@@ -7,7 +7,7 @@
 //!
 //! # Architecture
 //!
-//! Five modules:
+//! Six modules:
 //!
 //! - [`phoneme`] — IPA phoneme inventories per language, phonological features
 //!   (manner, place, voicing), stress/tone patterns, builder pattern,
@@ -21,6 +21,8 @@
 //!   word lists)
 //! - [`registry`] — Language registry: look up phoneme inventories and scripts
 //!   by ISO 639 code
+//! - [`dialect`] — Language variety overlays: regional dialects, national
+//!   standards, phoneme add/remove relative to parent language
 //!
 //! # Relationship to Other Crates
 //!

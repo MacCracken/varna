@@ -312,3 +312,77 @@ fn test_greek_isopsephy_word_value() {
     // "θεος" (theos) = 9 + 5 + 70 + 200 = 284
     assert_eq!(sys.string_value("θεος"), Some(284));
 }
+
+// ---------------------------------------------------------------------------
+// Dialect/variety
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_dialect_apply_overlay() {
+    let en = phoneme::english();
+    let rp = lipi::dialect::british_english();
+    let rp_inv = rp.apply(&en);
+
+    // RP adds /ɒ/ and removes /ɹ/
+    assert!(rp_inv.has("ɒ"));
+    assert!(!rp_inv.has("ɹ"));
+    // But still has everything else
+    assert!(rp_inv.has("p"));
+    assert!(rp_inv.has("θ"));
+    assert_eq!(rp_inv.language_code, "en-GB");
+}
+
+#[test]
+fn test_dialect_serde_roundtrip() {
+    let rp = lipi::dialect::british_english();
+    let json = serde_json::to_string(&rp).unwrap();
+    let back: lipi::dialect::LanguageVariety = serde_json::from_str(&json).unwrap();
+    assert_eq!(rp, back);
+}
+
+// ---------------------------------------------------------------------------
+// Cognate & etymology
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_cognate_cross_registry() {
+    use lipi::lexicon::cognate;
+    let cog = cognate::water_cognates();
+    // Verify cognate languages are registered
+    for entry in &cog.entries {
+        if lipi::registry::info(&entry.language).is_some() {
+            let inv = lipi::registry::phonemes(&entry.language).unwrap();
+            assert!(
+                !inv.phonemes.is_empty(),
+                "empty inventory for {}",
+                entry.language
+            );
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Extended inventories
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_all_inventories_serde_roundtrip() {
+    for code in lipi::registry::all_codes() {
+        let inv = lipi::registry::phonemes(code).unwrap();
+        let json = serde_json::to_string(&inv).unwrap();
+        let back: phoneme::PhonemeInventory = serde_json::from_str(&json).unwrap();
+        assert_eq!(inv, back, "serde roundtrip failed for {code}");
+    }
+}
+
+#[test]
+fn test_all_inventories_consonant_vowel_split() {
+    for code in lipi::registry::all_codes() {
+        let inv = lipi::registry::phonemes(code).unwrap();
+        assert_eq!(
+            inv.consonant_count() + inv.vowel_count(),
+            inv.phonemes.len(),
+            "consonant+vowel mismatch for {code}"
+        );
+    }
+}

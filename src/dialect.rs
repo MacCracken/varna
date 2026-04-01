@@ -57,6 +57,36 @@ impl LanguageVariety {
     pub fn removes(&self, ipa: &str) -> bool {
         self.removed_phonemes.iter().any(|p| p.as_ref() == ipa)
     }
+
+    /// Apply this variety's overlay to a parent phoneme inventory,
+    /// producing a new inventory with added/removed phonemes.
+    #[must_use]
+    pub fn apply(
+        &self,
+        parent: &crate::phoneme::PhonemeInventory,
+    ) -> crate::phoneme::PhonemeInventory {
+        tracing::debug!(variety = %self.code, parent = %parent.language_code, "applying variety overlay");
+        let mut inv = parent.clone();
+        inv.language_code = self.code.clone();
+        inv.language_name = self.name.clone();
+
+        // Remove phonemes
+        inv.phonemes.retain(|p| !self.removes(&p.ipa));
+
+        // Add phonemes (as vowels by default — caller can use Phoneme constructors for consonants)
+        for ipa in &self.added_phonemes {
+            if !inv.phonemes.iter().any(|p| p.ipa == *ipa) {
+                inv.phonemes.push(crate::phoneme::Phoneme::vowel(
+                    ipa.clone(),
+                    crate::phoneme::Height::Mid,
+                    crate::phoneme::Backness::Central,
+                    false,
+                ));
+            }
+        }
+
+        inv
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -64,6 +94,10 @@ impl LanguageVariety {
 // ---------------------------------------------------------------------------
 
 /// British English (Received Pronunciation).
+///
+/// Note: `removed_phonemes` lists /ɹ/ to model non-rhoticity, but RP does
+/// have /r/ in onset position ("red"). This is a simplification — the full
+/// model would restrict the phoneme's distribution rather than removing it.
 #[must_use]
 pub fn british_english() -> LanguageVariety {
     use crate::phoneme::allophone::{AllophoneRule, Environment};
@@ -91,20 +125,6 @@ pub fn british_english() -> LanguageVariety {
     }
 }
 
-/// Egyptian Arabic (Cairene).
-#[must_use]
-pub fn egyptian_arabic() -> LanguageVariety {
-    LanguageVariety {
-        code: Cow::Borrowed("ar-EG"),
-        name: Cow::Borrowed("Egyptian Arabic"),
-        parent: Cow::Borrowed("ar"),
-        kind: VarietyKind::Regional,
-        added_phonemes: vec![],
-        removed_phonemes: vec![],
-        allophone_overrides: vec![],
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,12 +145,5 @@ mod tests {
         let json = serde_json::to_string(&rp).unwrap();
         let back: LanguageVariety = serde_json::from_str(&json).unwrap();
         assert_eq!(rp, back);
-    }
-
-    #[test]
-    fn test_egyptian_arabic() {
-        let eg = egyptian_arabic();
-        assert_eq!(eg.parent, "ar");
-        assert_eq!(eg.kind, VarietyKind::Regional);
     }
 }

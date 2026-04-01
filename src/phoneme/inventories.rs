@@ -8,8 +8,8 @@ use super::*;
 
 /// Build the Yucatec Maya phoneme inventory.
 ///
-/// Maya has ejective consonants and an implosive /ɓ/, which are critical
-/// for day sign and month name validation in the Mayan calendar (sankhya).
+/// Maya has ejective consonants which are critical for day sign and
+/// month name validation in the Mayan calendar (sankhya).
 ///
 /// 21 consonants + 10 vowels (short/long pairs). Stress: fixed (penultimate).
 #[must_use]
@@ -68,7 +68,7 @@ pub fn yucatec_maya() -> PhonemeInventory {
 
 /// Build the Swahili phoneme inventory.
 ///
-/// 24 consonants + 5 vowels. Stress: penultimate (fixed).
+/// 26 consonants + 5 vowels. Stress: penultimate (fixed).
 #[must_use]
 pub fn swahili() -> PhonemeInventory {
     use Backness::*;
@@ -161,7 +161,7 @@ pub fn yoruba() -> PhonemeInventory {
 
 /// Build the Zulu phoneme inventory.
 ///
-/// 47 consonants (including clicks) + 5 vowels. Stress: penultimate.
+/// 42 consonants (including clicks) + 5 vowels. Stress: penultimate.
 #[must_use]
 pub fn zulu() -> PhonemeInventory {
     use Backness::*;
@@ -388,7 +388,7 @@ pub fn tagalog() -> PhonemeInventory {
 
 /// Build the Turkish phoneme inventory.
 ///
-/// 21 consonants + 8 vowels. Stress: typically final (agglutinative morphology).
+/// 20 consonants + 8 vowels. Stress: typically final (agglutinative morphology).
 #[must_use]
 pub fn turkish() -> PhonemeInventory {
     use Backness::*;
@@ -518,7 +518,7 @@ pub fn hawaiian() -> PhonemeInventory {
 
 /// Build the Nahuatl (Classical) phoneme inventory.
 ///
-/// 15 consonants + 4 vowels (short + long). Stress: penultimate.
+/// 16 consonants + 4 vowels (short + long). Stress: penultimate.
 #[must_use]
 pub fn nahuatl() -> PhonemeInventory {
     use Backness::*;
