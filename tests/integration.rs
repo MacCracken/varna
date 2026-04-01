@@ -1,11 +1,11 @@
-//! Integration tests for lipi — cross-module behavior.
+//! Integration tests for varna — cross-module behavior.
 
 use std::borrow::Cow;
 
-use lipi::grammar::{GrammarProfile, Morphology, WordOrder};
-use lipi::lexicon::{LexEntry, Lexicon, PartOfSpeech};
-use lipi::phoneme::{self, Backness, Height, Manner, Phoneme, PhonemeKind, Place};
-use lipi::script::{Direction, Script, ScriptStatus, ScriptType};
+use varna::grammar::{GrammarProfile, Morphology, WordOrder};
+use varna::lexicon::{LexEntry, Lexicon, PartOfSpeech};
+use varna::phoneme::{self, Backness, Height, Manner, Phoneme, PhonemeKind, Place};
+use varna::script::{Direction, Script, ScriptStatus, ScriptType};
 
 // ---------------------------------------------------------------------------
 // Serde roundtrips
@@ -100,8 +100,8 @@ fn test_english_consonant_vowel_split() {
 
 #[test]
 fn test_phoneme_kind_classification() {
-    for code in lipi::registry::all_codes() {
-        let inv = lipi::registry::phonemes(code).unwrap();
+    for code in varna::registry::all_codes() {
+        let inv = varna::registry::phonemes(code).unwrap();
         for p in &inv.phonemes {
             match &p.kind {
                 PhonemeKind::Consonant { .. } => {}
@@ -118,10 +118,10 @@ fn test_phoneme_kind_classification() {
 
 #[test]
 fn test_error_display() {
-    let err = lipi::LipiError::UnknownLanguage("xx".into());
+    let err = varna::VarnaError::UnknownLanguage("xx".into());
     assert_eq!(err.to_string(), "unknown language: xx");
 
-    let err = lipi::LipiError::PhonemeNotInInventory {
+    let err = varna::VarnaError::PhonemeNotInInventory {
         phoneme: "ʀ".into(),
         language: "en".into(),
     };
@@ -131,21 +131,21 @@ fn test_error_display() {
 
 #[test]
 fn test_all_error_variants_display() {
-    let cases: Vec<(lipi::LipiError, &str)> = vec![
+    let cases: Vec<(varna::VarnaError, &str)> = vec![
         (
-            lipi::LipiError::UnknownLanguage("zz".into()),
+            varna::VarnaError::UnknownLanguage("zz".into()),
             "unknown language: zz",
         ),
         (
-            lipi::LipiError::UnknownScript("Xxxx".into()),
+            varna::VarnaError::UnknownScript("Xxxx".into()),
             "unknown script: Xxxx",
         ),
         (
-            lipi::LipiError::InvalidIpa("???".into()),
+            varna::VarnaError::InvalidIpa("???".into()),
             "invalid IPA symbol: ???",
         ),
         (
-            lipi::LipiError::WordNotFound {
+            varna::VarnaError::WordNotFound {
                 word: "foo".into(),
                 language: "en".into(),
             },
@@ -204,8 +204,8 @@ fn test_phoneme_constructor_with_owned_string() {
 
 #[test]
 fn test_registry_roundtrip_all_languages() {
-    for code in lipi::registry::all_codes() {
-        let inv = lipi::registry::phonemes(code).unwrap();
+    for code in varna::registry::all_codes() {
+        let inv = varna::registry::phonemes(code).unwrap();
         let json = serde_json::to_string(&inv).unwrap();
         let back: phoneme::PhonemeInventory = serde_json::from_str(&json).unwrap();
         assert_eq!(inv, back, "serde roundtrip failed for {code}");
@@ -214,9 +214,9 @@ fn test_registry_roundtrip_all_languages() {
 
 #[test]
 fn test_registry_script_consistency() {
-    for code in lipi::registry::all_codes() {
-        let info = lipi::registry::info(code).unwrap();
-        if let Some(script) = lipi::registry::primary_script(code) {
+    for code in varna::registry::all_codes() {
+        let info = varna::registry::info(code).unwrap();
+        if let Some(script) = varna::registry::primary_script(code) {
             assert_eq!(
                 script.code, info.script_codes[0],
                 "script mismatch for {code}"
@@ -231,8 +231,8 @@ fn test_registry_script_consistency() {
 
 #[test]
 fn test_all_scripts_serde_roundtrip() {
-    for code in lipi::script::all_codes() {
-        let script = lipi::script::by_code(code).unwrap();
+    for code in varna::script::all_codes() {
+        let script = varna::script::by_code(code).unwrap();
         let json = serde_json::to_string(&script).unwrap();
         let back: Script = serde_json::from_str(&json).unwrap();
         assert_eq!(script, back, "serde roundtrip failed for script {code}");
@@ -245,7 +245,7 @@ fn test_all_scripts_serde_roundtrip() {
 
 #[test]
 fn test_allophone_realize_cross_module() {
-    use lipi::phoneme::allophone;
+    use varna::phoneme::allophone;
     let rules = allophone::english_allophones();
     // Verify allophone realization agrees with phoneme inventory
     let en = phoneme::english();
@@ -261,7 +261,7 @@ fn test_allophone_realize_cross_module() {
 
 #[test]
 fn test_phonotactics_serde_roundtrip_all() {
-    use lipi::phoneme::syllable;
+    use varna::phoneme::syllable;
     let profiles = [
         syllable::english_phonotactics(),
         syllable::sanskrit_phonotactics(),
@@ -280,7 +280,7 @@ fn test_phonotactics_serde_roundtrip_all() {
 
 #[test]
 fn test_transliteration_greek_roundtrip_chars() {
-    use lipi::script::transliteration;
+    use varna::script::transliteration;
     let table = transliteration::greek_beta_code();
     // Every char in forward map should transliterate correctly
     for (src, tgt) in &table.forward {
@@ -298,7 +298,7 @@ fn test_transliteration_greek_roundtrip_chars() {
 
 #[test]
 fn test_numeral_systems_serde_roundtrip() {
-    use lipi::script::numerals;
+    use varna::script::numerals;
     let systems = [numerals::devanagari_digits(), numerals::greek_isopsephy()];
     for sys in &systems {
         let json = serde_json::to_string(sys).unwrap();
@@ -309,7 +309,7 @@ fn test_numeral_systems_serde_roundtrip() {
 
 #[test]
 fn test_greek_isopsephy_word_value() {
-    use lipi::script::numerals;
+    use varna::script::numerals;
     let sys = numerals::greek_isopsephy();
     // "θεος" (theos) = 9 + 5 + 70 + 200 = 284
     assert_eq!(sys.string_value("θεος"), Some(284));
@@ -322,7 +322,7 @@ fn test_greek_isopsephy_word_value() {
 #[test]
 fn test_dialect_apply_overlay() {
     let en = phoneme::english();
-    let rp = lipi::dialect::british_english();
+    let rp = varna::dialect::british_english();
     let rp_inv = rp.apply(&en);
 
     // RP adds /ɒ/ and removes /ɹ/
@@ -336,9 +336,9 @@ fn test_dialect_apply_overlay() {
 
 #[test]
 fn test_dialect_serde_roundtrip() {
-    let rp = lipi::dialect::british_english();
+    let rp = varna::dialect::british_english();
     let json = serde_json::to_string(&rp).unwrap();
-    let back: lipi::dialect::LanguageVariety = serde_json::from_str(&json).unwrap();
+    let back: varna::dialect::LanguageVariety = serde_json::from_str(&json).unwrap();
     assert_eq!(rp, back);
 }
 
@@ -348,12 +348,12 @@ fn test_dialect_serde_roundtrip() {
 
 #[test]
 fn test_cognate_cross_registry() {
-    use lipi::lexicon::cognate;
+    use varna::lexicon::cognate;
     let cog = cognate::water_cognates();
     // Verify cognate languages are registered
     for entry in &cog.entries {
-        if lipi::registry::info(&entry.language).is_some() {
-            let inv = lipi::registry::phonemes(&entry.language).unwrap();
+        if varna::registry::info(&entry.language).is_some() {
+            let inv = varna::registry::phonemes(&entry.language).unwrap();
             assert!(
                 !inv.phonemes.is_empty(),
                 "empty inventory for {}",
@@ -369,8 +369,8 @@ fn test_cognate_cross_registry() {
 
 #[test]
 fn test_all_inventories_serde_roundtrip() {
-    for code in lipi::registry::all_codes() {
-        let inv = lipi::registry::phonemes(code).unwrap();
+    for code in varna::registry::all_codes() {
+        let inv = varna::registry::phonemes(code).unwrap();
         let json = serde_json::to_string(&inv).unwrap();
         let back: phoneme::PhonemeInventory = serde_json::from_str(&json).unwrap();
         assert_eq!(inv, back, "serde roundtrip failed for {code}");
@@ -379,8 +379,8 @@ fn test_all_inventories_serde_roundtrip() {
 
 #[test]
 fn test_all_inventories_consonant_vowel_split() {
-    for code in lipi::registry::all_codes() {
-        let inv = lipi::registry::phonemes(code).unwrap();
+    for code in varna::registry::all_codes() {
+        let inv = varna::registry::phonemes(code).unwrap();
         assert_eq!(
             inv.consonant_count() + inv.vowel_count(),
             inv.phonemes.len(),
@@ -395,18 +395,18 @@ fn test_all_inventories_consonant_vowel_split() {
 
 #[test]
 fn test_grammar_all_serde_roundtrip() {
-    for code in lipi::grammar::all_codes() {
-        let g = lipi::grammar::by_code(code).unwrap();
+    for code in varna::grammar::all_codes() {
+        let g = varna::grammar::by_code(code).unwrap();
         let json = serde_json::to_string(&g).unwrap();
-        let back: lipi::grammar::GrammarProfile = serde_json::from_str(&json).unwrap();
+        let back: varna::grammar::GrammarProfile = serde_json::from_str(&json).unwrap();
         assert_eq!(g, back, "grammar roundtrip failed for {code}");
     }
 }
 
 #[test]
 fn test_grammar_gender_consistency() {
-    for code in lipi::grammar::all_codes() {
-        let g = lipi::grammar::by_code(code).unwrap();
+    for code in varna::grammar::all_codes() {
+        let g = varna::grammar::by_code(code).unwrap();
         if g.has_gender {
             assert!(g.gender_count > 0, "{code} has_gender but gender_count=0");
         } else {
@@ -421,18 +421,18 @@ fn test_grammar_gender_consistency() {
 
 #[test]
 fn test_swadesh_all_serde_roundtrip() {
-    for code in lipi::lexicon::swadesh::all_codes() {
-        let lex = lipi::lexicon::swadesh::by_code(code).unwrap();
+    for code in varna::lexicon::swadesh::all_codes() {
+        let lex = varna::lexicon::swadesh::by_code(code).unwrap();
         let json = serde_json::to_string(&lex).unwrap();
-        let back: lipi::lexicon::Lexicon = serde_json::from_str(&json).unwrap();
+        let back: varna::lexicon::Lexicon = serde_json::from_str(&json).unwrap();
         assert_eq!(lex, back, "swadesh roundtrip failed for {code}");
     }
 }
 
 #[test]
 fn test_swadesh_cross_language_water() {
-    for code in lipi::lexicon::swadesh::all_codes() {
-        let lex = lipi::lexicon::swadesh::by_code(code).unwrap();
+    for code in varna::lexicon::swadesh::all_codes() {
+        let lex = varna::lexicon::swadesh::by_code(code).unwrap();
         let water = lex.entries.iter().find(|e| e.swadesh_index == Some(23));
         assert!(water.is_some(), "missing water (index 23) in {code}");
         assert_eq!(water.unwrap().gloss, "water");
@@ -447,7 +447,7 @@ fn test_swadesh_cross_language_water() {
 fn test_tonal_languages_have_tones() {
     let tonal = ["zh", "yo", "th", "vi", "lzh"];
     for code in tonal {
-        let inv = lipi::registry::phonemes(code).unwrap();
+        let inv = varna::registry::phonemes(code).unwrap();
         assert!(
             inv.tones.is_some(),
             "{code} should be tonal but has no tones"
@@ -464,7 +464,7 @@ fn test_tonal_languages_have_tones() {
 fn test_non_tonal_languages_no_tones() {
     let non_tonal = ["en", "es", "fr", "de", "ru", "pt", "la", "fi", "tr"];
     for code in non_tonal {
-        let inv = lipi::registry::phonemes(code).unwrap();
+        let inv = varna::registry::phonemes(code).unwrap();
         assert!(inv.tones.is_none(), "{code} should not have tones");
     }
 }

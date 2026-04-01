@@ -1,6 +1,6 @@
-# Contributing to Lipi
+# Contributing to Varna
 
-Thank you for your interest in contributing to Lipi.
+Thank you for your interest in contributing to Varna.
 
 ## Development Workflow
 

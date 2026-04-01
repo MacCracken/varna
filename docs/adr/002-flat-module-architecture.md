@@ -6,10 +6,10 @@ Accepted
 
 ## Context
 
-Lipi provides six distinct domains of linguistic data (phoneme, script, grammar, lexicon, registry, dialect). The module structure could be:
+Varna provides six distinct domains of linguistic data (phoneme, script, grammar, lexicon, registry, dialect). The module structure could be:
 
-1. **Deeply nested** — `lipi::language::phoneme::inventory::english`
-2. **Flat with submodules** — `lipi::phoneme::english()`, `lipi::script::by_code("Latn")`
+1. **Deeply nested** — `varna::language::phoneme::inventory::english`
+2. **Flat with submodules** — `varna::phoneme::english()`, `varna::script::by_code("Latn")`
 3. **Single module** — everything in `lib.rs`
 
 ## Decision
@@ -41,7 +41,7 @@ src/
 ## Consequences
 
 **Benefits:**
-- Import paths are short: `lipi::phoneme::english()`, `lipi::script::by_code("Deva")`
+- Import paths are short: `varna::phoneme::english()`, `varna::script::by_code("Deva")`
 - Each domain is independently navigable
 - Adding a new domain (e.g., `prosody`) requires only a new top-level module
 - Consumers pull exactly the domain they need

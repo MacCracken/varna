@@ -1,11 +1,11 @@
-//! Error types for lipi.
+//! Error types for varna.
 
 use thiserror::Error;
 
 /// Errors that can occur in language processing.
 #[derive(Debug, Error)]
 #[non_exhaustive]
-pub enum LipiError {
+pub enum VarnaError {
     /// Language not found in the registry.
     #[error("unknown language: {0}")]
     UnknownLanguage(String),

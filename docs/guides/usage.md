@@ -2,11 +2,11 @@
 
 ## Getting Started
 
-Add `lipi` to `Cargo.toml`:
+Add `varna` to `Cargo.toml`:
 
 ```toml
 [dependencies]
-lipi = "0.6"
+varna = "0.6"
 ```
 
 Feature flags:
@@ -22,10 +22,10 @@ Feature flags:
 
 ```toml
 # All optional integrations
-lipi = { version = "0.6", features = ["full"] }
+varna = { version = "0.6", features = ["full"] }
 
 # MCP only
-lipi = { version = "0.6", features = ["mcp"] }
+varna = { version = "0.6", features = ["mcp"] }
 ```
 
 ---
@@ -35,7 +35,7 @@ lipi = { version = "0.6", features = ["mcp"] }
 Look up a language by ISO 639 code via the registry, then inspect its inventory:
 
 ```rust
-let inv = lipi::registry::phonemes("sa").unwrap();
+let inv = varna::registry::phonemes("sa").unwrap();
 
 println!("{} — {}C + {}V", inv.language_name, inv.consonant_count(), inv.vowel_count());
 
@@ -49,7 +49,7 @@ assert!(inv.has("ɖ"));   // retroflex stop
 assert!(!inv.has("θ"));  // no dental fricative in Sanskrit
 ```
 
-All registered codes: `lipi::registry::all_codes()`.
+All registered codes: `varna::registry::all_codes()`.
 
 ---
 
@@ -58,7 +58,7 @@ All registered codes: `lipi::registry::all_codes()`.
 Construct a custom inventory with `PhonemeInventoryBuilder`:
 
 ```rust
-use lipi::phoneme::{PhonemeInventoryBuilder, Manner, Place, Height, Backness, StressPattern};
+use varna::phoneme::{PhonemeInventoryBuilder, Manner, Place, Height, Backness, StressPattern};
 
 let inv = PhonemeInventoryBuilder::new("xx", "Example Language")
     .stress(StressPattern::Fixed)
@@ -81,7 +81,7 @@ assert_eq!(inv.vowel_count(), 2);
 Look up script metadata by ISO 15924 code:
 
 ```rust
-let deva = lipi::script::by_code("Deva").unwrap();
+let deva = varna::script::by_code("Deva").unwrap();
 
 println!("Type: {:?}", deva.script_type);   // Abugida
 println!("Direction: {:?}", deva.direction); // LeftToRight
@@ -103,7 +103,7 @@ Registered codes: `"Latn"`, `"Arab"`, `"Deva"`, `"Hani"`, `"Cyrl"`, `"Hang"`, `"
 Use pre-built `TransliterationTable` instances to convert between scripts:
 
 ```rust
-use lipi::script::transliteration::{devanagari_iast, greek_beta_code};
+use varna::script::transliteration::{devanagari_iast, greek_beta_code};
 
 // Devanagari -> IAST
 let iast = devanagari_iast();
@@ -129,7 +129,7 @@ assert_eq!(rev.get("a"), Some(&"अ"));
 Query script-specific numeral mappings for isopsephy, digit conversion, and ancient notation:
 
 ```rust
-use lipi::script::numerals::{greek_isopsephy, devanagari_digits, babylonian_sexagesimal};
+use varna::script::numerals::{greek_isopsephy, devanagari_digits, babylonian_sexagesimal};
 
 // Greek isopsephy — additive letter values
 let iso = greek_isopsephy();
@@ -157,7 +157,7 @@ Also available: `egyptian_hieroglyphic()`, `chinese_rod_numerals()`.
 Look up typological data — morphology, word order, and case system — by ISO 639 code:
 
 ```rust
-let de = lipi::grammar::by_code("de").unwrap();
+let de = varna::grammar::by_code("de").unwrap();
 
 println!("Morphology: {:?}", de.morphology);   // Fusional
 println!("Word order: {:?}", de.word_order);    // SVO (V2)
@@ -166,9 +166,9 @@ println!("Genders: {}", de.gender_count);       // 3
 println!("Classifiers: {}", de.has_classifiers); // false
 
 // Japanese for comparison
-let ja = lipi::grammar::by_code("ja").unwrap();
-assert_eq!(ja.morphology, lipi::grammar::Morphology::Agglutinative);
-assert_eq!(ja.word_order, lipi::grammar::WordOrder::SOV);
+let ja = varna::grammar::by_code("ja").unwrap();
+assert_eq!(ja.morphology, varna::grammar::Morphology::Agglutinative);
+assert_eq!(ja.word_order, varna::grammar::WordOrder::SOV);
 assert!(ja.has_classifiers);
 ```
 
@@ -182,7 +182,7 @@ Access 25-word core vocabulary per language for cross-language comparison:
 
 ```rust
 // Fetch Spanish Swadesh-25
-let es = lipi::lexicon::swadesh::by_code("es").unwrap();
+let es = varna::lexicon::swadesh::by_code("es").unwrap();
 
 // Iterate Swadesh entries in index order
 for entry in es.swadesh() {
@@ -190,8 +190,8 @@ for entry in es.swadesh() {
 }
 
 // Cross-language: find the word for "water" in every covered language
-for code in lipi::lexicon::swadesh::all_codes() {
-    let lex = lipi::lexicon::swadesh::by_code(code).unwrap();
+for code in varna::lexicon::swadesh::all_codes() {
+    let lex = varna::lexicon::swadesh::by_code(code).unwrap();
     if let Some(w) = lex.entries.iter().find(|e| e.gloss == "water") {
         println!("{code}: {} /{}/", w.word, w.ipa);
     }
@@ -207,7 +207,7 @@ Swadesh data covers: `ar`, `zh`, `hi`, `ja`, `es`, `fr`, `de`, `ru`, `ko`, `pt`.
 `AllophoneRuleSet::realize()` returns the surface form of a phoneme in a given context:
 
 ```rust
-use lipi::phoneme::allophone::{english_allophones, Environment};
+use varna::phoneme::allophone::{english_allophones, Environment};
 
 let rules = english_allophones();
 
@@ -237,7 +237,7 @@ Use `rules_for(ipa)` to retrieve all rules for a given phoneme.
 Query syllable templates and explicit onset/coda constraints:
 
 ```rust
-use lipi::phoneme::syllable::{english_phonotactics, SyllablePosition};
+use varna::phoneme::syllable::{english_phonotactics, SyllablePosition};
 
 let p = english_phonotactics();
 
@@ -252,7 +252,7 @@ assert_eq!(p.is_permitted("sr",  SyllablePosition::Onset), Some(false));
 assert_eq!(p.is_permitted("br",  SyllablePosition::Onset), None); // no explicit rule
 
 // Japanese: (C)V(N) only
-let ja = lipi::phoneme::syllable::japanese_phonotactics();
+let ja = varna::phoneme::syllable::japanese_phonotactics();
 assert!(!ja.syllable.allows_onset_clusters());
 assert_eq!(ja.is_permitted("n", SyllablePosition::Coda), Some(true));
 ```
@@ -264,7 +264,7 @@ assert_eq!(ja.is_permitted("n", SyllablePosition::Coda), Some(true));
 `LanguageVariety::apply()` derives a modified `PhonemeInventory` from a parent:
 
 ```rust
-use lipi::dialect::british_english;
+use varna::dialect::british_english;
 
 let rp = british_english();
 assert_eq!(rp.parent, "en");
@@ -272,7 +272,7 @@ assert!(rp.adds("ɒ"));   // LOT vowel, absent in General American
 assert!(rp.removes("ɹ")); // non-rhotic: no post-vocalic /r/
 
 // Apply overlay to General American inventory
-let ga = lipi::phoneme::english();
+let ga = varna::phoneme::english();
 let rp_inv = rp.apply(&ga);
 
 assert_eq!(rp_inv.language_code, "en-GB");
@@ -289,7 +289,7 @@ assert!(!rp_inv.has("ɹ"));
 `CognateSet` groups related words across languages with a reconstructed proto-form:
 
 ```rust
-use lipi::lexicon::cognate::{water_cognates, Etymology, BorrowingType};
+use varna::lexicon::cognate::{water_cognates, Etymology, BorrowingType};
 use std::borrow::Cow;
 
 let cog = water_cognates();
@@ -317,10 +317,10 @@ let etym = Etymology {
 
 ## MCP Tools
 
-Requires feature `mcp`. Exposes lipi data as structured tools for AI agent frameworks:
+Requires feature `mcp`. Exposes varna data as structured tools for AI agent frameworks:
 
 ```rust
-use lipi::mcp::{tool_definitions, invoke, ToolResult};
+use varna::mcp::{tool_definitions, invoke, ToolResult};
 use std::collections::HashMap;
 
 // Enumerate available tools
@@ -352,7 +352,7 @@ params.insert("scheme".to_string(), "greek_beta".to_string());
 Requires feature `daimon`. Produces the registration payload for the AGNOS agent framework:
 
 ```rust
-let reg = lipi::daimon::registration();
+let reg = varna::daimon::registration();
 
 println!("Agent: {} v{}", reg.name, reg.version);
 println!("Languages: {}", reg.supported_languages.len()); // 27
@@ -372,10 +372,10 @@ Serialize with `serde_json::to_string(&reg)` to pass the payload to the daimon c
 
 ## Hoosh Queries
 
-Requires feature `hoosh`. Defines structured queries for LLM inference; `answer_from_data()` resolves queries that lipi can answer directly without calling an LLM:
+Requires feature `hoosh`. Defines structured queries for LLM inference; `answer_from_data()` resolves queries that varna can answer directly without calling an LLM:
 
 ```rust
-use lipi::hoosh::{LanguageQuery, ComparisonAspect, answer_from_data, ResponseSource};
+use varna::hoosh::{LanguageQuery, ComparisonAspect, answer_from_data, ResponseSource};
 
 // Data-resolvable: phoneme existence check
 let q = LanguageQuery::ExamplesForPhoneme {
@@ -389,7 +389,7 @@ assert_eq!(resp.confidence, Some(1.0));
 println!("{}", resp.content); // "/θ/ is present in English (24C + 12V inventory)"
 
 // Data-resolvable: phonology comparison
-let q = lipi::hoosh::compare(
+let q = varna::hoosh::compare(
     vec!["en".into(), "ja".into()],
     ComparisonAspect::Phonology,
 );
@@ -397,7 +397,7 @@ let resp = answer_from_data(&q).unwrap();
 println!("{}", resp.content); // "English has 24C+12V, Japanese has ..."
 
 // Requires LLM inference — answer_from_data returns None
-let q = lipi::hoosh::identify("bonjour le monde");
+let q = varna::hoosh::identify("bonjour le monde");
 assert!(answer_from_data(&q).is_none());
 ```
 

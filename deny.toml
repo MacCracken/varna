@@ -1,4 +1,4 @@
-# cargo-deny configuration for lipi
+# cargo-deny configuration for varna
 # https://embarkstudios.github.io/cargo-deny/
 
 [graph]

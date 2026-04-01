@@ -1,8 +1,8 @@
-# Lipi — Claude Code Instructions
+# Varna — Claude Code Instructions
 
 ## Project Identity
 
-**Lipi** (Sanskrit: लिपि — script, writing system) — Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access for 50+ languages
+**Varna** (Sanskrit: वर्ण — letter, character, sound) — Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access for 50+ languages
 
 - **Type**: Flat library crate
 - **License**: GPL-3.0

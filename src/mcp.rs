@@ -1,6 +1,6 @@
 //! MCP (Model Context Protocol) tool definitions for AI agent integration.
 //!
-//! Exposes lipi's language data as structured tools that AI agents can
+//! Exposes varna's language data as structured tools that AI agents can
 //! invoke via MCP. Each tool has a name, description, input parameters,
 //! and a handler that returns JSON-serializable output.
 
@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 /// Description of an MCP tool.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolDefinition {
-    /// Tool name (e.g., "lipi_phonemes").
+    /// Tool name (e.g., "varna_phonemes").
     pub name: Cow<'static, str>,
     /// Human-readable description.
     pub description: Cow<'static, str>,
@@ -43,12 +43,12 @@ pub enum ToolResult {
     Error(String),
 }
 
-/// All MCP tool definitions exposed by lipi.
+/// All MCP tool definitions exposed by varna.
 #[must_use]
 pub fn tool_definitions() -> Vec<ToolDefinition> {
     vec![
         ToolDefinition {
-            name: Cow::Borrowed("lipi_phonemes"),
+            name: Cow::Borrowed("varna_phonemes"),
             description: Cow::Borrowed(
                 "Get the phoneme inventory for a language. Returns consonants, vowels, \
                  stress pattern, and tone system.",
@@ -61,7 +61,7 @@ pub fn tool_definitions() -> Vec<ToolDefinition> {
             }],
         },
         ToolDefinition {
-            name: Cow::Borrowed("lipi_script"),
+            name: Cow::Borrowed("varna_script"),
             description: Cow::Borrowed(
                 "Get writing system metadata for a script. Returns type, direction, \
                  Unicode ranges, and status.",
@@ -74,7 +74,7 @@ pub fn tool_definitions() -> Vec<ToolDefinition> {
             }],
         },
         ToolDefinition {
-            name: Cow::Borrowed("lipi_grammar"),
+            name: Cow::Borrowed("varna_grammar"),
             description: Cow::Borrowed(
                 "Get the grammatical profile for a language. Returns morphology type, \
                  word order, case count, gender, and classifier usage.",
@@ -87,7 +87,7 @@ pub fn tool_definitions() -> Vec<ToolDefinition> {
             }],
         },
         ToolDefinition {
-            name: Cow::Borrowed("lipi_translate_ipa"),
+            name: Cow::Borrowed("varna_translate_ipa"),
             description: Cow::Borrowed(
                 "Transliterate text between scripts. Supports Devanagari↔IAST \
                  and Greek↔Beta Code.",
@@ -110,7 +110,7 @@ pub fn tool_definitions() -> Vec<ToolDefinition> {
             ],
         },
         ToolDefinition {
-            name: Cow::Borrowed("lipi_compare"),
+            name: Cow::Borrowed("varna_compare"),
             description: Cow::Borrowed(
                 "Compare two languages. Returns shared/unique phonemes, typological \
                  differences, and cognate information.",
@@ -138,11 +138,11 @@ pub fn tool_definitions() -> Vec<ToolDefinition> {
 pub fn invoke(tool_name: &str, params: &HashMap<String, String>) -> ToolResult {
     tracing::info!(tool = tool_name, "MCP tool invocation");
     match tool_name {
-        "lipi_phonemes" => handle_phonemes(params),
-        "lipi_script" => handle_script(params),
-        "lipi_grammar" => handle_grammar(params),
-        "lipi_translate_ipa" => handle_transliterate(params),
-        "lipi_compare" => handle_compare(params),
+        "varna_phonemes" => handle_phonemes(params),
+        "varna_script" => handle_script(params),
+        "varna_grammar" => handle_grammar(params),
+        "varna_translate_ipa" => handle_transliterate(params),
+        "varna_compare" => handle_compare(params),
         _ => ToolResult::Error(format!("unknown tool: {tool_name}")),
     }
 }
@@ -299,18 +299,18 @@ mod tests {
     fn test_tool_names() {
         let tools = tool_definitions();
         let names: Vec<&str> = tools.iter().map(|t| t.name.as_ref()).collect();
-        assert!(names.contains(&"lipi_phonemes"));
-        assert!(names.contains(&"lipi_script"));
-        assert!(names.contains(&"lipi_grammar"));
-        assert!(names.contains(&"lipi_translate_ipa"));
-        assert!(names.contains(&"lipi_compare"));
+        assert!(names.contains(&"varna_phonemes"));
+        assert!(names.contains(&"varna_script"));
+        assert!(names.contains(&"varna_grammar"));
+        assert!(names.contains(&"varna_translate_ipa"));
+        assert!(names.contains(&"varna_compare"));
     }
 
     #[test]
     fn test_invoke_phonemes() {
         let mut params = HashMap::new();
         params.insert("language".into(), "en".into());
-        match invoke("lipi_phonemes", &params) {
+        match invoke("varna_phonemes", &params) {
             ToolResult::Success(v) => {
                 assert!(v.get("language_code").is_some());
             }
@@ -323,7 +323,7 @@ mod tests {
         let mut params = HashMap::new();
         params.insert("language".into(), "xx".into());
         assert!(matches!(
-            invoke("lipi_phonemes", &params),
+            invoke("varna_phonemes", &params),
             ToolResult::Error(_)
         ));
     }
@@ -332,7 +332,7 @@ mod tests {
     fn test_invoke_script() {
         let mut params = HashMap::new();
         params.insert("code".into(), "Deva".into());
-        match invoke("lipi_script", &params) {
+        match invoke("varna_script", &params) {
             ToolResult::Success(v) => {
                 assert_eq!(v.get("code").unwrap().as_str().unwrap(), "Deva");
             }
@@ -344,7 +344,7 @@ mod tests {
     fn test_invoke_grammar() {
         let mut params = HashMap::new();
         params.insert("language".into(), "de".into());
-        match invoke("lipi_grammar", &params) {
+        match invoke("varna_grammar", &params) {
             ToolResult::Success(v) => {
                 assert_eq!(v.get("case_count").unwrap().as_u64().unwrap(), 4);
             }
@@ -357,7 +357,7 @@ mod tests {
         let mut params = HashMap::new();
         params.insert("text".into(), "αβγ".into());
         params.insert("scheme".into(), "greek_beta".into());
-        match invoke("lipi_translate_ipa", &params) {
+        match invoke("varna_translate_ipa", &params) {
             ToolResult::Success(v) => {
                 assert_eq!(v.as_str().unwrap(), "abg");
             }
@@ -370,7 +370,7 @@ mod tests {
         let mut params = HashMap::new();
         params.insert("lang1".into(), "en".into());
         params.insert("lang2".into(), "de".into());
-        match invoke("lipi_compare", &params) {
+        match invoke("varna_compare", &params) {
             ToolResult::Success(v) => {
                 assert!(v.get("shared_phonemes").is_some());
                 assert!(v.get("shared_count").is_some());
@@ -393,7 +393,7 @@ mod tests {
     fn test_invoke_missing_param() {
         let params = HashMap::new();
         assert!(matches!(
-            invoke("lipi_phonemes", &params),
+            invoke("varna_phonemes", &params),
             ToolResult::Error(_)
         ));
     }

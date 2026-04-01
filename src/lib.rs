@@ -1,6 +1,6 @@
-//! Lipi — Multilingual Language Engine
+//! Varna — Multilingual Language Engine
 //!
-//! **Lipi** (Sanskrit: लिपि — script, writing system) provides a structured,
+//! **Varna** (Sanskrit: वर्ण — letter, character, sound) provides a structured,
 //! queryable corpus of human language data. Phoneme inventories, grapheme-to-phoneme
 //! rules, writing system metadata, grammar structures, and lexicon access for
 //! 50+ languages.
@@ -27,11 +27,11 @@
 //! # Relationship to Other Crates
 //!
 //! ```text
-//! lipi (this) — language structure & phoneme inventories
+//! varna (this) — language structure & phoneme inventories
 //!   ↓ provides phoneme sets per language
-//! shabda — G2P conversion (currently English-only, lipi makes it multilingual)
+//! shabda — G2P conversion (currently English-only, varna makes it multilingual)
 //!   ↓ produces phoneme sequences
-//! shabdakosh — pronunciation dictionary (currently CMUdict, lipi adds IPA dicts)
+//! shabdakosh — pronunciation dictionary (currently CMUdict, varna adds IPA dicts)
 //!   ↓ lookup fallback
 //! svara — vocal synthesis (consumes phonemes, produces audio)
 //!   ↓ voice output
@@ -64,4 +64,4 @@ pub mod daimon;
 #[cfg(feature = "hoosh")]
 pub mod hoosh;
 
-pub use error::LipiError;
+pub use error::VarnaError;

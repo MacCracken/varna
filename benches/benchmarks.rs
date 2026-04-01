@@ -1,6 +1,6 @@
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 
-use lipi::phoneme;
+use varna::phoneme;
 
 // ---------------------------------------------------------------------------
 // Phoneme inventories
@@ -29,15 +29,15 @@ fn bench_phoneme_lookup(c: &mut Criterion) {
 
 fn bench_registry_lookup(c: &mut Criterion) {
     c.bench_function("registry_phonemes_lookup", |b| {
-        b.iter(|| lipi::registry::phonemes(black_box("sa")))
+        b.iter(|| varna::registry::phonemes(black_box("sa")))
     });
 }
 
 fn bench_registry_all_codes_iter(c: &mut Criterion) {
     c.bench_function("registry_all_codes_iter", |b| {
         b.iter(|| {
-            for code in lipi::registry::all_codes() {
-                black_box(lipi::registry::info(code));
+            for code in varna::registry::all_codes() {
+                black_box(varna::registry::info(code));
             }
         })
     });
@@ -49,12 +49,12 @@ fn bench_registry_all_codes_iter(c: &mut Criterion) {
 
 fn bench_script_lookup(c: &mut Criterion) {
     c.bench_function("script_by_code_lookup", |b| {
-        b.iter(|| lipi::script::by_code(black_box("Deva")))
+        b.iter(|| varna::script::by_code(black_box("Deva")))
     });
 }
 
 fn bench_script_contains_codepoint(c: &mut Criterion) {
-    let deva = lipi::script::devanagari();
+    let deva = varna::script::devanagari();
     c.bench_function("script_contains_codepoint", |b| {
         b.iter(|| deva.contains_codepoint(black_box(0x0915)))
     });
@@ -65,14 +65,14 @@ fn bench_script_contains_codepoint(c: &mut Criterion) {
 // ---------------------------------------------------------------------------
 
 fn bench_transliteration_devanagari(c: &mut Criterion) {
-    let table = lipi::script::transliteration::devanagari_iast();
+    let table = varna::script::transliteration::devanagari_iast();
     c.bench_function("transliterate_devanagari_char", |b| {
         b.iter(|| table.transliterate_char(black_box("क")))
     });
 }
 
 fn bench_transliteration_greek_word(c: &mut Criterion) {
-    let table = lipi::script::transliteration::greek_beta_code();
+    let table = varna::script::transliteration::greek_beta_code();
     c.bench_function("transliterate_greek_word", |b| {
         b.iter(|| table.transliterate(black_box("φιλοσοφια")))
     });
@@ -83,14 +83,14 @@ fn bench_transliteration_greek_word(c: &mut Criterion) {
 // ---------------------------------------------------------------------------
 
 fn bench_numeral_value_of(c: &mut Criterion) {
-    let sys = lipi::script::numerals::greek_isopsephy();
+    let sys = varna::script::numerals::greek_isopsephy();
     c.bench_function("numeral_value_of_char", |b| {
         b.iter(|| sys.value_of(black_box("π")))
     });
 }
 
 fn bench_numeral_string_value(c: &mut Criterion) {
-    let sys = lipi::script::numerals::greek_isopsephy();
+    let sys = varna::script::numerals::greek_isopsephy();
     c.bench_function("numeral_string_value_word", |b| {
         b.iter(|| sys.string_value(black_box("θεος")))
     });
@@ -102,7 +102,7 @@ fn bench_numeral_string_value(c: &mut Criterion) {
 
 fn bench_grammar_lookup(c: &mut Criterion) {
     c.bench_function("grammar_by_code_lookup", |b| {
-        b.iter(|| lipi::grammar::by_code(black_box("ru")))
+        b.iter(|| varna::grammar::by_code(black_box("ru")))
     });
 }
 
@@ -112,12 +112,12 @@ fn bench_grammar_lookup(c: &mut Criterion) {
 
 fn bench_swadesh_lookup(c: &mut Criterion) {
     c.bench_function("swadesh_by_code_lookup", |b| {
-        b.iter(|| lipi::lexicon::swadesh::by_code(black_box("ja")))
+        b.iter(|| varna::lexicon::swadesh::by_code(black_box("ja")))
     });
 }
 
 fn bench_lexicon_find(c: &mut Criterion) {
-    let lex = lipi::lexicon::swadesh::by_code("es").unwrap();
+    let lex = varna::lexicon::swadesh::by_code("es").unwrap();
     c.bench_function("lexicon_find_word", |b| {
         b.iter(|| lex.find(black_box("agua")))
     });
@@ -128,12 +128,12 @@ fn bench_lexicon_find(c: &mut Criterion) {
 // ---------------------------------------------------------------------------
 
 fn bench_allophone_realize(c: &mut Criterion) {
-    let rules = lipi::phoneme::allophone::english_allophones();
+    let rules = varna::phoneme::allophone::english_allophones();
     c.bench_function("allophone_realize", |b| {
         b.iter(|| {
             rules.realize(
                 black_box("t"),
-                black_box(&lipi::phoneme::allophone::Environment::Intervocalic),
+                black_box(&varna::phoneme::allophone::Environment::Intervocalic),
             )
         })
     });
@@ -144,12 +144,12 @@ fn bench_allophone_realize(c: &mut Criterion) {
 // ---------------------------------------------------------------------------
 
 fn bench_phonotactics_is_permitted(c: &mut Criterion) {
-    let p = lipi::phoneme::syllable::english_phonotactics();
+    let p = varna::phoneme::syllable::english_phonotactics();
     c.bench_function("phonotactics_is_permitted", |b| {
         b.iter(|| {
             p.is_permitted(
                 black_box("str"),
-                black_box(lipi::phoneme::syllable::SyllablePosition::Onset),
+                black_box(varna::phoneme::syllable::SyllablePosition::Onset),
             )
         })
     });
@@ -161,7 +161,7 @@ fn bench_phonotactics_is_permitted(c: &mut Criterion) {
 
 fn bench_dialect_apply(c: &mut Criterion) {
     let en = phoneme::english();
-    let rp = lipi::dialect::british_english();
+    let rp = varna::dialect::british_english();
     c.bench_function("dialect_apply_overlay", |b| {
         b.iter(|| rp.apply(black_box(&en)))
     });

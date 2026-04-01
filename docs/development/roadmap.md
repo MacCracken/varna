@@ -76,7 +76,7 @@
 
 ## Post-1.0 Roadmap — "World's Leading Authority"
 
-> Gaps identified by comparing lipi against PHOIBLE, WALS, Glottolog, Unicode CLDR,
+> Gaps identified by comparing varna against PHOIBLE, WALS, Glottolog, Unicode CLDR,
 > and the IPA specification. Prioritized by impact on credibility and utility.
 
 ### 1.1.0 — Phonological Depth (P1)
@@ -136,7 +136,7 @@ Extend `script::numerals` into a full character→number mapping system across s
 - [x] All modules have 80%+ test coverage (98.53% measured)
 - [x] Criterion benchmarks with 3-point trend history
 - [x] Full serde roundtrip tests for all public types
-- [ ] shabda + shabdakosh consuming lipi for multilingual G2P (external crate work)
-- [x] `[S]` sankhya consuming lipi for script-aware numeral display and transliteration
+- [ ] shabda + shabdakosh consuming varna for multilingual G2P (external crate work)
+- [x] `[S]` sankhya consuming varna for script-aware numeral display and transliteration
 - [x] Documentation: architecture overview, usage guide, API docs
 - [x] English grammar profile added; 11 grammar profiles total

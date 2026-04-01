@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Lipi stores large amounts of static linguistic data — IPA symbols, language names, script codes, Swadesh words, transliteration mappings — that are known at compile time. The choice of string type for these fields affects both memory allocation behavior and API ergonomics.
+Varna stores large amounts of static linguistic data — IPA symbols, language names, script codes, Swadesh words, transliteration mappings — that are known at compile time. The choice of string type for these fields affects both memory allocation behavior and API ergonomics.
 
 Options considered:
 1. **`String`** — always heap-allocated, simple API

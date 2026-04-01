@@ -2,7 +2,7 @@
 
 ## Scope
 
-Lipi is a pure language data library providing phoneme inventories, writing system metadata, grammar profiles, and lexicon access for Rust. The core library performs no I/O and contains no `unsafe` code.
+Varna is a pure language data library providing phoneme inventories, writing system metadata, grammar profiles, and lexicon access for Rust. The core library performs no I/O and contains no `unsafe` code.
 
 ## Attack Surface
 

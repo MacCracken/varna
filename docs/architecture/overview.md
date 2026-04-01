@@ -1,11 +1,11 @@
 # Architecture Overview
 
-> **Lipi** — multilingual language engine
+> **Varna** — multilingual language engine
 
 ## Module Map
 
 ```
-lipi/
+varna/
 ├── src/
 │   ├── lib.rs              — public API, module re-exports
 │   ├── error.rs            — LipiError enum (non_exhaustive)
@@ -117,7 +117,7 @@ Language selection (ISO 639 code)
 ## Dependency Stack
 
 ```
-lipi (this crate)
+varna (this crate)
   │
   ├── serde          — serialization for all types (alloc; std optional)
   ├── thiserror      — error derivation (std optional)
@@ -142,7 +142,7 @@ lipi (this crate)
 ## Downstream Consumers
 
 ```
-lipi
+varna
   ├─→ shabda      — G2P conversion (multilingual phoneme sets)
   ├─→ shabdakosh  — pronunciation dictionary (IPA dictionaries)
   ├─→ svara       — vocal synthesis (phoneme-to-audio)

@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Lipi serves as a data layer for downstream crates (shabda, svara, jnana) but also integrates with AGNOS AI infrastructure (MCP tools, daimon agent framework, hoosh LLM queries). These integrations:
+Varna serves as a data layer for downstream crates (shabda, svara, jnana) but also integrates with AGNOS AI infrastructure (MCP tools, daimon agent framework, hoosh LLM queries). These integrations:
 
 - Add a dependency on `serde_json` (not needed for core linguistic data)
 - Define AI-specific types and protocols
@@ -14,7 +14,7 @@ Lipi serves as a data layer for downstream crates (shabda, svara, jnana) but als
 
 Options:
 1. **Always included** — simpler, but bloats minimal consumers
-2. **Separate crates** — `lipi-mcp`, `lipi-daimon` — maximum isolation, more repos
+2. **Separate crates** — `varna-mcp`, `varna-daimon` — maximum isolation, more repos
 3. **Feature-gated modules** — opt-in at compile time, single crate
 
 ## Decision

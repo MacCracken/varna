@@ -1,6 +1,6 @@
-# Lipi
+# Varna
 
-> **Lipi** (Sanskrit: लिपि — script, writing system) — multilingual language engine for AGNOS
+> **Varna** (Sanskrit: वर्ण — letter, character, sound) — multilingual language engine for AGNOS
 
 Structured, queryable corpus of human language data. Phoneme inventories, writing system metadata, grammar profiles, and lexicon access for 50+ languages.
 
@@ -27,11 +27,11 @@ Used by [shabda](https://github.com/MacCracken/shabda) (G2P conversion), [shabda
 
 ```toml
 [dependencies]
-lipi = "0.1"
+varna = "0.1"
 ```
 
 ```rust
-use lipi::phoneme::{self, StressPattern};
+use varna::phoneme::{self, StressPattern};
 
 // Get the English phoneme inventory
 let en = phoneme::english();
@@ -48,11 +48,11 @@ let sh = en.find("ʃ").unwrap(); // postalveolar fricative (ship)
 ## Architecture
 
 ```text
-lipi (this) — language structure & phoneme inventories
+varna (this) — language structure & phoneme inventories
   | provides phoneme sets per language
-shabda — G2P conversion (currently English-only, lipi makes it multilingual)
+shabda — G2P conversion (currently English-only, varna makes it multilingual)
   | produces phoneme sequences
-shabdakosh — pronunciation dictionary (currently CMUdict, lipi adds IPA dicts)
+shabdakosh — pronunciation dictionary (currently CMUdict, varna adds IPA dicts)
   | lookup fallback
 svara — vocal synthesis (consumes phonemes, produces audio)
   | voice output

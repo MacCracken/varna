@@ -208,7 +208,7 @@ impl PhonemeInventory {
 ///
 /// # Example
 /// ```
-/// use lipi::phoneme::*;
+/// use varna::phoneme::*;
 ///
 /// let inv = PhonemeInventoryBuilder::new("xx", "Example")
 ///     .stress(StressPattern::Fixed)

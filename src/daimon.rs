@@ -1,6 +1,6 @@
 //! Daimon agent registration — capability advertisement for the AGNOS agent framework.
 //!
-//! Defines lipi's capabilities so that daimon can discover and orchestrate
+//! Defines varna's capabilities so that daimon can discover and orchestrate
 //! language-related operations. This module produces registration data;
 //! the actual daimon client integration lives in the consuming application.
 
@@ -8,7 +8,7 @@ use std::borrow::Cow;
 
 use serde::{Deserialize, Serialize};
 
-/// A capability that lipi exposes to the agent framework.
+/// A capability that varna exposes to the agent framework.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Capability {
     /// Capability name (e.g., "phoneme_lookup").
@@ -21,7 +21,7 @@ pub struct Capability {
     pub output: Cow<'static, str>,
 }
 
-/// Lipi's agent registration data for daimon.
+/// Varna's agent registration data for daimon.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AgentRegistration {
     /// Agent name.
@@ -38,7 +38,7 @@ pub struct AgentRegistration {
     pub supported_scripts: Vec<Cow<'static, str>>,
 }
 
-/// Build lipi's agent registration for daimon.
+/// Build varna's agent registration for daimon.
 #[must_use]
 pub fn registration() -> AgentRegistration {
     let lang_codes: Vec<Cow<'static, str>> = crate::registry::all_codes()
@@ -51,7 +51,7 @@ pub fn registration() -> AgentRegistration {
         .collect();
 
     AgentRegistration {
-        name: Cow::Borrowed("lipi"),
+        name: Cow::Borrowed("varna"),
         version: Cow::Borrowed(env!("CARGO_PKG_VERSION")),
         description: Cow::Borrowed(
             "Multilingual language engine: phoneme inventories, writing systems, \
@@ -117,7 +117,7 @@ mod tests {
     #[test]
     fn test_registration() {
         let reg = registration();
-        assert_eq!(reg.name, "lipi");
+        assert_eq!(reg.name, "varna");
         assert!(!reg.version.is_empty());
         assert!(!reg.capabilities.is_empty());
         assert!(reg.supported_languages.iter().any(|l| l == "en"));

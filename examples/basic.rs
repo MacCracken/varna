@@ -1,14 +1,14 @@
-//! Basic usage of lipi — exploring phoneme inventories, scripts, and the registry.
+//! Basic usage of varna — exploring phoneme inventories, scripts, and the registry.
 
-use lipi::phoneme::{self, PhonemeKind};
+use varna::phoneme::{self, PhonemeKind};
 
 fn main() {
     // --- Registry lookup ---
     println!("=== Registered Languages ===");
-    for code in lipi::registry::all_codes() {
-        let info = lipi::registry::info(code).unwrap();
-        let inv = lipi::registry::phonemes(code).unwrap();
-        let script = lipi::registry::primary_script(code).unwrap();
+    for code in varna::registry::all_codes() {
+        let info = varna::registry::info(code).unwrap();
+        let inv = varna::registry::phonemes(code).unwrap();
+        let script = varna::registry::primary_script(code).unwrap();
         println!(
             "  {} ({}) — {}C + {}V, script: {} ({:?})",
             info.name,
@@ -26,7 +26,7 @@ fn main() {
     println!("=== English Fricatives ===");
     for p in &en.phonemes {
         if let PhonemeKind::Consonant {
-            manner: lipi::phoneme::Manner::Fricative,
+            manner: varna::phoneme::Manner::Fricative,
             place,
             voiced,
             ..
@@ -54,7 +54,7 @@ fn main() {
 
     // --- Script lookup ---
     println!("=== Script: Devanagari ===");
-    let deva = lipi::script::by_code("Deva").unwrap();
+    let deva = varna::script::by_code("Deva").unwrap();
     println!("  Type: {:?}", deva.script_type);
     println!("  Direction: {:?}", deva.direction);
     println!("  Contains U+0915 (क): {}", deva.contains_codepoint(0x0915));

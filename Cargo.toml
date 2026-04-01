@@ -1,14 +1,14 @@
 [package]
-name = "lipi"
+name = "varna"
 version = "1.0.0"
 edition = "2024"
 rust-version = "1.89"
 license = "GPL-3.0-only"
-description = "Lipi — multilingual language engine: phoneme inventories, G2P rules, scripts, grammar, and lexicon for 50+ languages"
-homepage = "https://github.com/MacCracken/lipi"
-repository = "https://github.com/MacCracken/lipi"
+description = "Varna — multilingual language engine: phoneme inventories, G2P rules, scripts, grammar, and lexicon for 50+ languages"
+homepage = "https://github.com/MacCracken/varna"
+repository = "https://github.com/MacCracken/varna"
 readme = "README.md"
-documentation = "https://docs.rs/lipi"
+documentation = "https://docs.rs/varna"
 keywords = ["language", "phoneme", "linguistics", "multilingual", "ipa"]
 categories = ["science", "text-processing"]
 exclude = [".claude/", ".github/", "docs/", "scripts/"]
