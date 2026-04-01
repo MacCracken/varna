@@ -907,7 +907,7 @@ pub fn hindi() -> PhonemeInventory {
 /// Build the Japanese phoneme inventory.
 ///
 /// Standard Tokyo Japanese. Mora-timed with pitch accent.
-/// ~15 consonants + 5 vowels. Stress: pitch accent.
+/// 20 consonants + 5 vowels. Stress: pitch accent.
 #[must_use]
 pub fn japanese() -> PhonemeInventory {
     use Backness::*;
@@ -953,7 +953,7 @@ pub fn japanese() -> PhonemeInventory {
 
 /// Build the Spanish (Castilian) phoneme inventory.
 ///
-/// Standard peninsular Spanish. 19 consonants + 5 vowels. Stress: free.
+/// Standard peninsular Spanish. 23 consonants + 5 vowels. Stress: free.
 #[must_use]
 pub fn spanish() -> PhonemeInventory {
     use Backness::*;
@@ -1003,7 +1003,7 @@ pub fn spanish() -> PhonemeInventory {
 
 /// Build the French phoneme inventory.
 ///
-/// Standard Parisian French. ~20 consonants + 16 vowels (oral + nasal + schwa).
+/// Standard Parisian French. 21 consonants + 16 vowels (oral + nasal + schwa).
 /// Stress: fixed (final syllable).
 #[must_use]
 pub fn french() -> PhonemeInventory {
@@ -1063,7 +1063,7 @@ pub fn french() -> PhonemeInventory {
 
 /// Build the German (Standard) phoneme inventory.
 ///
-/// Standard High German. ~22 consonants + 15 vowels (short/long pairs + schwa).
+/// Standard High German. 23 consonants + 16 vowels (short/long pairs + schwa).
 /// Stress: free (root-initial tendency).
 #[must_use]
 pub fn german() -> PhonemeInventory {
@@ -1126,7 +1126,7 @@ pub fn german() -> PhonemeInventory {
 /// Build the Russian phoneme inventory.
 ///
 /// Standard Russian (Moscow norm). Extensive palatalization: hard/soft pairs.
-/// ~32 consonants + 6 vowels. Stress: free (contrastive).
+/// 36 consonants + 6 vowels. Stress: free (contrastive).
 #[must_use]
 pub fn russian() -> PhonemeInventory {
     use Backness::*;
@@ -1190,7 +1190,7 @@ pub fn russian() -> PhonemeInventory {
 /// Build the Korean phoneme inventory.
 ///
 /// Standard Korean (Seoul). Three-way plosive contrast (lax/aspirated/tense).
-/// ~19 consonants + 7 vowels. No lexical stress.
+/// 19 consonants + 7 vowels. No lexical stress.
 #[must_use]
 pub fn korean() -> PhonemeInventory {
     use Backness::*;
@@ -1238,7 +1238,7 @@ pub fn korean() -> PhonemeInventory {
 /// Build the Portuguese (European) phoneme inventory.
 ///
 /// European Portuguese. Includes oral and nasal vowels.
-/// ~19 consonants + 14 vowels (oral + nasal). Stress: free.
+/// 23 consonants + 14 vowels (oral + nasal). Stress: free.
 #[must_use]
 pub fn portuguese() -> PhonemeInventory {
     use Backness::*;

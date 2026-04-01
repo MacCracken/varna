@@ -388,3 +388,83 @@ fn test_all_inventories_consonant_vowel_split() {
         );
     }
 }
+
+// ---------------------------------------------------------------------------
+// Grammar profiles
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_grammar_all_serde_roundtrip() {
+    for code in lipi::grammar::all_codes() {
+        let g = lipi::grammar::by_code(code).unwrap();
+        let json = serde_json::to_string(&g).unwrap();
+        let back: lipi::grammar::GrammarProfile = serde_json::from_str(&json).unwrap();
+        assert_eq!(g, back, "grammar roundtrip failed for {code}");
+    }
+}
+
+#[test]
+fn test_grammar_gender_consistency() {
+    for code in lipi::grammar::all_codes() {
+        let g = lipi::grammar::by_code(code).unwrap();
+        if g.has_gender {
+            assert!(g.gender_count > 0, "{code} has_gender but gender_count=0");
+        } else {
+            assert_eq!(g.gender_count, 0, "{code} !has_gender but gender_count>0");
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Swadesh lists
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_swadesh_all_serde_roundtrip() {
+    for code in lipi::lexicon::swadesh::all_codes() {
+        let lex = lipi::lexicon::swadesh::by_code(code).unwrap();
+        let json = serde_json::to_string(&lex).unwrap();
+        let back: lipi::lexicon::Lexicon = serde_json::from_str(&json).unwrap();
+        assert_eq!(lex, back, "swadesh roundtrip failed for {code}");
+    }
+}
+
+#[test]
+fn test_swadesh_cross_language_water() {
+    for code in lipi::lexicon::swadesh::all_codes() {
+        let lex = lipi::lexicon::swadesh::by_code(code).unwrap();
+        let water = lex.entries.iter().find(|e| e.swadesh_index == Some(23));
+        assert!(water.is_some(), "missing water (index 23) in {code}");
+        assert_eq!(water.unwrap().gloss, "water");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Tonal language features
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_tonal_languages_have_tones() {
+    let tonal = ["zh", "yo", "th", "vi", "lzh"];
+    for code in tonal {
+        let inv = lipi::registry::phonemes(code).unwrap();
+        assert!(
+            inv.tones.is_some(),
+            "{code} should be tonal but has no tones"
+        );
+        assert_eq!(
+            inv.stress,
+            phoneme::StressPattern::Tonal,
+            "{code} stress should be Tonal"
+        );
+    }
+}
+
+#[test]
+fn test_non_tonal_languages_no_tones() {
+    let non_tonal = ["en", "es", "fr", "de", "ru", "pt", "la", "fi", "tr"];
+    for code in non_tonal {
+        let inv = lipi::registry::phonemes(code).unwrap();
+        assert!(inv.tones.is_none(), "{code} should not have tones");
+    }
+}
