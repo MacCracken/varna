@@ -39,6 +39,18 @@ pub enum Direction {
     Bidirectional,
 }
 
+/// Whether a script is actively used or historical.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[non_exhaustive]
+pub enum ScriptStatus {
+    /// Actively used for everyday writing.
+    Living,
+    /// Used in limited/ceremonial contexts (e.g., liturgical, academic).
+    Limited,
+    /// No longer in active use; only historical attestation.
+    Historical,
+}
+
 /// A writing system's metadata.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Script {
@@ -50,6 +62,10 @@ pub struct Script {
     pub script_type: ScriptType,
     /// Primary text direction.
     pub direction: Direction,
+    /// Whether this script is living, limited-use, or historical.
+    pub status: ScriptStatus,
+    /// Approximate attestation period (e.g., "3100 BCE – 75 CE" for Egyptian).
+    pub attestation: Option<Cow<'static, str>>,
     /// Unicode block ranges (start, end) for this script.
     pub unicode_ranges: Vec<(u32, u32)>,
     /// Languages that use this script.
@@ -81,6 +97,8 @@ pub fn by_code(code: &str) -> Option<Script> {
         "Hang" => Some(hangul()),
         "Kana" => Some(kana()),
         "Grek" => Some(greek()),
+        "Xsux" => Some(cuneiform()),
+        "Egyp" => Some(egyptian()),
         _ => None,
     }
 }
@@ -89,7 +107,7 @@ pub fn by_code(code: &str) -> Option<Script> {
 #[must_use]
 pub fn all_codes() -> &'static [&'static str] {
     &[
-        "Latn", "Arab", "Deva", "Hani", "Cyrl", "Hang", "Kana", "Grek",
+        "Latn", "Arab", "Deva", "Hani", "Cyrl", "Hang", "Kana", "Grek", "Xsux", "Egyp",
     ]
 }
 
@@ -105,6 +123,8 @@ pub fn latin() -> Script {
         name: Cow::Borrowed("Latin"),
         script_type: ScriptType::Alphabet,
         direction: Direction::LeftToRight,
+        status: ScriptStatus::Living,
+        attestation: None,
         unicode_ranges: vec![
             (0x0041, 0x005A), // A-Z
             (0x0061, 0x007A), // a-z
@@ -130,6 +150,8 @@ pub fn arabic() -> Script {
         name: Cow::Borrowed("Arabic"),
         script_type: ScriptType::Abjad,
         direction: Direction::RightToLeft,
+        status: ScriptStatus::Living,
+        attestation: None,
         unicode_ranges: vec![
             (0x0600, 0x06FF), // Arabic
             (0x0750, 0x077F), // Arabic Supplement
@@ -152,6 +174,8 @@ pub fn devanagari() -> Script {
         name: Cow::Borrowed("Devanagari"),
         script_type: ScriptType::Abugida,
         direction: Direction::LeftToRight,
+        status: ScriptStatus::Living,
+        attestation: None,
         unicode_ranges: vec![
             (0x0900, 0x097F), // Devanagari
             (0xA8E0, 0xA8FF), // Devanagari Extended
@@ -173,6 +197,8 @@ pub fn cjk() -> Script {
         name: Cow::Borrowed("CJK Unified Ideographs"),
         script_type: ScriptType::Logographic,
         direction: Direction::LeftToRight, // modern default; historically TTB
+        status: ScriptStatus::Living,
+        attestation: None,
         unicode_ranges: vec![
             (0x4E00, 0x9FFF),   // CJK Unified Ideographs
             (0x3400, 0x4DBF),   // CJK Unified Extension A
@@ -194,6 +220,8 @@ pub fn cyrillic() -> Script {
         name: Cow::Borrowed("Cyrillic"),
         script_type: ScriptType::Alphabet,
         direction: Direction::LeftToRight,
+        status: ScriptStatus::Living,
+        attestation: None,
         unicode_ranges: vec![
             (0x0400, 0x04FF), // Cyrillic
             (0x0500, 0x052F), // Cyrillic Supplement
@@ -215,6 +243,8 @@ pub fn hangul() -> Script {
         name: Cow::Borrowed("Hangul"),
         script_type: ScriptType::Alphabet, // featural alphabet
         direction: Direction::LeftToRight,
+        status: ScriptStatus::Living,
+        attestation: None,
         unicode_ranges: vec![
             (0xAC00, 0xD7AF), // Hangul Syllables
             (0x1100, 0x11FF), // Hangul Jamo
@@ -232,6 +262,8 @@ pub fn kana() -> Script {
         name: Cow::Borrowed("Kana (Hiragana + Katakana)"),
         script_type: ScriptType::Syllabary,
         direction: Direction::LeftToRight,
+        status: ScriptStatus::Living,
+        attestation: None,
         unicode_ranges: vec![
             (0x3040, 0x309F), // Hiragana
             (0x30A0, 0x30FF), // Katakana
@@ -251,11 +283,59 @@ pub fn greek() -> Script {
         name: Cow::Borrowed("Greek"),
         script_type: ScriptType::Alphabet,
         direction: Direction::LeftToRight,
+        status: ScriptStatus::Living,
+        attestation: None,
         unicode_ranges: vec![
             (0x0370, 0x03FF), // Greek and Coptic
             (0x1F00, 0x1FFF), // Greek Extended
         ],
         languages: vec![Cow::Borrowed("el")],
+    }
+}
+
+/// Cuneiform script (ISO 15924: Xsux).
+///
+/// Used for Sumerian, Akkadian, and other ancient Mesopotamian languages.
+/// Critical for sankhya's Babylonian sexagesimal numeral display.
+#[must_use]
+pub fn cuneiform() -> Script {
+    Script {
+        code: Cow::Borrowed("Xsux"),
+        name: Cow::Borrowed("Cuneiform"),
+        script_type: ScriptType::Logographic,
+        direction: Direction::LeftToRight, // late periods; originally top-to-bottom
+        status: ScriptStatus::Historical,
+        attestation: Some(Cow::Borrowed("3400 BCE – 75 CE")),
+        unicode_ranges: vec![
+            (0x12000, 0x1237F), // Cuneiform
+            (0x12400, 0x1247F), // Cuneiform Numbers and Punctuation
+            (0x12480, 0x1254F), // Early Dynastic Cuneiform
+        ],
+        languages: vec![
+            Cow::Borrowed("sux"), // Sumerian
+            Cow::Borrowed("akk"), // Akkadian
+        ],
+    }
+}
+
+/// Egyptian hieroglyphic script (ISO 15924: Egyp).
+///
+/// Used for ancient Egyptian. Critical for sankhya's stellar decan
+/// names and unit fraction notation.
+#[must_use]
+pub fn egyptian() -> Script {
+    Script {
+        code: Cow::Borrowed("Egyp"),
+        name: Cow::Borrowed("Egyptian Hieroglyphs"),
+        script_type: ScriptType::Logographic,
+        direction: Direction::RightToLeft, // canonical; could be LTR or TTB
+        status: ScriptStatus::Historical,
+        attestation: Some(Cow::Borrowed("3200 BCE – 400 CE")),
+        unicode_ranges: vec![
+            (0x13000, 0x1342F), // Egyptian Hieroglyphs
+            (0x13430, 0x1345F), // Egyptian Hieroglyph Format Controls
+        ],
+        languages: vec![Cow::Borrowed("egy")], // Ancient Egyptian
     }
 }
 
@@ -348,10 +428,26 @@ mod tests {
     #[test]
     fn test_contains_codepoint_boundary() {
         let s = latin();
-        // Exact boundaries
         assert!(s.contains_codepoint(0x0041)); // start of A-Z
         assert!(s.contains_codepoint(0x005A)); // end of A-Z
         assert!(!s.contains_codepoint(0x0040)); // just before
         assert!(!s.contains_codepoint(0x005B)); // just after
+    }
+
+    #[test]
+    fn test_cuneiform_script() {
+        let s = cuneiform();
+        assert_eq!(s.code, "Xsux");
+        assert_eq!(s.script_type, ScriptType::Logographic);
+        assert!(s.contains_codepoint(0x12000)); // first cuneiform
+        assert!(s.languages.iter().any(|l| l == "sux")); // Sumerian
+    }
+
+    #[test]
+    fn test_egyptian_script() {
+        let s = egyptian();
+        assert_eq!(s.code, "Egyp");
+        assert_eq!(s.script_type, ScriptType::Logographic);
+        assert!(s.contains_codepoint(0x13000)); // first hieroglyph
     }
 }

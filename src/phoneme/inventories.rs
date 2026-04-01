@@ -557,6 +557,222 @@ pub fn nahuatl() -> PhonemeInventory {
         .build()
 }
 
+// ---------------------------------------------------------------------------
+// Classical / Liturgical languages
+// ---------------------------------------------------------------------------
+
+/// Build the Latin (Classical) phoneme inventory.
+///
+/// 18 consonants + 10 vowels (5 short + 5 long). Stress: penultimate/antepenultimate.
+#[must_use]
+pub fn latin() -> PhonemeInventory {
+    use Backness::*;
+    use Height::*;
+    use Manner::*;
+    use Place::*;
+
+    PhonemeInventoryBuilder::with_capacity("la", "Latin", 28)
+        .stress(StressPattern::Free)
+        .consonant("p", Plosive, Bilabial, false)
+        .consonant("b", Plosive, Bilabial, true)
+        .consonant("t", Plosive, Alveolar, false)
+        .consonant("d", Plosive, Alveolar, true)
+        .consonant("k", Plosive, Velar, false)
+        .consonant("ɡ", Plosive, Velar, true)
+        .consonant("kʷ", Plosive, LabialVelar, false)
+        .consonant("ɡʷ", Plosive, LabialVelar, true)
+        .consonant("f", Fricative, Labiodental, false)
+        .consonant("s", Fricative, Alveolar, false)
+        .consonant("h", Fricative, Glottal, false)
+        .consonant("m", Nasal, Bilabial, true)
+        .consonant("n", Nasal, Alveolar, true)
+        .consonant("ŋ", Nasal, Velar, true)
+        .consonant("l", LateralApproximant, Alveolar, true)
+        .consonant("r", Trill, Alveolar, true)
+        .consonant("w", Approximant, LabialVelar, true)
+        .consonant("j", Approximant, Palatal, true)
+        // Short vowels
+        .vowel("i", Close, Front, false)
+        .vowel("e", CloseMid, Front, false)
+        .vowel("a", Open, Central, false)
+        .vowel("o", CloseMid, Back, true)
+        .vowel("u", Close, Back, true)
+        // Long vowels
+        .vowel("iː", Close, Front, false)
+        .vowel("eː", CloseMid, Front, false)
+        .vowel("aː", Open, Central, false)
+        .vowel("oː", CloseMid, Back, true)
+        .vowel("uː", Close, Back, true)
+        .build()
+}
+
+/// Build the Classical Arabic phoneme inventory.
+///
+/// 28 consonants + 6 vowels (3 short + 3 long). Stress: rule-based.
+#[must_use]
+pub fn classical_arabic() -> PhonemeInventory {
+    use Backness::*;
+    use Height::*;
+    use Manner::*;
+    use Place::*;
+
+    PhonemeInventoryBuilder::with_capacity("ar", "Arabic", 34)
+        .stress(StressPattern::Free)
+        // Plosives
+        .consonant("b", Plosive, Bilabial, true)
+        .consonant("t", Plosive, Alveolar, false)
+        .consonant("d", Plosive, Alveolar, true)
+        .consonant("tˤ", Plosive, Alveolar, false) // emphatic
+        .consonant("dˤ", Plosive, Alveolar, true) // emphatic
+        .consonant("k", Plosive, Velar, false)
+        .consonant("q", Plosive, Uvular, false)
+        .consonant("ʔ", Plosive, Glottal, false)
+        // Fricatives
+        .consonant("f", Fricative, Labiodental, false)
+        .consonant("θ", Fricative, Dental, false)
+        .consonant("ð", Fricative, Dental, true)
+        .consonant("ðˤ", Fricative, Dental, true) // emphatic
+        .consonant("s", Fricative, Alveolar, false)
+        .consonant("z", Fricative, Alveolar, true)
+        .consonant("sˤ", Fricative, Alveolar, false) // emphatic
+        .consonant("ʃ", Fricative, Postalveolar, false)
+        .consonant("x", Fricative, Velar, false)
+        .consonant("ɣ", Fricative, Velar, true)
+        .consonant("ħ", Fricative, Pharyngeal, false)
+        .consonant("ʕ", Fricative, Pharyngeal, true)
+        .consonant("h", Fricative, Glottal, false)
+        // Affricates
+        .consonant("d͡ʒ", Affricate, Postalveolar, true)
+        // Nasals
+        .consonant("m", Nasal, Bilabial, true)
+        .consonant("n", Nasal, Alveolar, true)
+        // Liquids
+        .consonant("l", LateralApproximant, Alveolar, true)
+        .consonant("r", Trill, Alveolar, true)
+        // Approximants
+        .consonant("w", Approximant, LabialVelar, true)
+        .consonant("j", Approximant, Palatal, true)
+        // Vowels
+        .vowel("a", Open, Central, false)
+        .vowel("i", Close, Front, false)
+        .vowel("u", Close, Back, true)
+        .vowel("aː", Open, Central, false)
+        .vowel("iː", Close, Front, false)
+        .vowel("uː", Close, Back, true)
+        .build()
+}
+
+/// Build the Koine Greek phoneme inventory.
+///
+/// The Greek of the New Testament and Hellenistic period.
+/// 17 consonants + 5 vowels. Stress: pitch accent (transitioning to stress).
+#[must_use]
+pub fn koine_greek() -> PhonemeInventory {
+    use Backness::*;
+    use Height::*;
+    use Manner::*;
+    use Place::*;
+
+    PhonemeInventoryBuilder::with_capacity("grc", "Koine Greek", 22)
+        .stress(StressPattern::PitchAccent)
+        // Plosives (aspirated series lost by Koine period → fricatives)
+        .consonant("p", Plosive, Bilabial, false)
+        .consonant("b", Plosive, Bilabial, true)
+        .consonant("t", Plosive, Alveolar, false)
+        .consonant("d", Plosive, Alveolar, true)
+        .consonant("k", Plosive, Velar, false)
+        .consonant("ɡ", Plosive, Velar, true)
+        // Fricatives (from earlier aspirated stops)
+        .consonant("f", Fricative, Labiodental, false)
+        .consonant("θ", Fricative, Dental, false)
+        .consonant("x", Fricative, Velar, false)
+        .consonant("s", Fricative, Alveolar, false)
+        .consonant("z", Fricative, Alveolar, true)
+        .consonant("h", Fricative, Glottal, false)
+        // Nasals
+        .consonant("m", Nasal, Bilabial, true)
+        .consonant("n", Nasal, Alveolar, true)
+        // Liquids
+        .consonant("l", LateralApproximant, Alveolar, true)
+        .consonant("r", Trill, Alveolar, true)
+        // Approximant
+        .consonant("j", Approximant, Palatal, true)
+        // Vowels (monophthongization underway)
+        .vowel("i", Close, Front, false)
+        .vowel("e", CloseMid, Front, false)
+        .vowel("a", Open, Central, false)
+        .vowel("o", CloseMid, Back, true)
+        .vowel("u", Close, Back, true)
+        .build()
+}
+
+/// Build the Literary Chinese phoneme inventory.
+///
+/// Middle Chinese reconstruction (Qieyun system, ~600 CE).
+/// 36 initials + 16 vowel nuclei. Stress: tonal (4-tone system).
+#[must_use]
+pub fn literary_chinese() -> PhonemeInventory {
+    use Backness::*;
+    use Height::*;
+    use Manner::*;
+    use Place::*;
+
+    PhonemeInventoryBuilder::with_capacity("lzh", "Literary Chinese", 40)
+        .stress(StressPattern::Tonal)
+        .tones(vec![
+            Cow::Borrowed("˥"),  // píng (level)
+            Cow::Borrowed("˧˥"), // shǎng (rising)
+            Cow::Borrowed("˥˩"), // qù (departing)
+            Cow::Borrowed("˩ʔ"), // rù (entering/checked)
+        ])
+        // Plosives (voiceless, aspirated, voiced triads)
+        .consonant("p", Plosive, Bilabial, false)
+        .consonant("pʰ", Plosive, Bilabial, false)
+        .consonant("b", Plosive, Bilabial, true)
+        .consonant("t", Plosive, Alveolar, false)
+        .consonant("tʰ", Plosive, Alveolar, false)
+        .consonant("d", Plosive, Alveolar, true)
+        .consonant("k", Plosive, Velar, false)
+        .consonant("kʰ", Plosive, Velar, false)
+        .consonant("ɡ", Plosive, Velar, true)
+        // Affricates
+        .consonant("t͡s", Affricate, Alveolar, false)
+        .consonant("t͡sʰ", Affricate, Alveolar, false)
+        .consonant("d͡z", Affricate, Alveolar, true)
+        .consonant("t͡ɕ", Affricate, Palatal, false)
+        .consonant("t͡ɕʰ", Affricate, Palatal, false)
+        .consonant("d͡ʑ", Affricate, Palatal, true)
+        // Fricatives
+        .consonant("s", Fricative, Alveolar, false)
+        .consonant("z", Fricative, Alveolar, true)
+        .consonant("ɕ", Fricative, Palatal, false)
+        .consonant("ʑ", Fricative, Palatal, true)
+        .consonant("x", Fricative, Velar, false)
+        .consonant("ɣ", Fricative, Velar, true)
+        .consonant("h", Fricative, Glottal, false)
+        // Nasals
+        .consonant("m", Nasal, Bilabial, true)
+        .consonant("n", Nasal, Alveolar, true)
+        .consonant("ɲ", Nasal, Palatal, true)
+        .consonant("ŋ", Nasal, Velar, true)
+        // Liquids
+        .consonant("l", LateralApproximant, Alveolar, true)
+        // Vowels
+        .vowel("i", Close, Front, false)
+        .vowel("e", CloseMid, Front, false)
+        .vowel("ɛ", OpenMid, Front, false)
+        .vowel("a", Open, Central, false)
+        .vowel("ɑ", Open, Back, false)
+        .vowel("ɨ", Close, Central, false)
+        .vowel("u", Close, Back, true)
+        .vowel("o", CloseMid, Back, true)
+        .vowel("ɔ", OpenMid, Back, true)
+        .vowel("ə", Mid, Central, false)
+        .vowel("æ", NearOpen, Front, false)
+        .vowel("ɐ", NearOpen, Central, false)
+        .build()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -590,6 +806,10 @@ mod tests {
     inventory_test!(test_finnish, finnish, "fi", 17, 16);
     inventory_test!(test_hawaiian, hawaiian, "haw", 8, 10);
     inventory_test!(test_nahuatl, nahuatl, "nah", 16, 8);
+    inventory_test!(test_latin, latin, "la", 18, 10);
+    inventory_test!(test_classical_arabic, classical_arabic, "ar", 28, 6);
+    inventory_test!(test_koine_greek, koine_greek, "grc", 17, 5);
+    inventory_test!(test_literary_chinese, literary_chinese, "lzh", 27, 12);
 
     #[test]
     fn test_maya_ejectives() {
@@ -624,5 +844,39 @@ mod tests {
     fn test_vietnamese_tones() {
         let vi = vietnamese();
         assert_eq!(vi.tones.as_ref().unwrap().len(), 6);
+    }
+
+    #[test]
+    fn test_arabic_pharyngeals() {
+        let ar = classical_arabic();
+        assert!(ar.has("ħ"));
+        assert!(ar.has("ʕ"));
+        assert!(ar.has("q")); // uvular
+    }
+
+    #[test]
+    fn test_arabic_emphatics() {
+        let ar = classical_arabic();
+        assert!(ar.has("tˤ"));
+        assert!(ar.has("sˤ"));
+    }
+
+    #[test]
+    fn test_latin_labialized_velars() {
+        let la = latin();
+        assert!(la.has("kʷ"));
+        assert!(la.has("ɡʷ"));
+    }
+
+    #[test]
+    fn test_koine_greek_stress() {
+        let grc = koine_greek();
+        assert_eq!(grc.stress, StressPattern::PitchAccent);
+    }
+
+    #[test]
+    fn test_literary_chinese_tones() {
+        let lzh = literary_chinese();
+        assert_eq!(lzh.tones.as_ref().unwrap().len(), 4);
     }
 }

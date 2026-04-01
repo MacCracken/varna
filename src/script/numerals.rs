@@ -259,6 +259,167 @@ pub fn greek_isopsephy() -> NumeralSystem {
     }
 }
 
+/// Babylonian sexagesimal (base-60) numeral system.
+///
+/// Uses two cuneiform signs: 𒐕 (diš, unit = 1) and 𒌋 (u, ten = 10).
+/// Values 1-59 are composed additively. Position gives powers of 60.
+/// Used by sankhya for Babylonian mathematical notation.
+#[must_use]
+pub fn babylonian_sexagesimal() -> NumeralSystem {
+    NumeralSystem {
+        script_code: Cow::Borrowed("Xsux"),
+        name: Cow::Borrowed("Babylonian Sexagesimal"),
+        kind: NumeralSystemKind::Other, // positional base-60 but additive within digits
+        mappings: vec![
+            NumeralMapping {
+                character: Cow::Borrowed("𒐕"),
+                value: 1,
+            }, // diš
+            NumeralMapping {
+                character: Cow::Borrowed("𒐖"),
+                value: 2,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𒐗"),
+                value: 3,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𒐘"),
+                value: 4,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𒐙"),
+                value: 5,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𒐚"),
+                value: 6,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𒐛"),
+                value: 7,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𒐜"),
+                value: 8,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𒐝"),
+                value: 9,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𒌋"),
+                value: 10,
+            }, // u
+            NumeralMapping {
+                character: Cow::Borrowed("𒌋𒌋"),
+                value: 20,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𒌍"),
+                value: 30,
+            },
+        ],
+    }
+}
+
+/// Egyptian hieroglyphic numeral system (additive decimal).
+///
+/// Each power of 10 has a distinct symbol. Values are composed
+/// by repeating symbols additively. Used by sankhya for Egyptian
+/// mathematical notation and unit fraction display.
+#[must_use]
+pub fn egyptian_hieroglyphic() -> NumeralSystem {
+    NumeralSystem {
+        script_code: Cow::Borrowed("Egyp"),
+        name: Cow::Borrowed("Egyptian Hieroglyphic Numerals"),
+        kind: NumeralSystemKind::Other, // additive decimal
+        mappings: vec![
+            NumeralMapping {
+                character: Cow::Borrowed("𓏺"),
+                value: 1,
+            }, // stroke
+            NumeralMapping {
+                character: Cow::Borrowed("𓎆"),
+                value: 10,
+            }, // heel bone
+            NumeralMapping {
+                character: Cow::Borrowed("𓍢"),
+                value: 100,
+            }, // coil of rope
+            NumeralMapping {
+                character: Cow::Borrowed("𓆼"),
+                value: 1000,
+            }, // lotus flower
+            NumeralMapping {
+                character: Cow::Borrowed("𓂭"),
+                value: 10000,
+            }, // bent finger
+            NumeralMapping {
+                character: Cow::Borrowed("𓆐"),
+                value: 100000,
+            }, // tadpole
+            NumeralMapping {
+                character: Cow::Borrowed("𓁨"),
+                value: 1000000,
+            }, // god Heh
+        ],
+    }
+}
+
+/// Chinese rod numeral system (positional decimal).
+///
+/// Rod numerals alternate between vertical (units, hundreds, ten-thousands)
+/// and horizontal (tens, thousands) orientations for adjacent positions.
+/// Used by sankhya for displaying ancient Chinese mathematical notation.
+#[must_use]
+pub fn chinese_rod_numerals() -> NumeralSystem {
+    NumeralSystem {
+        script_code: Cow::Borrowed("Hani"),
+        name: Cow::Borrowed("Chinese Rod Numerals"),
+        kind: NumeralSystemKind::Decimal,
+        mappings: vec![
+            // Vertical forms (units position)
+            NumeralMapping {
+                character: Cow::Borrowed("𝍠"),
+                value: 1,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𝍡"),
+                value: 2,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𝍢"),
+                value: 3,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𝍣"),
+                value: 4,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𝍤"),
+                value: 5,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𝍥"),
+                value: 6,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𝍦"),
+                value: 7,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𝍧"),
+                value: 8,
+            },
+            NumeralMapping {
+                character: Cow::Borrowed("𝍨"),
+                value: 9,
+            },
+        ],
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -347,6 +508,69 @@ mod tests {
     #[test]
     fn test_greek_isopsephy_serde_roundtrip() {
         let sys = greek_isopsephy();
+        let json = serde_json::to_string(&sys).unwrap();
+        let back: NumeralSystem = serde_json::from_str(&json).unwrap();
+        assert_eq!(sys, back);
+    }
+
+    // -- Babylonian sexagesimal --
+
+    #[test]
+    fn test_babylonian_units() {
+        let sys = babylonian_sexagesimal();
+        assert_eq!(sys.value_of("𒐕"), Some(1));
+        assert_eq!(sys.value_of("𒐝"), Some(9));
+        assert_eq!(sys.value_of("𒌋"), Some(10));
+    }
+
+    #[test]
+    fn test_babylonian_char_for() {
+        let sys = babylonian_sexagesimal();
+        assert_eq!(sys.char_for(1), Some("𒐕"));
+        assert_eq!(sys.char_for(30), Some("𒌍"));
+    }
+
+    #[test]
+    fn test_babylonian_serde_roundtrip() {
+        let sys = babylonian_sexagesimal();
+        let json = serde_json::to_string(&sys).unwrap();
+        let back: NumeralSystem = serde_json::from_str(&json).unwrap();
+        assert_eq!(sys, back);
+    }
+
+    // -- Egyptian hieroglyphic --
+
+    #[test]
+    fn test_egyptian_powers_of_ten() {
+        let sys = egyptian_hieroglyphic();
+        assert_eq!(sys.value_of("𓏺"), Some(1));
+        assert_eq!(sys.value_of("𓎆"), Some(10));
+        assert_eq!(sys.value_of("𓍢"), Some(100));
+        assert_eq!(sys.value_of("𓆼"), Some(1000));
+        assert_eq!(sys.value_of("𓁨"), Some(1000000));
+    }
+
+    #[test]
+    fn test_egyptian_serde_roundtrip() {
+        let sys = egyptian_hieroglyphic();
+        let json = serde_json::to_string(&sys).unwrap();
+        let back: NumeralSystem = serde_json::from_str(&json).unwrap();
+        assert_eq!(sys, back);
+    }
+
+    // -- Chinese rod numerals --
+
+    #[test]
+    fn test_rod_numeral_digits() {
+        let sys = chinese_rod_numerals();
+        assert_eq!(sys.value_of("𝍠"), Some(1));
+        assert_eq!(sys.value_of("𝍨"), Some(9));
+        assert_eq!(sys.kind, NumeralSystemKind::Decimal);
+    }
+
+    #[test]
+    fn test_rod_serde_roundtrip() {
+        let sys = chinese_rod_numerals();
         let json = serde_json::to_string(&sys).unwrap();
         let back: NumeralSystem = serde_json::from_str(&json).unwrap();
         assert_eq!(sys, back);

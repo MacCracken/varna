@@ -89,6 +89,26 @@ pub const REGISTERED: &[LanguageInfo] = &[
         name: "Nahuatl",
         script_codes: &["Latn"],
     },
+    LanguageInfo {
+        code: "la",
+        name: "Latin",
+        script_codes: &["Latn"],
+    },
+    LanguageInfo {
+        code: "ar",
+        name: "Arabic",
+        script_codes: &["Arab"],
+    },
+    LanguageInfo {
+        code: "grc",
+        name: "Koine Greek",
+        script_codes: &["Grek"],
+    },
+    LanguageInfo {
+        code: "lzh",
+        name: "Literary Chinese",
+        script_codes: &["Hani"],
+    },
 ];
 
 /// Look up a language by ISO 639 code.
@@ -118,6 +138,10 @@ pub fn phonemes(code: &str) -> Option<PhonemeInventory> {
         "fi" => Some(finnish()),
         "haw" => Some(hawaiian()),
         "nah" => Some(nahuatl()),
+        "la" => Some(latin()),
+        "ar" => Some(classical_arabic()),
+        "grc" => Some(koine_greek()),
+        "lzh" => Some(literary_chinese()),
         _ => None,
     }
 }
@@ -138,6 +162,7 @@ pub fn primary_script(code: &str) -> Option<Script> {
 pub fn all_codes() -> &'static [&'static str] {
     &[
         "en", "sa", "el", "yua", "sw", "yo", "zu", "th", "vi", "tl", "tr", "fi", "haw", "nah",
+        "la", "ar", "grc", "lzh",
     ]
 }
 
@@ -183,7 +208,7 @@ mod tests {
     #[test]
     fn test_all_codes() {
         let codes = all_codes();
-        assert_eq!(codes.len(), 14);
+        assert_eq!(codes.len(), 18);
         assert!(codes.contains(&"en"));
         assert!(codes.contains(&"yua"));
         assert!(codes.contains(&"haw"));

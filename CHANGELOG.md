@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-03-31
+
+### Added
+
+- **script** — `[S]` Cuneiform script metadata (Xsux) with Sumerian/Akkadian language tags and Unicode ranges
+- **script** — `[S]` Egyptian hieroglyphic script metadata (Egyp) with Unicode ranges
+- **script** — `ScriptStatus` enum (Living, Limited, Historical) and `attestation` period field on all scripts
+- **script::numerals** — `[S]` Babylonian sexagesimal numeral system (base-60, cuneiform digits)
+- **script::numerals** — `[S]` Egyptian hieroglyphic numeral system (additive decimal, powers of 10)
+- **script::numerals** — `[S]` Chinese rod numeral system (positional decimal, vertical forms)
+- **phoneme::inventories** — 4 classical/liturgical language inventories:
+  - **Latin** (la) — 18C + 10V, labialized velars
+  - **Classical Arabic** (ar) — 28C + 6V, pharyngeals, emphatics, uvular
+  - **Koine Greek** (grc) — 17C + 5V, pitch accent
+  - **Literary Chinese** (lzh) — 27C + 12V, 4-tone Middle Chinese reconstruction
+- **registry** — 18 languages registered (up from 14), 10 scripts (up from 8)
+
 ## [0.4.0] - 2026-03-31
 
 ### Added

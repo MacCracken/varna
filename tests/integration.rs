@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use lipi::grammar::{GrammarProfile, Morphology, WordOrder};
 use lipi::lexicon::{LexEntry, Lexicon, PartOfSpeech};
 use lipi::phoneme::{self, Backness, Height, Manner, Phoneme, PhonemeKind, Place};
-use lipi::script::{Direction, Script, ScriptType};
+use lipi::script::{Direction, Script, ScriptStatus, ScriptType};
 
 // ---------------------------------------------------------------------------
 // Serde roundtrips
@@ -42,6 +42,8 @@ fn test_script_serde_roundtrip() {
         name: Cow::Borrowed("Latin"),
         script_type: ScriptType::Alphabet,
         direction: Direction::LeftToRight,
+        status: ScriptStatus::Living,
+        attestation: None,
         unicode_ranges: vec![(0x0041, 0x005A), (0x0061, 0x007A)],
         languages: vec![Cow::Borrowed("en"), Cow::Borrowed("fr")],
     };

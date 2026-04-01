@@ -1,6 +1,6 @@
 # Development Roadmap
 
-> **Status**: Pre-1.0 | **Current**: 0.4.0
+> **Status**: Pre-1.0 | **Current**: 0.4.1
 >
 > Items marked `[S]` also unblock **sankhya** (ancient mathematical systems).
 
@@ -54,15 +54,15 @@
 - [x] Cognate detection types (`lexicon::cognate` — CognateSet, CognateEntry, proto-forms)
 - [x] Loanword tracking and etymology (`Etymology`, `BorrowingType`)
 
+### 0.4.1 — Classical & Ancient Scripts (2026-03-31)
+
+- [x] `[S]` Cuneiform script metadata (Xsux) + Babylonian sexagesimal numeral system
+- [x] `[S]` Egyptian hieroglyphic script metadata (Egyp) + additive decimal numeral system
+- [x] `[S]` Chinese rod numeral system (positional decimal, vertical forms)
+- [x] Classical/Liturgical language profiles: Latin, Classical Arabic, Koine Greek, Literary Chinese (Sanskrit already in 0.2.0)
+- [x] Dead script classification: `ScriptStatus` (Living/Limited/Historical) + attestation periods
+
 ## Backlog
-
-### 0.4.x — Classical & Ancient Scripts
-
-- [ ] `[S]` Cuneiform script metadata — Sumerian/Akkadian (Babylonian sexagesimal numeral display)
-- [ ] `[S]` Egyptian hieratic/hieroglyphic script metadata (stellar decan names, unit fraction notation)
-- [ ] `[S]` Classical Chinese rod numeral script conventions (positional display rules)
-- [ ] Classical/Liturgical language profiles: Sanskrit, Classical Arabic, Koine Greek, Literary Chinese, Latin
-- [ ] Dead script classification and historical attestation metadata
 
 ### 0.5.0 — Core Languages
 
