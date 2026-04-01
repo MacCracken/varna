@@ -7,7 +7,7 @@ use crate::phoneme::PhonemeInventory;
 use crate::script::Script;
 
 /// A registered language's available data.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LanguageInfo {
     /// ISO 639-1 or 639-3 language code.
     pub code: &'static str,
@@ -122,7 +122,7 @@ pub const REGISTERED: &[LanguageInfo] = &[
     LanguageInfo {
         code: "bn",
         name: "Bengali",
-        script_codes: &["Deva"],
+        script_codes: &["Beng"],
     },
     LanguageInfo {
         code: "ta",

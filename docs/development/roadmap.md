@@ -74,13 +74,61 @@
 - [x] Daimon agent registration: `AgentRegistration` with 6 capabilities (feature-gated `daimon`)
 - [x] Hoosh LLM query interface: `LanguageQuery`, `answer_from_data()` for data-only resolution (feature-gated `hoosh`)
 
-## Future (demand-gated)
+## Post-1.0 Roadmap — "World's Leading Authority"
 
-- Prosody patterns (intonation contours, rhythm class)
-- Morphological analyzer (stemming, lemmatization per language)
-- Frequency corpus integration (Google Ngrams, OpenSubtitles)
-- Historical phonology (sound change rules, Proto-IE reconstructions)
-- Sign language phonology (handshape, location, movement features)
+> Gaps identified by comparing lipi against PHOIBLE, WALS, Glottolog, Unicode CLDR,
+> and the IPA specification. Prioritized by impact on credibility and utility.
+
+### 1.1.0 — Phonological Depth (P1)
+
+- [ ] **Distinctive feature system**: Add `DistinctiveFeatures` bundle with 20+ binary features per phoneme (sonorant, continuant, strident, anterior, distributed, ATR/RTR, spread/constricted glottis, syllabic, etc.) — PHOIBLE parity
+- [ ] **Manner expansion**: Add `Click`, `Implosive`, `Ejective` to `Manner` enum — reclassify Zulu clicks, Georgian ejectives, Hausa implosives
+- [ ] **Consonant secondary features**: `aspirated`, `labialized`, `palatalized`, `prenasalized`, `long` fields on `PhonemeKind::Consonant`
+- [ ] **Vowel features**: `long`, `nasalized`, `atr` (Advanced Tongue Root) fields on `PhonemeKind::Vowel`
+- [ ] **Tone as structured data**: Replace `Vec<Cow<str>>` tone labels with `Tone` structs (contour, register, features)
+
+### 1.2.0 — Typological Depth (P2)
+
+- [ ] **Grammar expansion** toward WALS parity: alignment type (nom-acc/erg-abs/active-stative), adposition order, tense/aspect system, evidentiality, negation strategy, adjective order, relative clause order, article type
+- [ ] **Language classification**: Add `family`, `subfamily`, `genus` to `LanguageInfo` (Indo-European > Germanic > West Germanic)
+- [ ] **Missing script entries**: Hebrew, Thai, Tamil, Georgian, Ethiopic, Myanmar, Khmer, Lao, Bengali (9 scripts for already-registered languages)
+- [ ] **Glottocode support**: Add `glottocode: Option<Cow<str>>` alongside ISO 639 codes
+- [ ] **Endangerment status**: `EndangermentLevel` enum (Safe/Vulnerable/Threatened/Shifting/Moribund/NearlyExtinct/Extinct)
+- [ ] **Geographic metadata**: Latitude/longitude per language, macro-area classification
+
+### 1.3.0 — Gematria & Numeric Letter Values (P2)
+
+Extend `script::numerals` into a full character→number mapping system across scripts. Foundation for classical cipher work and sankhya gematria computation.
+
+- [ ] **Hebrew gematria values**: Standard (א=1..ת=400), ordinal (א=1..ת=22), reduced (digital root)
+- [ ] **Arabic abjad numerals**: Standard abjad order (أ=1..غ=1000)
+- [ ] **Latin/English ordinal values**: a=1..z=26 (simple gematria, used by classical ciphers)
+- [ ] **Cyrillic numeric values**: Church Slavonic letter-number system
+- [ ] **`NumericSystem` enum**: Standard, Ordinal, Reduced, Additive — per-script system classification
+- [ ] **`char_value(script, system, char) -> Option<u32>`**: Unified lookup API across all scripts
+- [ ] **`script_alphabet_values(script, system) -> Vec<(char, u32)>`**: Full mapping table per script
+- [ ] **Cipher foundation**: Character↔number round-trip enables Caesar, Vigenère, substitution cipher implementations downstream (crypto crate or sankhya)
+
+### 1.4.0 — Coverage Scale (P3)
+
+- [ ] **Data-driven inventories**: Load from PHOIBLE CSV/JSON for 2000+ languages (feature-gated)
+- [ ] **Expanded allophone rules**: Mandarin, Spanish, Japanese, Russian, Arabic (currently English only)
+- [ ] **Expanded phonotactic profiles**: All core languages (currently 3)
+- [ ] **Transliteration tables**: Cyrillic-Latin, Arabic-Latin, Hebrew-Latin, Pinyin (currently 2)
+- [ ] **Source provenance**: Track bibliography/reference for each inventory
+- [ ] **Multiple inventories per language**: Competing analyses like PHOIBLE
+
+### 1.5.0+ — Differentiators (P4)
+
+- [ ] PHOIBLE-compatible export format
+- [ ] WALS feature code mapping
+- [ ] Typological cross-cutting queries ("all SOV languages with ejectives")
+- [ ] ISO 639 validation (compile-time const table)
+- [ ] Prosody patterns (intonation contours, rhythm class: stress/syllable/mora-timed)
+- [ ] Morphological analyzer (stemming, lemmatization per language)
+- [ ] Historical phonology (sound change rules, Proto-IE reconstructions)
+- [ ] Sign language phonology (handshape, location, movement features)
+- [ ] ScriptType::Featural for Hangul reclassification
 
 ## v1.0 Criteria
 

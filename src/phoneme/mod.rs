@@ -186,6 +186,7 @@ impl PhonemeInventory {
 
     /// Look up a phoneme by IPA symbol.
     #[must_use]
+    #[inline]
     pub fn find(&self, ipa: &str) -> Option<&Phoneme> {
         tracing::trace!(language = %self.language_code, ipa, "phoneme lookup");
         self.phonemes.iter().find(|p| p.ipa == ipa)
