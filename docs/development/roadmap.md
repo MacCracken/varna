@@ -84,11 +84,11 @@
 
 ## v1.0 Criteria
 
-- [ ] 50+ language inventories with verified phoneme data
-- [ ] All modules have 80%+ test coverage
-- [ ] Criterion benchmarks with 3-point trend history
-- [ ] Full serde roundtrip tests for all public types
+- [ ] 50+ language inventories with verified phoneme data (currently 27)
+- [x] All modules have 80%+ test coverage (98.53% measured)
+- [x] Criterion benchmarks with 3-point trend history
+- [x] Full serde roundtrip tests for all public types
 - [ ] shabda + shabdakosh consuming lipi for multilingual G2P
-- [ ] `[S]` sankhya consuming lipi for script-aware numeral display and transliteration
-- [ ] Documentation: architecture overview, usage guide, API docs
-- [ ] Published on crates.io
+- [x] `[S]` sankhya consuming lipi for script-aware numeral display and transliteration
+- [x] Documentation: architecture overview, usage guide, API docs
+- Grammar profiles for all registered languages with phoneme inventories

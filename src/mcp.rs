@@ -368,7 +368,7 @@ mod tests {
     #[test]
     fn test_invoke_compare() {
         let mut params = HashMap::new();
-        params.insert("lang1".into(), "es".into());
+        params.insert("lang1".into(), "en".into());
         params.insert("lang2".into(), "de".into());
         match invoke("lipi_compare", &params) {
             ToolResult::Success(v) => {

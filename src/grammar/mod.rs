@@ -57,6 +57,7 @@ pub struct GrammarProfile {
 pub fn by_code(code: &str) -> Option<GrammarProfile> {
     tracing::trace!(code, "grammar profile lookup");
     match code {
+        "en" => Some(english()),
         "ar" => Some(arabic()),
         "zh" => Some(mandarin()),
         "hi" => Some(hindi()),
@@ -74,12 +75,29 @@ pub fn by_code(code: &str) -> Option<GrammarProfile> {
 /// All language codes with grammar profiles.
 #[must_use]
 pub fn all_codes() -> &'static [&'static str] {
-    &["ar", "zh", "hi", "ja", "es", "fr", "de", "ru", "ko", "pt"]
+    &[
+        "en", "ar", "zh", "hi", "ja", "es", "fr", "de", "ru", "ko", "pt",
+    ]
 }
 
 // ---------------------------------------------------------------------------
 // Pre-built grammar profiles
 // ---------------------------------------------------------------------------
+
+/// English grammar profile.
+#[must_use]
+pub fn english() -> GrammarProfile {
+    GrammarProfile {
+        language_code: Cow::Borrowed("en"),
+        morphology: Morphology::Fusional,
+        word_order: WordOrder::SVO,
+        case_count: 2, // subjective/objective (I/me, he/him)
+        has_gender: false,
+        gender_count: 0,
+        has_dual: false,
+        has_classifiers: false,
+    }
+}
 
 /// Arabic grammar profile.
 #[must_use]
