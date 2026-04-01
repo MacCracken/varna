@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-31
+
+### Added
+
+- **phoneme::allophone** — Allophone rule system: `AllophoneRuleSet`, `AllophoneRule`, `Environment`, `PhonemeClass`. Context-dependent sound variation with `rules_for()` and `realize()` lookup. English (GA) rules included (aspiration, flapping, dark-l)
+- **phoneme::syllable** — Syllable structure templates: `SyllableTemplate` with max onset/coda, `Phonotactics` with `PhonotacticConstraint`. English, Sanskrit, and Japanese profiles included
+- **script::transliteration** — `[S]` Bidirectional transliteration tables: `TransliterationTable` with `transliterate()`, `transliterate_char()`, and `reverse_map()`. Devanagari↔IAST and Greek↔Beta Code tables included
+- **script::numerals** — `[S]` Script-to-numeral mapping: `NumeralSystem` with `value_of()`, `char_for()`, and `string_value()`. Devanagari decimal digits and Greek isopsephy included
+- `Hash` derive on `Phoneme`, `PhonemeKind`, `Morphology`, `WordOrder`, `Direction`
+- `debug_assert` for duplicate IPA detection in `PhonemeInventoryBuilder::build()`
+
+### Changed
+
+- **script** — Kana script name corrected from "Katakana" to "Kana (Hiragana + Katakana)"
+- **registry** — `all_codes()` returns `&'static [&'static str]` instead of allocating `Vec`
+- **lib.rs** — Crate documentation updated to reflect five modules (added registry)
+- **docs** — Architecture overview rewritten with registry, script/language tables
+
 ## [0.2.0] - 2026-03-31
 
 ### Added

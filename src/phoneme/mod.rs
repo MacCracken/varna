@@ -2,7 +2,10 @@
 //!
 //! Every language has a finite set of contrastive sounds (phonemes). This module
 //! provides those inventories with IPA transcription, articulatory features
-//! (manner, place, voicing), and language-specific allophone rules.
+//! (manner, place, voicing), allophone rules, and phonotactic constraints.
+
+pub mod allophone;
+pub mod syllable;
 
 use std::borrow::Cow;
 

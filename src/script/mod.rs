@@ -1,6 +1,10 @@
 //! Writing systems — alphabet, syllabary, logographic, abjad, abugida.
 //!
 //! Pre-built metadata for major writing systems, queryable by ISO 15924 code.
+//! Includes transliteration tables and numeral system mappings.
+
+pub mod numerals;
+pub mod transliteration;
 
 use std::borrow::Cow;
 

@@ -1,6 +1,6 @@
 # Development Roadmap
 
-> **Status**: Pre-1.0 | **Current**: 0.2.0
+> **Status**: Pre-1.0 | **Current**: 0.3.0
 >
 > Items marked `[S]` also unblock **sankhya** (ancient mathematical systems).
 
@@ -38,15 +38,15 @@
 - [x] Builder pattern for PhonemeInventory construction (`PhonemeInventoryBuilder`)
 - [x] Language registry with ISO 639 lookup (`registry` module)
 
+### 0.3.0 — Allophone & Phonotactics (2026-03-31)
+
+- [x] Allophone rules per language (`phoneme::allophone` — Environment, PhonemeClass, AllophoneRule, AllophoneRuleSet)
+- [x] Phonotactic constraints (`phoneme::syllable` — PhonotacticConstraint, ConstraintKind, Phonotactics)
+- [x] Syllable structure templates (SyllableTemplate — onset/nucleus/coda, English/Sanskrit/Japanese profiles)
+- [x] `[S]` Romanization/transliteration tables (`script::transliteration` — Devanagari↔IAST, Greek↔Beta Code)
+- [x] `[S]` Script-to-numeral mapping API (`script::numerals` — Devanagari digits, Greek isopsephy)
+
 ## Backlog
-
-### 0.3.0 — Allophone & Phonotactics
-
-- [ ] Allophone rules per language (context-dependent sound variation)
-- [ ] Phonotactic constraints (valid syllable structures)
-- [ ] Syllable structure templates (onset-nucleus-coda)
-- [ ] `[S]` Romanization/transliteration tables per script (Devanagari IAST/ISO 15919, Greek Beta Code)
-- [ ] `[S]` Script-to-numeral mapping API (generic interface for scripts with numeric values)
 
 ### 0.4.0 — Extended Coverage
 

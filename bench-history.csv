@@ -19,3 +19,9 @@ timestamp,commit,branch,benchmark,estimate_ns
 2026-04-01T03:08:37Z,63ab2be,main,phoneme_lookup_ipa,15.022
 2026-04-01T03:08:37Z,63ab2be,main,registry_phonemes_lookup,208.36
 2026-04-01T03:08:37Z,63ab2be,main,script_by_code_lookup,19.164
+2026-04-01T03:23:23Z,3d1ef78,main,english_phoneme_inventory,150.42
+2026-04-01T03:23:23Z,3d1ef78,main,sanskrit_phoneme_inventory,202.79
+2026-04-01T03:23:23Z,3d1ef78,main,greek_phoneme_inventory,93.416
+2026-04-01T03:23:23Z,3d1ef78,main,phoneme_lookup_ipa,16.016
+2026-04-01T03:23:23Z,3d1ef78,main,registry_phonemes_lookup,212.83
+2026-04-01T03:23:23Z,3d1ef78,main,script_by_code_lookup,19.273
