@@ -1,0 +1,87 @@
+# src/cognate.cyr — cognate sets + etymology.
+#
+# Ported from rust-old/src/lexicon/cognate.rs.
+#
+# CognateSet (32B):   [0]=proto_form(cstr|0) [8]=proto_language(cstr|0) [16]=gloss [24]=entries(vec)
+# CognateEntry (24B): [0]=language [8]=word [16]=ipa
+# Etymology (32B):    [0]=source_language [8]=source_form [16]=borrowing_type [24]=period(cstr|0)
+
+enum BorrowingType {
+    Loanword = 0;
+    Calque = 1;
+    SemanticLoan = 2;
+    Inherited = 3;
+}
+
+fn _cognate_entry_new(language, word, ipa) {
+    var e = alloc(24);
+    store64(e, language);
+    store64(e + 8, word);
+    store64(e + 16, ipa);
+    return e;
+}
+
+fn cognate_entry_language(e) { return load64(e); }
+fn cognate_word(e) { return load64(e + 8); }
+fn cognate_ipa(e) { return load64(e + 16); }
+
+fn _cognate_set_new(proto_form, proto_language, gloss) {
+    var s = alloc(32);
+    store64(s, proto_form);
+    store64(s + 8, proto_language);
+    store64(s + 16, gloss);
+    store64(s + 24, vec_new());
+    return s;
+}
+
+fn _cognate_set_add(s, language, word, ipa) {
+    vec_push(load64(s + 24), _cognate_entry_new(language, word, ipa));
+    return s;
+}
+
+fn cognate_proto_form(s) { return load64(s); }
+fn cognate_proto_language(s) { return load64(s + 8); }
+fn cognate_gloss(s) { return load64(s + 16); }
+fn cognate_entries(s) { return load64(s + 24); }
+
+# Cognate entry for a language code — entry ptr, or 0 if absent.
+fn cognate_for_language(s, code) {
+    var es = load64(s + 24);
+    var n = vec_len(es);
+    var i = 0;
+    while (i < n) {
+        var e = vec_get(es, i);
+        if (streq(load64(e), code) == 1) { return e; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+fn cognate_language_count(s) { return vec_len(load64(s + 24)); }
+
+fn etymology_new(source_language, source_form, borrowing_type, period) {
+    var e = alloc(32);
+    store64(e, source_language);
+    store64(e + 8, source_form);
+    store64(e + 16, borrowing_type);
+    store64(e + 24, period);
+    return e;
+}
+
+fn etymology_source_language(e) { return load64(e); }
+fn etymology_source_form(e) { return load64(e + 8); }
+fn etymology_borrowing_type(e) { return load64(e + 16); }
+fn etymology_period(e) { return load64(e + 24); }
+
+# --- Pre-built cognate sets ----------------------------------------
+
+# Water cognates across Indo-European languages.
+fn cognate_water() {
+    var s = _cognate_set_new("*wódr̥", "Proto-Indo-European", "water");
+    _cognate_set_add(s, "en", "water", "ˈwɔːtər");
+    _cognate_set_add(s, "de", "Wasser", "ˈvasɐ");
+    _cognate_set_add(s, "ru", "вода", "vɐˈda");
+    _cognate_set_add(s, "sa", "उदन्", "udán");
+    _cognate_set_add(s, "el", "ύδωρ", "ˈiðor");
+    return s;
+}

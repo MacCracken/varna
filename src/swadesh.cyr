@@ -1,0 +1,349 @@
+# src/swadesh.cyr — Swadesh-25 starter lists for 10 core languages.
+# Ported from rust-old/src/lexicon/swadesh.rs (data transpiled byte-exact).
+# Requires src/lexicon.cyr. Entries carry frequency_rank = None (0-1).
+
+fn _sw_entry(lex, word, ipa, gloss, pos, swadesh) {
+    _lexicon_add(lex, _lex_entry_new(word, ipa, gloss, pos, 0 - 1, swadesh));
+    return lex;
+}
+
+fn swadesh_count(lex) { return vec_len(lexicon_entries(lex)); }
+fn swadesh_entry(lex, i) { return vec_get(lexicon_entries(lex), i); }
+fn swadesh_entry_index(e) { return lex_swadesh_index(e); }
+fn swadesh_entry_word(e) { return lex_word(e); }
+fn swadesh_entry_ipa(e) { return lex_ipa(e); }
+fn swadesh_entry_gloss(e) { return lex_gloss(e); }
+fn swadesh_find_gloss(lex, gloss) { return lexicon_find_gloss(lex, gloss); }
+
+# --- Pre-built Swadesh-25 lists ------------------------------------
+
+fn swadesh_arabic() {
+    var lex = _lexicon_new("ar");
+    _sw_entry(lex, "أنا", "ʔana", "I", PartOfSpeech.Pronoun, 1);
+    _sw_entry(lex, "أنتَ", "ʔanta", "you", PartOfSpeech.Pronoun, 2);
+    _sw_entry(lex, "نحن", "naħnu", "we", PartOfSpeech.Pronoun, 3);
+    _sw_entry(lex, "هذا", "haːðaː", "this", PartOfSpeech.Determiner, 4);
+    _sw_entry(lex, "ذلك", "ðaːlika", "that", PartOfSpeech.Determiner, 5);
+    _sw_entry(lex, "مَن", "man", "who", PartOfSpeech.Pronoun, 6);
+    _sw_entry(lex, "ما", "maː", "what", PartOfSpeech.Pronoun, 7);
+    _sw_entry(lex, "لا", "laː", "not", PartOfSpeech.Particle, 8);
+    _sw_entry(lex, "كل", "kull", "all", PartOfSpeech.Adjective, 9);
+    _sw_entry(lex, "كثير", "kaθiːr", "many", PartOfSpeech.Adjective, 10);
+    _sw_entry(lex, "واحد", "waːħid", "one", PartOfSpeech.Numeral, 11);
+    _sw_entry(lex, "اثنان", "iθnaːn", "two", PartOfSpeech.Numeral, 12);
+    _sw_entry(lex, "كبير", "kabiːr", "big", PartOfSpeech.Adjective, 13);
+    _sw_entry(lex, "طويل", "tˤawiːl", "long", PartOfSpeech.Adjective, 14);
+    _sw_entry(lex, "صغير", "sˤaɣiːr", "small", PartOfSpeech.Adjective, 15);
+    _sw_entry(lex, "امرأة", "imraʔa", "woman", PartOfSpeech.Noun, 16);
+    _sw_entry(lex, "رجل", "rad͡ʒul", "man", PartOfSpeech.Noun, 17);
+    _sw_entry(lex, "إنسان", "ʔinsaːn", "person", PartOfSpeech.Noun, 18);
+    _sw_entry(lex, "سمك", "samak", "fish", PartOfSpeech.Noun, 19);
+    _sw_entry(lex, "طير", "tˤajr", "bird", PartOfSpeech.Noun, 20);
+    _sw_entry(lex, "كلب", "kalb", "dog", PartOfSpeech.Noun, 21);
+    _sw_entry(lex, "شجرة", "ʃad͡ʒara", "tree", PartOfSpeech.Noun, 22);
+    _sw_entry(lex, "ماء", "maːʔ", "water", PartOfSpeech.Noun, 23);
+    _sw_entry(lex, "نار", "naːr", "fire", PartOfSpeech.Noun, 24);
+    _sw_entry(lex, "شمس", "ʃams", "sun", PartOfSpeech.Noun, 25);
+    return lex;
+}
+
+fn swadesh_mandarin() {
+    var lex = _lexicon_new("zh");
+    _sw_entry(lex, "我", "wɔ˧˩˦", "I", PartOfSpeech.Pronoun, 1);
+    _sw_entry(lex, "你", "ni˧˩˦", "you", PartOfSpeech.Pronoun, 2);
+    _sw_entry(lex, "我们", "wɔ˧˩˦.mən", "we", PartOfSpeech.Pronoun, 3);
+    _sw_entry(lex, "这", "ʈ͡ʂɤ˥˩", "this", PartOfSpeech.Determiner, 4);
+    _sw_entry(lex, "那", "na˥˩", "that", PartOfSpeech.Determiner, 5);
+    _sw_entry(lex, "谁", "ʂeɪ˧˥", "who", PartOfSpeech.Pronoun, 6);
+    _sw_entry(lex, "什么", "ʂən˧˥.mə", "what", PartOfSpeech.Pronoun, 7);
+    _sw_entry(lex, "不", "pu˥˩", "not", PartOfSpeech.Particle, 8);
+    _sw_entry(lex, "都", "tou˥", "all", PartOfSpeech.Adverb, 9);
+    _sw_entry(lex, "多", "two˥", "many", PartOfSpeech.Adjective, 10);
+    _sw_entry(lex, "一", "i˥", "one", PartOfSpeech.Numeral, 11);
+    _sw_entry(lex, "二", "ɤɻ˥˩", "two", PartOfSpeech.Numeral, 12);
+    _sw_entry(lex, "大", "ta˥˩", "big", PartOfSpeech.Adjective, 13);
+    _sw_entry(lex, "长", "ʈ͡ʂʰɑŋ˧˥", "long", PartOfSpeech.Adjective, 14);
+    _sw_entry(lex, "小", "ɕjɑʊ˧˩˦", "small", PartOfSpeech.Adjective, 15);
+    _sw_entry(lex, "女人", "ny˧˩˦.ɻən˧˥", "woman", PartOfSpeech.Noun, 16);
+    _sw_entry(lex, "男人", "nan˧˥.ɻən˧˥", "man", PartOfSpeech.Noun, 17);
+    _sw_entry(lex, "人", "ɻən˧˥", "person", PartOfSpeech.Noun, 18);
+    _sw_entry(lex, "鱼", "y˧˥", "fish", PartOfSpeech.Noun, 19);
+    _sw_entry(lex, "鸟", "njɑʊ˧˩˦", "bird", PartOfSpeech.Noun, 20);
+    _sw_entry(lex, "狗", "koʊ˧˩˦", "dog", PartOfSpeech.Noun, 21);
+    _sw_entry(lex, "树", "ʂu˥˩", "tree", PartOfSpeech.Noun, 22);
+    _sw_entry(lex, "水", "ʂweɪ˧˩˦", "water", PartOfSpeech.Noun, 23);
+    _sw_entry(lex, "火", "xwo˧˩˦", "fire", PartOfSpeech.Noun, 24);
+    _sw_entry(lex, "太阳", "tʰaɪ˥˩.jɑŋ˧˥", "sun", PartOfSpeech.Noun, 25);
+    return lex;
+}
+
+fn swadesh_hindi() {
+    var lex = _lexicon_new("hi");
+    _sw_entry(lex, "मैं", "mɛ̃ː", "I", PartOfSpeech.Pronoun, 1);
+    _sw_entry(lex, "तू", "tuː", "you", PartOfSpeech.Pronoun, 2);
+    _sw_entry(lex, "हम", "ɦəm", "we", PartOfSpeech.Pronoun, 3);
+    _sw_entry(lex, "यह", "jɛɦ", "this", PartOfSpeech.Determiner, 4);
+    _sw_entry(lex, "वह", "ʋɔɦ", "that", PartOfSpeech.Determiner, 5);
+    _sw_entry(lex, "कौन", "kɔːn", "who", PartOfSpeech.Pronoun, 6);
+    _sw_entry(lex, "क्या", "kjɑː", "what", PartOfSpeech.Pronoun, 7);
+    _sw_entry(lex, "नहीं", "nəɦĩː", "not", PartOfSpeech.Particle, 8);
+    _sw_entry(lex, "सब", "səb", "all", PartOfSpeech.Adjective, 9);
+    _sw_entry(lex, "बहुत", "bəɦʊt", "many", PartOfSpeech.Adjective, 10);
+    _sw_entry(lex, "एक", "eːk", "one", PartOfSpeech.Numeral, 11);
+    _sw_entry(lex, "दो", "doː", "two", PartOfSpeech.Numeral, 12);
+    _sw_entry(lex, "बड़ा", "bəɽɑː", "big", PartOfSpeech.Adjective, 13);
+    _sw_entry(lex, "लंबा", "ləmbɑː", "long", PartOfSpeech.Adjective, 14);
+    _sw_entry(lex, "छोटा", "t͡ʃʰoːʈɑː", "small", PartOfSpeech.Adjective, 15);
+    _sw_entry(lex, "औरत", "ɔːɾət̪", "woman", PartOfSpeech.Noun, 16);
+    _sw_entry(lex, "आदमी", "ɑːd̪miː", "man", PartOfSpeech.Noun, 17);
+    _sw_entry(lex, "इंसान", "ɪnsɑːn", "person", PartOfSpeech.Noun, 18);
+    _sw_entry(lex, "मछली", "mət͡ʃʰliː", "fish", PartOfSpeech.Noun, 19);
+    _sw_entry(lex, "पक्षी", "pəkʂiː", "bird", PartOfSpeech.Noun, 20);
+    _sw_entry(lex, "कुत्ता", "kʊt̪t̪ɑː", "dog", PartOfSpeech.Noun, 21);
+    _sw_entry(lex, "पेड़", "peːɽ", "tree", PartOfSpeech.Noun, 22);
+    _sw_entry(lex, "पानी", "pɑːniː", "water", PartOfSpeech.Noun, 23);
+    _sw_entry(lex, "आग", "ɑːɡ", "fire", PartOfSpeech.Noun, 24);
+    _sw_entry(lex, "सूरज", "suːɾəd͡ʒ", "sun", PartOfSpeech.Noun, 25);
+    return lex;
+}
+
+fn swadesh_japanese() {
+    var lex = _lexicon_new("ja");
+    _sw_entry(lex, "私", "ʋataɕi", "I", PartOfSpeech.Pronoun, 1);
+    _sw_entry(lex, "あなた", "anata", "you", PartOfSpeech.Pronoun, 2);
+    _sw_entry(lex, "私たち", "ʋataɕitaːtɕi", "we", PartOfSpeech.Pronoun, 3);
+    _sw_entry(lex, "これ", "koɾe", "this", PartOfSpeech.Determiner, 4);
+    _sw_entry(lex, "それ", "soɾe", "that", PartOfSpeech.Determiner, 5);
+    _sw_entry(lex, "誰", "daɾe", "who", PartOfSpeech.Pronoun, 6);
+    _sw_entry(lex, "何", "nani", "what", PartOfSpeech.Pronoun, 7);
+    _sw_entry(lex, "ない", "nai", "not", PartOfSpeech.Particle, 8);
+    _sw_entry(lex, "全部", "zembɯ", "all", PartOfSpeech.Noun, 9);
+    _sw_entry(lex, "多い", "ooi", "many", PartOfSpeech.Adjective, 10);
+    _sw_entry(lex, "一", "itɕi", "one", PartOfSpeech.Numeral, 11);
+    _sw_entry(lex, "二", "ni", "two", PartOfSpeech.Numeral, 12);
+    _sw_entry(lex, "大きい", "oːkiː", "big", PartOfSpeech.Adjective, 13);
+    _sw_entry(lex, "長い", "naɡai", "long", PartOfSpeech.Adjective, 14);
+    _sw_entry(lex, "小さい", "tɕiːsai", "small", PartOfSpeech.Adjective, 15);
+    _sw_entry(lex, "女", "onna", "woman", PartOfSpeech.Noun, 16);
+    _sw_entry(lex, "男", "otoko", "man", PartOfSpeech.Noun, 17);
+    _sw_entry(lex, "人", "çito", "person", PartOfSpeech.Noun, 18);
+    _sw_entry(lex, "魚", "sakana", "fish", PartOfSpeech.Noun, 19);
+    _sw_entry(lex, "鳥", "toɾi", "bird", PartOfSpeech.Noun, 20);
+    _sw_entry(lex, "犬", "inɯ", "dog", PartOfSpeech.Noun, 21);
+    _sw_entry(lex, "木", "ki", "tree", PartOfSpeech.Noun, 22);
+    _sw_entry(lex, "水", "mizɯ", "water", PartOfSpeech.Noun, 23);
+    _sw_entry(lex, "火", "çi", "fire", PartOfSpeech.Noun, 24);
+    _sw_entry(lex, "太陽", "taijoː", "sun", PartOfSpeech.Noun, 25);
+    return lex;
+}
+
+fn swadesh_spanish() {
+    var lex = _lexicon_new("es");
+    _sw_entry(lex, "yo", "ɟ͡ʝo", "I", PartOfSpeech.Pronoun, 1);
+    _sw_entry(lex, "tú", "tu", "you", PartOfSpeech.Pronoun, 2);
+    _sw_entry(lex, "nosotros", "nosotɾos", "we", PartOfSpeech.Pronoun, 3);
+    _sw_entry(lex, "esto", "esto", "this", PartOfSpeech.Determiner, 4);
+    _sw_entry(lex, "eso", "eso", "that", PartOfSpeech.Determiner, 5);
+    _sw_entry(lex, "quién", "kjen", "who", PartOfSpeech.Pronoun, 6);
+    _sw_entry(lex, "qué", "ke", "what", PartOfSpeech.Pronoun, 7);
+    _sw_entry(lex, "no", "no", "not", PartOfSpeech.Particle, 8);
+    _sw_entry(lex, "todo", "toðo", "all", PartOfSpeech.Adjective, 9);
+    _sw_entry(lex, "mucho", "mutʃo", "many", PartOfSpeech.Adjective, 10);
+    _sw_entry(lex, "uno", "uno", "one", PartOfSpeech.Numeral, 11);
+    _sw_entry(lex, "dos", "dos", "two", PartOfSpeech.Numeral, 12);
+    _sw_entry(lex, "grande", "ɡɾande", "big", PartOfSpeech.Adjective, 13);
+    _sw_entry(lex, "largo", "laɾɣo", "long", PartOfSpeech.Adjective, 14);
+    _sw_entry(lex, "pequeño", "pekeɲo", "small", PartOfSpeech.Adjective, 15);
+    _sw_entry(lex, "mujer", "muxeɾ", "woman", PartOfSpeech.Noun, 16);
+    _sw_entry(lex, "hombre", "ombɾe", "man", PartOfSpeech.Noun, 17);
+    _sw_entry(lex, "persona", "peɾsona", "person", PartOfSpeech.Noun, 18);
+    _sw_entry(lex, "pez", "peθ", "fish", PartOfSpeech.Noun, 19);
+    _sw_entry(lex, "pájaro", "paxaɾo", "bird", PartOfSpeech.Noun, 20);
+    _sw_entry(lex, "perro", "pero", "dog", PartOfSpeech.Noun, 21);
+    _sw_entry(lex, "árbol", "aɾβol", "tree", PartOfSpeech.Noun, 22);
+    _sw_entry(lex, "agua", "aɣwa", "water", PartOfSpeech.Noun, 23);
+    _sw_entry(lex, "fuego", "fweɣo", "fire", PartOfSpeech.Noun, 24);
+    _sw_entry(lex, "sol", "sol", "sun", PartOfSpeech.Noun, 25);
+    return lex;
+}
+
+fn swadesh_french() {
+    var lex = _lexicon_new("fr");
+    _sw_entry(lex, "je", "ʒə", "I", PartOfSpeech.Pronoun, 1);
+    _sw_entry(lex, "tu", "ty", "you", PartOfSpeech.Pronoun, 2);
+    _sw_entry(lex, "nous", "nu", "we", PartOfSpeech.Pronoun, 3);
+    _sw_entry(lex, "ceci", "səsi", "this", PartOfSpeech.Determiner, 4);
+    _sw_entry(lex, "cela", "səla", "that", PartOfSpeech.Determiner, 5);
+    _sw_entry(lex, "qui", "ki", "who", PartOfSpeech.Pronoun, 6);
+    _sw_entry(lex, "quoi", "kwa", "what", PartOfSpeech.Pronoun, 7);
+    _sw_entry(lex, "ne…pas", "nə pa", "not", PartOfSpeech.Particle, 8);
+    _sw_entry(lex, "tout", "tu", "all", PartOfSpeech.Adjective, 9);
+    _sw_entry(lex, "beaucoup", "boku", "many", PartOfSpeech.Adverb, 10);
+    _sw_entry(lex, "un", "œ̃", "one", PartOfSpeech.Numeral, 11);
+    _sw_entry(lex, "deux", "dø", "two", PartOfSpeech.Numeral, 12);
+    _sw_entry(lex, "grand", "ɡʁɑ̃", "big", PartOfSpeech.Adjective, 13);
+    _sw_entry(lex, "long", "lɔ̃", "long", PartOfSpeech.Adjective, 14);
+    _sw_entry(lex, "petit", "pəti", "small", PartOfSpeech.Adjective, 15);
+    _sw_entry(lex, "femme", "fam", "woman", PartOfSpeech.Noun, 16);
+    _sw_entry(lex, "homme", "ɔm", "man", PartOfSpeech.Noun, 17);
+    _sw_entry(lex, "personne", "pɛʁsɔn", "person", PartOfSpeech.Noun, 18);
+    _sw_entry(lex, "poisson", "pwasɔ̃", "fish", PartOfSpeech.Noun, 19);
+    _sw_entry(lex, "oiseau", "wazo", "bird", PartOfSpeech.Noun, 20);
+    _sw_entry(lex, "chien", "ʃjɛ̃", "dog", PartOfSpeech.Noun, 21);
+    _sw_entry(lex, "arbre", "aʁbʁ", "tree", PartOfSpeech.Noun, 22);
+    _sw_entry(lex, "eau", "o", "water", PartOfSpeech.Noun, 23);
+    _sw_entry(lex, "feu", "fø", "fire", PartOfSpeech.Noun, 24);
+    _sw_entry(lex, "soleil", "sɔlɛj", "sun", PartOfSpeech.Noun, 25);
+    return lex;
+}
+
+fn swadesh_german() {
+    var lex = _lexicon_new("de");
+    _sw_entry(lex, "ich", "ɪç", "I", PartOfSpeech.Pronoun, 1);
+    _sw_entry(lex, "du", "duː", "you", PartOfSpeech.Pronoun, 2);
+    _sw_entry(lex, "wir", "viːɐ̯", "we", PartOfSpeech.Pronoun, 3);
+    _sw_entry(lex, "dies", "diːs", "this", PartOfSpeech.Determiner, 4);
+    _sw_entry(lex, "jenes", "jeːnəs", "that", PartOfSpeech.Determiner, 5);
+    _sw_entry(lex, "wer", "veːɐ̯", "who", PartOfSpeech.Pronoun, 6);
+    _sw_entry(lex, "was", "vas", "what", PartOfSpeech.Pronoun, 7);
+    _sw_entry(lex, "nicht", "nɪçt", "not", PartOfSpeech.Particle, 8);
+    _sw_entry(lex, "alles", "aləs", "all", PartOfSpeech.Adjective, 9);
+    _sw_entry(lex, "viel", "fiːl", "many", PartOfSpeech.Adjective, 10);
+    _sw_entry(lex, "eins", "aɪ̯ns", "one", PartOfSpeech.Numeral, 11);
+    _sw_entry(lex, "zwei", "t͡svaɪ̯", "two", PartOfSpeech.Numeral, 12);
+    _sw_entry(lex, "groß", "ɡʁoːs", "big", PartOfSpeech.Adjective, 13);
+    _sw_entry(lex, "lang", "laŋ", "long", PartOfSpeech.Adjective, 14);
+    _sw_entry(lex, "klein", "klaɪ̯n", "small", PartOfSpeech.Adjective, 15);
+    _sw_entry(lex, "Frau", "fʁaʊ̯", "woman", PartOfSpeech.Noun, 16);
+    _sw_entry(lex, "Mann", "man", "man", PartOfSpeech.Noun, 17);
+    _sw_entry(lex, "Mensch", "mɛnʃ", "person", PartOfSpeech.Noun, 18);
+    _sw_entry(lex, "Fisch", "fɪʃ", "fish", PartOfSpeech.Noun, 19);
+    _sw_entry(lex, "Vogel", "foːɡl̩", "bird", PartOfSpeech.Noun, 20);
+    _sw_entry(lex, "Hund", "hʊnt", "dog", PartOfSpeech.Noun, 21);
+    _sw_entry(lex, "Baum", "baʊ̯m", "tree", PartOfSpeech.Noun, 22);
+    _sw_entry(lex, "Wasser", "vasɐ", "water", PartOfSpeech.Noun, 23);
+    _sw_entry(lex, "Feuer", "fɔʏ̯ɐ", "fire", PartOfSpeech.Noun, 24);
+    _sw_entry(lex, "Sonne", "zɔnə", "sun", PartOfSpeech.Noun, 25);
+    return lex;
+}
+
+fn swadesh_russian() {
+    var lex = _lexicon_new("ru");
+    _sw_entry(lex, "я", "ja", "I", PartOfSpeech.Pronoun, 1);
+    _sw_entry(lex, "ты", "tɨ", "you", PartOfSpeech.Pronoun, 2);
+    _sw_entry(lex, "мы", "mɨ", "we", PartOfSpeech.Pronoun, 3);
+    _sw_entry(lex, "это", "ˈɛtə", "this", PartOfSpeech.Determiner, 4);
+    _sw_entry(lex, "то", "to", "that", PartOfSpeech.Determiner, 5);
+    _sw_entry(lex, "кто", "kto", "who", PartOfSpeech.Pronoun, 6);
+    _sw_entry(lex, "что", "ʃto", "what", PartOfSpeech.Pronoun, 7);
+    _sw_entry(lex, "не", "nʲe", "not", PartOfSpeech.Particle, 8);
+    _sw_entry(lex, "все", "fsʲe", "all", PartOfSpeech.Adjective, 9);
+    _sw_entry(lex, "много", "ˈmnoɡə", "many", PartOfSpeech.Adjective, 10);
+    _sw_entry(lex, "один", "ɐˈdʲin", "one", PartOfSpeech.Numeral, 11);
+    _sw_entry(lex, "два", "dva", "two", PartOfSpeech.Numeral, 12);
+    _sw_entry(lex, "большой", "bɐlʲˈʂoj", "big", PartOfSpeech.Adjective, 13);
+    _sw_entry(lex, "длинный", "ˈdlʲinːɨj", "long", PartOfSpeech.Adjective, 14);
+    _sw_entry(lex, "маленький", "ˈmalʲɪnʲkʲɪj", "small", PartOfSpeech.Adjective, 15);
+    _sw_entry(lex, "женщина", "ˈʐɛnʲɕːɪnə", "woman", PartOfSpeech.Noun, 16);
+    _sw_entry(lex, "мужчина", "mʊˈɕːinə", "man", PartOfSpeech.Noun, 17);
+    _sw_entry(lex, "человек", "t͡ɕɪlɐˈvʲek", "person", PartOfSpeech.Noun, 18);
+    _sw_entry(lex, "рыба", "ˈrɨbə", "fish", PartOfSpeech.Noun, 19);
+    _sw_entry(lex, "птица", "ˈptʲit͡sə", "bird", PartOfSpeech.Noun, 20);
+    _sw_entry(lex, "собака", "sɐˈbakə", "dog", PartOfSpeech.Noun, 21);
+    _sw_entry(lex, "дерево", "ˈdʲerʲɪvə", "tree", PartOfSpeech.Noun, 22);
+    _sw_entry(lex, "вода", "vɐˈda", "water", PartOfSpeech.Noun, 23);
+    _sw_entry(lex, "огонь", "ɐˈɡonʲ", "fire", PartOfSpeech.Noun, 24);
+    _sw_entry(lex, "солнце", "ˈsont͡sə", "sun", PartOfSpeech.Noun, 25);
+    return lex;
+}
+
+fn swadesh_korean() {
+    var lex = _lexicon_new("ko");
+    _sw_entry(lex, "나", "na", "I", PartOfSpeech.Pronoun, 1);
+    _sw_entry(lex, "너", "nʌ", "you", PartOfSpeech.Pronoun, 2);
+    _sw_entry(lex, "우리", "uɾi", "we", PartOfSpeech.Pronoun, 3);
+    _sw_entry(lex, "이것", "iɡʌt̚", "this", PartOfSpeech.Determiner, 4);
+    _sw_entry(lex, "저것", "t͡ɕʌɡʌt̚", "that", PartOfSpeech.Determiner, 5);
+    _sw_entry(lex, "누구", "nuɡu", "who", PartOfSpeech.Pronoun, 6);
+    _sw_entry(lex, "무엇", "muʌt̚", "what", PartOfSpeech.Pronoun, 7);
+    _sw_entry(lex, "아니", "ani", "not", PartOfSpeech.Particle, 8);
+    _sw_entry(lex, "모두", "modu", "all", PartOfSpeech.Adjective, 9);
+    _sw_entry(lex, "많은", "manɯn", "many", PartOfSpeech.Adjective, 10);
+    _sw_entry(lex, "하나", "hana", "one", PartOfSpeech.Numeral, 11);
+    _sw_entry(lex, "둘", "tul", "two", PartOfSpeech.Numeral, 12);
+    _sw_entry(lex, "큰", "kʰɯn", "big", PartOfSpeech.Adjective, 13);
+    _sw_entry(lex, "긴", "kin", "long", PartOfSpeech.Adjective, 14);
+    _sw_entry(lex, "작은", "t͡ɕaɡɯn", "small", PartOfSpeech.Adjective, 15);
+    _sw_entry(lex, "여자", "jʌd͡ʑa", "woman", PartOfSpeech.Noun, 16);
+    _sw_entry(lex, "남자", "namd͡ʑa", "man", PartOfSpeech.Noun, 17);
+    _sw_entry(lex, "사람", "saɾam", "person", PartOfSpeech.Noun, 18);
+    _sw_entry(lex, "물고기", "mulɡoɡi", "fish", PartOfSpeech.Noun, 19);
+    _sw_entry(lex, "새", "sɛ", "bird", PartOfSpeech.Noun, 20);
+    _sw_entry(lex, "개", "kɛ", "dog", PartOfSpeech.Noun, 21);
+    _sw_entry(lex, "나무", "namu", "tree", PartOfSpeech.Noun, 22);
+    _sw_entry(lex, "물", "mul", "water", PartOfSpeech.Noun, 23);
+    _sw_entry(lex, "불", "pul", "fire", PartOfSpeech.Noun, 24);
+    _sw_entry(lex, "해", "hɛ", "sun", PartOfSpeech.Noun, 25);
+    return lex;
+}
+
+fn swadesh_portuguese() {
+    var lex = _lexicon_new("pt");
+    _sw_entry(lex, "eu", "ew", "I", PartOfSpeech.Pronoun, 1);
+    _sw_entry(lex, "tu", "tu", "you", PartOfSpeech.Pronoun, 2);
+    _sw_entry(lex, "nós", "nɔʃ", "we", PartOfSpeech.Pronoun, 3);
+    _sw_entry(lex, "isto", "iʃtu", "this", PartOfSpeech.Determiner, 4);
+    _sw_entry(lex, "isso", "isu", "that", PartOfSpeech.Determiner, 5);
+    _sw_entry(lex, "quem", "kẽj̃", "who", PartOfSpeech.Pronoun, 6);
+    _sw_entry(lex, "que", "kɨ", "what", PartOfSpeech.Pronoun, 7);
+    _sw_entry(lex, "não", "nɐ̃w̃", "not", PartOfSpeech.Particle, 8);
+    _sw_entry(lex, "tudo", "tudu", "all", PartOfSpeech.Adjective, 9);
+    _sw_entry(lex, "muito", "mũjtu", "many", PartOfSpeech.Adjective, 10);
+    _sw_entry(lex, "um", "ũ", "one", PartOfSpeech.Numeral, 11);
+    _sw_entry(lex, "dois", "dojʃ", "two", PartOfSpeech.Numeral, 12);
+    _sw_entry(lex, "grande", "ɡɾɐ̃dɨ", "big", PartOfSpeech.Adjective, 13);
+    _sw_entry(lex, "longo", "lõɡu", "long", PartOfSpeech.Adjective, 14);
+    _sw_entry(lex, "pequeno", "pɨkenu", "small", PartOfSpeech.Adjective, 15);
+    _sw_entry(lex, "mulher", "muʎeɾ", "woman", PartOfSpeech.Noun, 16);
+    _sw_entry(lex, "homem", "ɔmẽj̃", "man", PartOfSpeech.Noun, 17);
+    _sw_entry(lex, "pessoa", "pɨsoɐ", "person", PartOfSpeech.Noun, 18);
+    _sw_entry(lex, "peixe", "pejʃɨ", "fish", PartOfSpeech.Noun, 19);
+    _sw_entry(lex, "pássaro", "pasɐɾu", "bird", PartOfSpeech.Noun, 20);
+    _sw_entry(lex, "cão", "kɐ̃w̃", "dog", PartOfSpeech.Noun, 21);
+    _sw_entry(lex, "árvore", "aɾvuɾɨ", "tree", PartOfSpeech.Noun, 22);
+    _sw_entry(lex, "água", "aɡwɐ", "water", PartOfSpeech.Noun, 23);
+    _sw_entry(lex, "fogo", "foɡu", "fire", PartOfSpeech.Noun, 24);
+    _sw_entry(lex, "sol", "sɔl", "sun", PartOfSpeech.Noun, 25);
+    return lex;
+}
+
+# Swadesh lexicon for a language, or 0 if none.
+fn swadesh_by_code(code) {
+    if (streq(code, "ar") == 1) { return swadesh_arabic(); }
+    if (streq(code, "zh") == 1) { return swadesh_mandarin(); }
+    if (streq(code, "hi") == 1) { return swadesh_hindi(); }
+    if (streq(code, "ja") == 1) { return swadesh_japanese(); }
+    if (streq(code, "es") == 1) { return swadesh_spanish(); }
+    if (streq(code, "fr") == 1) { return swadesh_french(); }
+    if (streq(code, "de") == 1) { return swadesh_german(); }
+    if (streq(code, "ru") == 1) { return swadesh_russian(); }
+    if (streq(code, "ko") == 1) { return swadesh_korean(); }
+    if (streq(code, "pt") == 1) { return swadesh_portuguese(); }
+    return 0;
+}
+
+# All language codes with Swadesh data — vec of cstrings.
+fn swadesh_all_codes() {
+    var c = vec_new();
+    vec_push(c, "ar");
+    vec_push(c, "zh");
+    vec_push(c, "hi");
+    vec_push(c, "ja");
+    vec_push(c, "es");
+    vec_push(c, "fr");
+    vec_push(c, "de");
+    vec_push(c, "ru");
+    vec_push(c, "ko");
+    vec_push(c, "pt");
+    return c;
+}

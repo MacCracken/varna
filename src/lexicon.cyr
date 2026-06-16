@@ -1,0 +1,135 @@
+# src/lexicon.cyr — core vocabulary types + Lexicon queries.
+#
+# Ported from rust-old/src/lexicon/mod.rs.
+#
+# LexEntry (48B): [0]=word [8]=ipa [16]=gloss [24]=pos
+#                 [32]=frequency_rank [40]=swadesh_index   ((0-1) = None for both)
+# Lexicon (16B):  [0]=language_code [8]=entries(vec)
+
+enum PartOfSpeech {
+    Noun = 0;
+    Verb = 1;
+    Adjective = 2;
+    Adverb = 3;
+    Pronoun = 4;
+    Preposition = 5;
+    Conjunction = 6;
+    Interjection = 7;
+    Determiner = 8;
+    Particle = 9;
+    Numeral = 10;
+}
+
+fn _lex_entry_new(word, ipa, gloss, pos, frequency_rank, swadesh_index) {
+    var e = alloc(48);
+    store64(e, word);
+    store64(e + 8, ipa);
+    store64(e + 16, gloss);
+    store64(e + 24, pos);
+    store64(e + 32, frequency_rank);
+    store64(e + 40, swadesh_index);
+    return e;
+}
+
+fn lex_word(e) { return load64(e); }
+fn lex_ipa(e) { return load64(e + 8); }
+fn lex_gloss(e) { return load64(e + 16); }
+fn lex_pos(e) { return load64(e + 24); }
+fn lex_frequency_rank(e) { return load64(e + 32); }
+fn lex_swadesh_index(e) { return load64(e + 40); }
+
+fn _lexicon_new(code) {
+    var lex = alloc(16);
+    store64(lex, code);
+    store64(lex + 8, vec_new());
+    return lex;
+}
+
+fn _lexicon_add(lex, entry) {
+    vec_push(load64(lex + 8), entry);
+    return lex;
+}
+
+fn lexicon_language_code(lex) { return load64(lex); }
+fn lexicon_entries(lex) { return load64(lex + 8); }
+
+# Insertion-sort a vec of LexEntry ptrs ascending by the i64 field at `off`.
+fn _lex_sort_by_offset(v, off) {
+    var n = vec_len(v);
+    var i = 1;
+    while (i < n) {
+        var key = vec_get(v, i);
+        var kv = load64(key + off);
+        var j = i - 1;
+        while (j >= 0 && load64(vec_get(v, j) + off) > kv) {
+            vec_set(v, j + 1, vec_get(v, j));
+            j = j - 1;
+        }
+        vec_set(v, j + 1, key);
+        i = i + 1;
+    }
+    return v;
+}
+
+# Look up a word by its native form — entry ptr, or 0 if absent.
+fn lexicon_find(lex, word) {
+    var entries = load64(lex + 8);
+    var n = vec_len(entries);
+    var i = 0;
+    while (i < n) {
+        var e = vec_get(entries, i);
+        if (streq(load64(e), word) == 1) { return e; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Look up an entry by English gloss — entry ptr, or 0 if absent.
+fn lexicon_find_gloss(lex, gloss) {
+    var entries = load64(lex + 8);
+    var n = vec_len(entries);
+    var i = 0;
+    while (i < n) {
+        var e = vec_get(entries, i);
+        if (streq(load64(e + 16), gloss) == 1) { return e; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# All Swadesh entries (swadesh_index set), sorted by index — vec of entry ptrs.
+fn lexicon_swadesh(lex) {
+    var entries = load64(lex + 8);
+    var n = vec_len(entries);
+    var out = vec_new();
+    var i = 0;
+    while (i < n) {
+        var e = vec_get(entries, i);
+        if (load64(e + 40) >= 0) { vec_push(out, e); }
+        i = i + 1;
+    }
+    _lex_sort_by_offset(out, 40);
+    return out;
+}
+
+# The N most frequent entries (frequency_rank set), sorted ascending by rank.
+fn lexicon_most_frequent(lex, n) {
+    var entries = load64(lex + 8);
+    var cnt = vec_len(entries);
+    var ranked = vec_new();
+    var i = 0;
+    while (i < cnt) {
+        var e = vec_get(entries, i);
+        if (load64(e + 32) >= 0) { vec_push(ranked, e); }
+        i = i + 1;
+    }
+    _lex_sort_by_offset(ranked, 32);
+    var out = vec_new();
+    var rn = vec_len(ranked);
+    var k = 0;
+    while (k < n && k < rn) {
+        vec_push(out, vec_get(ranked, k));
+        k = k + 1;
+    }
+    return out;
+}

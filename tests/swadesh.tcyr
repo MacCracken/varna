@@ -1,0 +1,47 @@
+# tests/swadesh.tcyr — Swadesh parity (rust-old/src/lexicon/swadesh.rs).
+
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("swadesh_lists");
+    var codes = swadesh_all_codes();
+    assert_eq(vec_len(codes), 10, "10 swadesh codes");
+    var n = vec_len(codes);
+    var i = 0;
+    while (i < n) {
+        var code = vec_get(codes, i);
+        var lex = swadesh_by_code(code);
+        assert(lex != 0, "by_code found");
+        assert(streq(lexicon_language_code(lex), code), "language_code matches");
+        assert_eq(swadesh_count(lex), 25, "25 entries");
+        var sw = lexicon_swadesh(lex);
+        assert_eq(vec_len(sw), 25, "25 swadesh entries");
+        assert_eq(swadesh_entry_index(vec_get(sw, 0)), 1, "first index 1");
+        assert_eq(swadesh_entry_index(vec_get(sw, 24)), 25, "last index 25");
+        assert(swadesh_find_gloss(lex, "water") != 0, "has water");
+        i = i + 1;
+    }
+    assert_eq(swadesh_by_code("xx"), 0, "unknown code");
+
+    test_group("lexicon_methods");
+    # synthetic lexicon mirrors rust-old mod.rs sample_lexicon
+    var lex = _lexicon_new("en");
+    _lexicon_add(lex, _lex_entry_new("water", "ˈwɔːtər", "water", PartOfSpeech.Noun, 250, 1));
+    _lexicon_add(lex, _lex_entry_new("fire", "ˈfaɪər", "fire", PartOfSpeech.Noun, 800, 2));
+    _lexicon_add(lex, _lex_entry_new("the", "ðə", "the", PartOfSpeech.Determiner, 1, 0 - 1));
+    assert(lexicon_find(lex, "water") != 0, "find water");
+    assert_eq(lexicon_find(lex, "xyz"), 0, "find unknown");
+    var sl = lexicon_swadesh(lex);
+    assert_eq(vec_len(sl), 2, "2 swadesh entries");
+    assert(streq(lex_word(vec_get(sl, 0)), "water"), "swadesh[0]=water");
+    var mf = lexicon_most_frequent(lex, 2);
+    assert(streq(lex_word(vec_get(mf, 0)), "the"), "most_frequent[0]=the");
+    assert(streq(lex_word(vec_get(mf, 1)), "water"), "most_frequent[1]=water");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

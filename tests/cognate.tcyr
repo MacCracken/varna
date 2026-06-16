@@ -1,0 +1,32 @@
+# tests/cognate.tcyr — cognate/etymology parity (rust-old/src/lexicon/cognate.rs).
+
+include "src/cognate.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("cognate");
+    var cog = cognate_water();
+    assert_eq(cognate_language_count(cog), 5, "5 languages");
+    assert(streq(cognate_proto_form(cog), "*wódr̥"), "proto-form");
+    assert(streq(cognate_gloss(cog), "water"), "gloss water");
+    var en = cognate_for_language(cog, "en");
+    assert(en != 0, "for_language en");
+    assert(streq(cognate_word(en), "water"), "en word water");
+    var de = cognate_for_language(cog, "de");
+    assert(streq(cognate_word(de), "Wasser"), "de word Wasser");
+    assert_eq(cognate_for_language(cog, "xx"), 0, "for_language unknown");
+
+    test_group("etymology");
+    var etym = etymology_new("fr", "café", BorrowingType.Loanword, "18th century");
+    assert(streq(etymology_source_language(etym), "fr"), "source fr");
+    assert(streq(etymology_source_form(etym), "café"), "source café");
+    assert_eq(etymology_borrowing_type(etym), BorrowingType.Loanword, "loanword type");
+    assert(streq(etymology_period(etym), "18th century"), "period");
+    assert(BorrowingType.Loanword != BorrowingType.Calque, "loanword != calque");
+    assert(BorrowingType.SemanticLoan != BorrowingType.Inherited, "semloan != inherited");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
