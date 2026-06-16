@@ -1,0 +1,108 @@
+[package]
+name = "varna"
+version = "${file:VERSION}"
+description = "Varna — multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access for 50+ languages"
+license = "GPL-3.0-only"
+repository = "https://github.com/MacCracken/varna"
+language = "cyrius"
+cyrius = "6.2.12"
+
+[build]
+entry = "src/main.cyr"
+output = "build/varna"
+
+# `[lib]` lets `cyrius distlib` concatenate src/ into a single
+# dist/varna.cyr bundle for downstream consumers (shabda, shabdakosh,
+# svara, sankhya, jnana, vidya) that fold the language engine in as one
+# file. Order mirrors the include order in src/main.cyr — load-bearing
+# for Cyrius single-pass forward-reference resolution.
+#   cyrius distlib       → dist/varna.cyr       (full data engine)
+#   cyrius distlib core  → dist/varna-core.cyr  ([lib.core], no AI surfaces)
+[lib]
+modules = [
+    "src/error.cyr",
+    "src/phoneme.cyr",
+    "src/inventories.cyr",
+    "src/allophone.cyr",
+    "src/syllable.cyr",
+    "src/script.cyr",
+    "src/transliteration.cyr",
+    "src/numerals.cyr",
+    "src/grammar.cyr",
+    "src/lexicon.cyr",
+    "src/swadesh.cyr",
+    "src/cognate.cyr",
+    "src/dialect.cyr",
+    "src/registry.cyr",
+]
+
+# Core-only bundle: the linguistic data engine without the optional AI
+# integration surfaces (mcp / daimon / hoosh), which compile in only
+# under their -D defines. Consumers that want just phoneme/script/
+# grammar/lexicon data fold this.
+[lib.core]
+modules = [
+    "src/error.cyr",
+    "src/phoneme.cyr",
+    "src/inventories.cyr",
+    "src/allophone.cyr",
+    "src/syllable.cyr",
+    "src/script.cyr",
+    "src/transliteration.cyr",
+    "src/numerals.cyr",
+    "src/grammar.cyr",
+    "src/lexicon.cyr",
+    "src/swadesh.cyr",
+    "src/cognate.cyr",
+    "src/dialect.cyr",
+    "src/registry.cyr",
+]
+
+# ── Dependencies ─────────────────────────────────────────────────
+# Cyrius-stdlib modules. `cyrius deps` copies these from the version-
+# pinned toolchain snapshot into ./lib/ (gitignored). The list mirrors
+# the include order at the top of src/main.cyr so the manifest stays
+# load-bearing.
+#
+# Rust → Cyrius dependency map (the v1.x crate's Cargo deps):
+#   serde + serde_json  →  bayan           (JSON: #derive(Serialize) + json_parse/json_build)
+#   thiserror           →  result + tagged (native enum + Result<T,E>, lib/result.cyr)
+#   tracing             →  log + sakshi    (level filtering + structured audit output)
+#   tracing-subscriber  →  log + sakshi    (no separate subscriber; env-filter wired by hand)
+#   criterion (dev)     →  cyrius bench    (lib/bench.cyr; benches/*.bcyr)
+[deps]
+stdlib = [
+    "string",
+    "fmt",
+    "alloc",
+    "vec",
+    "str",
+    "slice",
+    "syscalls",
+    "io",
+    "args",
+    "assert",
+    "hashmap",
+    "bayan",
+    "fnptr",
+    "tagged",
+    "result",
+    "log",
+    "sakshi",
+]
+
+# MCP tool surface (compiled only under -D MCP). bote is the AGNOS MCP /
+# JSON-RPC core, consumed as the transport-free `dist/bote-core.cyr`
+# bundle (the same 9-module profile hoosh vendors). `cyrius deps` clones
+# bote at the tag and copies dist/bote-core.cyr into lib/bote-core.cyr.
+#
+# NOTE: the v1.x `daimon` and `hoosh` Cargo features did NOT link those
+# crates — they only flipped on serde_json. Their Cyrius equivalents are
+# pure -D DAIMON / -D HOOSH build defines (JSON via bayan, already a
+# stdlib dep), so neither needs a [deps.*] entry. daimon and hoosh ship
+# as Cyrius binaries today with no consumable [lib]/dist bundle.
+[deps.bote]
+git = "https://github.com/MacCracken/bote"
+path = "../bote"
+tag = "2.7.6"
+modules = ["dist/bote-core.cyr"]

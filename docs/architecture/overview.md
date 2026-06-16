@@ -1,41 +1,39 @@
 # Architecture Overview
 
-> **Varna** — multilingual language engine
+> **Varna** — multilingual language engine (Cyrius)
 
 ## Module Map
 
 ```
 varna/
 ├── src/
-│   ├── lib.rs              — public API, module re-exports
-│   ├── error.rs            — LipiError enum (non_exhaustive)
-│   ├── phoneme/
-│   │   ├── mod.rs          — IPA inventories, articulatory features, stress/tone,
-│   │   │                     PhonemeInventoryBuilder, english/sanskrit/greek
-│   │   ├── allophone.rs    — allophone rules, conditioned variants
-│   │   ├── syllable.rs     — syllable structure, phonotactic constraints
-│   │   └── inventories.rs  — 24 additional language inventories
-│   ├── script/
-│   │   ├── mod.rs          — writing system metadata, 10 scripts, by_code() lookup
-│   │   ├── transliteration.rs — transliteration tables between scripts
-│   │   └── numerals.rs     — numeral system mappings (5 systems)
-│   ├── grammar/mod.rs      — 11 grammar profiles, morphology, word order, case systems
-│   ├── lexicon/
-│   │   ├── mod.rs          — vocabulary types, LexEntry, Lexicon, PartOfSpeech
-│   │   ├── cognate.rs      — cross-language cognate tracking
-│   │   └── swadesh.rs      — Swadesh-25 lists for 10 languages
-│   ├── registry.rs         — 27 languages, central ISO 639 lookup
-│   ├── dialect.rs          — language variety overlays (regional dialects, national standards)
-│   ├── logging.rs          — optional LIPI_LOG env-based tracing init (feature: logging)
-│   ├── mcp.rs              — 5 MCP tools (feature: mcp)
-│   ├── daimon.rs           — agent registration (feature: daimon)
-│   └── hoosh.rs            — LLM query interface (feature: hoosh)
+│   ├── main.cyr           — demo entry + include aggregator (alloc_init, dispatch)
+│   ├── error.cyr          — VarnaError enum (tagged variants)
+│   ├── phoneme.cyr        — IPA inventories, articulatory features, stress/tone,
+│   │                        the inventory builder, english/sanskrit/greek
+│   ├── inventories.cyr    — extended language inventories
+│   ├── allophone.cyr      — allophone rules, conditioned variants
+│   ├── syllable.cyr       — syllable structure, phonotactic constraints
+│   ├── script.cyr         — writing system metadata, scripts, by_code() lookup
+│   ├── transliteration.cyr — transliteration tables between scripts
+│   ├── numerals.cyr       — numeral system mappings (Greek/Deva/Babylonian/Egyptian/rod)
+│   ├── grammar.cyr        — grammar profiles, morphology, word order, case systems
+│   ├── lexicon.cyr        — vocabulary types, LexEntry, Lexicon, PartOfSpeech
+│   ├── swadesh.cyr        — Swadesh-25 lists per language
+│   ├── cognate.cyr        — cross-language cognate tracking
+│   ├── dialect.cyr        — language-variety overlays (regional dialects, national standards)
+│   ├── registry.cyr       — central ISO 639 lookup across all domains
+│   ├── logging.cyr        — VARNA_LOG env init (log + sakshi)        [-D LOGGING]
+│   ├── mcp.cyr            — 5 MCP tools, bote-core surface           [-D MCP]
+│   ├── daimon.cyr        — agent registration payload                [-D DAIMON]
+│   └── hoosh.cyr         — LLM query interface                       [-D HOOSH]
+├── lib/                   — vendored Cyrius stdlib snapshot (cyrius deps; gitignored)
+├── dist/
+│   └── varna.cyr          — single-file bundle for consumers (cyrius distlib)
 ├── benches/
-│   └── benchmarks.rs       — criterion benchmarks
-├── tests/
-│   └── integration.rs      — cross-module integration tests
-└── examples/
-    └── basic.rs            — runnable usage example
+│   └── *.bcyr             — cyrius bench harness (lib/bench.cyr)
+└── tests/
+    └── tcyr/*.tcyr        — cross-module integration tests (cyrius tests)
 ```
 
 ## Data Flow
@@ -89,6 +87,9 @@ Language selection (ISO 639 code)
 | nah  | Nahuatl           | 16         | 8      | Latin       |
 | yua  | Yucatec Maya      | 21         | 10     | Latin       |
 
+51 languages are registered in total (the table above lists the core set; see
+`registry.cyr` and `inventories.cyr` for the full roster).
+
 ## Registered Scripts
 
 | Code | Name                  | Type        | Direction | Status     |
@@ -117,27 +118,41 @@ Language selection (ISO 639 code)
 ## Dependency Stack
 
 ```
-varna (this crate)
+varna (this engine)
+  │  Cyrius stdlib (resolved by `cyrius deps` into lib/)
+  ├── bayan           — JSON serialization for all types (#derive(Serialize), json_parse/json_build)
+  ├── result + tagged — native enum + Result<T,E> error model (VarnaError)
+  ├── str / string / slice / vec / hashmap / fmt / io — core data structures + formatting
   │
-  ├── serde          — serialization for all types (alloc; std optional)
-  ├── thiserror      — error derivation (std optional)
-  ├── tracing        — structured logging
-  │
-  └── optional (feature-gated):
-      ├── serde_json       — JSON encoding (mcp, daimon, hoosh)
-      └── tracing-subscriber — env-filter log init (logging)
+  └── optional (define-gated):
+      ├── log + sakshi               — structured logging + audit         (-D LOGGING)
+      └── bote (dist/bote-core.cyr)  — MCP / JSON-RPC core surface        (-D MCP)
 ```
 
-## Feature Flags
+The v1.x crate's external dependencies all resolve to Cyrius stdlib or builtins:
 
-| Flag    | Enables                                    |
-|---------|--------------------------------------------|
-| std     | std-backed serde + thiserror (default)     |
-| logging | tracing-subscriber, LIPI_LOG env init      |
-| mcp     | 5 MCP tool definitions (requires std)      |
-| daimon  | agent registration interface (requires std)|
-| hoosh   | LLM query interface (requires std)         |
-| full    | all of the above                           |
+| Rust dependency | Cyrius equivalent | Kind |
+|-----------------|-------------------|------|
+| `serde` + `serde_json` | `bayan` — `#derive(Serialize)` + `json_parse`/`json_build` | stdlib |
+| `thiserror` | native `enum` + `Result<T,E>` (`lib/result.cyr`, `lib/tagged.cyr`) | builtin |
+| `tracing` | `lib/log.cyr` (level filtering) | stdlib |
+| `tracing-subscriber` | `lib/sakshi.cyr` (output routing; env-filter wired by hand) | stdlib |
+| `criterion` | `cyrius bench` + `lib/bench.cyr` | toolchain |
+
+Deserialization is hand-rolled via `bayan` `json_parse`/`json_get` accessors — Cyrius
+ships `#derive(Serialize)` but no `#derive(Deserialize)` counterpart.
+
+## Build Defines
+
+| Define | Enables |
+|--------|---------|
+| _(none)_ | core data engine (phoneme/script/grammar/lexicon/registry/dialect) |
+| `-D LOGGING` | `log`+`sakshi` init, `VARNA_LOG` env var |
+| `-D MCP` | 5 MCP tool definitions (folds `bote-core`) |
+| `-D DAIMON` | agent registration payload |
+| `-D HOOSH` | LLM query interface |
+
+Pass any combination on the `cyrius build` line; passing all four is the `full` equivalent.
 
 ## Downstream Consumers
 
@@ -155,12 +170,12 @@ varna
 
 ## Design Principles
 
-- **Data-driven**: Language data as structured Rust types, not embedded strings
-- **Queryable**: Every inventory supports lookup, filtering, counting, and by_code() dispatch
-- **Composable**: Each module is independent — consumers pull only what they need
-- **Serializable**: All types implement Serialize + Deserialize for data exchange
-- **Extensible**: `#[non_exhaustive]` on all enums — new variants without breaking changes
-- **Zero-alloc statics**: `Cow<'static, str>` for all pre-built inventory data
-- **Builder pattern**: `PhonemeInventoryBuilder` for ergonomic inventory construction
-- **Feature-gated optionals**: logging, mcp, daimon, and hoosh add zero cost when unused
-- **Tracing throughout**: every lookup emits a `trace!` span for audit and debugging
+- **Data-driven**: Language data as structured Cyrius `struct`s, not embedded strings
+- **Queryable**: Every inventory supports lookup, filtering, counting, and `by_code()` dispatch
+- **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`)
+- **Serializable**: All types emit JSON via `#derive(Serialize)` / `bayan` for data exchange
+- **Extensible**: tagged enums everywhere — new variants are additive, no break for consumers
+- **Static-literal data**: pre-built inventories hold `'static` `str` literals — no per-build heap churn (Cyrius has no `Cow`)
+- **Builder pattern**: an inventory builder for ergonomic construction
+- **Define-gated optionals**: `-D LOGGING`/`MCP`/`DAIMON`/`HOOSH` add zero cost when not passed
+- **Logging throughout**: every lookup emits a `log`/`sakshi` event for audit and debugging (under `-D LOGGING`)

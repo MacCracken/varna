@@ -1,5 +1,7 @@
 # ADR-002: Flat Module Architecture
 
+> **Historical — pre-2.0 Rust crate.** The flat-per-domain decision carries into the Cyrius port, but the mechanics changed: `src/*.rs` → `src/*.cyr` (flat, no `mod.rs`), `lib.rs` re-exports → the `[lib]` module list in `cyrius.cyml` + `include` order in `src/main.cyr`, and module paths use dot syntax (`varna::phoneme::english()` → `phoneme_english()`). See [ADR 0001](0001-port-from-rust-to-cyrius.md).
+
 ## Status
 
 Accepted

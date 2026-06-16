@@ -1,5 +1,7 @@
 # ADR-004: Forward-Map Transliteration Tables
 
+> **Historical — pre-2.0 Rust crate.** The forward-map + on-demand reverse design carries into the Cyrius port; the types changed: `Vec<(Cow<'static, str>, Cow<'static, str>)>` → a `lib/vec.cyr` vec of `(str, str)` pairs (static literals, no `Cow`), and the `reverse_map()` `HashMap` → `lib/hashmap.cyr`. See [ADR 0001](0001-port-from-rust-to-cyrius.md).
+
 ## Status
 
 Accepted

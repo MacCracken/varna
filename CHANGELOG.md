@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-06-16
+
+Ported from a Rust crate to the [Cyrius](https://github.com/MacCracken/cyrius)
+systems language. See [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md) for the
+full rationale. The `content`/data model and the public surface are preserved at
+parity; the implementation language, build system, and dependency stack changed.
+
+### Breaking
+
+- **Language** — varna is now a Cyrius library (`dist/varna.cyr`), not a Rust crate.
+  The v1.x Rust source is frozen in `rust-old/`. Consumers depend on varna via a
+  `[deps.varna]` block in `cyrius.cyml` (`modules = ["dist/varna.cyr"]`), not Cargo.
+- **API shape** — the Rust module-path API (`varna::phoneme::english()`) is re-exposed
+  as snake-case free functions (`phoneme_english()`); `Option`/`unwrap` access becomes
+  sentinel-return checks; `Result` errors use native tagged `enum`s.
+- **Feature flags → build defines** — the Cargo `std`/`logging`/`mcp`/`daimon`/`hoosh`/`full`
+  features are replaced by `-D LOGGING`/`-D MCP`/`-D DAIMON`/`-D HOOSH` passed to
+  `cyrius build`. There is no `std`/`no_std` split.
+- **Renames for project-name consistency** — `LIPI_LOG` → `VARNA_LOG`; `LipiError` →
+  `VarnaError`; MCP tools `lipi_*` → `varna_*` (`varna_phonemes`, `varna_script`,
+  `varna_grammar`, `varna_translate_ipa`, `varna_compare`); `ResponseSource::LipiData`
+  → `VarnaData`.
+
+### Changed
+
+- **Dependency stack** — every external Rust dependency now resolves to the Cyrius
+  stdlib or a language builtin:
+  - `serde` + `serde_json` → `bayan` (`#derive(Serialize)` + `json_parse`/`json_build`)
+  - `thiserror` → native `enum` + `Result<T,E>` (`lib/result.cyr`, `lib/tagged.cyr`)
+  - `tracing` + `tracing-subscriber` → `lib/log.cyr` + `lib/sakshi.cyr` (env-filter wired by hand)
+  - `criterion` → `cyrius bench` + `lib/bench.cyr`
+  - Optional `bote` (MCP) → consumed as the `dist/bote-core.cyr` git dep under `-D MCP`
+- **String model** — `Cow<'static, str>` fields become `'static` `str` literals (Cyrius
+  has no `Cow`); the builder still constructs inventories at runtime.
+- **Enums** — `#[non_exhaustive]` enums become Cyrius tagged enums (additive variants).
+- **Build + test layout** — `Cargo.toml`/`Cargo.lock` → `cyrius.cyml`/`cyrius.lock`;
+  `benches/benchmarks.rs` (criterion) → `benches/*.bcyr`; `tests/integration.rs` →
+  `tests/tcyr/*.tcyr`; `make check` (cargo fmt/clippy/test/audit) → `cyrius audit`.
+
+### Removed
+
+- The Rust toolchain config (`rust-toolchain.toml`), `deny.toml`, and the Cargo
+  feature system. `cargo doc` browsable API reference (varna's surface is a folded
+  `.cyr` bundle, navigable in `src/`).
+- The `std`/`no_std`/`alloc` feature distinction — Cyrius emits a single artifact.
+
+### Note
+
+The source-level port (`cyrius port` → `rust-old/`, then re-implementing each module as
+`src/*.cyr`) is the follow-on step; this release establishes the Cyrius project metadata,
+dependency mapping, and documentation. `daimon`/`hoosh` remain Cyrius binaries with no
+consumable library bundle, so those define-gated surfaces only toggle JSON output, not a
+link against those projects.
+
 ## [1.0.0] - 2026-03-31
 
 ### Added

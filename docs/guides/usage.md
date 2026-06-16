@@ -1,31 +1,44 @@
 # Usage Guide
 
+> Examples show the **ported Cyrius API shape**: the v1.x Rust module-path surface
+> (`varna::phoneme::english()`) is re-exposed as snake-case free functions
+> (`phoneme_english()`); `Option`/`unwrap` become sentinel-return checks (a pointer is
+> `0` when absent); enums use `Enum.VARIANT` namespacing; tagged results are matched.
+> Stdlib I/O helper names (`io`/`fmt`) are elided for brevity; `assert`/`streq` come from
+> `lib/assert.cyr` / `lib/str.cyr`.
+
 ## Getting Started
 
-Add `varna` to `Cargo.toml`:
+Depend on varna from another Cyrius project via `cyrius.cyml`:
 
-```toml
-[dependencies]
-varna = "0.6"
+```cyml
+[deps.varna]
+git = "https://github.com/MacCracken/varna"
+tag = "2.0.0"
+modules = ["dist/varna.cyr"]
 ```
 
-Feature flags:
+`cyrius deps` copies the bundle to `lib/varna.cyr`, included as:
 
-| Flag | Enables |
-|------|---------|
-| `default` | Core data types, `std` support |
-| `full` | All features below |
-| `logging` | `tracing-subscriber` initialisation helpers |
-| `mcp` | MCP tool definitions and `invoke()` for AI agent integration |
-| `daimon` | AGNOS agent framework registration |
-| `hoosh` | Structured LLM query types and `answer_from_data()` |
+```cyrius
+include "lib/varna.cyr"
+```
 
-```toml
+Optional surfaces compile in only when their `-D` define is passed to `cyrius build`:
+
+| Define | Enables |
+|--------|---------|
+| _(none)_ | Core data types |
+| `-D LOGGING` | `VARNA_LOG` logging init (`log` + `sakshi`) |
+| `-D MCP` | MCP tool definitions and `mcp_invoke()` for AI-agent integration |
+| `-D DAIMON` | AGNOS agent-framework registration |
+| `-D HOOSH` | Structured LLM query types and `hoosh_answer_from_data()` |
+
+```sh
+# Core only
+cyrius build src/main.cyr build/varna
 # All optional integrations
-varna = { version = "0.6", features = ["full"] }
-
-# MCP only
-varna = { version = "0.6", features = ["mcp"] }
+cyrius build -D LOGGING -D MCP -D DAIMON -D HOOSH src/main.cyr build/varna
 ```
 
 ---
@@ -34,45 +47,46 @@ varna = { version = "0.6", features = ["mcp"] }
 
 Look up a language by ISO 639 code via the registry, then inspect its inventory:
 
-```rust
-let inv = varna::registry::phonemes("sa").unwrap();
+```cyrius
+var inv = registry_phonemes("sa");           # sentinel 0 if the code is unknown
 
-println!("{} — {}C + {}V", inv.language_name, inv.consonant_count(), inv.vowel_count());
+var c = phoneme_consonant_count(inv);
+var v = phoneme_vowel_count(inv);            # inv carries language_name + counts
 
-// find returns Option<&Phoneme>
-if let Some(p) = inv.find("ʂ") {
-    println!("/{}/  {:?}", p.ipa, p.kind);
+# find returns a phoneme pointer, or 0 when absent
+var p = phoneme_find(inv, "ʂ");
+if p != 0 {
+    # phoneme_ipa(p), phoneme_kind(p) available
 }
 
-// has is the existence check
-assert!(inv.has("ɖ"));   // retroflex stop
-assert!(!inv.has("θ"));  // no dental fricative in Sanskrit
+# has is the existence check
+assert(phoneme_has(inv, "ɖ"));               # retroflex stop
+assert(!phoneme_has(inv, "θ"));              # no dental fricative in Sanskrit
 ```
 
-All registered codes: `varna::registry::all_codes()`.
+All registered codes: `registry_all_codes()`.
 
 ---
 
 ## Builder Pattern
 
-Construct a custom inventory with `PhonemeInventoryBuilder`:
+Construct a custom inventory with the inventory builder:
 
-```rust
-use varna::phoneme::{PhonemeInventoryBuilder, Manner, Place, Height, Backness, StressPattern};
+```cyrius
+var b = phoneme_builder_new("xx", "Example Language");
+phoneme_builder_stress(b, StressPattern.Fixed);
+phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, false);
+phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, false);
+phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, false);
+phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, false);
+var inv = phoneme_builder_build(b);
 
-let inv = PhonemeInventoryBuilder::new("xx", "Example Language")
-    .stress(StressPattern::Fixed)
-    .consonant("p", Manner::Plosive, Place::Bilabial, false)
-    .consonant("t", Manner::Plosive, Place::Alveolar, false)
-    .vowel("a", Height::Open, Backness::Central, false)
-    .vowel("i", Height::Close, Backness::Front, false)
-    .build();
-
-assert_eq!(inv.consonant_count(), 2);
-assert_eq!(inv.vowel_count(), 2);
+assert(phoneme_consonant_count(inv) == 2);
+assert(phoneme_vowel_count(inv) == 2);
 ```
 
-`with_capacity(code, name, n)` is available when the approximate phoneme count is known.
+`phoneme_builder_with_capacity(code, name, n)` is available when the approximate phoneme
+count is known.
 
 ---
 
@@ -80,47 +94,45 @@ assert_eq!(inv.vowel_count(), 2);
 
 Look up script metadata by ISO 15924 code:
 
-```rust
-let deva = varna::script::by_code("Deva").unwrap();
+```cyrius
+var deva = script_by_code("Deva");           # sentinel 0 if unknown
 
-println!("Type: {:?}", deva.script_type);   // Abugida
-println!("Direction: {:?}", deva.direction); // LeftToRight
-println!("Status: {:?}", deva.status);       // Living
+# script_type(deva) -> ScriptType.Abugida
+# script_direction(deva) -> Direction.LeftToRight
+# script_status(deva) -> ScriptStatus.Living
 
-// Test whether a Unicode code point belongs to the script
-assert!(deva.contains_codepoint(0x0915)); // क (ka)
-assert!(!deva.contains_codepoint(0x0041)); // 'A' is Latin
+# Test whether a Unicode code point belongs to the script
+assert(script_contains_codepoint(deva, 0x0915));  # क (ka)
+assert(!script_contains_codepoint(deva, 0x0041)); # 'A' is Latin
 ```
 
 Registered codes: `"Latn"`, `"Arab"`, `"Deva"`, `"Hani"`, `"Cyrl"`, `"Hang"`, `"Kana"`, `"Grek"`, `"Xsux"`, `"Egyp"`.
 
-`ScriptStatus` variants: `Living`, `Limited`, `Historical`.
+`ScriptStatus` variants: `ScriptStatus.Living`, `ScriptStatus.Limited`, `ScriptStatus.Historical`.
 
 ---
 
 ## Transliteration
 
-Use pre-built `TransliterationTable` instances to convert between scripts:
+Use pre-built transliteration tables to convert between scripts:
 
-```rust
-use varna::script::transliteration::{devanagari_iast, greek_beta_code};
+```cyrius
+# Devanagari -> IAST
+var iast = translit_devanagari_iast();
+assert(streq(translit_apply(iast, "क"), "ka"));
+assert(streq(translit_apply(iast, "आ"), "ā"));
 
-// Devanagari -> IAST
-let iast = devanagari_iast();
-assert_eq!(iast.transliterate("क"), "ka");
-assert_eq!(iast.transliterate("आ"), "ā");
+# Greek -> Beta Code
+var beta = translit_greek_beta_code();
+assert(streq(translit_apply(beta, "λογος"), "logos"));
+assert(streq(translit_apply(beta, "Αθηνα"), "*aqhna"));
 
-// Greek -> Beta Code
-let beta = greek_beta_code();
-assert_eq!(beta.transliterate("λογος"), "logos");
-assert_eq!(beta.transliterate("Αθηνα"), "*aqhna");
-
-// Reverse map (target -> source)
-let rev = iast.reverse_map();
-assert_eq!(rev.get("a"), Some(&"अ"));
+# Reverse map (target -> source)
+var rev = translit_reverse_map(iast);
+assert(streq(map_get(rev, "a"), "अ"));
 ```
 
-`transliterate()` uses greedy longest-match; unmapped characters pass through unchanged.
+`translit_apply()` uses greedy longest-match; unmapped characters pass through unchanged.
 
 ---
 
@@ -128,27 +140,25 @@ assert_eq!(rev.get("a"), Some(&"अ"));
 
 Query script-specific numeral mappings for isopsephy, digit conversion, and ancient notation:
 
-```rust
-use varna::script::numerals::{greek_isopsephy, devanagari_digits, babylonian_sexagesimal};
+```cyrius
+# Greek isopsephy — additive letter values
+var iso = numerals_greek_isopsephy();
+assert(numerals_value_of(iso, "α") == 1);
+assert(numerals_value_of(iso, "ω") == 800);
+assert(numerals_string_value(iso, "αω") == 801);   # 1 + 800
 
-// Greek isopsephy — additive letter values
-let iso = greek_isopsephy();
-assert_eq!(iso.value_of("α"), Some(1));
-assert_eq!(iso.value_of("ω"), Some(800));
-assert_eq!(iso.string_value("αω"), Some(801)); // 1 + 800
+# Devanagari decimal digits
+var deva = numerals_devanagari_digits();
+assert(numerals_value_of(deva, "५") == 5);
+assert(streq(numerals_char_for(deva, 7), "७"));
 
-// Devanagari decimal digits
-let deva = devanagari_digits();
-assert_eq!(deva.value_of("५"), Some(5));
-assert_eq!(deva.char_for(7), Some("७"));
-
-// Babylonian sexagesimal (base-60 cuneiform)
-let bab = babylonian_sexagesimal();
-assert_eq!(bab.value_of("𒌋"), Some(10)); // u (ten)
-assert_eq!(bab.char_for(30), Some("𒌍"));
+# Babylonian sexagesimal (base-60 cuneiform)
+var bab = numerals_babylonian_sexagesimal();
+assert(numerals_value_of(bab, "𒌋") == 10);          # u (ten)
+assert(streq(numerals_char_for(bab, 30), "𒌍"));
 ```
 
-Also available: `egyptian_hieroglyphic()`, `chinese_rod_numerals()`.
+Also available: `numerals_egyptian_hieroglyphic()`, `numerals_chinese_rod()`.
 
 ---
 
@@ -156,20 +166,20 @@ Also available: `egyptian_hieroglyphic()`, `chinese_rod_numerals()`.
 
 Look up typological data — morphology, word order, and case system — by ISO 639 code:
 
-```rust
-let de = varna::grammar::by_code("de").unwrap();
+```cyrius
+var de = grammar_by_code("de");
 
-println!("Morphology: {:?}", de.morphology);   // Fusional
-println!("Word order: {:?}", de.word_order);    // SVO (V2)
-println!("Cases: {}", de.case_count);           // 4
-println!("Genders: {}", de.gender_count);       // 3
-println!("Classifiers: {}", de.has_classifiers); // false
+# grammar_morphology(de) -> Morphology.Fusional
+# grammar_word_order(de)  -> WordOrder.SVO (V2)
+# grammar_case_count(de)   == 4
+# grammar_gender_count(de) == 3
+# grammar_has_classifiers(de) == false
 
-// Japanese for comparison
-let ja = varna::grammar::by_code("ja").unwrap();
-assert_eq!(ja.morphology, varna::grammar::Morphology::Agglutinative);
-assert_eq!(ja.word_order, varna::grammar::WordOrder::SOV);
-assert!(ja.has_classifiers);
+# Japanese for comparison
+var ja = grammar_by_code("ja");
+assert(grammar_morphology(ja) == Morphology.Agglutinative);
+assert(grammar_word_order(ja) == WordOrder.SOV);
+assert(grammar_has_classifiers(ja));
 ```
 
 Covered languages: `en`, `ar`, `zh`, `hi`, `ja`, `es`, `fr`, `de`, `ru`, `ko`, `pt`.
@@ -180,20 +190,24 @@ Covered languages: `en`, `ar`, `zh`, `hi`, `ja`, `es`, `fr`, `de`, `ru`, `ko`, `
 
 Access 25-word core vocabulary per language for cross-language comparison:
 
-```rust
-// Fetch Spanish Swadesh-25
-let es = varna::lexicon::swadesh::by_code("es").unwrap();
+```cyrius
+# Fetch Spanish Swadesh-25
+var es = swadesh_by_code("es");
 
-// Iterate Swadesh entries in index order
-for entry in es.swadesh() {
-    println!("{:2}. {} ({}) — {}", entry.swadesh_index.unwrap(), entry.word, entry.ipa, entry.gloss);
+# Iterate Swadesh entries in index order
+var n = swadesh_count(es);
+for i in 0..n {
+    var e = swadesh_entry(es, i);
+    # swadesh_entry_index(e), swadesh_entry_word(e),
+    # swadesh_entry_ipa(e), swadesh_entry_gloss(e)
 }
 
-// Cross-language: find the word for "water" in every covered language
-for code in varna::lexicon::swadesh::all_codes() {
-    let lex = varna::lexicon::swadesh::by_code(code).unwrap();
-    if let Some(w) = lex.entries.iter().find(|e| e.gloss == "water") {
-        println!("{code}: {} /{}/", w.word, w.ipa);
+# Cross-language: find the word for "water" in every covered language
+for code in swadesh_all_codes() {
+    var lex = swadesh_by_code(code);
+    var w = swadesh_find_gloss(lex, "water");   # sentinel 0 if absent
+    if w != 0 {
+        # swadesh_entry_word(w), swadesh_entry_ipa(w)
     }
 }
 ```
@@ -204,31 +218,25 @@ Swadesh data covers: `ar`, `zh`, `hi`, `ja`, `es`, `fr`, `de`, `ru`, `ko`, `pt`.
 
 ## Allophone Rules
 
-`AllophoneRuleSet::realize()` returns the surface form of a phoneme in a given context:
+`allophone_realize()` returns the surface form of a phoneme in a given context:
 
-```rust
-use varna::phoneme::allophone::{english_allophones, Environment};
+```cyrius
+var rules = allophone_english();
 
-let rules = english_allophones();
+# /t/ -> [ɾ] (flap) between vowels: "water", "better"
+assert(streq(allophone_realize(rules, "t", Environment.Intervocalic), "ɾ"));
 
-// /t/ -> [ɾ] (flap) between vowels: "water", "better"
-let flap = rules.realize("t", &Environment::Intervocalic);
-assert_eq!(flap, "ɾ");
+# /t/ -> [tʰ] (aspirated) word-initially: "top"
+assert(streq(allophone_realize(rules, "t", Environment.WordInitial), "tʰ"));
 
-// /t/ -> [tʰ] (aspirated) word-initially: "top"
-let asp = rules.realize("t", &Environment::WordInitial);
-assert_eq!(asp, "tʰ");
+# /l/ -> [ɫ] (dark-l) in syllable coda: "feel", "milk"
+assert(streq(allophone_realize(rules, "l", Environment.SyllableFinal), "ɫ"));
 
-// /l/ -> [ɫ] (dark-l) in syllable coda: "feel", "milk"
-let dark_l = rules.realize("l", &Environment::SyllableFinal);
-assert_eq!(dark_l, "ɫ");
-
-// No matching rule: returns the phoneme unchanged
-let unchanged = rules.realize("t", &Environment::WordFinal);
-assert_eq!(unchanged, "t");
+# No matching rule: returns the phoneme unchanged
+assert(streq(allophone_realize(rules, "t", Environment.WordFinal), "t"));
 ```
 
-Use `rules_for(ipa)` to retrieve all rules for a given phoneme.
+Use `allophone_rules_for(rules, ipa)` to retrieve all rules for a given phoneme.
 
 ---
 
@@ -236,169 +244,152 @@ Use `rules_for(ipa)` to retrieve all rules for a given phoneme.
 
 Query syllable templates and explicit onset/coda constraints:
 
-```rust
-use varna::phoneme::syllable::{english_phonotactics, SyllablePosition};
+```cyrius
+var p = phonotactics_english();
 
-let p = english_phonotactics();
+# phonotactics_pattern(p) -> "(C)(C)(C)V(C)(C)(C)(C)"
+assert(phonotactics_allows_onset_clusters(p));  # max_onset = 3
+assert(phonotactics_allows_coda_clusters(p));   # max_coda = 4
 
-// Syllable template
-println!("Pattern: {}", p.syllable.pattern); // (C)(C)(C)V(C)(C)(C)(C)
-assert!(p.syllable.allows_onset_clusters());  // max_onset = 3
-assert!(p.syllable.allows_coda_clusters());   // max_coda = 4
+# is_permitted is tri-state: 1 = allowed, 0 = forbidden, -1 = unspecified (sentinel)
+assert(phonotactics_is_permitted(p, "str", SyllablePosition.Onset) == 1);
+assert(phonotactics_is_permitted(p, "sr",  SyllablePosition.Onset) == 0);
+assert(phonotactics_is_permitted(p, "br",  SyllablePosition.Onset) == -1);  # no explicit rule
 
-// is_permitted: Some(true) = allowed, Some(false) = forbidden, None = unspecified
-assert_eq!(p.is_permitted("str", SyllablePosition::Onset), Some(true));
-assert_eq!(p.is_permitted("sr",  SyllablePosition::Onset), Some(false));
-assert_eq!(p.is_permitted("br",  SyllablePosition::Onset), None); // no explicit rule
-
-// Japanese: (C)V(N) only
-let ja = varna::phoneme::syllable::japanese_phonotactics();
-assert!(!ja.syllable.allows_onset_clusters());
-assert_eq!(ja.is_permitted("n", SyllablePosition::Coda), Some(true));
+# Japanese: (C)V(N) only
+var ja = phonotactics_japanese();
+assert(!phonotactics_allows_onset_clusters(ja));
+assert(phonotactics_is_permitted(ja, "n", SyllablePosition.Coda) == 1);
 ```
 
 ---
 
 ## Dialect Overlays
 
-`LanguageVariety::apply()` derives a modified `PhonemeInventory` from a parent:
+`dialect_apply()` derives a modified phoneme inventory from a parent:
 
-```rust
-use varna::dialect::british_english;
+```cyrius
+var rp = dialect_british_english();
+# dialect_parent(rp) == "en"
+assert(dialect_adds(rp, "ɒ"));    # LOT vowel, absent in General American
+assert(dialect_removes(rp, "ɹ")); # non-rhotic: no post-vocalic /r/
 
-let rp = british_english();
-assert_eq!(rp.parent, "en");
-assert!(rp.adds("ɒ"));   // LOT vowel, absent in General American
-assert!(rp.removes("ɹ")); // non-rhotic: no post-vocalic /r/
+# Apply overlay to the General American inventory
+var ga = phoneme_english();
+var rp_inv = dialect_apply(rp, ga);
 
-// Apply overlay to General American inventory
-let ga = varna::phoneme::english();
-let rp_inv = rp.apply(&ga);
-
-assert_eq!(rp_inv.language_code, "en-GB");
-assert!(rp_inv.has("ɒ"));
-assert!(!rp_inv.has("ɹ"));
+# phoneme_language_code(rp_inv) == "en-GB"
+assert(phoneme_has(rp_inv, "ɒ"));
+assert(!phoneme_has(rp_inv, "ɹ"));
 ```
 
-`VarietyKind` variants: `Regional`, `NationalStandard`, `Historical`, `Sociolect`, `Creole`.
+`VarietyKind` variants: `VarietyKind.Regional`, `VarietyKind.NationalStandard`,
+`VarietyKind.Historical`, `VarietyKind.Sociolect`, `VarietyKind.Creole`.
 
 ---
 
 ## Cognates and Etymology
 
-`CognateSet` groups related words across languages with a reconstructed proto-form:
+`cognate_water()` groups related words across languages with a reconstructed proto-form:
 
-```rust
-use varna::lexicon::cognate::{water_cognates, Etymology, BorrowingType};
-use std::borrow::Cow;
+```cyrius
+var cog = cognate_water();
+# cognate_proto_form(cog) -> "*wódr̥"
+# cognate_language_count(cog) == 5
 
-let cog = water_cognates();
-println!("Proto-form: {}", cog.proto_form.as_deref().unwrap()); // *wódr̥
-println!("Languages: {}", cog.language_count()); // 5
+var en = cognate_for_language(cog, "en");
+# cognate_word(en) == "water"
 
-let en = cog.for_language("en").unwrap();
-assert_eq!(en.word, "water");
+var de = cognate_for_language(cog, "de");
+# cognate_word(de) == "Wasser"
 
-let de = cog.for_language("de").unwrap();
-assert_eq!(de.word, "Wasser");
-
-// Record a loanword
-let etym = Etymology {
-    source_language: Cow::Borrowed("fr"),
-    source_form: Cow::Borrowed("café"),
-    borrowing_type: BorrowingType::Loanword,
-    period: Some(Cow::Borrowed("18th century")),
+# Record a loanword (struct literal; plain str fields — no Cow)
+var etym = Etymology {
+    "fr",                    # source_language
+    "café",                  # source_form
+    BorrowingType.Loanword,  # borrowing_type
+    "18th century",          # period (empty str when none)
 };
 ```
 
-`BorrowingType` variants: `Loanword`, `Calque`, `SemanticLoan`, `Inherited`.
+`BorrowingType` variants: `BorrowingType.Loanword`, `BorrowingType.Calque`,
+`BorrowingType.SemanticLoan`, `BorrowingType.Inherited`.
 
 ---
 
 ## MCP Tools
 
-Requires feature `mcp`. Exposes varna data as structured tools for AI agent frameworks:
+Requires `-D MCP`. Exposes varna data as structured tools for AI agent frameworks (backed
+by `bote-core`):
 
-```rust
-use varna::mcp::{tool_definitions, invoke, ToolResult};
-use std::collections::HashMap;
+```cyrius
+# Enumerate available tools
+var tools = mcp_tool_definitions();
+# varna_phonemes, varna_script, varna_grammar, varna_translate_ipa, varna_compare
 
-// Enumerate available tools
-for tool in tool_definitions() {
-    println!("{}: {}", tool.name, tool.description);
-}
-// lipi_phonemes, lipi_script, lipi_grammar, lipi_translate_ipa, lipi_compare
+# Invoke a tool — params is a lib/hashmap.cyr map
+var params = map_new();
+map_set(params, "language", "ja");
 
-// Invoke a tool
-let mut params = HashMap::new();
-params.insert("language".to_string(), "ja".to_string());
-
-match invoke("lipi_phonemes", &params) {
-    ToolResult::Success(json) => println!("{}", json),
-    ToolResult::Error(msg)   => eprintln!("error: {msg}"),
+var res = mcp_invoke("varna_phonemes", params);   # res: ToolResult tagged enum
+match res {
+    ToolResult.Success(json) => { /* emit json */ }
+    ToolResult.Error(msg)    => { /* report msg */ }
 }
 
-// Transliterate via MCP
-let mut params = HashMap::new();
-params.insert("text".to_string(),   "αβγ".to_string());
-params.insert("scheme".to_string(), "greek_beta".to_string());
-// -> ToolResult::Success("abg")
+# Transliterate via MCP
+var tp = map_new();
+map_set(tp, "text",   "αβγ");
+map_set(tp, "scheme", "greek_beta");
+# mcp_invoke("varna_translate_ipa", tp) -> ToolResult.Success("abg")
 ```
 
 ---
 
 ## Daimon Registration
 
-Requires feature `daimon`. Produces the registration payload for the AGNOS agent framework:
+Requires `-D DAIMON`. Produces the registration payload for the AGNOS agent framework:
 
-```rust
-let reg = varna::daimon::registration();
+```cyrius
+var reg = daimon_registration();
 
-println!("Agent: {} v{}", reg.name, reg.version);
-println!("Languages: {}", reg.supported_languages.len()); // 27
-println!("Scripts: {}",   reg.supported_scripts.len());   // 10
-println!("Capabilities: {}", reg.capabilities.len());      // 6
-
-for cap in &reg.capabilities {
-    println!("  {} <- {:?}", cap.name, cap.inputs);
-}
-// phoneme_lookup, script_lookup, grammar_profile,
-// transliterate, language_compare, numeral_value
+# daimon_name(reg), daimon_version(reg)
+# daimon_supported_languages(reg) -> 51
+# daimon_supported_scripts(reg)   -> 10
+# daimon_capabilities(reg)        -> 6
+# capabilities: phoneme_lookup, script_lookup, grammar_profile,
+#               transliterate, language_compare, numeral_value
 ```
 
-Serialize with `serde_json::to_string(&reg)` to pass the payload to the daimon client.
+Serialize with the `bayan` JSON encoder — `var json = json_build(reg);` (the payload type
+carries `#derive(Serialize)`) — to pass to the daimon client.
 
 ---
 
 ## Hoosh Queries
 
-Requires feature `hoosh`. Defines structured queries for LLM inference; `answer_from_data()` resolves queries that varna can answer directly without calling an LLM:
+Requires `-D HOOSH`. Defines structured queries for LLM inference;
+`hoosh_answer_from_data()` resolves queries varna can answer directly without an LLM:
 
-```rust
-use varna::hoosh::{LanguageQuery, ComparisonAspect, answer_from_data, ResponseSource};
+```cyrius
+# Data-resolvable: phoneme existence check (LanguageQuery is a tagged enum)
+var q = LanguageQuery.ExamplesForPhoneme { "en", "θ", 3 };
+var resp = hoosh_answer_from_data(q);            # sentinel 0 when not data-resolvable
+if resp != 0 {
+    assert(hoosh_response_source(resp) == ResponseSource.VarnaData);
+    # hoosh_response_confidence(resp) == 1.0
+    # hoosh_response_content(resp) -> "/θ/ is present in English (24C + 12V inventory)"
+}
 
-// Data-resolvable: phoneme existence check
-let q = LanguageQuery::ExamplesForPhoneme {
-    language: "en".into(),
-    ipa: "θ".into(),
-    count: 3,
-};
-let resp = answer_from_data(&q).unwrap();
-assert_eq!(resp.source, ResponseSource::LipiData);
-assert_eq!(resp.confidence, Some(1.0));
-println!("{}", resp.content); // "/θ/ is present in English (24C + 12V inventory)"
+# Data-resolvable: phonology comparison
+var q2 = hoosh_compare("en", "ja", ComparisonAspect.Phonology);
+var r2 = hoosh_answer_from_data(q2);
+# hoosh_response_content(r2) -> "English has 24C+12V, Japanese has ..."
 
-// Data-resolvable: phonology comparison
-let q = varna::hoosh::compare(
-    vec!["en".into(), "ja".into()],
-    ComparisonAspect::Phonology,
-);
-let resp = answer_from_data(&q).unwrap();
-println!("{}", resp.content); // "English has 24C+12V, Japanese has ..."
-
-// Requires LLM inference — answer_from_data returns None
-let q = varna::hoosh::identify("bonjour le monde");
-assert!(answer_from_data(&q).is_none());
+# Requires LLM inference — answer_from_data returns the sentinel 0
+var q3 = hoosh_identify("bonjour le monde");
+assert(hoosh_answer_from_data(q3) == 0);
 ```
 
-`ResponseSource` variants: `LipiData`, `LlmGenerated`, `Hybrid`.
+`ResponseSource` variants: `ResponseSource.VarnaData`, `ResponseSource.LlmGenerated`,
+`ResponseSource.Hybrid`.

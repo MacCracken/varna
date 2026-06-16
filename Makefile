@@ -1,27 +1,35 @@
-.PHONY: check fmt clippy test audit deny bench coverage build doc clean
+.PHONY: check deps fmt lint vet deny test bench coverage build distlib doc clean
 
-# Run all CI checks locally
-check: fmt clippy test audit
+# Run all CI checks locally (umbrella gate)
+check: audit
+
+# Umbrella gate: fmt + lint + format + tests
+audit:
+	cyrius audit
+
+# Resolve stdlib + git deps into lib/
+deps:
+	cyrius deps
 
 # Format check
 fmt:
-	cargo fmt --all -- --check
+	cyrius fmt src/main.cyr --check
 
-# Lint (zero warnings)
-clippy:
-	cargo clippy --all-features --all-targets -- -D warnings
+# Static analysis (zero warnings)
+lint:
+	cyrius lint src/main.cyr
 
-# Run test suite
-test:
-	cargo test --all-features
+# Audit include dependencies
+vet:
+	cyrius vet src/main.cyr
 
-# Security audit
-audit:
-	cargo audit
-
-# Supply-chain checks (cargo-deny)
+# Enforce project policies
 deny:
-	cargo deny check
+	cyrius deny src/main.cyr
+
+# Run test suite (tests/tcyr/*.tcyr)
+test:
+	cyrius tests
 
 # Run benchmarks with history
 bench:
@@ -29,18 +37,20 @@ bench:
 
 # Generate coverage report
 coverage:
-	cargo llvm-cov --all-features --html --output-dir coverage/
-	@echo "Coverage report: coverage/html/index.html"
+	cyrius coverage
 
-# Build release
+# Build the engine + demo entry (all optional surfaces)
 build:
-	cargo build --release --all-features
+	cyrius build -D LOGGING -D MCP -D DAIMON -D HOOSH src/main.cyr build/varna
 
-# Generate documentation
+# Bundle src/ into the consumer distfile
+distlib:
+	cyrius distlib
+
+# Generate / check documentation
 doc:
-	RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
+	cyrius doc --check src/main.cyr
 
 # Clean build artifacts
 clean:
-	cargo clean
-	rm -rf coverage/
+	cyrius clean

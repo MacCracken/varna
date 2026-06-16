@@ -1,5 +1,7 @@
 # ADR-003: Builder Pattern for Phoneme Inventories
 
+> **Historical — pre-2.0 Rust crate.** The builder pattern survives the Cyrius port; the mechanics changed: chained methods become builder free functions, `#[must_use]` → the `#must_use` directive, and debug-mode duplicate detection → `lib/assert.cyr` under a debug define. The Rust code block below is illustrative — see the Cyrius form in [usage.md](../guides/usage.md) and [ADR 0001](0001-port-from-rust-to-cyrius.md).
+
 ## Status
 
 Accepted

@@ -1,10 +1,26 @@
 # Development Roadmap
 
-> **Status**: v1.0 | **Current**: 1.0.0
+> **Status**: v2.0 (Cyrius) | **Current**: 2.0.0
 >
 > Items marked `[S]` also unblock **sankhya** (ancient mathematical systems).
+>
+> The 0.x–1.0 history below records the **Rust crate** (frozen in `rust-old/`).
+> Mechanics named there (`Cow`, `#[non_exhaustive]`, `criterion`, `serde`) are
+> historical; their Cyrius equivalents are in [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md).
+> Backlog signatures are illustrative — they land as Cyrius forms (tagged enums,
+> sentinel returns, `str` literals; no `Cow`/`Option` types).
 
 ## Completed
+
+### 2.0.0 — Cyrius Port (2026-06-16)
+
+- [x] Ported from a Rust crate to the Cyrius systems language ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md))
+- [x] `cyrius.cyml` manifest: `[package]` + `[build]` + `[lib]`/`[lib.core]` + `[deps]`
+- [x] Dependency mapping to Cyrius stdlib (serde/serde_json→`bayan`, thiserror→`result`/`tagged`, tracing→`log`/`sakshi`, criterion→`cyrius bench`); `bote-core` git dep under `-D MCP`
+- [x] Feature flags → `-D` build defines (`LOGGING`/`MCP`/`DAIMON`/`HOOSH`)
+- [x] Legacy `lipi`/`LIPI` naming retired → `varna`/`VARNA`
+- [x] Documentation ported (README, CLAUDE.md, architecture, CONTRIBUTING, SECURITY, this roadmap)
+- [ ] Source-level reimplementation of each domain as `src/*.cyr` (follow-on, module by module, at v1.0 data parity)
 
 ### 0.1.0 — Scaffold (2026-03-30)
 
@@ -83,16 +99,16 @@
 
 - [ ] **Distinctive feature system**: Add `DistinctiveFeatures` bundle with 20+ binary features per phoneme (sonorant, continuant, strident, anterior, distributed, ATR/RTR, spread/constricted glottis, syllabic, etc.) — PHOIBLE parity
 - [ ] **Manner expansion**: Add `Click`, `Implosive`, `Ejective` to `Manner` enum — reclassify Zulu clicks, Georgian ejectives, Hausa implosives
-- [ ] **Consonant secondary features**: `aspirated`, `labialized`, `palatalized`, `prenasalized`, `long` fields on `PhonemeKind::Consonant`
-- [ ] **Vowel features**: `long`, `nasalized`, `atr` (Advanced Tongue Root) fields on `PhonemeKind::Vowel`
-- [ ] **Tone as structured data**: Replace `Vec<Cow<str>>` tone labels with `Tone` structs (contour, register, features)
+- [ ] **Consonant secondary features**: `aspirated`, `labialized`, `palatalized`, `prenasalized`, `long` fields on the `PhonemeKind.Consonant` variant
+- [ ] **Vowel features**: `long`, `nasalized`, `atr` (Advanced Tongue Root) fields on the `PhonemeKind.Vowel` variant
+- [ ] **Tone as structured data**: Replace string tone labels with `Tone` structs (contour, register, features)
 
 ### 1.2.0 — Typological Depth (P2)
 
 - [ ] **Grammar expansion** toward WALS parity: alignment type (nom-acc/erg-abs/active-stative), adposition order, tense/aspect system, evidentiality, negation strategy, adjective order, relative clause order, article type
 - [ ] **Language classification**: Add `family`, `subfamily`, `genus` to `LanguageInfo` (Indo-European > Germanic > West Germanic)
 - [ ] **Missing script entries**: Hebrew, Thai, Tamil, Georgian, Ethiopic, Myanmar, Khmer, Lao, Bengali (9 scripts for already-registered languages)
-- [ ] **Glottocode support**: Add `glottocode: Option<Cow<str>>` alongside ISO 639 codes
+- [ ] **Glottocode support**: Add a nullable `glottocode` field (str) alongside ISO 639 codes
 - [ ] **Endangerment status**: `EndangermentLevel` enum (Safe/Vulnerable/Threatened/Shifting/Moribund/NearlyExtinct/Extinct)
 - [ ] **Geographic metadata**: Latitude/longitude per language, macro-area classification
 
@@ -105,9 +121,9 @@ Extend `script::numerals` into a full character→number mapping system across s
 - [ ] **Latin/English ordinal values**: a=1..z=26 (simple gematria, used by classical ciphers)
 - [ ] **Cyrillic numeric values**: Church Slavonic letter-number system
 - [ ] **`NumericSystem` enum**: Standard, Ordinal, Reduced, Additive — per-script system classification
-- [ ] **`char_value(script, system, char) -> Option<u32>`**: Unified lookup API across all scripts
-- [ ] **`script_alphabet_values(script, system) -> Vec<(char, u32)>`**: Full mapping table per script
-- [ ] **Cipher foundation**: Character↔number round-trip enables Caesar, Vigenère, substitution cipher implementations downstream (crypto crate or sankhya)
+- [ ] **`char_value(script, system, ch)`**: Unified lookup API across all scripts (returns the value, or a sentinel when unmapped)
+- [ ] **`script_alphabet_values(script, system)`**: Full (char, value) mapping table per script
+- [ ] **Cipher foundation**: Character↔number round-trip enables Caesar, Vigenère, substitution cipher implementations downstream (a crypto Cyrius project or sankhya)
 
 ### 1.4.0 — Coverage Scale (P3)
 
@@ -123,20 +139,20 @@ Extend `script::numerals` into a full character→number mapping system across s
 - [ ] PHOIBLE-compatible export format
 - [ ] WALS feature code mapping
 - [ ] Typological cross-cutting queries ("all SOV languages with ejectives")
-- [ ] ISO 639 validation (compile-time const table)
+- [ ] ISO 639 validation (static lookup table)
 - [ ] Prosody patterns (intonation contours, rhythm class: stress/syllable/mora-timed)
 - [ ] Morphological analyzer (stemming, lemmatization per language)
 - [ ] Historical phonology (sound change rules, Proto-IE reconstructions)
 - [ ] Sign language phonology (handshape, location, movement features)
-- [ ] ScriptType::Featural for Hangul reclassification
+- [ ] ScriptType.Featural for Hangul reclassification
 
 ## v1.0 Criteria
 
 - [x] 50+ language inventories with verified phoneme data (51 languages)
-- [x] All modules have 80%+ test coverage (98.53% measured)
-- [x] Criterion benchmarks with 3-point trend history
-- [x] Full serde roundtrip tests for all public types
-- [ ] shabda + shabdakosh consuming varna for multilingual G2P (external crate work)
+- [x] All modules have 80%+ test coverage (98.53% measured on the Rust crate; re-measured under `cyrius coverage` post-port)
+- [x] `cyrius bench` benchmarks with 3-point trend history (`bench-history.csv`)
+- [x] Full `bayan`-JSON roundtrip tests for all public types
+- [ ] shabda + shabdakosh consuming varna for multilingual G2P (external Cyrius project work)
 - [x] `[S]` sankhya consuming varna for script-aware numeral display and transliteration
 - [x] Documentation: architecture overview, usage guide, API docs
 - [x] English grammar profile added; 11 grammar profiles total

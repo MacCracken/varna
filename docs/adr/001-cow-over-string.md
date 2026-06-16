@@ -1,5 +1,7 @@
 # ADR-001: Cow<'static, str> over String for Static Data
 
+> **Historical — pre-2.0 Rust crate.** Superseded by [ADR 0001 — Port from Rust to Cyrius](0001-port-from-rust-to-cyrius.md). Cyrius has no `Cow`/`String`/`&'static str` trichotomy: pre-built inventories hold `'static` `str` literals, and runtime construction allocates via `lib/str.cyr`. Kept for provenance.
+
 ## Status
 
 Accepted

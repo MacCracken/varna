@@ -2,9 +2,17 @@
 
 > **Varna** (Sanskrit: वर्ण — letter, character, sound) — multilingual language engine for AGNOS
 
-Structured, queryable corpus of human language data. Phoneme inventories, writing system metadata, grammar profiles, and lexicon access for 50+ languages.
+Structured, queryable corpus of human language data. Phoneme inventories, writing
+system metadata, grammar profiles, and lexicon access for 50+ languages — written in
+[Cyrius](https://github.com/MacCracken/cyrius). (Migrated from a Rust crate at v2.0;
+the frozen Rust source lives in `rust-old/` — see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md).)
 
-Used by [shabda](https://github.com/MacCracken/shabda) (G2P conversion), [shabdakosh](https://github.com/MacCracken/shabdakosh) (pronunciation dictionary), [svara](https://github.com/MacCracken/svara) (vocal synthesis), [jnana](https://github.com/MacCracken/jnana) (knowledge system), and [vidya](https://github.com/MacCracken/vidya) (programming reference).
+Used by [shabda](https://github.com/MacCracken/shabda) (G2P conversion),
+[shabdakosh](https://github.com/MacCracken/shabdakosh) (pronunciation dictionary),
+[svara](https://github.com/MacCracken/svara) (vocal synthesis),
+[sankhya](https://github.com/MacCracken/sankhya) (ancient mathematical systems),
+[jnana](https://github.com/MacCracken/jnana) (knowledge system), and
+[vidya](https://github.com/MacCracken/vidya) (programming reference).
 
 ## Modules
 
@@ -14,36 +22,81 @@ Used by [shabda](https://github.com/MacCracken/shabda) (G2P conversion), [shabda
 | `script` | Writing system metadata: alphabet, syllabary, logographic, abjad, abugida. Unicode ranges, directionality |
 | `grammar` | Morphological typology (isolating, agglutinative, fusional, polysynthetic), word order, case systems |
 | `lexicon` | Core vocabulary per language (Swadesh lists, frequency-ranked word lists), cognate detection |
+| `registry` | Central ISO 639 lookup across phoneme/script/grammar/lexicon |
+| `dialect` | Language-variety overlays (regional dialects, national standards) |
 
-## Features
+## Build Defines
 
-| Feature | Default | Description |
-|---------|---------|-------------|
-| `std` | yes | Standard library support |
-| `logging` | no | Structured logging via `LIPI_LOG` env var |
-| `full` | -- | Enables all features |
+Optional integration surfaces compile in only when their `-D` define is passed to
+`cyrius build`. The core data engine (phoneme/script/grammar/lexicon/registry/dialect)
+is always present.
+
+| Define | Enables |
+|--------|---------|
+| _(none)_ | Core linguistic data engine |
+| `-D LOGGING` | Structured logging via the `VARNA_LOG` env var (`lib/log.cyr` + `lib/sakshi.cyr`) |
+| `-D MCP` | 5 MCP tool definitions for AI-agent integration (folds `bote-core`) |
+| `-D DAIMON` | AGNOS agent-framework registration payload |
+| `-D HOOSH` | Structured LLM query types + `answer_from_data()` |
+
+`cyrius build -D LOGGING -D MCP -D DAIMON -D HOOSH src/main.cyr build/varna` enables everything.
 
 ## Quick Start
 
-```toml
-[dependencies]
-varna = "0.1"
+Depend on varna from another Cyrius project by adding it to `cyrius.cyml`:
+
+```cyml
+[deps.varna]
+git = "https://github.com/MacCracken/varna"
+tag = "2.0.0"
+modules = ["dist/varna.cyr"]
 ```
 
-```rust
-use varna::phoneme::{self, StressPattern};
+`cyrius deps` clones varna at the tag and copies the bundle into `lib/varna.cyr`:
 
-// Get the English phoneme inventory
-let en = phoneme::english();
-assert!(en.has("θ"));           // voiceless dental fricative (think)
-assert!(en.has("ð"));           // voiced dental fricative (this)
-assert!(!en.has("ʀ"));          // no uvular trill in English
-assert_eq!(en.stress, StressPattern::Free);
-println!("{} consonants, {} vowels", en.consonant_count(), en.vowel_count());
+```cyrius
+include "lib/varna.cyr"
 
-// Look up a specific phoneme
-let sh = en.find("ʃ").unwrap(); // postalveolar fricative (ship)
+fn main() {
+    alloc_init();
+
+    # Get the English (General American) phoneme inventory
+    var en = phoneme_english();
+    var has_th = phoneme_has(en, "θ");      # voiceless dental fricative (think)
+    var has_dh = phoneme_has(en, "ð");      # voiced dental fricative (this)
+    var no_r   = phoneme_has(en, "ʀ");      # 0 — no uvular trill in English
+
+    var consonants = phoneme_consonant_count(en);
+    var vowels     = phoneme_vowel_count(en);
+
+    # Look up a specific phoneme — returns a sentinel (0) when absent
+    var sh = phoneme_find(en, "ʃ");         # postalveolar fricative (ship)
+
+    return 0;
+}
 ```
+
+The Cyrius API mirrors the v1.x Rust surface as snake-case free functions
+(`varna::phoneme::english()` → `phoneme_english()`, `inv.has("θ")` → `phoneme_has(inv, "θ")`),
+with sentinel-return checks in place of `Option`/`unwrap`.
+
+## Dependency Stack
+
+```
+varna (this engine)
+  │  Cyrius stdlib (resolved by `cyrius deps` into lib/)
+  ├── bayan          — JSON serialization (#derive(Serialize), json_parse/json_build)
+  ├── result + tagged — native enum + Result<T,E> error model (VarnaError)
+  ├── str / string / slice / vec / hashmap / fmt / io — core data structures + formatting
+  ├── log + sakshi   — structured logging + audit (only under -D LOGGING)
+  │
+  └── git dep (only under -D MCP):
+      └── bote (dist/bote-core.cyr) — MCP / JSON-RPC core surface
+```
+
+Zero external (non-Cyrius) dependencies. The v1.x crate's `serde`, `serde_json`,
+`thiserror`, `tracing`, `tracing-subscriber`, and `criterion` all resolve to Cyrius
+stdlib modules or language builtins — see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md).
 
 ## Architecture
 
@@ -60,6 +113,7 @@ dhvani — audio engine (mixing, DSP, output)
 ```
 
 Also feeds:
+- **sankhya** — ancient mathematical systems (script-aware numerals, Babylonian/Egyptian)
 - **jnana** — multilingual knowledge access
 - **vidya** — programming concepts explained in native languages
 - **vansh** (planned) — voice assistant with multilingual TTS/STT
@@ -68,11 +122,17 @@ Also feeds:
 ## Development
 
 ```bash
-make check     # fmt + clippy + test + audit
-make bench     # Run benchmarks with history tracking
-make coverage  # Generate coverage report
-make doc       # Build documentation
+cyrius deps                          # resolve stdlib + bote into lib/
+cyrius build src/main.cyr build/varna # compile the engine + demo entry
+cyrius distlib                       # bundle src/ → dist/varna.cyr for consumers
+
+cyrius audit                         # umbrella gate: fmt + lint + format + tests
+cyrius test                          # run tests/tcyr/*.tcyr
+cyrius bench                         # run benches/*.bcyr
+./scripts/bench-history.sh           # benchmarks with CSV trend history
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full toolchain reference.
 
 ## License
 

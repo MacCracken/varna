@@ -1,5 +1,7 @@
 # ADR-005: Feature-Gated AI Integration Modules
 
+> **Historical — pre-2.0 Rust crate.** The opt-in principle carries into the Cyrius port, but the mechanism changed: Cargo `[features]` → `-D` build defines (`#ifdef MCP`/`DAIMON`/`HOOSH`); `serde_json` → `bayan`; and there is no `std`/`no_std`/WASM split. The `mcp` surface folds `bote-core`; `daimon`/`hoosh` ship as binaries with no library bundle, so their defines only toggle JSON output. See [ADR 0001](0001-port-from-rust-to-cyrius.md).
+
 ## Status
 
 Accepted
