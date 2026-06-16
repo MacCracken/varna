@@ -29,13 +29,14 @@ Rust preserved at `rust-old/` for parity reference. See
   - ✅ `src/util.cyr` — shared `_utf8_len` codepoint helper
   - ✅ `src/allophone.cyr` — English allophone rules (flapping/aspiration/dark-l); `realize`/`rules_for`
   - ✅ `src/syllable.cyr` — syllable templates + phonotactics (English/Sanskrit/Japanese); tri-state `is_permitted`
-  - ⏳ grammar, lexicon, swadesh, cognate, dialect; then the `-D` surfaces
+  - ✅ `src/grammar.cyr` — 11 typological profiles (morphology/word-order/case/gender/classifiers); `by_code`
+  - ⏳ lexicon, swadesh, cognate, dialect; then the `-D` surfaces
 
 ## Tests
 
-- `cyrius tests` — green: 320 parity assertions + smoke — phoneme (32) + inventories (159) +
+- `cyrius tests` — green: 367 parity assertions + smoke — phoneme (32) + inventories (159) +
   registry (15) + script (37) + numerals (34) + transliteration (14) + allophone (8) + syllable (21) +
-  `tests/varna.tcyr` (smoke).
+  grammar (47) + `tests/varna.tcyr` (smoke).
 - `cyrius bench tests/varna.bcyr` — harness green (`noop` benchmark).
 - Parity tests against `rust-old/` land with each ported module.
 

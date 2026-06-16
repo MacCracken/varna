@@ -1,0 +1,122 @@
+# src/grammar.cyr — grammatical typology profiles by ISO 639 code.
+# Ported from rust-old/src/grammar/mod.rs.
+#
+# GrammarProfile (64B): [0]=language_code [8]=morphology [16]=word_order
+#   [24]=case_count [32]=has_gender [40]=gender_count [48]=has_dual [56]=has_classifiers
+
+enum Morphology {
+    Isolating = 0;
+    Agglutinative = 1;
+    Fusional = 2;
+    Polysynthetic = 3;
+}
+
+# WordOrder.Free (case-marked free order) is omitted: no profile uses it, and
+# the name would collide with StressPattern.Free (phoneme.cyr).
+enum WordOrder {
+    SVO = 0;
+    SOV = 1;
+    VSO = 2;
+    VOS = 3;
+    OVS = 4;
+    OSV = 5;
+}
+
+fn _gp_new(code, morph, order, case_count, has_gender, gender_count, has_dual, has_classifiers) {
+    var g = alloc(64);
+    store64(g, code);
+    store64(g + 8, morph);
+    store64(g + 16, order);
+    store64(g + 24, case_count);
+    store64(g + 32, has_gender);
+    store64(g + 40, gender_count);
+    store64(g + 48, has_dual);
+    store64(g + 56, has_classifiers);
+    return g;
+}
+
+fn grammar_language_code(g) { return load64(g); }
+fn grammar_morphology(g) { return load64(g + 8); }
+fn grammar_word_order(g) { return load64(g + 16); }
+fn grammar_case_count(g) { return load64(g + 24); }
+fn grammar_has_gender(g) { return load64(g + 32); }
+fn grammar_gender_count(g) { return load64(g + 40); }
+fn grammar_has_dual(g) { return load64(g + 48); }
+fn grammar_has_classifiers(g) { return load64(g + 56); }
+
+fn grammar_english() {
+    return _gp_new("en", Morphology.Fusional, WordOrder.SVO, 2, 0, 0, 0, 0);
+}
+
+fn grammar_arabic() {
+    return _gp_new("ar", Morphology.Fusional, WordOrder.VSO, 3, 1, 2, 1, 0);
+}
+
+fn grammar_mandarin() {
+    return _gp_new("zh", Morphology.Isolating, WordOrder.SVO, 0, 0, 0, 0, 1);
+}
+
+fn grammar_hindi() {
+    return _gp_new("hi", Morphology.Fusional, WordOrder.SOV, 3, 1, 2, 0, 0);
+}
+
+fn grammar_japanese() {
+    return _gp_new("ja", Morphology.Agglutinative, WordOrder.SOV, 0, 0, 0, 0, 1);
+}
+
+fn grammar_spanish() {
+    return _gp_new("es", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+}
+
+fn grammar_french() {
+    return _gp_new("fr", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+}
+
+fn grammar_german() {
+    return _gp_new("de", Morphology.Fusional, WordOrder.SVO, 4, 1, 3, 0, 0);
+}
+
+fn grammar_russian() {
+    return _gp_new("ru", Morphology.Fusional, WordOrder.SVO, 6, 1, 3, 0, 0);
+}
+
+fn grammar_korean() {
+    return _gp_new("ko", Morphology.Agglutinative, WordOrder.SOV, 0, 0, 0, 0, 1);
+}
+
+fn grammar_portuguese() {
+    return _gp_new("pt", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+}
+
+# Grammar profile for a language, or 0 if none.
+fn grammar_by_code(code) {
+    if (streq(code, "en") == 1) { return grammar_english(); }
+    if (streq(code, "ar") == 1) { return grammar_arabic(); }
+    if (streq(code, "zh") == 1) { return grammar_mandarin(); }
+    if (streq(code, "hi") == 1) { return grammar_hindi(); }
+    if (streq(code, "ja") == 1) { return grammar_japanese(); }
+    if (streq(code, "es") == 1) { return grammar_spanish(); }
+    if (streq(code, "fr") == 1) { return grammar_french(); }
+    if (streq(code, "de") == 1) { return grammar_german(); }
+    if (streq(code, "ru") == 1) { return grammar_russian(); }
+    if (streq(code, "ko") == 1) { return grammar_korean(); }
+    if (streq(code, "pt") == 1) { return grammar_portuguese(); }
+    return 0;
+}
+
+# All language codes with grammar profiles — vec of cstrings.
+fn grammar_all_codes() {
+    var c = vec_new();
+    vec_push(c, "en");
+    vec_push(c, "ar");
+    vec_push(c, "zh");
+    vec_push(c, "hi");
+    vec_push(c, "ja");
+    vec_push(c, "es");
+    vec_push(c, "fr");
+    vec_push(c, "de");
+    vec_push(c, "ru");
+    vec_push(c, "ko");
+    vec_push(c, "pt");
+    return c;
+}

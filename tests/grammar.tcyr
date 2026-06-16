@@ -1,0 +1,86 @@
+# tests/grammar.tcyr — grammar parity (rust-old/src/grammar/mod.rs).
+
+include "src/grammar.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("profiles");
+    var g = 0;
+    g = grammar_english();
+    assert(streq(grammar_language_code(g), "en"), "en code");
+    assert_eq(grammar_morphology(g), Morphology.Fusional, "en morphology");
+    assert_eq(grammar_word_order(g), WordOrder.SVO, "en word order");
+    g = grammar_arabic();
+    assert(streq(grammar_language_code(g), "ar"), "ar code");
+    assert_eq(grammar_morphology(g), Morphology.Fusional, "ar morphology");
+    assert_eq(grammar_word_order(g), WordOrder.VSO, "ar word order");
+    g = grammar_mandarin();
+    assert(streq(grammar_language_code(g), "zh"), "zh code");
+    assert_eq(grammar_morphology(g), Morphology.Isolating, "zh morphology");
+    assert_eq(grammar_word_order(g), WordOrder.SVO, "zh word order");
+    g = grammar_hindi();
+    assert(streq(grammar_language_code(g), "hi"), "hi code");
+    assert_eq(grammar_morphology(g), Morphology.Fusional, "hi morphology");
+    assert_eq(grammar_word_order(g), WordOrder.SOV, "hi word order");
+    g = grammar_japanese();
+    assert(streq(grammar_language_code(g), "ja"), "ja code");
+    assert_eq(grammar_morphology(g), Morphology.Agglutinative, "ja morphology");
+    assert_eq(grammar_word_order(g), WordOrder.SOV, "ja word order");
+    g = grammar_spanish();
+    assert(streq(grammar_language_code(g), "es"), "es code");
+    assert_eq(grammar_morphology(g), Morphology.Fusional, "es morphology");
+    assert_eq(grammar_word_order(g), WordOrder.SVO, "es word order");
+    g = grammar_french();
+    assert(streq(grammar_language_code(g), "fr"), "fr code");
+    assert_eq(grammar_morphology(g), Morphology.Fusional, "fr morphology");
+    assert_eq(grammar_word_order(g), WordOrder.SVO, "fr word order");
+    g = grammar_german();
+    assert(streq(grammar_language_code(g), "de"), "de code");
+    assert_eq(grammar_morphology(g), Morphology.Fusional, "de morphology");
+    assert_eq(grammar_word_order(g), WordOrder.SVO, "de word order");
+    g = grammar_russian();
+    assert(streq(grammar_language_code(g), "ru"), "ru code");
+    assert_eq(grammar_morphology(g), Morphology.Fusional, "ru morphology");
+    assert_eq(grammar_word_order(g), WordOrder.SVO, "ru word order");
+    g = grammar_korean();
+    assert(streq(grammar_language_code(g), "ko"), "ko code");
+    assert_eq(grammar_morphology(g), Morphology.Agglutinative, "ko morphology");
+    assert_eq(grammar_word_order(g), WordOrder.SOV, "ko word order");
+    g = grammar_portuguese();
+    assert(streq(grammar_language_code(g), "pt"), "pt code");
+    assert_eq(grammar_morphology(g), Morphology.Fusional, "pt morphology");
+    assert_eq(grammar_word_order(g), WordOrder.SVO, "pt word order");
+
+    test_group("features");
+    var de = grammar_german();
+    assert_eq(grammar_case_count(de), 4, "german 4 cases");
+    assert_eq(grammar_gender_count(de), 3, "german 3 genders");
+    var ru = grammar_russian();
+    assert_eq(grammar_case_count(ru), 6, "russian 6 cases");
+    assert_eq(grammar_gender_count(ru), 3, "russian 3 genders");
+    assert(grammar_has_dual(grammar_arabic()), "arabic has dual");
+    assert(grammar_has_classifiers(grammar_mandarin()), "mandarin classifiers");
+    assert(grammar_has_classifiers(grammar_japanese()), "japanese classifiers");
+    assert(grammar_has_classifiers(grammar_korean()), "korean classifiers");
+    assert_eq(grammar_has_classifiers(grammar_spanish()), 0, "spanish no classifiers");
+
+    test_group("lookup");
+    assert(grammar_by_code("ar") != 0, "by_code ar");
+    assert(grammar_by_code("zh") != 0, "by_code zh");
+    assert_eq(grammar_by_code("xx"), 0, "by_code unknown");
+    var codes = grammar_all_codes();
+    assert_eq(vec_len(codes), 11, "11 grammar codes");
+    var n = vec_len(codes);
+    var i = 0;
+    var missing = 0;
+    while (i < n) {
+        if (grammar_by_code(vec_get(codes, i)) == 0) { missing = missing + 1; }
+        i = i + 1;
+    }
+    assert_eq(missing, 0, "all codes have profiles");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
