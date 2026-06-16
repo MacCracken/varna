@@ -1,0 +1,348 @@
+# src/phoneme.cyr — IPA phoneme inventories, articulatory features.
+#
+# Ported from rust-old/src/phoneme/mod.rs. Records are heap structs (alloc +
+# store64/load64 at 8-byte slots); enums are integer constants; IPA symbols are
+# cstring literals compared with streq. Sentinel 0 = "not found" (was Option).
+#
+# Memory layout
+#   Phoneme   (40B): [0]=ipa  [8]=kind  [16]=f0  [24]=f1  [32]=f2
+#                    consonant → f0=manner f1=place    f2=voiced(0/1)
+#                    vowel     → f0=height f1=backness f2=rounded(0/1)
+#   Inventory (40B): [0]=code  [8]=name  [16]=phonemes(vec)  [24]=stress  [32]=tones(vec|0)
+
+enum Manner {
+    Plosive = 0;
+    Nasal = 1;
+    Trill = 2;
+    TapFlap = 3;
+    Fricative = 4;
+    LateralFricative = 5;
+    Approximant = 6;
+    LateralApproximant = 7;
+    Affricate = 8;
+}
+
+enum Place {
+    Bilabial = 0;
+    Labiodental = 1;
+    Dental = 2;
+    Alveolar = 3;
+    Postalveolar = 4;
+    Retroflex = 5;
+    Palatal = 6;
+    Velar = 7;
+    Uvular = 8;
+    Pharyngeal = 9;
+    Glottal = 10;
+    LabialVelar = 11;
+}
+
+enum Height {
+    Close = 0;
+    NearClose = 1;
+    CloseMid = 2;
+    Mid = 3;
+    OpenMid = 4;
+    NearOpen = 5;
+    Open = 6;
+}
+
+enum Backness {
+    Front = 0;
+    Central = 1;
+    Back = 2;
+}
+
+enum StressPattern {
+    Fixed = 0;
+    Free = 1;
+    PitchAccent = 2;
+    Tonal = 3;
+}
+
+enum PhonemeKind {
+    Consonant = 0;
+    Vowel = 1;
+}
+
+# --- Phoneme constructors + accessors ------------------------------
+
+fn phoneme_consonant(ipa, manner, place, voiced) {
+    var p = alloc(40);
+    store64(p, ipa);
+    store64(p + 8, PhonemeKind.Consonant);
+    store64(p + 16, manner);
+    store64(p + 24, place);
+    store64(p + 32, voiced);
+    return p;
+}
+
+fn phoneme_vowel(ipa, height, backness, rounded) {
+    var p = alloc(40);
+    store64(p, ipa);
+    store64(p + 8, PhonemeKind.Vowel);
+    store64(p + 16, height);
+    store64(p + 24, backness);
+    store64(p + 32, rounded);
+    return p;
+}
+
+fn phoneme_ipa(p) { return load64(p); }
+fn phoneme_kind(p) { return load64(p + 8); }
+fn phoneme_manner(p) { return load64(p + 16); }
+fn phoneme_place(p) { return load64(p + 24); }
+fn phoneme_voiced(p) { return load64(p + 32); }
+fn phoneme_height(p) { return load64(p + 16); }
+fn phoneme_backness(p) { return load64(p + 24); }
+fn phoneme_rounded(p) { return load64(p + 32); }
+
+# --- Inventory builder ---------------------------------------------
+# The builder and the inventory share one 40-byte layout; build() is identity.
+
+fn phoneme_builder_with_capacity(code, name, cap) {
+    var inv = alloc(40);
+    store64(inv, code);
+    store64(inv + 8, name);
+    store64(inv + 16, vec_new());
+    store64(inv + 24, StressPattern.Free);
+    store64(inv + 32, 0);
+    return inv;
+}
+
+fn phoneme_builder_new(code, name) {
+    return phoneme_builder_with_capacity(code, name, 48);
+}
+
+fn phoneme_builder_stress(inv, pattern) {
+    store64(inv + 24, pattern);
+    return inv;
+}
+
+fn phoneme_builder_tones(inv, tones) {
+    store64(inv + 32, tones);
+    return inv;
+}
+
+fn phoneme_builder_consonant(inv, ipa, manner, place, voiced) {
+    vec_push(load64(inv + 16), phoneme_consonant(ipa, manner, place, voiced));
+    return inv;
+}
+
+fn phoneme_builder_vowel(inv, ipa, height, backness, rounded) {
+    vec_push(load64(inv + 16), phoneme_vowel(ipa, height, backness, rounded));
+    return inv;
+}
+
+fn phoneme_builder_phoneme(inv, p) {
+    vec_push(load64(inv + 16), p);
+    return inv;
+}
+
+fn phoneme_builder_build(inv) { return inv; }
+
+# --- Inventory accessors + queries ---------------------------------
+
+fn phoneme_language_code(inv) { return load64(inv); }
+fn phoneme_language_name(inv) { return load64(inv + 8); }
+fn phoneme_list(inv) { return load64(inv + 16); }
+fn phoneme_stress(inv) { return load64(inv + 24); }
+fn phoneme_tones(inv) { return load64(inv + 32); }
+
+fn phoneme_consonant_count(inv) {
+    var ph = load64(inv + 16);
+    var n = vec_len(ph);
+    var count = 0;
+    var i = 0;
+    while (i < n) {
+        if (phoneme_kind(vec_get(ph, i)) == PhonemeKind.Consonant) { count = count + 1; }
+        i = i + 1;
+    }
+    return count;
+}
+
+fn phoneme_vowel_count(inv) {
+    var ph = load64(inv + 16);
+    var n = vec_len(ph);
+    var count = 0;
+    var i = 0;
+    while (i < n) {
+        if (phoneme_kind(vec_get(ph, i)) == PhonemeKind.Vowel) { count = count + 1; }
+        i = i + 1;
+    }
+    return count;
+}
+
+# Look up a phoneme by IPA symbol — returns the Phoneme ptr, or 0 if absent.
+fn phoneme_find(inv, ipa) {
+    var ph = load64(inv + 16);
+    var n = vec_len(ph);
+    var i = 0;
+    while (i < n) {
+        var p = vec_get(ph, i);
+        if (streq(phoneme_ipa(p), ipa) == 1) { return p; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+fn phoneme_has(inv, ipa) {
+    if (phoneme_find(inv, ipa) != 0) { return 1; }
+    return 0;
+}
+
+# --- Pre-built inventories ------------------------------------------
+
+# English (General American): 24 consonants + 12 vowels. Stress: free.
+fn phoneme_english() {
+    var b = phoneme_builder_with_capacity("en", "English", 36);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
+    phoneme_builder_consonant(b, "ð", Manner.Fricative, Place.Dental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Approximants
+    phoneme_builder_consonant(b, "ɹ", Manner.Approximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Vowels (General American)
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɪ", Height.NearClose, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eɪ", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "æ", Height.NearOpen, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɑː", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "oʊ", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ʊ", Height.NearClose, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ʌ", Height.OpenMid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    return phoneme_builder_build(b);
+}
+
+# Sanskrit (Classical): 36 consonants + 14 vowels. Stress: pitch accent.
+fn phoneme_sanskrit() {
+    var b = phoneme_builder_with_capacity("sa", "Sanskrit", 50);
+    phoneme_builder_stress(b, StressPattern.PitchAccent);
+    # Kavarga (velar)
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ɡʰ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Chavarga (palatal)
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "d͡ʑʰ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Tavarga (retroflex)
+    phoneme_builder_consonant(b, "ʈ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ɖ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "ɖʰ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "ɳ", Manner.Nasal, Place.Retroflex, 1);
+    # Tavarga (dental)
+    phoneme_builder_consonant(b, "t̪", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "d̪", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "d̪ʰ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "n̪", Manner.Nasal, Place.Dental, 1);
+    # Pavarga (bilabial)
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "bʰ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    # Antastha (semivowels/approximants)
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʋ", Manner.Approximant, Place.Labiodental, 1);
+    # Ushman (sibilants/fricatives)
+    phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "ʂ", Manner.Fricative, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ɦ", Manner.Fricative, Place.Glottal, 1);
+    # Additional
+    phoneme_builder_consonant(b, "ɭ", Manner.LateralApproximant, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "kʂ", Manner.Affricate, Place.Velar, 0);
+    phoneme_builder_consonant(b, "d͡ʑɲ", Manner.Affricate, Place.Palatal, 1);
+    # Vowels (svara) — short
+    phoneme_builder_vowel(b, "ɐ", Height.NearOpen, Backness.Central, 0);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "r̩", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel(b, "l̩", Height.Close, Backness.Central, 0);
+    # Long
+    phoneme_builder_vowel(b, "ɐː", Height.NearOpen, Backness.Central, 0);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "r̩ː", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel(b, "l̩ː", Height.Close, Backness.Central, 0);
+    # Diphthongs
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɐi", Height.NearOpen, Backness.Front, 0);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɐu", Height.NearOpen, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+# Greek (Modern Standard): 20 consonants + 5 vowels. Stress: free.
+fn phoneme_greek() {
+    var b = phoneme_builder_with_capacity("el", "Greek", 25);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
+    phoneme_builder_consonant(b, "ð", Manner.Fricative, Place.Dental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
+    # Vowels (5-vowel system)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}

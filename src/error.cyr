@@ -1,0 +1,26 @@
+# src/error.cyr — VarnaError codes for varna
+#
+# Cyrius has no throw/catch; fallible calls return a sentinel (0 / -1) and the
+# caller checks. This enum gives stable codes for the conditions the v1.x Rust
+# crate modeled as the VarnaError enum. `varna_error_str` renders a message.
+#
+# Ported from rust-old/src/error.rs (VarnaError).
+
+enum VarnaError {
+    VARNA_OK = 0;
+    VARNA_UNKNOWN_LANGUAGE = 1;
+    VARNA_UNKNOWN_SCRIPT = 2;
+    VARNA_PHONEME_NOT_IN_INVENTORY = 3;
+    VARNA_INVALID_IPA = 4;
+    VARNA_WORD_NOT_FOUND = 5;
+}
+
+fn varna_error_str(code) {
+    if (code == VARNA_OK) { return "ok"; }
+    if (code == VARNA_UNKNOWN_LANGUAGE) { return "unknown language"; }
+    if (code == VARNA_UNKNOWN_SCRIPT) { return "unknown script"; }
+    if (code == VARNA_PHONEME_NOT_IN_INVENTORY) { return "phoneme not in inventory"; }
+    if (code == VARNA_INVALID_IPA) { return "invalid IPA symbol"; }
+    if (code == VARNA_WORD_NOT_FOUND) { return "word not found"; }
+    return "unknown error";
+}

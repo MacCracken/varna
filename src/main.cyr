@@ -1,11 +1,17 @@
-# varna — Cyrius port
-# Ported from 8386 lines of Rust
+# varna — multilingual language engine (Cyrius port)
+# Ported from 8386 lines of Rust (rust-old/).
+#
+# Stdlib auto-included via cyrius.cyml [deps]. Project modules below.
 
-# Stdlib auto-included via cyrius.cyml
+include "src/error.cyr"
+include "src/phoneme.cyr"
 
 fn main() {
     alloc_init();
-    println("varna ready");
+    var en = phoneme_english();
+    if (phoneme_has(en, "θ") == 1) {
+        println("varna: English inventory loaded (24C + 12V, has θ)");
+    }
     return 0;
 }
 

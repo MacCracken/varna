@@ -1,0 +1,65 @@
+# tests/phoneme.tcyr — phoneme module parity tests.
+# Mirrors the #[test] assertions in rust-old/src/phoneme/mod.rs.
+
+include "src/error.cyr"
+include "src/phoneme.cyr"
+
+fn main() {
+    alloc_init();
+
+    test_group("english");
+    var en = phoneme_english();
+    assert_eq(phoneme_consonant_count(en), 24, "english 24 consonants");
+    assert_eq(phoneme_vowel_count(en), 12, "english 12 vowels");
+    assert(phoneme_has(en, "θ"), "english has θ");
+    assert(phoneme_has(en, "ð"), "english has ð");
+    assert_eq(phoneme_stress(en), StressPattern.Free, "english stress free");
+    assert_eq(phoneme_has(en, "ʀ"), 0, "english lacks ʀ");
+    assert_eq(phoneme_tones(en), 0, "english no tones");
+
+    test_group("english_features");
+    var sh = phoneme_find(en, "ʃ");
+    assert(sh != 0, "find ʃ");
+    assert_eq(phoneme_kind(sh), PhonemeKind.Consonant, "ʃ is consonant");
+    assert_eq(phoneme_manner(sh), Manner.Fricative, "ʃ manner fricative");
+    assert_eq(phoneme_place(sh), Place.Postalveolar, "ʃ place postalveolar");
+    assert_eq(phoneme_voiced(sh), 0, "ʃ unvoiced");
+    var w = phoneme_find(en, "w");
+    assert(w != 0, "find w");
+    assert_eq(phoneme_place(w), Place.LabialVelar, "w is labial-velar");
+
+    test_group("sanskrit");
+    var sa = phoneme_sanskrit();
+    assert_eq(phoneme_consonant_count(sa), 36, "sanskrit 36 consonants");
+    assert_eq(phoneme_vowel_count(sa), 14, "sanskrit 14 vowels");
+    assert(streq(phoneme_language_code(sa), "sa"), "sanskrit code sa");
+    assert(phoneme_has(sa, "kʰ"), "sanskrit has kʰ");
+    assert(phoneme_has(sa, "ʈ"), "sanskrit has ʈ");
+    assert(phoneme_has(sa, "ʂ"), "sanskrit has ʂ");
+    assert(phoneme_has(sa, "r̩"), "sanskrit has syllabic r");
+    assert_eq(phoneme_stress(sa), StressPattern.PitchAccent, "sanskrit pitch accent");
+
+    test_group("greek");
+    var el = phoneme_greek();
+    assert_eq(phoneme_consonant_count(el), 20, "greek 20 consonants");
+    assert_eq(phoneme_vowel_count(el), 5, "greek 5 vowels");
+    assert(streq(phoneme_language_code(el), "el"), "greek code el");
+    assert(phoneme_has(el, "x"), "greek has x");
+    assert(phoneme_has(el, "ɣ"), "greek has ɣ");
+    assert_eq(phoneme_stress(el), StressPattern.Free, "greek stress free");
+
+    test_group("builder");
+    var inv = phoneme_builder_new("xx", "Test");
+    phoneme_builder_consonant(inv, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_vowel(inv, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_build(inv);
+    assert(streq(phoneme_language_code(inv), "xx"), "builder code xx");
+    assert_eq(phoneme_consonant_count(inv), 1, "builder 1 consonant");
+    assert_eq(phoneme_vowel_count(inv), 1, "builder 1 vowel");
+    assert_eq(phoneme_stress(inv), StressPattern.Free, "builder default stress free");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
