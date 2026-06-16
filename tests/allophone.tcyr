@@ -1,0 +1,21 @@
+# tests/allophone.tcyr — allophone parity (rust-old/src/phoneme/allophone.rs).
+
+include "src/allophone.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("english_allophones");
+    var r = allophone_english();
+    assert(streq(allophone_language_code(r), "en"), "code en");
+    assert(vec_len(allophone_rules(r)) > 0, "rules not empty");
+    assert_eq(vec_len(allophone_rules_for(r, "t")), 2, "t has 2 rules");
+    assert(streq(allophone_realize(r, "t", Environment.Intervocalic), "ɾ"), "t intervocalic flap");
+    assert(streq(allophone_realize(r, "t", Environment.WordInitial), "tʰ"), "t word-initial aspirated");
+    assert(streq(allophone_realize(r, "t", Environment.WordFinal), "t"), "t word-final unchanged");
+    assert(streq(allophone_realize(r, "l", Environment.SyllableFinal), "ɫ"), "l dark");
+    assert_eq(vec_len(allophone_rules_for(r, "ʀ")), 0, "unknown phoneme no rules");
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

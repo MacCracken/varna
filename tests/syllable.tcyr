@@ -1,0 +1,41 @@
+# tests/syllable.tcyr — phonotactics parity (rust-old/src/phoneme/syllable.rs).
+
+include "src/syllable.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("english_syllable");
+    var en = phonotactics_english();
+    assert_eq(phonotactics_max_onset(en), 3, "en max_onset 3");
+    assert_eq(phonotactics_max_coda(en), 4, "en max_coda 4");
+    assert(phonotactics_allows_onset_clusters(en), "en onset clusters");
+    assert(phonotactics_allows_coda_clusters(en), "en coda clusters");
+    assert(phonotactics_allows_closed_syllables(en), "en closed syllables");
+    assert(streq(phonotactics_pattern(en), "(C)(C)(C)V(C)(C)(C)(C)"), "en pattern");
+
+    test_group("english_constraints");
+    assert_eq(phonotactics_is_permitted(en, "str", SyllablePosition.Onset), 1, "str permitted");
+    assert_eq(phonotactics_is_permitted(en, "sp", SyllablePosition.Onset), 1, "sp permitted");
+    assert_eq(phonotactics_is_permitted(en, "sr", SyllablePosition.Onset), 0, "sr forbidden");
+    assert_eq(phonotactics_is_permitted(en, "tl", SyllablePosition.Onset), 0, "tl forbidden");
+    assert_eq(phonotactics_is_permitted(en, "br", SyllablePosition.Onset), 0 - 1, "br unspecified");
+    assert_eq(vec_len(phonotactics_constraints_at(en, SyllablePosition.Onset)), 2, "2 onset constraints");
+    assert_eq(vec_len(phonotactics_constraints_at(en, SyllablePosition.Coda)), 0, "0 coda constraints");
+
+    test_group("japanese_sanskrit");
+    var ja = phonotactics_japanese();
+    assert_eq(phonotactics_max_onset(ja), 1, "ja max_onset 1");
+    assert_eq(phonotactics_max_coda(ja), 1, "ja max_coda 1");
+    assert_eq(phonotactics_allows_onset_clusters(ja), 0, "ja no onset clusters");
+    assert_eq(phonotactics_allows_coda_clusters(ja), 0, "ja no coda clusters");
+    assert(phonotactics_allows_closed_syllables(ja), "ja closed syllables");
+    assert_eq(phonotactics_is_permitted(ja, "n", SyllablePosition.Coda), 1, "ja n coda permitted");
+    var sa = phonotactics_sanskrit();
+    assert_eq(phonotactics_is_permitted(sa, "kr", SyllablePosition.Onset), 1, "sa kr permitted");
+    assert_eq(phonotactics_max_onset(sa), 2, "sa max_onset 2");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

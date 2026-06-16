@@ -1,0 +1,186 @@
+# src/syllable.cyr — syllable structure + phonotactic constraints.
+#
+# Ported from rust-old/src/phoneme/syllable.rs.
+#
+# SyllableTemplate (32B):      [0]=max_onset [8]=max_coda [16]=complex_nucleus(0/1) [24]=pattern
+# PhonotacticConstraint (32B): [0]=kind [8]=position [16]=sequences(vec) [24]=description
+# Phonotactics (24B):          [0]=language_code [8]=syllable(template) [16]=constraints(vec)
+#
+# is_permitted returns tri-state: 1 = permitted, 0 = forbidden, (0-1) = unspecified.
+
+enum ConstraintKind {
+    Permitted = 0;
+    Forbidden = 1;
+}
+
+enum SyllablePosition {
+    Onset = 0;
+    Coda = 1;
+    Nucleus = 2;
+    AcrossBoundary = 3;
+}
+
+# --- SyllableTemplate ----------------------------------------------
+
+fn _syllable_new(max_onset, max_coda, complex_nucleus, pattern) {
+    var t = alloc(32);
+    store64(t, max_onset);
+    store64(t + 8, max_coda);
+    store64(t + 16, complex_nucleus);
+    store64(t + 24, pattern);
+    return t;
+}
+
+fn syllable_max_onset(t) { return load64(t); }
+fn syllable_max_coda(t) { return load64(t + 8); }
+fn syllable_complex_nucleus(t) { return load64(t + 16); }
+fn syllable_pattern(t) { return load64(t + 24); }
+
+fn syllable_allows_onset_clusters(t) {
+    if (load64(t) > 1) { return 1; }
+    return 0;
+}
+
+fn syllable_allows_coda_clusters(t) {
+    if (load64(t + 8) > 1) { return 1; }
+    return 0;
+}
+
+fn syllable_allows_closed_syllables(t) {
+    if (load64(t + 8) > 0) { return 1; }
+    return 0;
+}
+
+# --- Constraints ---------------------------------------------------
+
+fn _constraint_new(kind, position, description) {
+    var c = alloc(32);
+    store64(c, kind);
+    store64(c + 8, position);
+    store64(c + 16, vec_new());
+    store64(c + 24, description);
+    return c;
+}
+
+fn _constraint_add_seq(c, seq) {
+    vec_push(load64(c + 16), seq);
+    return c;
+}
+
+fn constraint_kind(c) { return load64(c); }
+fn constraint_position(c) { return load64(c + 8); }
+fn constraint_sequences(c) { return load64(c + 16); }
+fn constraint_description(c) { return load64(c + 24); }
+
+# --- Phonotactics --------------------------------------------------
+
+fn _phonotactics_new(code, syllable) {
+    var p = alloc(24);
+    store64(p, code);
+    store64(p + 8, syllable);
+    store64(p + 16, vec_new());
+    return p;
+}
+
+fn _phonotactics_add(p, constraint) {
+    vec_push(load64(p + 16), constraint);
+    return p;
+}
+
+fn phonotactics_language_code(p) { return load64(p); }
+fn phonotactics_syllable(p) { return load64(p + 8); }
+fn phonotactics_constraints(p) { return load64(p + 16); }
+
+# Convenience accessors delegating to the syllable template.
+fn phonotactics_max_onset(p) { return syllable_max_onset(load64(p + 8)); }
+fn phonotactics_max_coda(p) { return syllable_max_coda(load64(p + 8)); }
+fn phonotactics_pattern(p) { return syllable_pattern(load64(p + 8)); }
+fn phonotactics_allows_onset_clusters(p) { return syllable_allows_onset_clusters(load64(p + 8)); }
+fn phonotactics_allows_coda_clusters(p) { return syllable_allows_coda_clusters(load64(p + 8)); }
+fn phonotactics_allows_closed_syllables(p) { return syllable_allows_closed_syllables(load64(p + 8)); }
+
+# All constraints at a syllable position — vec of constraint ptrs.
+fn phonotactics_constraints_at(p, position) {
+    var cs = load64(p + 16);
+    var n = vec_len(cs);
+    var out = vec_new();
+    var i = 0;
+    while (i < n) {
+        var c = vec_get(cs, i);
+        if (load64(c + 8) == position) { vec_push(out, c); }
+        i = i + 1;
+    }
+    return out;
+}
+
+# Tri-state: 1 permitted, 0 forbidden, (0-1) unspecified. First match wins.
+fn phonotactics_is_permitted(p, sequence, position) {
+    var cs = load64(p + 16);
+    var n = vec_len(cs);
+    var i = 0;
+    while (i < n) {
+        var c = vec_get(cs, i);
+        if (load64(c + 8) == position) {
+            var seqs = load64(c + 16);
+            var m = vec_len(seqs);
+            var j = 0;
+            while (j < m) {
+                if (streq(vec_get(seqs, j), sequence) == 1) {
+                    if (load64(c) == ConstraintKind.Permitted) { return 1; }
+                    return 0;
+                }
+                j = j + 1;
+            }
+        }
+        i = i + 1;
+    }
+    return 0 - 1;
+}
+
+# --- Pre-built phonotactic profiles --------------------------------
+
+fn phonotactics_english() {
+    var p = _phonotactics_new("en", _syllable_new(3, 4, 1, "(C)(C)(C)V(C)(C)(C)(C)"));
+    var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset, "English /s/+stop onset clusters");
+    _constraint_add_seq(ok, "st");
+    _constraint_add_seq(ok, "sp");
+    _constraint_add_seq(ok, "sk");
+    _constraint_add_seq(ok, "str");
+    _constraint_add_seq(ok, "spr");
+    _constraint_add_seq(ok, "skr");
+    _constraint_add_seq(ok, "spl");
+    _constraint_add_seq(ok, "skw");
+    _constraint_add_seq(ok, "stj");
+    _constraint_add_seq(ok, "spj");
+    _constraint_add_seq(ok, "skj");
+    _phonotactics_add(p, ok);
+    var no = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset, "Forbidden English onset sequences");
+    _constraint_add_seq(no, "sr");
+    _constraint_add_seq(no, "tl");
+    _constraint_add_seq(no, "dl");
+    _constraint_add_seq(no, "ŋ");
+    _phonotactics_add(p, no);
+    return p;
+}
+
+fn phonotactics_sanskrit() {
+    var p = _phonotactics_new("sa", _syllable_new(2, 2, 1, "(C)(C)V(C)(C)"));
+    var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset, "Sanskrit stop+liquid onset clusters");
+    _constraint_add_seq(ok, "pr");
+    _constraint_add_seq(ok, "kr");
+    _constraint_add_seq(ok, "tr");
+    _constraint_add_seq(ok, "sr");
+    _constraint_add_seq(ok, "pl");
+    _constraint_add_seq(ok, "kl");
+    _phonotactics_add(p, ok);
+    return p;
+}
+
+fn phonotactics_japanese() {
+    var p = _phonotactics_new("ja", _syllable_new(1, 1, 1, "(C)V(N)"));
+    var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda, "Only moraic nasal permitted in Japanese coda");
+    _constraint_add_seq(ok, "n");
+    _constraint_add_seq(ok, "ɴ");
+    _phonotactics_add(p, ok);
+    return p;
+}

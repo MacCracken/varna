@@ -1,0 +1,94 @@
+# src/allophone.cyr — context-dependent allophone rules.
+#
+# Ported from rust-old/src/phoneme/allophone.rs.
+#
+# AllophoneRule (32B):    [0]=phoneme [8]=allophone [16]=environment [24]=obligatory(0/1)
+# AllophoneRuleSet (16B): [0]=language_code [8]=rules(vec)
+#
+# Environment is modeled as plain int constants. The v1.x parametrized
+# Before(PhonemeClass)/After(PhonemeClass) variants are deferred — no current
+# ruleset uses them, and PhonemeClass's names (Vowel/Consonant/Nasal/Plosive/
+# Fricative) would collide with the Manner/PhonemeKind enum constants.
+
+enum Environment {
+    WordInitial = 0;
+    WordFinal = 1;
+    Intervocalic = 2;
+    PreVocalic = 3;
+    PostVocalic = 4;
+    SyllableFinal = 5;
+    SyllableInitial = 6;
+    PreStress = 7;
+    Unstressed = 8;
+}
+
+fn _arule_new(phoneme, allophone, env, obligatory) {
+    var r = alloc(32);
+    store64(r, phoneme);
+    store64(r + 8, allophone);
+    store64(r + 16, env);
+    store64(r + 24, obligatory);
+    return r;
+}
+
+fn allophone_rule_phoneme(r) { return load64(r); }
+fn allophone_rule_allophone(r) { return load64(r + 8); }
+fn allophone_rule_environment(r) { return load64(r + 16); }
+fn allophone_rule_obligatory(r) { return load64(r + 24); }
+
+fn _aset_new(code) {
+    var s = alloc(16);
+    store64(s, code);
+    store64(s + 8, vec_new());
+    return s;
+}
+
+fn _aset_add(s, phoneme, allophone, env, obligatory) {
+    vec_push(load64(s + 8), _arule_new(phoneme, allophone, env, obligatory));
+    return s;
+}
+
+fn allophone_language_code(s) { return load64(s); }
+fn allophone_rules(s) { return load64(s + 8); }
+
+# All allophone rules for a phoneme — vec of rule ptrs (possibly empty).
+fn allophone_rules_for(s, phoneme) {
+    var rules = load64(s + 8);
+    var n = vec_len(rules);
+    var out = vec_new();
+    var i = 0;
+    while (i < n) {
+        var r = vec_get(rules, i);
+        if (streq(load64(r), phoneme) == 1) { vec_push(out, r); }
+        i = i + 1;
+    }
+    return out;
+}
+
+# Surface realization of a phoneme in an environment — the allophone if a rule
+# matches (first wins), else the phoneme unchanged.
+fn allophone_realize(s, phoneme, env) {
+    var rules = load64(s + 8);
+    var n = vec_len(rules);
+    var i = 0;
+    while (i < n) {
+        var r = vec_get(rules, i);
+        if (streq(load64(r), phoneme) == 1 && load64(r + 16) == env) { return load64(r + 8); }
+        i = i + 1;
+    }
+    return phoneme;
+}
+
+# --- Pre-built rule sets -------------------------------------------
+
+# English (General American) allophone rules.
+fn allophone_english() {
+    var s = _aset_new("en");
+    _aset_add(s, "t", "ɾ", Environment.Intervocalic, 0);
+    _aset_add(s, "t", "tʰ", Environment.WordInitial, 1);
+    _aset_add(s, "p", "pʰ", Environment.WordInitial, 1);
+    _aset_add(s, "k", "kʰ", Environment.WordInitial, 1);
+    _aset_add(s, "l", "ɫ", Environment.SyllableFinal, 1);
+    _aset_add(s, "ə", "ɨ", Environment.Unstressed, 0);
+    return s;
+}

@@ -27,13 +27,15 @@ Rust preserved at `rust-old/` for parity reference. See
     Egyptian, Chinese rod); UTF-8 `string_value`
   - ✅ `src/transliteration.cyr` — Devanagari↔IAST, Greek↔Beta Code (greedy longest-match, reverse map)
   - ✅ `src/util.cyr` — shared `_utf8_len` codepoint helper
-  - ⏳ allophone, syllable, grammar, lexicon, swadesh, cognate, dialect;
-    then the `-D` surfaces
+  - ✅ `src/allophone.cyr` — English allophone rules (flapping/aspiration/dark-l); `realize`/`rules_for`
+  - ✅ `src/syllable.cyr` — syllable templates + phonotactics (English/Sanskrit/Japanese); tri-state `is_permitted`
+  - ⏳ grammar, lexicon, swadesh, cognate, dialect; then the `-D` surfaces
 
 ## Tests
 
-- `cyrius tests` — green: 291 parity assertions + smoke — phoneme (32) + inventories (159) +
-  registry (15) + script (37) + numerals (34) + transliteration (14) + `tests/varna.tcyr` (smoke).
+- `cyrius tests` — green: 320 parity assertions + smoke — phoneme (32) + inventories (159) +
+  registry (15) + script (37) + numerals (34) + transliteration (14) + allophone (8) + syllable (21) +
+  `tests/varna.tcyr` (smoke).
 - `cyrius bench tests/varna.bcyr` — harness green (`noop` benchmark).
 - Parity tests against `rust-old/` land with each ported module.
 
