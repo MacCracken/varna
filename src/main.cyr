@@ -20,8 +20,10 @@ include "src/numerals.cyr"
 include "src/transliteration.cyr"
 
 # Optional AI-integration surfaces — compiled in only under their -D defines.
+include "src/logging.cyr"
 include "src/daimon.cyr"
 include "src/hoosh.cyr"
+include "src/mcp.cyr"
 
 fn main() {
     alloc_init();

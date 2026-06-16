@@ -1,0 +1,108 @@
+# tests/mcp.tcyr — MCP tool parity (rust-old/src/mcp.rs).
+# JSON payloads are verified by substring (the Rust tests check key presence /
+# value equality, which map directly to `contains` on the hand-built JSON).
+
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/script.cyr"
+include "src/grammar.cyr"
+include "src/registry.cyr"
+include "src/transliteration.cyr"
+#define MCP
+include "src/mcp.cyr"
+
+fn _contains(haystack, needle) {
+    var hl = strlen(haystack);
+    var nl = strlen(needle);
+    if (nl == 0) { return 1; }
+    if (nl > hl) { return 0; }
+    var i = 0;
+    while (i <= hl - nl) {
+        var j = 0;
+        var matched = 1;
+        while (j < nl) {
+            if (load8(haystack + i + j) != load8(needle + j)) { matched = 0; }
+            j = j + 1;
+        }
+        if (matched == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+fn _has_tool(tools, name) {
+    var n = vec_len(tools);
+    var i = 0;
+    while (i < n) {
+        if (streq(tool_def_name(vec_get(tools, i)), name) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+fn main() {
+    alloc_init();
+    test_group("tool_definitions");
+    var tools = mcp_tool_definitions();
+    assert_eq(vec_len(tools), 5, "5 tools");
+    assert(_has_tool(tools, "varna_phonemes"), "has varna_phonemes");
+    assert(_has_tool(tools, "varna_script"), "has varna_script");
+    assert(_has_tool(tools, "varna_grammar"), "has varna_grammar");
+    assert(_has_tool(tools, "varna_translate_ipa"), "has varna_translate_ipa");
+    assert(_has_tool(tools, "varna_compare"), "has varna_compare");
+    var i = 0;
+    while (i < 5) {
+        var t = vec_get(tools, i);
+        assert(streq(tool_def_schema_type(t), "object"), "schema object");
+        assert(strlen(tool_def_description(t)) > 0, "desc not empty");
+        i = i + 1;
+    }
+
+    test_group("invoke");
+    var p1 = map_new();
+    map_set(p1, "language", "en");
+    var r1 = mcp_invoke("varna_phonemes", p1);
+    assert(mcp_result_is_ok(r1), "phonemes ok");
+    assert(_contains(mcp_result_payload(r1), "\"language_code\""), "has language_code");
+
+    var p2 = map_new();
+    map_set(p2, "code", "Deva");
+    var r2 = mcp_invoke("varna_script", p2);
+    assert(_contains(mcp_result_payload(r2), "\"code\":\"Deva\""), "script code Deva");
+
+    var p3 = map_new();
+    map_set(p3, "language", "de");
+    var r3 = mcp_invoke("varna_grammar", p3);
+    assert(_contains(mcp_result_payload(r3), "\"case_count\":4"), "grammar case_count 4");
+
+    var p4 = map_new();
+    map_set(p4, "text", "αβγ");
+    map_set(p4, "scheme", "greek_beta");
+    var r4 = mcp_invoke("varna_translate_ipa", p4);
+    assert(streq(mcp_result_payload(r4), "abg"), "transliterate abg");
+
+    var p5 = map_new();
+    map_set(p5, "lang1", "en");
+    map_set(p5, "lang2", "de");
+    var r5 = mcp_invoke("varna_compare", p5);
+    assert(_contains(mcp_result_payload(r5), "\"shared_phonemes\""), "compare shared_phonemes");
+    assert(_contains(mcp_result_payload(r5), "\"unique_to_lang1\""), "compare unique_to_lang1");
+    assert(_contains(mcp_result_payload(r5), "\"unique_to_lang2\""), "compare unique_to_lang2");
+    assert(_contains(mcp_result_payload(r5), "\"shared_count\""), "compare shared_count");
+    assert(_contains(mcp_result_payload(r5), "\"grammar_comparison\""), "compare grammar_comparison");
+
+    test_group("errors");
+    assert(mcp_result_is_error(mcp_invoke("nonexistent", map_new())), "unknown tool");
+    assert(mcp_result_is_error(mcp_invoke("varna_phonemes", map_new())), "missing param");
+    var pu = map_new();
+    map_set(pu, "language", "xx");
+    var ru = mcp_invoke("varna_phonemes", pu);
+    assert(mcp_result_is_error(ru), "unknown language");
+    assert(_contains(mcp_result_payload(ru), "xx"), "error message interpolates the value");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

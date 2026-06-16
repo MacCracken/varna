@@ -1,0 +1,24 @@
+# tests/logging.tcyr — logging init smoke (rust-old/src/logging.rs has no tests).
+
+#define LOGGING
+include "src/logging.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("logging");
+    varna_log_init();
+    assert_eq(varna_log_level(), 2, "default info level");
+    varna_log_init_with_level("debug");
+    assert_eq(varna_log_level(), 1, "debug level");
+    varna_log_init_with_level("trace");
+    assert_eq(varna_log_level(), 0, "trace level");
+    varna_log_init_with_level("error");
+    assert_eq(varna_log_level(), 4, "error level");
+    varna_log_init_with_level("bogus");
+    assert_eq(varna_log_level(), 2, "unknown defaults to info");
+    varna_log(4, "logging smoke (stderr)");
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

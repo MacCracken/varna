@@ -20,7 +20,7 @@
 - [x] Feature flags → `-D` build defines (`LOGGING`/`MCP`/`DAIMON`/`HOOSH`)
 - [x] Legacy `lipi`/`LIPI` naming retired → `varna`/`VARNA`
 - [x] Documentation ported (README, CLAUDE.md, architecture, CONTRIBUTING, SECURITY, this roadmap)
-- [ ] Source-level reimplementation of each domain as `src/*.cyr` (follow-on, module by module, at v1.0 data parity)
+- [x] Source-level reimplementation of every domain as `src/*.cyr` — 19 modules (15 core + 4 `-D` surfaces), 523 parity assertions green against the `rust-old/` oracle
 
 ### 0.1.0 — Scaffold (2026-03-30)
 

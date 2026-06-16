@@ -37,18 +37,23 @@ Rust preserved at `rust-old/` for parity reference. See
   - **Core data engine complete — 15 modules.** `cyrius distlib` → `dist/varna.cyr` bundles + compiles.
   - ✅ `src/daimon.cyr` (`-D DAIMON`) — agent registration (6 capabilities, 51 langs, 10 scripts)
   - ✅ `src/hoosh.cyr` (`-D HOOSH`) — `LanguageQuery` + `answer_from_data` (string-built content;
-    confidence per-mille, structured_data deferred to the JSON path)
-  - ⏳ remaining surfaces: `-D LOGGING` (`src/logging.cyr` — `sakshi`/`log`), `-D MCP`
-    (`src/mcp.cyr` — JSON serializers + ToolDef)
-  - Gating: surfaces wrap their body in `#ifdef NAME`; main.cyr includes them (compiled
-    out by default), and each test `#define`s its macro so `cyrius tests` exercises it.
+    confidence per-mille, structured_data deferred)
+  - ✅ `src/logging.cyr` (`-D LOGGING`) — level-gated stderr logger (`io`); env-filter/`sakshi` deferred
+  - ✅ `src/mcp.cyr` (`-D MCP`) — 5 tools + `invoke`; lightweight ToolDef + hand-built JSON (no bote/bayan)
+  - **Port complete — 19 modules (15 core + 4 `-D` surfaces).** Default `cyrius build` excludes
+    surfaces (973 unreachable); `-D LOGGING -D MCP -D DAIMON -D HOOSH` includes all (1023).
+    `cyrius distlib` → `dist/varna.cyr`. Gating: `#ifdef NAME` body; each test `#define`s its
+    macro so `cyrius tests` exercises it.
 
 ## Tests
 
-- `cyrius tests` — green: 491 parity assertions + smoke — phoneme (32) + inventories (159) +
+- `cyrius tests` — green: 526 parity assertions + smoke — phoneme (32) + inventories (159) +
   registry (15) + script (37) + numerals (34) + transliteration (14) + allophone (8) + syllable (21) +
   grammar (47) + swadesh (78) + cognate (13) + dialect (11) + daimon (9) + hoosh (13) +
-  `tests/varna.tcyr` (smoke).
+  logging (5) + mcp (30) + `tests/varna.tcyr` (smoke).
+- Full parity audit (7-agent workflow, 2026-06-16): **0 unported public functions**; every
+  divergence documented (sentinels-for-Option, tagged enums, hand-built JSON, omitted
+  name-colliding enum variants). One fidelity fix applied (mcp compare `unique_to_*` fields).
 - `cyrius bench tests/varna.bcyr` — harness green (`noop` benchmark).
 - Parity tests against `rust-old/` land with each ported module.
 

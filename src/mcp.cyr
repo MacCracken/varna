@@ -1,0 +1,224 @@
+# src/mcp.cyr — MCP tool definitions for AI-agent integration (-D MCP).
+#
+# Ported from rust-old/src/mcp.rs. The v1.x version used bote::ToolDef and
+# serde_json; this port uses a lightweight ToolDef and hand-built JSON strings
+# (the core types are raw structs, not #derive(Serialize)). Output is valid JSON
+# with the same field set as the oracle handlers. Requires registry/script/
+# grammar/transliteration + lib/hashmap.cyr.
+#
+# ToolResult (16B): [0]=tag(0=Success,1=Error) [8]=payload(cstr)
+# ToolDef (24B):    [0]=name [8]=description [16]=schema_type
+
+#ifdef MCP
+
+fn _tool_ok(payload) {
+    var r = alloc(16);
+    store64(r, 0);
+    store64(r + 8, payload);
+    return r;
+}
+
+fn _tool_err(msg) {
+    var r = alloc(16);
+    store64(r, 1);
+    store64(r + 8, msg);
+    return r;
+}
+
+fn mcp_result_is_ok(r) { if (load64(r) == 0) { return 1; } return 0; }
+fn mcp_result_is_error(r) { if (load64(r) == 1) { return 1; } return 0; }
+fn mcp_result_payload(r) { return load64(r + 8); }
+
+fn _tool_def_new(name, description) {
+    var t = alloc(24);
+    store64(t, name);
+    store64(t + 8, description);
+    store64(t + 16, "object");
+    return t;
+}
+
+fn tool_def_name(t) { return load64(t); }
+fn tool_def_description(t) { return load64(t + 8); }
+fn tool_def_schema_type(t) { return load64(t + 16); }
+
+# The 5 MCP tool definitions exposed by varna.
+fn mcp_tool_definitions() {
+    var tools = vec_new();
+    vec_push(tools, _tool_def_new("varna_phonemes", "Get the phoneme inventory for a language. Returns consonants, vowels, stress pattern, and tone system."));
+    vec_push(tools, _tool_def_new("varna_script", "Get writing system metadata for a script. Returns type, direction, Unicode ranges, and status."));
+    vec_push(tools, _tool_def_new("varna_grammar", "Get the grammatical profile for a language. Returns morphology type, word order, case count, gender, and classifier usage."));
+    vec_push(tools, _tool_def_new("varna_translate_ipa", "Transliterate text between scripts. Supports Devanagari and IAST and Greek and Beta Code."));
+    vec_push(tools, _tool_def_new("varna_compare", "Compare two languages. Returns shared/unique phonemes, typological differences, and cognate information."));
+    return tools;
+}
+
+fn _mcp_append(buf, off, src) {
+    var len = strlen(src);
+    memcpy(buf + off, src, len);
+    return off + len;
+}
+
+# Build an Error result with an interpolated value: "<prefix><value>".
+fn _tool_err2(prefix, value) {
+    var buf = alloc(256);
+    var off = _mcp_append(buf, 0, prefix);
+    off = _mcp_append(buf, off, value);
+    store8(buf + off, 0);
+    return _tool_err(buf);
+}
+
+# Append a JSON array of the IPA strings in `src_list` that satisfy a membership
+# test against `other` (want_shared=1 -> in other; 0 -> not in other).
+fn _mcp_append_ipa_array(buf, off, src_list, other, want_shared) {
+    off = _mcp_append(buf, off, "[");
+    var n = vec_len(src_list);
+    var count = 0;
+    var i = 0;
+    while (i < n) {
+        var ipa = phoneme_ipa(vec_get(src_list, i));
+        if (phoneme_has(other, ipa) == want_shared) {
+            if (count > 0) { off = _mcp_append(buf, off, ","); }
+            off = _mcp_append(buf, off, "\"");
+            off = _mcp_append(buf, off, ipa);
+            off = _mcp_append(buf, off, "\"");
+            count = count + 1;
+        }
+        i = i + 1;
+    }
+    off = _mcp_append(buf, off, "]");
+    return off;
+}
+
+fn _mcp_shared_count(list1, other) {
+    var n = vec_len(list1);
+    var count = 0;
+    var i = 0;
+    while (i < n) {
+        if (phoneme_has(other, phoneme_ipa(vec_get(list1, i))) == 1) { count = count + 1; }
+        i = i + 1;
+    }
+    return count;
+}
+
+fn _mcp_handle_phonemes(params) {
+    var lang = map_get(params, "language");
+    if (lang == 0) { return _tool_err("missing required parameter: language"); }
+    var inv = registry_phonemes(lang);
+    if (inv == 0) { return _tool_err2("unknown language: ", lang); }
+    var buf = alloc(512);
+    var off = 0;
+    off = _mcp_append(buf, off, "{\"language_code\":\"");
+    off = _mcp_append(buf, off, phoneme_language_code(inv));
+    off = _mcp_append(buf, off, "\",\"language_name\":\"");
+    off = _mcp_append(buf, off, phoneme_language_name(inv));
+    off = _mcp_append(buf, off, "\",\"consonant_count\":");
+    off = off + fmt_int_buf(phoneme_consonant_count(inv), buf + off);
+    off = _mcp_append(buf, off, ",\"vowel_count\":");
+    off = off + fmt_int_buf(phoneme_vowel_count(inv), buf + off);
+    off = _mcp_append(buf, off, "}");
+    store8(buf + off, 0);
+    return _tool_ok(buf);
+}
+
+fn _mcp_handle_script(params) {
+    var code = map_get(params, "code");
+    if (code == 0) { return _tool_err("missing required parameter: code"); }
+    var sc = script_by_code(code);
+    if (sc == 0) { return _tool_err2("unknown script: ", code); }
+    var buf = alloc(256);
+    var off = 0;
+    off = _mcp_append(buf, off, "{\"code\":\"");
+    off = _mcp_append(buf, off, script_code(sc));
+    off = _mcp_append(buf, off, "\",\"name\":\"");
+    off = _mcp_append(buf, off, script_name(sc));
+    off = _mcp_append(buf, off, "\",\"script_type\":");
+    off = off + fmt_int_buf(script_type(sc), buf + off);
+    off = _mcp_append(buf, off, "}");
+    store8(buf + off, 0);
+    return _tool_ok(buf);
+}
+
+fn _mcp_handle_grammar(params) {
+    var lang = map_get(params, "language");
+    if (lang == 0) { return _tool_err("missing required parameter: language"); }
+    var g = grammar_by_code(lang);
+    if (g == 0) { return _tool_err2("no grammar profile for: ", lang); }
+    var buf = alloc(256);
+    var off = 0;
+    off = _mcp_append(buf, off, "{\"language_code\":\"");
+    off = _mcp_append(buf, off, grammar_language_code(g));
+    off = _mcp_append(buf, off, "\",\"case_count\":");
+    off = off + fmt_int_buf(grammar_case_count(g), buf + off);
+    off = _mcp_append(buf, off, ",\"gender_count\":");
+    off = off + fmt_int_buf(grammar_gender_count(g), buf + off);
+    off = _mcp_append(buf, off, "}");
+    store8(buf + off, 0);
+    return _tool_ok(buf);
+}
+
+fn _mcp_handle_transliterate(params) {
+    var text = map_get(params, "text");
+    if (text == 0) { return _tool_err("missing required parameter: text"); }
+    var scheme = map_get(params, "scheme");
+    if (scheme == 0) { return _tool_err("missing required parameter: scheme"); }
+    var table = 0;
+    if (streq(scheme, "devanagari_iast") == 1) { table = translit_devanagari_iast(); }
+    if (streq(scheme, "greek_beta") == 1) { table = translit_greek_beta_code(); }
+    if (table == 0) { return _tool_err2("unknown scheme: ", scheme); }
+    return _tool_ok(translit_apply(table, text));
+}
+
+fn _mcp_handle_compare(params) {
+    var lang1 = map_get(params, "lang1");
+    if (lang1 == 0) { return _tool_err("missing required parameter: lang1"); }
+    var lang2 = map_get(params, "lang2");
+    if (lang2 == 0) { return _tool_err("missing required parameter: lang2"); }
+    var inv1 = registry_phonemes(lang1);
+    if (inv1 == 0) { return _tool_err2("unknown language: ", lang1); }
+    var inv2 = registry_phonemes(lang2);
+    if (inv2 == 0) { return _tool_err2("unknown language: ", lang2); }
+
+    var ph1 = phoneme_list(inv1);
+    var ph2 = phoneme_list(inv2);
+    var buf = alloc(4096);
+    var off = 0;
+    off = _mcp_append(buf, off, "{\"lang1\":\"");
+    off = _mcp_append(buf, off, lang1);
+    off = _mcp_append(buf, off, "\",\"lang2\":\"");
+    off = _mcp_append(buf, off, lang2);
+    off = _mcp_append(buf, off, "\",\"shared_phonemes\":");
+    off = _mcp_append_ipa_array(buf, off, ph1, inv2, 1);
+    off = _mcp_append(buf, off, ",\"unique_to_lang1\":");
+    off = _mcp_append_ipa_array(buf, off, ph1, inv2, 0);
+    off = _mcp_append(buf, off, ",\"unique_to_lang2\":");
+    off = _mcp_append_ipa_array(buf, off, ph2, inv1, 0);
+    off = _mcp_append(buf, off, ",\"shared_count\":");
+    off = off + fmt_int_buf(_mcp_shared_count(ph1, inv2), buf + off);
+
+    var g1 = grammar_by_code(lang1);
+    var g2 = grammar_by_code(lang2);
+    if (g1 != 0 && g2 != 0) {
+        off = _mcp_append(buf, off, ",\"grammar_comparison\":{\"same_word_order\":");
+        if (grammar_word_order(g1) == grammar_word_order(g2)) { off = _mcp_append(buf, off, "true"); }
+        if (grammar_word_order(g1) != grammar_word_order(g2)) { off = _mcp_append(buf, off, "false"); }
+        off = _mcp_append(buf, off, ",\"same_morphology\":");
+        if (grammar_morphology(g1) == grammar_morphology(g2)) { off = _mcp_append(buf, off, "true"); }
+        if (grammar_morphology(g1) != grammar_morphology(g2)) { off = _mcp_append(buf, off, "false"); }
+        off = _mcp_append(buf, off, "}");
+    }
+    off = _mcp_append(buf, off, "}");
+    store8(buf + off, 0);
+    return _tool_ok(buf);
+}
+
+# Invoke an MCP tool by name with the given params (a lib/hashmap.cyr map).
+fn mcp_invoke(tool_name, params) {
+    if (streq(tool_name, "varna_phonemes") == 1) { return _mcp_handle_phonemes(params); }
+    if (streq(tool_name, "varna_script") == 1) { return _mcp_handle_script(params); }
+    if (streq(tool_name, "varna_grammar") == 1) { return _mcp_handle_grammar(params); }
+    if (streq(tool_name, "varna_translate_ipa") == 1) { return _mcp_handle_transliterate(params); }
+    if (streq(tool_name, "varna_compare") == 1) { return _mcp_handle_compare(params); }
+    return _tool_err2("unknown tool: ", tool_name);
+}
+
+#endif
