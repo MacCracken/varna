@@ -67,9 +67,17 @@ modules = [
 # Rust → Cyrius dependency map (the v1.x crate's Cargo deps):
 #   serde + serde_json  →  bayan           (JSON: #derive(Serialize) + json_parse/json_build)
 #   thiserror           →  result + tagged (native enum + Result<T,E>, lib/result.cyr)
-#   tracing             →  log + sakshi    (level filtering + structured audit output)
-#   tracing-subscriber  →  log + sakshi    (no separate subscriber; env-filter wired by hand)
+#   tracing             →  sakshi          (structured logging/audit — added with -D LOGGING)
+#   tracing-subscriber  →  sakshi          (no separate subscriber; env-filter wired by hand)
 #   criterion (dev)     →  cyrius bench    (lib/bench.cyr; benches/*.bcyr)
+#
+# Core data-engine deps ONLY. The optional surfaces add their own deps
+# WITH their module, so the core build stays lean (no crypto/thread/log
+# closure dragged in):
+#   -D LOGGING (src/logging.cyr) → add "sakshi"
+#   -D MCP     (src/mcp.cyr)     → add [deps.bote] + its crypto/thread
+#                                  companions (ct/keccak/random/thread/
+#                                  thread_local/sigil/freelist/chrono)
 [deps]
 stdlib = [
     "string",
@@ -87,22 +95,23 @@ stdlib = [
     "fnptr",
     "tagged",
     "result",
-    "log",
-    "sakshi",
+    "bench",
 ]
 
-# MCP tool surface (compiled only under -D MCP). bote is the AGNOS MCP /
-# JSON-RPC core, consumed as the transport-free `dist/bote-core.cyr`
-# bundle (the same 9-module profile hoosh vendors). `cyrius deps` clones
-# bote at the tag and copies dist/bote-core.cyr into lib/bote-core.cyr.
+# --- Added with -D MCP (src/mcp.cyr), not before -------------------
+# bote is the AGNOS MCP / JSON-RPC core, consumed as the transport-free
+# `dist/bote-core.cyr` bundle (the 9-module profile hoosh vendors).
+# `cyrius deps` copies dist/bote-core.cyr into lib/bote-core.cyr; it also
+# needs the crypto/thread stdlib companions appended to [deps].stdlib.
 #
 # NOTE: the v1.x `daimon` and `hoosh` Cargo features did NOT link those
 # crates — they only flipped on serde_json. Their Cyrius equivalents are
 # pure -D DAIMON / -D HOOSH build defines (JSON via bayan, already a
 # stdlib dep), so neither needs a [deps.*] entry. daimon and hoosh ship
 # as Cyrius binaries today with no consumable [lib]/dist bundle.
-[deps.bote]
-git = "https://github.com/MacCracken/bote"
-path = "../bote"
-tag = "2.7.6"
-modules = ["dist/bote-core.cyr"]
+#
+# [deps.bote]
+# git = "https://github.com/MacCracken/bote"
+# path = "../bote"
+# tag = "2.7.6"
+# modules = ["dist/bote-core.cyr"]

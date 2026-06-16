@@ -30,10 +30,9 @@ varna/
 ├── lib/                   — vendored Cyrius stdlib snapshot (cyrius deps; gitignored)
 ├── dist/
 │   └── varna.cyr          — single-file bundle for consumers (cyrius distlib)
-├── benches/
-│   └── *.bcyr             — cyrius bench harness (lib/bench.cyr)
 └── tests/
-    └── tcyr/*.tcyr        — cross-module integration tests (cyrius tests)
+    ├── *.tcyr             — cross-module integration tests (cyrius tests)
+    └── *.bcyr             — cyrius bench harness (lib/bench.cyr)
 ```
 
 ## Data Flow

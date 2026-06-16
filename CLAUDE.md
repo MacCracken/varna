@@ -16,17 +16,17 @@ shabda (G2P), shabdakosh (pronunciation dict), svara (vocal synthesis), sankhya 
 
 ## Toolchain — the Cyrius surface
 
-Varna is a single Cyrius project under `src/`, `lib/`, `tests/`, `benches/`. Build, test,
+Varna is a single Cyrius project under `src/`, `lib/`, `tests/`. Build, test,
 lint, and bench with the cyrius toolchain only.
 
 | Action | Command | Notes |
 |---|---|---|
-| Resolve deps | `cyrius deps` | Reads `cyrius.cyml`, copies stdlib + bote into `lib/` (gitignored) |
+| Resolve deps | `cyrius deps` | Reads `cyrius.cyml`, copies stdlib into `lib/` (gitignored); bote is added under `-D MCP` |
 | Verify lock | `cyrius deps --verify` | Checks `cyrius.lock` hashes |
 | Build | `cyrius build src/main.cyr build/varna` | `-D LOGGING -D MCP -D DAIMON -D HOOSH` for optional surfaces |
 | Bundle | `cyrius distlib` | Concatenates `src/` → `dist/varna.cyr` for consumers (`distlib core` → `dist/varna-core.cyr`) |
-| Run tests | `cyrius tests` | Recursively runs `tests/tcyr/*.tcyr` |
-| Run benchmarks | `cyrius bench` | Runs `benches/*.bcyr` (`lib/bench.cyr` harness) |
+| Run tests | `cyrius tests` | Recursively runs `tests/*.tcyr` |
+| Run benchmarks | `cyrius bench tests/varna.bcyr` | `lib/bench.cyr` harness (`.bcyr` in `tests/`) |
 | Format | `cyrius fmt <file> [--check]` | Per-file; `--check` is the CI gate |
 | Lint | `cyrius lint <file>` | Static analysis (`#skip-lint` exempts a line) |
 | Vet deps | `cyrius vet src/main.cyr` | Audit include dependencies |
@@ -102,7 +102,7 @@ frozen.
 - Do not add unnecessary dependencies — keep it lean
 - Do not introduce implicit aborts — there is no `unwrap()`/`panic!()`; check sentinel/`Result` returns from every fallible call
 - Do not skip benchmarks before claiming performance improvements
-- Do not commit `build/` or `cyrius.lock`
+- Do not commit `build/` or the vendored `lib/` (re-resolved by `cyrius deps`); `cyrius.lock` **is** committed (pins the resolved deps)
 
 ## Documentation Structure
 

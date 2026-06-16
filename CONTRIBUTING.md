@@ -23,8 +23,8 @@ Thank you for your interest in contributing to Varna.
 | `cyrius deps` | Resolve stdlib + git deps into `lib/` |
 | `cyrius build src/main.cyr build/varna` | Build the engine + demo entry (`-D LOGGING -D MCP -D DAIMON -D HOOSH` for optional surfaces) |
 | `cyrius distlib` | Bundle `src/` → `dist/varna.cyr` for consumers |
-| `cyrius tests` | Run `tests/tcyr/*.tcyr` |
-| `cyrius bench` | Run `benches/*.bcyr` |
+| `cyrius tests` | Run `tests/*.tcyr` (recursive) |
+| `cyrius bench tests/varna.bcyr` | Run benchmarks (`tests/*.bcyr`) |
 | `cyrius fmt <file> --check` | Formatting gate |
 | `cyrius lint <file>` | Static analysis |
 | `cyrius vet src/main.cyr` | Audit include dependencies |
@@ -41,7 +41,7 @@ Thank you for your interest in contributing to Varna.
    and `include` it in `src/main.cyr` — **order matters** (Cyrius is single-pass; a module
    must be included after everything it references)
 3. If the module needs a new stdlib dep, add it to `[deps].stdlib`
-4. Add tests in `tests/tcyr/`
+4. Add tests in `tests/` (`*.tcyr`)
 5. Update the README module table
 
 Gate optional surfaces behind a `-D` define (`#ifdef NAME` … `#endif`), not a Cargo feature.
@@ -67,7 +67,7 @@ Gate optional surfaces behind a `-D` define (`#ifdef NAME` … `#endif`), not a 
 
 ## Testing
 
-- Tests live in `tests/tcyr/*.tcyr` (run by `cyrius tests`)
+- Tests live in `tests/*.tcyr` (run by `cyrius tests`)
 - Define-gated tests with `#ifdef NAME` for optional surfaces
 - Target: 80%+ line coverage (`cyrius coverage`)
 
