@@ -1,0 +1,72 @@
+# src/daimon.cyr — AGNOS agent-framework registration (-D DAIMON).
+#
+# Ported from rust-old/src/daimon.rs. Builds the registration payload; JSON
+# serialization is the consumer's concern (the v1.x serde path). Requires
+# registry.cyr + script.cyr.
+#
+# Capability (32B):        [0]=name [8]=description [16]=inputs(vec) [24]=output
+# AgentRegistration (48B): [0]=name [8]=version [16]=description [24]=capabilities(vec)
+#                          [32]=supported_languages(vec) [40]=supported_scripts(vec)
+
+#ifdef DAIMON
+
+fn _capability_new(name, description, output) {
+    var c = alloc(32);
+    store64(c, name);
+    store64(c + 8, description);
+    store64(c + 16, vec_new());
+    store64(c + 24, output);
+    return c;
+}
+
+fn _capability_add_input(c, inp) { vec_push(load64(c + 16), inp); return c; }
+
+fn capability_name(c) { return load64(c); }
+fn capability_description(c) { return load64(c + 8); }
+fn capability_inputs(c) { return load64(c + 16); }
+fn capability_output(c) { return load64(c + 24); }
+
+fn daimon_name(r) { return load64(r); }
+fn daimon_version(r) { return load64(r + 8); }
+fn daimon_description(r) { return load64(r + 16); }
+fn daimon_capabilities(r) { return load64(r + 24); }
+fn daimon_supported_languages(r) { return load64(r + 32); }
+fn daimon_supported_scripts(r) { return load64(r + 40); }
+
+# Build varna's agent registration for daimon.
+fn daimon_registration() {
+    var r = alloc(48);
+    store64(r, "varna");
+    store64(r + 8, "2.0.0");
+    store64(r + 16, "Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access");
+
+    var caps = vec_new();
+    var c1 = _capability_new("phoneme_lookup", "Look up phoneme inventory for a language by ISO 639 code", "PhonemeInventory");
+    _capability_add_input(c1, "language_code");
+    vec_push(caps, c1);
+    var c2 = _capability_new("script_lookup", "Look up writing system metadata by ISO 15924 code", "Script");
+    _capability_add_input(c2, "script_code");
+    vec_push(caps, c2);
+    var c3 = _capability_new("grammar_profile", "Get grammatical profile (morphology, word order, cases) for a language", "GrammarProfile");
+    _capability_add_input(c3, "language_code");
+    vec_push(caps, c3);
+    var c4 = _capability_new("transliterate", "Transliterate text between scripts (Devanagari↔IAST, Greek↔Beta Code)", "String");
+    _capability_add_input(c4, "text");
+    _capability_add_input(c4, "scheme");
+    vec_push(caps, c4);
+    var c5 = _capability_new("language_compare", "Compare phoneme inventories and grammar between two languages", "ComparisonResult");
+    _capability_add_input(c5, "lang1");
+    _capability_add_input(c5, "lang2");
+    vec_push(caps, c5);
+    var c6 = _capability_new("numeral_value", "Convert script numerals to numeric values (Greek isopsephy, Devanagari, etc.)", "u32");
+    _capability_add_input(c6, "text");
+    _capability_add_input(c6, "system");
+    vec_push(caps, c6);
+
+    store64(r + 24, caps);
+    store64(r + 32, registry_all_codes());
+    store64(r + 40, script_all_codes());
+    return r;
+}
+
+#endif

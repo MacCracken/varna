@@ -1,0 +1,39 @@
+# tests/hoosh.tcyr — hoosh query-resolution parity (rust-old/src/hoosh.rs).
+
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+#define HOOSH
+include "src/hoosh.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("query_builders");
+    assert_eq(hoosh_query_tag(hoosh_identify("hello world")), LanguageQueryTag.IdentifyLanguage, "identify tag");
+    assert_eq(hoosh_query_tag(hoosh_explain_phonology("en", "vowel reduction")), LanguageQueryTag.ExplainPhonology, "explain tag");
+    assert_eq(hoosh_query_tag(hoosh_compare("en", "de", ComparisonAspect.Phonology)), LanguageQueryTag.ComparativeAnalysis, "compare tag");
+
+    test_group("answer_from_data");
+    var r1 = hoosh_answer_from_data(hoosh_examples_for_phoneme("en", "θ", 3));
+    assert(r1 != 0, "θ resolved");
+    assert_eq(hoosh_response_source(r1), ResponseSource.VarnaData, "source VarnaData");
+    assert(streq(hoosh_response_content(r1), "/θ/ is present in English (24C + 12V inventory)"), "present content");
+    assert_eq(hoosh_response_confidence(r1), 1000, "confidence 1.0 (per-mille)");
+
+    var r2 = hoosh_answer_from_data(hoosh_examples_for_phoneme("en", "ʀ", 3));
+    assert(r2 != 0, "ʀ resolved");
+    assert(streq(hoosh_response_content(r2), "/ʀ/ is not in the English phoneme inventory"), "missing content");
+
+    var r3 = hoosh_answer_from_data(hoosh_compare("en", "ja", ComparisonAspect.Phonology));
+    assert(r3 != 0, "comparison resolved");
+    assert(streq(hoosh_response_content(r3), "English has 24C+12V, Japanese has 20C+5V"), "comparison content");
+
+    assert_eq(hoosh_answer_from_data(hoosh_identify("some text")), 0, "identify needs LLM");
+    assert_eq(hoosh_answer_from_data(hoosh_examples_for_phoneme("xx", "a", 1)), 0, "unknown language none");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

@@ -19,6 +19,10 @@ include "src/registry.cyr"
 include "src/numerals.cyr"
 include "src/transliteration.cyr"
 
+# Optional AI-integration surfaces — compiled in only under their -D defines.
+include "src/daimon.cyr"
+include "src/hoosh.cyr"
+
 fn main() {
     alloc_init();
     var en = phoneme_english();

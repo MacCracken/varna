@@ -1,0 +1,166 @@
+# src/hoosh.cyr — structured LLM query interface (-D HOOSH).
+#
+# Ported from rust-old/src/hoosh.rs. Requires registry.cyr + phoneme.cyr.
+# Divergences from the v1.x serde shape: confidence is per-mille (1000 = 1.0,
+# (0-1) = None) to avoid f64; structured_data is deferred (0 = None) — it needs
+# the JSON path that lands with mcp.cyr.
+#
+# LanguageQuery (40B): [0]=tag [8]=f0 [16]=f1 [24]=f2
+# QueryResponse (40B): [0]=query_id(cstr|0) [8]=source [16]=content
+#                      [24]=confidence(per-mille|0-1) [32]=structured_data(0)
+
+#ifdef HOOSH
+
+enum ComparisonAspect {
+    Phonology = 0;
+    Grammar = 1;
+    Script = 2;
+    Lexicon = 3;
+}
+
+enum ResponseSource {
+    VarnaData = 0;
+    LlmGenerated = 1;
+    Hybrid = 2;
+}
+
+enum LanguageQueryTag {
+    IdentifyLanguage = 0;
+    ExplainPhonology = 1;
+    ExamplesForPhoneme = 2;
+    ComparativeAnalysis = 3;
+    EtymologyLookup = 4;
+}
+
+fn hoosh_query_tag(q) { return load64(q); }
+
+fn hoosh_identify(text) {
+    var q = alloc(40);
+    store64(q, LanguageQueryTag.IdentifyLanguage);
+    store64(q + 8, text);
+    return q;
+}
+
+fn hoosh_explain_phonology(language, topic) {
+    var q = alloc(40);
+    store64(q, LanguageQueryTag.ExplainPhonology);
+    store64(q + 8, language);
+    store64(q + 16, topic);
+    return q;
+}
+
+fn hoosh_examples_for_phoneme(language, ipa, count) {
+    var q = alloc(40);
+    store64(q, LanguageQueryTag.ExamplesForPhoneme);
+    store64(q + 8, language);
+    store64(q + 16, ipa);
+    store64(q + 24, count);
+    return q;
+}
+
+fn hoosh_compare(lang1, lang2, aspect) {
+    var q = alloc(40);
+    store64(q, LanguageQueryTag.ComparativeAnalysis);
+    var langs = vec_new();
+    vec_push(langs, lang1);
+    vec_push(langs, lang2);
+    store64(q + 8, langs);
+    store64(q + 16, aspect);
+    return q;
+}
+
+fn hoosh_etymology_lookup(word, source_language) {
+    var q = alloc(40);
+    store64(q, LanguageQueryTag.EtymologyLookup);
+    store64(q + 8, word);
+    store64(q + 16, source_language);
+    return q;
+}
+
+fn _query_response_new(query_id, source, content, confidence, structured_data) {
+    var r = alloc(40);
+    store64(r, query_id);
+    store64(r + 8, source);
+    store64(r + 16, content);
+    store64(r + 24, confidence);
+    store64(r + 32, structured_data);
+    return r;
+}
+
+fn hoosh_response_query_id(r) { return load64(r); }
+fn hoosh_response_source(r) { return load64(r + 8); }
+fn hoosh_response_content(r) { return load64(r + 16); }
+fn hoosh_response_confidence(r) { return load64(r + 24); }
+fn hoosh_response_structured_data(r) { return load64(r + 32); }
+
+# Append cstring `src` to `buf` at `off`; return the new offset.
+fn _hb_append(buf, off, src) {
+    var len = strlen(src);
+    memcpy(buf + off, src, len);
+    return off + len;
+}
+
+# Answer a query from varna's data — QueryResponse ptr, or 0 if it needs an LLM.
+fn hoosh_answer_from_data(q) {
+    var tag = load64(q);
+    if (tag == LanguageQueryTag.ExamplesForPhoneme) {
+        var language = load64(q + 8);
+        var ipa = load64(q + 16);
+        var inv = registry_phonemes(language);
+        if (inv == 0) { return 0; }
+        var name = phoneme_language_name(inv);
+        if (phoneme_has(inv, ipa) == 1) {
+            var buf = alloc(256);
+            var off = 0;
+            off = _hb_append(buf, off, "/");
+            off = _hb_append(buf, off, ipa);
+            off = _hb_append(buf, off, "/ is present in ");
+            off = _hb_append(buf, off, name);
+            off = _hb_append(buf, off, " (");
+            off = off + fmt_int_buf(phoneme_consonant_count(inv), buf + off);
+            off = _hb_append(buf, off, "C + ");
+            off = off + fmt_int_buf(phoneme_vowel_count(inv), buf + off);
+            off = _hb_append(buf, off, "V inventory)");
+            store8(buf + off, 0);
+            return _query_response_new(0, ResponseSource.VarnaData, buf, 1000, 0);
+        }
+        var b2 = alloc(256);
+        var o2 = 0;
+        o2 = _hb_append(b2, o2, "/");
+        o2 = _hb_append(b2, o2, ipa);
+        o2 = _hb_append(b2, o2, "/ is not in the ");
+        o2 = _hb_append(b2, o2, name);
+        o2 = _hb_append(b2, o2, " phoneme inventory");
+        store8(b2 + o2, 0);
+        return _query_response_new(0, ResponseSource.VarnaData, b2, 1000, 0);
+    }
+    if (tag == LanguageQueryTag.ComparativeAnalysis) {
+        var langs = load64(q + 8);
+        var aspect = load64(q + 16);
+        if (aspect == ComparisonAspect.Phonology && vec_len(langs) == 2) {
+            var inv1 = registry_phonemes(vec_get(langs, 0));
+            var inv2 = registry_phonemes(vec_get(langs, 1));
+            if (inv1 == 0 || inv2 == 0) { return 0; }
+            var buf = alloc(256);
+            var off = 0;
+            off = _hb_append(buf, off, phoneme_language_name(inv1));
+            off = _hb_append(buf, off, " has ");
+            off = off + fmt_int_buf(phoneme_consonant_count(inv1), buf + off);
+            off = _hb_append(buf, off, "C+");
+            off = off + fmt_int_buf(phoneme_vowel_count(inv1), buf + off);
+            off = _hb_append(buf, off, "V, ");
+            off = _hb_append(buf, off, phoneme_language_name(inv2));
+            off = _hb_append(buf, off, " has ");
+            off = off + fmt_int_buf(phoneme_consonant_count(inv2), buf + off);
+            off = _hb_append(buf, off, "C+");
+            off = off + fmt_int_buf(phoneme_vowel_count(inv2), buf + off);
+            off = _hb_append(buf, off, "V");
+            store8(buf + off, 0);
+            return _query_response_new(0, ResponseSource.VarnaData, buf, 1000, 0);
+        }
+        return 0;
+    }
+    return 0;
+}
+
+#endif

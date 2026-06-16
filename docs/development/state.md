@@ -34,16 +34,21 @@ Rust preserved at `rust-old/` for parity reference. See
   - ✅ `src/swadesh.cyr` — Swadesh-25 lists for 10 languages (250 entries)
   - ✅ `src/cognate.cyr` — water cognates + CognateSet/Etymology/BorrowingType
   - ✅ `src/dialect.cyr` — variety overlays (British English RP); `adds`/`removes`/`apply`
-  - **Core data engine complete — 15 modules.** `cyrius distlib` → `dist/varna.cyr`
-    (4487 lines) bundles and compiles standalone. Remaining: the `-D`-gated surfaces —
-    `-D LOGGING` (`src/logging.cyr`), `-D MCP` (`src/mcp.cyr`), `-D DAIMON` (`src/daimon.cyr`),
-    `-D HOOSH` (`src/hoosh.cyr`).
+  - **Core data engine complete — 15 modules.** `cyrius distlib` → `dist/varna.cyr` bundles + compiles.
+  - ✅ `src/daimon.cyr` (`-D DAIMON`) — agent registration (6 capabilities, 51 langs, 10 scripts)
+  - ✅ `src/hoosh.cyr` (`-D HOOSH`) — `LanguageQuery` + `answer_from_data` (string-built content;
+    confidence per-mille, structured_data deferred to the JSON path)
+  - ⏳ remaining surfaces: `-D LOGGING` (`src/logging.cyr` — `sakshi`/`log`), `-D MCP`
+    (`src/mcp.cyr` — JSON serializers + ToolDef)
+  - Gating: surfaces wrap their body in `#ifdef NAME`; main.cyr includes them (compiled
+    out by default), and each test `#define`s its macro so `cyrius tests` exercises it.
 
 ## Tests
 
-- `cyrius tests` — green: 469 parity assertions + smoke — phoneme (32) + inventories (159) +
+- `cyrius tests` — green: 491 parity assertions + smoke — phoneme (32) + inventories (159) +
   registry (15) + script (37) + numerals (34) + transliteration (14) + allophone (8) + syllable (21) +
-  grammar (47) + swadesh (78) + cognate (13) + dialect (11) + `tests/varna.tcyr` (smoke).
+  grammar (47) + swadesh (78) + cognate (13) + dialect (11) + daimon (9) + hoosh (13) +
+  `tests/varna.tcyr` (smoke).
 - `cyrius bench tests/varna.bcyr` — harness green (`noop` benchmark).
 - Parity tests against `rust-old/` land with each ported module.
 
