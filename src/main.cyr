@@ -5,6 +5,7 @@
 
 include "src/error.cyr"
 include "src/phoneme.cyr"
+include "src/inventories.cyr"
 
 fn main() {
     alloc_init();

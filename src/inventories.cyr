@@ -1,0 +1,2223 @@
+# src/inventories.cyr — extended language phoneme inventories.
+# Ported from rust-old/src/phoneme/inventories.rs (transpiled, byte-exact IPA).
+# Uses the phoneme.cyr builder API + enums. 48 inventories.
+
+fn phoneme_yucatec_maya() {
+
+    var b = phoneme_builder_with_capacity("yua", "Yucatec Maya", 31);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    # Ejectives
+    phoneme_builder_consonant(b, "pʼ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "tʼ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "kʼ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "t͡sʼ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Approximants
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels (5 short + 5 long)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_swahili() {
+
+    var b = phoneme_builder_with_capacity("sw", "Swahili", 29);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
+    phoneme_builder_consonant(b, "ð", Manner.Fricative, Place.Dental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Vowels (5-vowel system)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_yoruba() {
+
+    var b = phoneme_builder_with_capacity("yo", "Yoruba", 25);
+    phoneme_builder_stress(b, StressPattern.Tonal);
+    var t = vec_new();
+    vec_push(t, "˥");
+    vec_push(t, "˧");
+    vec_push(t, "˩");
+    phoneme_builder_tones(b, t);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "k͡p", Manner.Plosive, Place.LabialVelar, 0);
+    phoneme_builder_consonant(b, "ɡ͡b", Manner.Plosive, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Vowels (7 oral)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_zulu() {
+
+    var b = phoneme_builder_with_capacity("zu", "Zulu", 52);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Implosives
+    phoneme_builder_consonant(b, "ɓ", Manner.Plosive, Place.Bilabial, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ɦ", Manner.Fricative, Place.Glottal, 1);
+    phoneme_builder_consonant(b, "ɬ", Manner.LateralFricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ɮ", Manner.LateralFricative, Place.Alveolar, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Approximants
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Clicks (dental, alveolar, lateral)
+    phoneme_builder_consonant(b, "ǀ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "ǀʰ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "ɡǀ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "ŋǀ", Manner.Nasal, Place.Dental, 1);
+    phoneme_builder_consonant(b, "ǃ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ǃʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ɡǃ", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋǃ", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ǁ", Manner.LateralFricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ǁʰ", Manner.LateralFricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ɡǁ", Manner.LateralFricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋǁ", Manner.Nasal, Place.Alveolar, 1);
+    # Vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_thai() {
+
+    var b = phoneme_builder_with_capacity("th", "Thai", 30);
+    phoneme_builder_stress(b, StressPattern.Tonal);
+    var t = vec_new();
+    vec_push(t, "˧");
+    vec_push(t, "˨˩");
+    vec_push(t, "˨˩˦");
+    vec_push(t, "˦˥");
+    vec_push(t, "˩˧˥");
+    phoneme_builder_tones(b, t);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɤ", Height.CloseMid, Backness.Back, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɯ", Height.Close, Backness.Back, 0);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_vietnamese() {
+
+    var b = phoneme_builder_with_capacity("vi", "Vietnamese", 33);
+    phoneme_builder_stress(b, StressPattern.Tonal);
+    var t = vec_new();
+    vec_push(t, "˧");
+    vec_push(t, "˨˩˦");
+    vec_push(t, "˧˥");
+    vec_push(t, "˧˩˧");
+    vec_push(t, "˧ˀ˥");
+    vec_push(t, "˨˩ˀ");
+    phoneme_builder_tones(b, t);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɯ", Height.Close, Backness.Back, 0);
+    phoneme_builder_vowel(b, "ɤ", Height.CloseMid, Backness.Back, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ă", Height.NearOpen, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɤ̆", Height.CloseMid, Backness.Back, 0);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_tagalog() {
+
+    var b = phoneme_builder_with_capacity("tl", "Tagalog", 23);
+    phoneme_builder_stress(b, StressPattern.Free);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_turkish() {
+
+    var b = phoneme_builder_with_capacity("tr", "Turkish", 29);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels (8-vowel harmony system: front/back × rounded/unrounded × high/low)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "y", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ø", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "ɯ", Height.Close, Backness.Back, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_finnish() {
+
+    var b = phoneme_builder_with_capacity("fi", "Finnish", 33);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "ʋ", Manner.Approximant, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    # Vowels (short)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "æ", Height.NearOpen, Backness.Front, 0);
+    phoneme_builder_vowel(b, "y", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel(b, "ø", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "ɑ", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    # Long vowels
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "æː", Height.NearOpen, Backness.Front, 0);
+    phoneme_builder_vowel(b, "yː", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel(b, "øː", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "ɑː", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_hawaiian() {
+
+    var b = phoneme_builder_with_capacity("haw", "Hawaiian", 18);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    # Short vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    # Long vowels
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_nahuatl() {
+
+    var b = phoneme_builder_with_capacity("nah", "Nahuatl", 23);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʷ", Manner.Plosive, Place.LabialVelar, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "t͡ɬ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ɬ", Manner.LateralFricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels (short)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    # Long vowels
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_latin() {
+
+    var b = phoneme_builder_with_capacity("la", "Latin", 28);
+    phoneme_builder_stress(b, StressPattern.Free);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "kʷ", Manner.Plosive, Place.LabialVelar, 0);
+    phoneme_builder_consonant(b, "ɡʷ", Manner.Plosive, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Short vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    # Long vowels
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_classical_arabic() {
+
+    var b = phoneme_builder_with_capacity("ar", "Arabic", 34);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "tˤ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "dˤ", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
+    phoneme_builder_consonant(b, "ð", Manner.Fricative, Place.Dental, 1);
+    phoneme_builder_consonant(b, "ðˤ", Manner.Fricative, Place.Dental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "sˤ", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ħ", Manner.Fricative, Place.Pharyngeal, 0);
+    phoneme_builder_consonant(b, "ʕ", Manner.Fricative, Place.Pharyngeal, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Affricates
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Approximants
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_koine_greek() {
+
+    var b = phoneme_builder_with_capacity("grc", "Koine Greek", 22);
+    phoneme_builder_stress(b, StressPattern.PitchAccent);
+    # Plosives (aspirated series lost by Koine period → fricatives)
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Fricatives (from earlier aspirated stops)
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Approximant
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels (monophthongization underway)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_literary_chinese() {
+
+    var b = phoneme_builder_with_capacity("lzh", "Literary Chinese", 40);
+    phoneme_builder_stress(b, StressPattern.Tonal);
+    var t = vec_new();
+    vec_push(t, "˥");
+    vec_push(t, "˧˥");
+    vec_push(t, "˥˩");
+    vec_push(t, "˩ʔ");
+    phoneme_builder_tones(b, t);
+    # Plosives (voiceless, aspirated, voiced triads)
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "ʑ", Manner.Fricative, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    # Vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɑ", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "æ", Height.NearOpen, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɐ", Height.NearOpen, Backness.Central, 0);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_mandarin() {
+
+    var b = phoneme_builder_with_capacity("zh", "Mandarin Chinese", 28);
+    phoneme_builder_stress(b, StressPattern.Tonal);
+    var t = vec_new();
+    vec_push(t, "˥˥");
+    vec_push(t, "˧˥");
+    vec_push(t, "˨˩˦");
+    vec_push(t, "˥˩");
+    vec_push(t, "˧");
+    phoneme_builder_tones(b, t);
+    # Bilabials
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    # Alveolars
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    # Alveolar sibilants
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    # Retroflex sibilants
+    phoneme_builder_consonant(b, "ʈ͡ʂ", Manner.Affricate, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ʈ͡ʂʰ", Manner.Affricate, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ʂ", Manner.Fricative, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ɻ", Manner.Approximant, Place.Retroflex, 1);
+    # Palatals (from velar/alveolar before front vowels)
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
+    # Velars
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    # Vowels (nuclear vowels of the syllable finals)
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɤ", Height.CloseMid, Backness.Back, 0);
+    phoneme_builder_vowel(b, "e", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "y", Height.Close, Backness.Front, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_hindi() {
+
+    var b = phoneme_builder_with_capacity("hi", "Hindi", 44);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Velars
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ɡʱ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Palatals
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "d͡ʑʱ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Retroflexes
+    phoneme_builder_consonant(b, "ʈ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ɖ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "ɖʱ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "ɳ", Manner.Nasal, Place.Retroflex, 1);
+    # Dentals
+    phoneme_builder_consonant(b, "t̪", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "d̪", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "d̪ʱ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Bilabials
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "bʱ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    # Approximants & liquids
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʋ", Manner.Approximant, Place.Labiodental, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "ʂ", Manner.Fricative, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ɦ", Manner.Fricative, Place.Glottal, 1);
+    # Borrowed / marginal
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    # Vowels (short and long pairs + schwa)
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛː", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_japanese() {
+
+    var b = phoneme_builder_with_capacity("ja", "Japanese", 20);
+    phoneme_builder_stress(b, StressPattern.PitchAccent);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates (allophonic before /i/, /u/ — treated as separate in inventory)
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "ɸ", Manner.Fricative, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Approximants & liquids
+    phoneme_builder_consonant(b, "ɾ", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    # Vowels (5-vowel system)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 0);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_spanish() {
+
+    var b = phoneme_builder_with_capacity("es", "Spanish", 24);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "β", Manner.Fricative, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "ð", Manner.Fricative, Place.Dental, 1);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "rr", Manner.Trill, Place.Alveolar, 1);
+    # Approximants
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    # Vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_french() {
+
+    var b = phoneme_builder_with_capacity("fr", "French", 36);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʁ", Manner.Fricative, Place.Uvular, 1);
+    # Approximants (semi-vowels)
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "ɥ", Manner.Approximant, Place.Palatal, 1);
+    # Oral vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɑ", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "y", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel(b, "ø", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "œ", Height.OpenMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    # Nasal vowels
+    phoneme_builder_vowel(b, "ɛ̃", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɑ̃", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "œ̃", Height.OpenMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "ɔ̃", Height.OpenMid, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_german() {
+
+    var b = phoneme_builder_with_capacity("de", "German", 37);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "p͡f", Manner.Affricate, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ç", Manner.Fricative, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "ʁ", Manner.Fricative, Place.Uvular, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Liquids & approximants
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Short vowels
+    phoneme_builder_vowel(b, "ɪ", Height.NearClose, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ʊ", Height.NearClose, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ʏ", Height.NearClose, Backness.Front, 1);
+    phoneme_builder_vowel(b, "œ", Height.OpenMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    # Long vowels
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛː", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "yː", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel(b, "øː", Height.CloseMid, Backness.Front, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_russian() {
+
+    var b = phoneme_builder_with_capacity("ru", "Russian", 38);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives (plain / palatalized pairs)
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʲ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "bʲ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "tʲ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "dʲ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʲ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ɡʲ", Manner.Plosive, Place.Velar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    # Fricatives (plain / palatalized pairs)
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "fʲ", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "vʲ", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "sʲ", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "zʲ", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "ɕː", Manner.Fricative, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "xʲ", Manner.Fricative, Place.Velar, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "mʲ", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "nʲ", Manner.Nasal, Place.Alveolar, 1);
+    # Liquids & approximants
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "lʲ", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "rʲ", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels (6-vowel system: stressed realisations)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_korean() {
+
+    var b = phoneme_builder_with_capacity("ko", "Korean", 26);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives: lax / aspirated / tense triads
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "p͈", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͈", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "k͈", Manner.Plosive, Place.Velar, 0);
+    # Affricate: lax / aspirated / tense
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕ͈", Manner.Affricate, Place.Palatal, 0);
+    # Fricatives: lax / tense
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "s͈", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Liquid
+    phoneme_builder_consonant(b, "ɾ", Manner.TapFlap, Place.Alveolar, 1);
+    # Vowels (basic monophthongs)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɯ", Height.Close, Backness.Back, 0);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_portuguese() {
+
+    var b = phoneme_builder_with_capacity("pt", "Portuguese", 33);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Liquids & approximants
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʁ", Manner.Fricative, Place.Uvular, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    # Oral vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɐ", Height.NearOpen, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
+    # Nasal vowels
+    phoneme_builder_vowel(b, "ẽ", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ã", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "õ", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ĩ", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ũ", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_italian() {
+
+    var b = phoneme_builder_with_capacity("it", "Italian", 30);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Approximants
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels (7-vowel system)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_dutch() {
+
+    var b = phoneme_builder_with_capacity("nl", "Dutch", 32);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʀ", Manner.Trill, Place.Uvular, 1);
+    # Approximants
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Monophthong vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "y", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ø", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "œ", Height.OpenMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    # Diphthongs (as vowel units)
+    phoneme_builder_vowel(b, "ɛi", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "œy", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "ɑu", Height.Open, Backness.Back, 0);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_polish() {
+
+    var b = phoneme_builder_with_capacity("pl", "Polish", 35);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates — three series
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "t͡ʂ", Manner.Affricate, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "d͡ʐ", Manner.Affricate, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
+    # Fricatives — alveolar series
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    # Fricatives — retroflex series
+    phoneme_builder_consonant(b, "ʂ", Manner.Fricative, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ʐ", Manner.Fricative, Place.Retroflex, 1);
+    # Fricatives — alveolo-palatal series
+    phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "ʑ", Manner.Fricative, Place.Palatal, 1);
+    # Fricatives — other
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Approximants
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels (6-vowel system)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_bengali() {
+
+    var b = phoneme_builder_with_capacity("bn", "Bengali", 37);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Velars
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ɡʱ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Palatals (affricate series)
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "d͡ʑʱ", Manner.Affricate, Place.Palatal, 1);
+    # Retroflexes
+    phoneme_builder_consonant(b, "ʈ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ɖ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "ɖʱ", Manner.Plosive, Place.Retroflex, 1);
+    # Dentals
+    phoneme_builder_consonant(b, "t̪", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "d̪", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "d̪ʱ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Bilabials
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "bʱ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ɦ", Manner.Fricative, Place.Glottal, 1);
+    # Approximants & liquids
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɽ", Manner.TapFlap, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    # Vowels
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "æ", Height.NearOpen, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_tamil() {
+
+    var b = phoneme_builder_with_capacity("ta", "Tamil", 28);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives (voiceless; voiced are allophonic)
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "t̪", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "ʈ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɳ", Manner.Nasal, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Approximants & liquids
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ʋ", Manner.Approximant, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɻ", Manner.Approximant, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɭ", Manner.LateralApproximant, Place.Retroflex, 1);
+    # Vowels (5 short + 5 long)
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_urdu() {
+
+    var b = phoneme_builder_with_capacity("ur", "Urdu", 47);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Velars
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ɡʱ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Uvular (Persian/Arabic)
+    phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
+    # Palatals
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "d͡ʑʱ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Retroflexes
+    phoneme_builder_consonant(b, "ʈ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant(b, "ɖ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "ɖʱ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "ɳ", Manner.Nasal, Place.Retroflex, 1);
+    # Dentals
+    phoneme_builder_consonant(b, "t̪", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "d̪", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "d̪ʱ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Bilabials
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "bʱ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    # Approximants & liquids
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʋ", Manner.Approximant, Place.Labiodental, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ɦ", Manner.Fricative, Place.Glottal, 1);
+    # Vowels (short and long pairs + schwa)
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛː", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_amharic() {
+
+    var b = phoneme_builder_with_capacity("am", "Amharic", 34);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plain plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Ejectives
+    phoneme_builder_consonant(b, "pʼ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "tʼ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "kʼ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "t͡sʼ", Manner.Affricate, Place.Alveolar, 0);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Approximants / liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    # Vowels (7-vowel system — the seven Ethiopic orders)
+    phoneme_builder_vowel(b, "ä", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_hausa() {
+
+    var b = phoneme_builder_with_capacity("ha", "Hausa", 35);
+    phoneme_builder_stress(b, StressPattern.Tonal);
+    var t = vec_new();
+    vec_push(t, "˥");
+    vec_push(t, "˩");
+    phoneme_builder_tones(b, t);
+    # Plain plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    phoneme_builder_consonant(b, "ʔʲ", Manner.Plosive, Place.Palatal, 0);
+    # Implosives (bilabial + alveolar)
+    phoneme_builder_consonant(b, "ɓ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "ɗ", Manner.Plosive, Place.Alveolar, 1);
+    # Ejective
+    phoneme_builder_consonant(b, "kʼ", Manner.Plosive, Place.Velar, 0);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Approximants / liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    # Vowels: 5 short + 5 long
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_indonesian() {
+
+    var b = phoneme_builder_with_capacity("id", "Indonesian", 24);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Approximant / liquid
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    # Vowels (6-vowel system)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_persian() {
+
+    var b = phoneme_builder_with_capacity("fa", "Persian", 29);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Approximants / liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Vowels (6-vowel system)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "æ", Height.NearOpen, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɑ", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_hebrew() {
+
+    var b = phoneme_builder_with_capacity("he", "Hebrew", 28);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "χ", Manner.Fricative, Place.Uvular, 0);
+    phoneme_builder_consonant(b, "ʁ", Manner.Fricative, Place.Uvular, 1);
+    phoneme_builder_consonant(b, "ħ", Manner.Fricative, Place.Pharyngeal, 0);
+    phoneme_builder_consonant(b, "ʕ", Manner.Fricative, Place.Pharyngeal, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Approximants / liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels (5-vowel system)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_georgian() {
+
+    var b = phoneme_builder_with_capacity("ka", "Georgian", 33);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives — voiced
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Plosives — voiceless aspirated
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    # Plosives — ejective
+    phoneme_builder_consonant(b, "pʼ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "tʼ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "kʼ", Manner.Plosive, Place.Velar, 0);
+    # Glottal stop
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Affricates — voiced
+    phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Affricates — voiceless aspirated
+    phoneme_builder_consonant(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ʃʰ", Manner.Affricate, Place.Postalveolar, 0);
+    # Affricates — ejective
+    phoneme_builder_consonant(b, "t͡sʼ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Approximants / liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Vowels (5-vowel system)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_czech() {
+
+    var b = phoneme_builder_with_capacity("cs", "Czech", 35);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives — voiceless / voiced pairs
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates — voiceless / voiced pairs
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Fricatives — voiceless / voiced pairs
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Liquids — r̝ (ř) is a raised alveolar trill unique to Czech
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r̝", Manner.Trill, Place.Alveolar, 1);
+    # Approximant
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels — 5 short + 5 long
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_hungarian() {
+
+    var b = phoneme_builder_with_capacity("hu", "Hungarian", 39);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives — plain and palatal pairs
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "c", Manner.Plosive, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "ɟ", Manner.Plosive, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates — voiceless / voiced pairs
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Liquids / approximants
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels — 7 short + 7 long (front rounded y/ø included)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "y", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel(b, "yː", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ø", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "øː", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Back, 1);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_romanian() {
+
+    var b = phoneme_builder_with_capacity("ro", "Romanian", 28);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives — voiceless / voiced pairs
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Fricatives — voiceless / voiced pairs
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Liquids / approximants
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels — 7 (ɨ is unique among Romance languages)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_burmese() {
+
+    var b = phoneme_builder_with_capacity("my", "Burmese", 37);
+    phoneme_builder_stress(b, StressPattern.Tonal);
+    var t = vec_new();
+    vec_push(t, "˥");
+    vec_push(t, "˧ˀ");
+    vec_push(t, "˨˩");
+    vec_push(t, "˩ʔ");
+    phoneme_builder_tones(b, t);
+    # Bilabial plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    # Alveolar plosives
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    # Velar plosives
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Glottal stop
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
+    phoneme_builder_consonant(b, "ð", Manner.Fricative, Place.Dental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Voiced nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Voiceless nasals (modal voiceless)
+    phoneme_builder_consonant(b, "m̥", Manner.Nasal, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "n̥", Manner.Nasal, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ŋ̊", Manner.Nasal, Place.Velar, 0);
+    # Approximants & liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels (7-vowel system)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_khmer() {
+
+    var b = phoneme_builder_with_capacity("km", "Khmer", 42);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plosives (plain)
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Aspirated plosives
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    # Implosives
+    phoneme_builder_consonant(b, "ɓ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "ɗ", Manner.Plosive, Place.Alveolar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Approximants & liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Short vowels (9)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    # Long vowels (9)
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛː", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɨː", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel(b, "əː", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_somali() {
+
+    var b = phoneme_builder_with_capacity("so", "Somali", 32);
+    phoneme_builder_stress(b, StressPattern.Tonal);
+    var t = vec_new();
+    vec_push(t, "˥");
+    vec_push(t, "˩");
+    phoneme_builder_tones(b, t);
+    # Plosives
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɖ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ħ", Manner.Fricative, Place.Pharyngeal, 0);
+    phoneme_builder_consonant(b, "ʕ", Manner.Fricative, Place.Pharyngeal, 1);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    # Approximants & liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Short vowels (5)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    # Long vowels (5)
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "oː", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_quechua() {
+
+    var b = phoneme_builder_with_capacity("qu", "Quechua", 27);
+    phoneme_builder_stress(b, StressPattern.Fixed);
+    # Plain stops
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
+    # Aspirated stops
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ʃʰ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "qʰ", Manner.Plosive, Place.Uvular, 0);
+    # Ejectives
+    phoneme_builder_consonant(b, "pʼ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "tʼ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "kʼ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "qʼ", Manner.Plosive, Place.Uvular, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    # Approximants & liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Three-vowel system (typologically notable)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_guarani() {
+
+    var b = phoneme_builder_with_capacity("gn", "Guarani", 28);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plain stops & glottal
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Prenasalized stops (modelled as voiced plosives)
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricate
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Trill & approximants
+    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Oral vowels (6)
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
+    # Nasal vowels (6)
+    phoneme_builder_vowel(b, "ã", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ẽ", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ĩ", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "õ", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ũ", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɨ̃", Height.Close, Backness.Central, 0);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_icelandic() {
+
+    var b = phoneme_builder_with_capacity("is", "Icelandic", 30);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Aspirated voiceless stops (phonemically distinctive)
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    # Plain (unaspirated) voiceless stops
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    # Voiced stops
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
+    phoneme_builder_consonant(b, "ð", Manner.Fricative, Place.Dental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ç", Manner.Fricative, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Voiceless lateral fricative (unique feature)
+    phoneme_builder_consonant(b, "ɬ", Manner.LateralFricative, Place.Alveolar, 0);
+    # Voiceless nasals (pre-aspiration related)
+    phoneme_builder_consonant(b, "m̥", Manner.Nasal, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "n̥", Manner.Nasal, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "ŋ̊", Manner.Nasal, Place.Velar, 0);
+    # Voiced nasal + trill + approximant
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Monophthong vowels (8)
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɪ", Height.NearClose, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_wolof() {
+
+    var b = phoneme_builder_with_capacity("wo", "Wolof", 33);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
+    # Prenasalized stops (phonemic units, not sequences)
+    phoneme_builder_consonant(b, "mb", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "nd", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ɲɟ", Manner.Plosive, Place.Palatal, 1);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "χ", Manner.Fricative, Place.Uvular, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Approximants / liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels — short
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    # Vowels — long
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_lao() {
+
+    var b = phoneme_builder_with_capacity("lo", "Lao", 29);
+    phoneme_builder_stress(b, StressPattern.Tonal);
+    var t = vec_new();
+    vec_push(t, "˧");
+    vec_push(t, "˨˩");
+    vec_push(t, "˥˩");
+    vec_push(t, "˦˥");
+    vec_push(t, "˩˧˥");
+    vec_push(t, "˧˥");
+    phoneme_builder_tones(b, t);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Approximants / liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels — short/long pairs
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɯ", Height.Close, Backness.Back, 0);
+    phoneme_builder_vowel(b, "ɯː", Height.Close, Backness.Back, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    # Diphthong
+    phoneme_builder_vowel(b, "ia", Height.CloseMid, Backness.Front, 0);
+    return phoneme_builder_build(b);
+}
+
+fn phoneme_mongolian() {
+
+    var b = phoneme_builder_with_capacity("mn", "Mongolian", 35);
+    phoneme_builder_stress(b, StressPattern.Free);
+    # Plosives
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # Affricates
+    phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    # Fricatives
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant(b, "χ", Manner.Fricative, Place.Uvular, 0);
+    # Lateral fricative
+    phoneme_builder_consonant(b, "ɮ", Manner.LateralFricative, Place.Alveolar, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    # Approximants / liquids
+    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Vowels — back harmony set (short)
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    # Vowels — front harmony set (short)
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ø", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    # Vowels — long pairs
+    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "øː", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    return phoneme_builder_build(b);
+}
+

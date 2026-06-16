@@ -18,13 +18,16 @@ Rust preserved at `rust-old/` for parity reference. See
 - Rust reference: 8386 lines at `rust-old/` (frozen, do not edit).
 - Cyrius port (in-flight, module by module against the `rust-old/` oracle):
   - ✅ `src/error.cyr` — VarnaError codes
-  - ✅ `src/phoneme.cyr` — phoneme types, builder, `english`/`sanskrit`/`greek` inventories
-  - ⏳ inventories, allophone, syllable, script, transliteration, numerals,
-    grammar, lexicon, swadesh, cognate, dialect, registry; then the `-D` surfaces
+  - ✅ `src/phoneme.cyr` — phoneme types, builder, `english`/`sanskrit`/`greek`
+  - ✅ `src/inventories.cyr` — 48 extended language inventories (51 languages total)
+  - ⏳ allophone, syllable, script, transliteration, numerals, grammar,
+    lexicon, swadesh, cognate, dialect, registry; then the `-D` surfaces
 
 ## Tests
 
-- `cyrius tests` — green: `tests/phoneme.tcyr` (32 parity assertions) + `tests/varna.tcyr` (smoke).
+- `cyrius tests` — green: 193 parity assertions — `tests/phoneme.tcyr` (32) +
+  `tests/inventories.tcyr` (159: 48 inventory counts/codes + special phonemes) +
+  `tests/varna.tcyr` (smoke).
 - `cyrius bench tests/varna.bcyr` — harness green (`noop` benchmark).
 - Parity tests against `rust-old/` land with each ported module.
 
