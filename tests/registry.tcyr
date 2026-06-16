@@ -1,0 +1,41 @@
+# tests/registry.tcyr — registry parity tests (rust-old/src/registry.rs).
+
+include "src/error.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/registry.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("registry");
+    var en = registry_info("en");
+    assert(en != 0, "info en found");
+    assert(streq(registry_info_name(en), "English"), "en name English");
+    assert(streq(registry_primary_script_code("en"), "Latn"), "en script Latn");
+    assert_eq(registry_info("xx"), 0, "info xx unknown");
+    var sa = registry_phonemes("sa");
+    assert(sa != 0, "phonemes sa found");
+    assert(streq(phoneme_language_code(sa), "sa"), "phonemes sa code");
+    assert(phoneme_consonant_count(sa) > 0, "phonemes sa has consonants");
+    assert_eq(registry_phonemes("xx"), 0, "phonemes xx unknown");
+    assert_eq(registry_primary_script_code("xx"), 0, "script xx unknown");
+
+    test_group("registry_codes");
+    var codes = registry_all_codes();
+    assert_eq(vec_len(codes), 51, "51 registered codes");
+    assert_eq(vec_len(registry_languages()), 51, "51 registered languages");
+    # every registered language resolves to a phoneme inventory
+    var n = vec_len(codes);
+    var i = 0;
+    var missing = 0;
+    while (i < n) {
+        if (registry_phonemes(vec_get(codes, i)) == 0) { missing = missing + 1; }
+        i = i + 1;
+    }
+    assert_eq(missing, 0, "all 51 languages have a phoneme inventory");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

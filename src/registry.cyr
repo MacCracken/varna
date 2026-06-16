@@ -1,0 +1,174 @@
+# src/registry.cyr — central ISO 639 language lookup.
+# Ported from rust-old/src/registry.rs. Maps codes -> LanguageInfo / phoneme
+# inventory / primary script code. Needs phoneme.cyr + inventories.cyr.
+#
+# LanguageInfo (24B): [0]=code  [8]=name  [16]=scripts(vec of cstrings)
+
+var _varna_langs = 0;   # vec of LanguageInfo ptrs, lazily built
+
+fn _li_new(code, name, sc) {
+    var li = alloc(24);
+    store64(li, code);
+    store64(li + 8, name);
+    var sv = vec_new();
+    vec_push(sv, sc);
+    store64(li + 16, sv);
+    return li;
+}
+
+fn registry_info_code(li) { return load64(li); }
+fn registry_info_name(li) { return load64(li + 8); }
+fn registry_info_scripts(li) { return load64(li + 16); }
+
+fn _registry_build() {
+    var r = vec_new();
+    vec_push(r, _li_new("en", "English", "Latn"));
+    vec_push(r, _li_new("sa", "Sanskrit", "Deva"));
+    vec_push(r, _li_new("el", "Greek", "Grek"));
+    vec_push(r, _li_new("yua", "Yucatec Maya", "Latn"));
+    vec_push(r, _li_new("sw", "Swahili", "Latn"));
+    vec_push(r, _li_new("yo", "Yoruba", "Latn"));
+    vec_push(r, _li_new("zu", "Zulu", "Latn"));
+    vec_push(r, _li_new("th", "Thai", "Thai"));
+    vec_push(r, _li_new("vi", "Vietnamese", "Latn"));
+    vec_push(r, _li_new("tl", "Tagalog", "Latn"));
+    vec_push(r, _li_new("tr", "Turkish", "Latn"));
+    vec_push(r, _li_new("fi", "Finnish", "Latn"));
+    vec_push(r, _li_new("haw", "Hawaiian", "Latn"));
+    vec_push(r, _li_new("nah", "Nahuatl", "Latn"));
+    vec_push(r, _li_new("la", "Latin", "Latn"));
+    vec_push(r, _li_new("ar", "Arabic", "Arab"));
+    vec_push(r, _li_new("grc", "Koine Greek", "Grek"));
+    vec_push(r, _li_new("lzh", "Literary Chinese", "Hani"));
+    vec_push(r, _li_new("zh", "Mandarin Chinese", "Hani"));
+    vec_push(r, _li_new("hi", "Hindi", "Deva"));
+    vec_push(r, _li_new("bn", "Bengali", "Beng"));
+    vec_push(r, _li_new("ta", "Tamil", "Taml"));
+    vec_push(r, _li_new("ur", "Urdu", "Arab"));
+    vec_push(r, _li_new("ja", "Japanese", "Kana"));
+    vec_push(r, _li_new("es", "Spanish", "Latn"));
+    vec_push(r, _li_new("fr", "French", "Latn"));
+    vec_push(r, _li_new("de", "German", "Latn"));
+    vec_push(r, _li_new("ru", "Russian", "Cyrl"));
+    vec_push(r, _li_new("ko", "Korean", "Hang"));
+    vec_push(r, _li_new("pt", "Portuguese", "Latn"));
+    vec_push(r, _li_new("it", "Italian", "Latn"));
+    vec_push(r, _li_new("nl", "Dutch", "Latn"));
+    vec_push(r, _li_new("pl", "Polish", "Latn"));
+    vec_push(r, _li_new("am", "Amharic", "Ethi"));
+    vec_push(r, _li_new("ha", "Hausa", "Latn"));
+    vec_push(r, _li_new("id", "Indonesian", "Latn"));
+    vec_push(r, _li_new("fa", "Persian", "Arab"));
+    vec_push(r, _li_new("he", "Hebrew", "Hebr"));
+    vec_push(r, _li_new("ka", "Georgian", "Geor"));
+    vec_push(r, _li_new("cs", "Czech", "Latn"));
+    vec_push(r, _li_new("hu", "Hungarian", "Latn"));
+    vec_push(r, _li_new("ro", "Romanian", "Latn"));
+    vec_push(r, _li_new("my", "Burmese", "Mymr"));
+    vec_push(r, _li_new("km", "Khmer", "Khmr"));
+    vec_push(r, _li_new("so", "Somali", "Latn"));
+    vec_push(r, _li_new("qu", "Quechua", "Latn"));
+    vec_push(r, _li_new("gn", "Guarani", "Latn"));
+    vec_push(r, _li_new("is", "Icelandic", "Latn"));
+    vec_push(r, _li_new("wo", "Wolof", "Latn"));
+    vec_push(r, _li_new("lo", "Lao", "Laoo"));
+    vec_push(r, _li_new("mn", "Mongolian", "Cyrl"));
+    return r;
+}
+
+fn registry_languages() {
+    if (_varna_langs == 0) { _varna_langs = _registry_build(); }
+    return _varna_langs;
+}
+
+# Look up a language by ISO 639 code — LanguageInfo ptr, or 0 if unknown.
+fn registry_info(code) {
+    var langs = registry_languages();
+    var n = vec_len(langs);
+    var i = 0;
+    while (i < n) {
+        var li = vec_get(langs, i);
+        if (streq(registry_info_code(li), code) == 1) { return li; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# All registered ISO 639 codes — vec of cstrings.
+fn registry_all_codes() {
+    var langs = registry_languages();
+    var n = vec_len(langs);
+    var codes = vec_new();
+    var i = 0;
+    while (i < n) {
+        vec_push(codes, registry_info_code(vec_get(langs, i)));
+        i = i + 1;
+    }
+    return codes;
+}
+
+# Primary script ISO 15924 code for a language, or 0 if unknown.
+# (registry_primary_script -> Script object lands with src/script.cyr.)
+fn registry_primary_script_code(code) {
+    var li = registry_info(code);
+    if (li == 0) { return 0; }
+    var sv = registry_info_scripts(li);
+    if (vec_len(sv) == 0) { return 0; }
+    return vec_get(sv, 0);
+}
+
+# Phoneme inventory for a language, or 0 if unavailable.
+fn registry_phonemes(code) {
+    if (streq(code, "en") == 1) { return phoneme_english(); }
+    if (streq(code, "sa") == 1) { return phoneme_sanskrit(); }
+    if (streq(code, "el") == 1) { return phoneme_greek(); }
+    if (streq(code, "yua") == 1) { return phoneme_yucatec_maya(); }
+    if (streq(code, "sw") == 1) { return phoneme_swahili(); }
+    if (streq(code, "yo") == 1) { return phoneme_yoruba(); }
+    if (streq(code, "zu") == 1) { return phoneme_zulu(); }
+    if (streq(code, "th") == 1) { return phoneme_thai(); }
+    if (streq(code, "vi") == 1) { return phoneme_vietnamese(); }
+    if (streq(code, "tl") == 1) { return phoneme_tagalog(); }
+    if (streq(code, "tr") == 1) { return phoneme_turkish(); }
+    if (streq(code, "fi") == 1) { return phoneme_finnish(); }
+    if (streq(code, "haw") == 1) { return phoneme_hawaiian(); }
+    if (streq(code, "nah") == 1) { return phoneme_nahuatl(); }
+    if (streq(code, "la") == 1) { return phoneme_latin(); }
+    if (streq(code, "ar") == 1) { return phoneme_classical_arabic(); }
+    if (streq(code, "grc") == 1) { return phoneme_koine_greek(); }
+    if (streq(code, "lzh") == 1) { return phoneme_literary_chinese(); }
+    if (streq(code, "zh") == 1) { return phoneme_mandarin(); }
+    if (streq(code, "hi") == 1) { return phoneme_hindi(); }
+    if (streq(code, "bn") == 1) { return phoneme_bengali(); }
+    if (streq(code, "ta") == 1) { return phoneme_tamil(); }
+    if (streq(code, "ur") == 1) { return phoneme_urdu(); }
+    if (streq(code, "ja") == 1) { return phoneme_japanese(); }
+    if (streq(code, "es") == 1) { return phoneme_spanish(); }
+    if (streq(code, "fr") == 1) { return phoneme_french(); }
+    if (streq(code, "de") == 1) { return phoneme_german(); }
+    if (streq(code, "ru") == 1) { return phoneme_russian(); }
+    if (streq(code, "ko") == 1) { return phoneme_korean(); }
+    if (streq(code, "pt") == 1) { return phoneme_portuguese(); }
+    if (streq(code, "it") == 1) { return phoneme_italian(); }
+    if (streq(code, "nl") == 1) { return phoneme_dutch(); }
+    if (streq(code, "pl") == 1) { return phoneme_polish(); }
+    if (streq(code, "am") == 1) { return phoneme_amharic(); }
+    if (streq(code, "ha") == 1) { return phoneme_hausa(); }
+    if (streq(code, "id") == 1) { return phoneme_indonesian(); }
+    if (streq(code, "fa") == 1) { return phoneme_persian(); }
+    if (streq(code, "he") == 1) { return phoneme_hebrew(); }
+    if (streq(code, "ka") == 1) { return phoneme_georgian(); }
+    if (streq(code, "cs") == 1) { return phoneme_czech(); }
+    if (streq(code, "hu") == 1) { return phoneme_hungarian(); }
+    if (streq(code, "ro") == 1) { return phoneme_romanian(); }
+    if (streq(code, "my") == 1) { return phoneme_burmese(); }
+    if (streq(code, "km") == 1) { return phoneme_khmer(); }
+    if (streq(code, "so") == 1) { return phoneme_somali(); }
+    if (streq(code, "qu") == 1) { return phoneme_quechua(); }
+    if (streq(code, "gn") == 1) { return phoneme_guarani(); }
+    if (streq(code, "is") == 1) { return phoneme_icelandic(); }
+    if (streq(code, "wo") == 1) { return phoneme_wolof(); }
+    if (streq(code, "lo") == 1) { return phoneme_lao(); }
+    if (streq(code, "mn") == 1) { return phoneme_mongolian(); }
+    return 0;
+}
