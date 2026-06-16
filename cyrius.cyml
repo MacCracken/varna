@@ -21,19 +21,20 @@ output = "build/varna"
 [lib]
 modules = [
     "src/error.cyr",
+    "src/util.cyr",
     "src/phoneme.cyr",
     "src/inventories.cyr",
     "src/allophone.cyr",
     "src/syllable.cyr",
-    "src/script.cyr",
-    "src/transliteration.cyr",
-    "src/numerals.cyr",
     "src/grammar.cyr",
     "src/lexicon.cyr",
     "src/swadesh.cyr",
     "src/cognate.cyr",
     "src/dialect.cyr",
+    "src/script.cyr",
     "src/registry.cyr",
+    "src/numerals.cyr",
+    "src/transliteration.cyr",
 ]
 
 # Core-only bundle: the linguistic data engine without the optional AI
@@ -43,19 +44,20 @@ modules = [
 [lib.core]
 modules = [
     "src/error.cyr",
+    "src/util.cyr",
     "src/phoneme.cyr",
     "src/inventories.cyr",
     "src/allophone.cyr",
     "src/syllable.cyr",
-    "src/script.cyr",
-    "src/transliteration.cyr",
-    "src/numerals.cyr",
     "src/grammar.cyr",
     "src/lexicon.cyr",
     "src/swadesh.cyr",
     "src/cognate.cyr",
     "src/dialect.cyr",
+    "src/script.cyr",
     "src/registry.cyr",
+    "src/numerals.cyr",
+    "src/transliteration.cyr",
 ]
 
 # ── Dependencies ─────────────────────────────────────────────────

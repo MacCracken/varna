@@ -284,7 +284,9 @@ assert(!phoneme_has(rp_inv, "ɹ"));
 ```
 
 `VarietyKind` variants: `VarietyKind.Regional`, `VarietyKind.NationalStandard`,
-`VarietyKind.Historical`, `VarietyKind.Sociolect`, `VarietyKind.Creole`.
+`VarietyKind.Sociolect`, `VarietyKind.Creole`. (The v1.x `Historical` variant is
+omitted — its name collides with `ScriptStatus.Historical` in Cyrius's flat enum
+namespace.)
 
 ---
 

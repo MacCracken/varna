@@ -1,0 +1,104 @@
+# src/dialect.cyr — language-variety overlays on a base inventory.
+#
+# Ported from rust-old/src/dialect.rs. Requires phoneme.cyr (apply) and
+# allophone.cyr (AllophoneRule overrides).
+#
+# LanguageVariety (56B): [0]=code [8]=name [16]=parent [24]=kind
+#   [32]=added_phonemes(vec) [40]=removed_phonemes(vec) [48]=allophone_overrides(vec)
+
+# VarietyKind.Historical is omitted: its name would collide with the
+# ScriptStatus.Historical enum constant (Cyrius enum variants share one flat
+# symbol namespace). No pre-built variety uses it.
+enum VarietyKind {
+    Regional = 0;
+    NationalStandard = 1;
+    Sociolect = 2;
+    Creole = 3;
+}
+
+fn _variety_new(code, name, parent, kind) {
+    var v = alloc(56);
+    store64(v, code);
+    store64(v + 8, name);
+    store64(v + 16, parent);
+    store64(v + 24, kind);
+    store64(v + 32, vec_new());
+    store64(v + 40, vec_new());
+    store64(v + 48, vec_new());
+    return v;
+}
+
+fn _variety_add_added(v, ipa) { vec_push(load64(v + 32), ipa); return v; }
+fn _variety_add_removed(v, ipa) { vec_push(load64(v + 40), ipa); return v; }
+fn _variety_add_override(v, rule) { vec_push(load64(v + 48), rule); return v; }
+
+fn dialect_code(v) { return load64(v); }
+fn dialect_name(v) { return load64(v + 8); }
+fn dialect_parent(v) { return load64(v + 16); }
+fn dialect_kind(v) { return load64(v + 24); }
+fn dialect_added(v) { return load64(v + 32); }
+fn dialect_removed(v) { return load64(v + 40); }
+fn dialect_overrides(v) { return load64(v + 48); }
+
+# Does this variety add a phoneme not in the parent?
+fn dialect_adds(v, ipa) {
+    var added = load64(v + 32);
+    var n = vec_len(added);
+    var i = 0;
+    while (i < n) {
+        if (streq(vec_get(added, i), ipa) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Does this variety remove a phoneme from the parent?
+fn dialect_removes(v, ipa) {
+    var removed = load64(v + 40);
+    var n = vec_len(removed);
+    var i = 0;
+    while (i < n) {
+        if (streq(vec_get(removed, i), ipa) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Apply this variety's overlay to a parent inventory, producing a new inventory
+# (parent phonemes minus removed, plus added as Mid/Central vowels).
+fn dialect_apply(v, parent) {
+    var inv = phoneme_builder_with_capacity(load64(v), load64(v + 8), 48);
+    store64(inv + 24, phoneme_stress(parent));
+    store64(inv + 32, phoneme_tones(parent));
+    var dst = load64(inv + 16);
+    var pph = phoneme_list(parent);
+    var n = vec_len(pph);
+    var i = 0;
+    while (i < n) {
+        var p = vec_get(pph, i);
+        if (dialect_removes(v, phoneme_ipa(p)) == 0) { vec_push(dst, p); }
+        i = i + 1;
+    }
+    var added = load64(v + 32);
+    var m = vec_len(added);
+    var j = 0;
+    while (j < m) {
+        var ipa = vec_get(added, j);
+        if (phoneme_has(inv, ipa) == 0) {
+            vec_push(dst, phoneme_vowel(ipa, Height.Mid, Backness.Central, 0));
+        }
+        j = j + 1;
+    }
+    return inv;
+}
+
+# --- Pre-built varieties -------------------------------------------
+
+# British English (Received Pronunciation).
+fn dialect_british_english() {
+    var v = _variety_new("en-GB", "British English (RP)", "en", VarietyKind.NationalStandard);
+    _variety_add_added(v, "ɒ");
+    _variety_add_removed(v, "ɹ");
+    _variety_add_override(v, _arule_new("t", "t", Environment.Intervocalic, 1));
+    return v;
+}

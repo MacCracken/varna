@@ -1,0 +1,32 @@
+# tests/dialect.tcyr — dialect-overlay parity (rust-old/src/dialect.rs).
+
+include "src/phoneme.cyr"
+include "src/allophone.cyr"
+include "src/dialect.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("british_english");
+    var rp = dialect_british_english();
+    assert(streq(dialect_parent(rp), "en"), "parent en");
+    assert_eq(dialect_kind(rp), VarietyKind.NationalStandard, "national standard");
+    assert(dialect_adds(rp, "ɒ"), "adds ɒ");
+    assert(dialect_removes(rp, "ɹ"), "removes ɹ");
+    assert_eq(dialect_adds(rp, "xyz"), 0, "no add xyz");
+    assert_eq(vec_len(dialect_overrides(rp)), 1, "1 allophone override");
+
+    test_group("apply");
+    var ga = phoneme_english();
+    var rp_inv = dialect_apply(rp, ga);
+    assert(streq(phoneme_language_code(rp_inv), "en-GB"), "applied code en-GB");
+    assert(phoneme_has(rp_inv, "ɒ"), "applied has ɒ (added)");
+    assert_eq(phoneme_has(rp_inv, "ɹ"), 0, "applied removed ɹ");
+    # parent inventory must be left unmodified
+    assert(phoneme_has(ga, "ɹ"), "parent still has ɹ");
+    assert_eq(phoneme_has(ga, "ɒ"), 0, "parent still lacks ɒ");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
