@@ -80,6 +80,17 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-See [`roadmap.md`](roadmap.md). The current milestone is Rust→Cyrius surface parity:
-reimplement each `src/*.cyr` module against the `rust-old/` oracle, keeping
-`cyrius build` / `cyrius tests` green at every step.
+The port is complete and shipped as 2.0.0. Remaining work is post-port:
+
+- **2.0.1 — remove `rust-old/`** (planned, separate session, after another review
+  sweep). `rust-old/` is currently kept as the frozen parity oracle per
+  [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md). When it's removed, sweep the
+  references that point into it:
+  - ADR 0001 — supersede/annotate the "preserve `rust-old/`" decision
+  - CHANGELOG `[2.0.0]`, SECURITY.md (`frozen in rust-old/`), CLAUDE.md, this file, roadmap
+  - module headers (`# Ported from rust-old/src/...`) across `src/*.cyr`
+  - `docs/benchmarks-rust-vs-cyrius.md` bottom pointer; `.gitignore` `/rust-old/target/`
+  - the Rust criterion numbers are already preserved in `docs/benchmarks-rust-vs-cyrius.md`,
+    so removal loses no benchmark history
+- **Optimization** (unstarted, see `docs/benchmarks-rust-vs-cyrius.md`): cache the immutable
+  pre-built inventories/scripts/profiles (build-once); intern lookups. Parity-safe wins.

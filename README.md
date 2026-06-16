@@ -134,6 +134,13 @@ cyrius bench tests/varna.bcyr        # run benchmarks (tests/*.bcyr)
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full toolchain reference.
 
+## Benchmarks
+
+Latest numbers in [BENCHMARKS.md](BENCHMARKS.md) (18 benchmarks, every domain). A
+before/after analysis of the Rust → Cyrius port — with the methodology caveats that
+make a fair comparison — is in
+[docs/benchmarks-rust-vs-cyrius.md](docs/benchmarks-rust-vs-cyrius.md).
+
 ## License
 
 GPL-3.0-only. See [LICENSE](LICENSE).
