@@ -1,11 +1,8 @@
 .PHONY: check deps fmt lint vet deny test bench coverage build distlib doc clean
 
-# Run all CI checks locally (umbrella gate)
-check: audit
-
-# Umbrella gate: fmt + lint + format + tests
-audit:
-	cyrius audit
+# Local cleanliness + test gate (deps + fmt + lint + build + full build + tests)
+check:
+	sh scripts/check.sh
 
 # Resolve stdlib + git deps into lib/
 deps:
@@ -27,7 +24,7 @@ vet:
 deny:
 	cyrius deny src/main.cyr
 
-# Run test suite (tests/tcyr/*.tcyr)
+# Run test suite (tests/*.tcyr)
 test:
 	cyrius tests
 

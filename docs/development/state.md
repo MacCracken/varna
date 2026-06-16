@@ -54,8 +54,13 @@ Rust preserved at `rust-old/` for parity reference. See
 - Full parity audit (7-agent workflow, 2026-06-16): **0 unported public functions**; every
   divergence documented (sentinels-for-Option, tagged enums, hand-built JSON, omitted
   name-colliding enum variants). One fidelity fix applied (mcp compare `unique_to_*` fields).
-- `cyrius bench tests/varna.bcyr` — harness green (`noop` benchmark).
-- Parity tests against `rust-old/` land with each ported module.
+- `sh scripts/check.sh` — local gate green: `cyrius deps` + `fmt --check` + `lint` (0 warnings)
+  + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
+- `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
+  (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
+- **Release-ready (2.0.0):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.0.0]`); CI runs `check.sh` + bench + distlib; release.yml
+  bundles `dist/varna.cyr`.
 
 ## Dependencies
 

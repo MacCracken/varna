@@ -32,7 +32,7 @@ lint, and bench with the cyrius toolchain only.
 | Vet deps | `cyrius vet src/main.cyr` | Audit include dependencies |
 | Enforce policy | `cyrius deny src/main.cyr` | Deny-list checks |
 | Doc | `cyrius doc --check src/main.cyr` | Doc currency gate |
-| Umbrella gate | `cyrius audit` | Runs the whole `check.sh` suite (fmt / lint / format / tests) |
+| Local gate | `sh scripts/check.sh` | deps + fmt + lint + build (default + full) + tests (`cyrius audit` needs the cyrius-repo check.sh, not installed for consumers) |
 
 **Never run `cargo`, `clippy`, `rustc`, `cargo-audit`, or `cargo-deny`** — those are
 stale references from the pre-2.0 Rust era. They survive only in `rust-old/`, which is
@@ -44,7 +44,7 @@ frozen.
 
 0. Read roadmap, CHANGELOG, and open issues — know what was intended before auditing what was built
 1. Test + benchmark sweep of existing code (`cyrius tests`, `cyrius bench`)
-2. Cleanliness check: `cyrius fmt --check`, `cyrius lint`, `cyrius vet`, `cyrius deny`, `cyrius doc --check` (or the umbrella `cyrius audit`)
+2. Cleanliness check: `cyrius fmt --check`, `cyrius lint`, `cyrius vet`, `cyrius deny`, `cyrius doc --check` (or `sh scripts/check.sh`)
 3. Get baseline benchmarks (`./scripts/bench-history.sh`)
 4. Internal deep review — gaps, optimizations, security, logging/errors, docs
 5. External research — domain completeness, missing capabilities, best practices, world-class accuracy
@@ -56,7 +56,7 @@ frozen.
 ### Work Loop / Working Loop (continuous)
 
 1. Work phase — new features, roadmap items, bug fixes
-2. Cleanliness check: `cyrius fmt --check`, `cyrius lint`, `cyrius vet`, `cyrius deny`, `cyrius doc --check` (or `cyrius audit`)
+2. Cleanliness check: `cyrius fmt --check`, `cyrius lint`, `cyrius vet`, `cyrius deny`, `cyrius doc --check` (or `sh scripts/check.sh`)
 3. Test + benchmark additions for new code
 4. Run benchmarks (`./scripts/bench-history.sh`)
 5. Internal review — performance, memory, security, throughput, correctness

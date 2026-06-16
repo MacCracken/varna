@@ -53,13 +53,23 @@ parity; the implementation language, build system, and dependency stack changed.
   `.cyr` bundle, navigable in `src/`).
 - The `std`/`no_std`/`alloc` feature distinction — Cyrius emits a single artifact.
 
+### Performance
+
+- Baselined 18 benchmarks via `cyrius bench tests/varna.bcyr` (`bench-history.csv` /
+  `BENCHMARKS.md`). Representative per-op `min` figures: phoneme lookup 419ns,
+  `script_by_code` 838ns, grammar lookup 419ns, English inventory build 2µs, registry
+  iteration over 51 languages 40µs.
+
 ### Note
 
-The source-level port (`cyrius port` → `rust-old/`, then re-implementing each module as
-`src/*.cyr`) is the follow-on step; this release establishes the Cyrius project metadata,
-dependency mapping, and documentation. `daimon`/`hoosh` remain Cyrius binaries with no
-consumable library bundle, so those define-gated surfaces only toggle JSON output, not a
-link against those projects.
+The source-level port is **complete**: all 19 modules (15 core + 4 `-D` surfaces) are
+reimplemented as `src/*.cyr`, verified by **526 parity assertions** (`cyrius tests`)
+against the frozen `rust-old/` oracle plus a 7-agent parity audit (0 unported public
+functions). Documented divergences from the oracle: sentinel returns for `Option`/`Result`,
+integer-tagged enums, hand-built JSON (`mcp` uses a lightweight `ToolDef`, no `bote`/`bayan`),
+`hoosh` confidence as per-mille, and the name-colliding enum variants `WordOrder.Free` /
+`VarietyKind.Historical` / `PhonemeClass` omitted. `daimon`/`hoosh` remain Cyrius binaries
+with no consumable library bundle, so those define-gated surfaces only toggle JSON output.
 
 ## [1.0.0] - 2026-03-31
 

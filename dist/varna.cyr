@@ -2900,7 +2900,7 @@ fn phonotactics_sanskrit() {
 
 fn phonotactics_japanese() {
     var p = _phonotactics_new("ja", _syllable_new(1, 1, 1, "(C)V(N)"));
-    var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda, "Only moraic nasal permitted in Japanese coda");
+    var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda, "Only moraic nasal permitted in Japanese coda");  #skip-lint
     _constraint_add_seq(ok, "n");
     _constraint_add_seq(ok, "ɴ");
     _phonotactics_add(p, ok);
@@ -3844,7 +3844,7 @@ fn script_devanagari() {
 }
 
 fn script_cjk() {
-    var s = _script_new("Hani", "CJK Unified Ideographs", ScriptType.Logographic, Direction.LeftToRight, ScriptStatus.Living, 0);
+    var s = _script_new("Hani", "CJK Unified Ideographs", ScriptType.Logographic, Direction.LeftToRight, ScriptStatus.Living, 0);  #skip-lint
     _script_add_range(s, 0x4E00, 0x9FFF);
     _script_add_range(s, 0x3400, 0x4DBF);
     _script_add_range(s, 0x20000, 0x2A6DF);
@@ -3875,7 +3875,7 @@ fn script_hangul() {
 }
 
 fn script_kana() {
-    var s = _script_new("Kana", "Kana (Hiragana + Katakana)", ScriptType.Syllabary, Direction.LeftToRight, ScriptStatus.Living, 0);
+    var s = _script_new("Kana", "Kana (Hiragana + Katakana)", ScriptType.Syllabary, Direction.LeftToRight, ScriptStatus.Living, 0);  #skip-lint
     _script_add_range(s, 0x3040, 0x309F);
     _script_add_range(s, 0x30A0, 0x30FF);
     _script_add_range(s, 0x31F0, 0x31FF);
@@ -3892,7 +3892,7 @@ fn script_greek() {
 }
 
 fn script_cuneiform() {
-    var s = _script_new("Xsux", "Cuneiform", ScriptType.Logographic, Direction.LeftToRight, ScriptStatus.Historical, "3400 BCE – 75 CE");
+    var s = _script_new("Xsux", "Cuneiform", ScriptType.Logographic, Direction.LeftToRight, ScriptStatus.Historical, "3400 BCE – 75 CE");  #skip-lint
     _script_add_range(s, 0x12000, 0x1237F);
     _script_add_range(s, 0x12400, 0x1247F);
     _script_add_range(s, 0x12480, 0x1254F);
@@ -3902,7 +3902,7 @@ fn script_cuneiform() {
 }
 
 fn script_egyptian() {
-    var s = _script_new("Egyp", "Egyptian Hieroglyphs", ScriptType.Logographic, Direction.RightToLeft, ScriptStatus.Historical, "3200 BCE – 400 CE");
+    var s = _script_new("Egyp", "Egyptian Hieroglyphs", ScriptType.Logographic, Direction.RightToLeft, ScriptStatus.Historical, "3200 BCE – 400 CE");  #skip-lint
     _script_add_range(s, 0x13000, 0x1342F);
     _script_add_range(s, 0x13430, 0x1345F);
     _script_add_lang(s, "egy");

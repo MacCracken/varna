@@ -32,13 +32,14 @@ jobs:
           echo "$HOME/.cyrius/bin" >> $GITHUB_PATH
           echo "CYRIUS_HOME=$HOME/.cyrius" >> $GITHUB_ENV
 
-      - name: Resolve dependencies
-        run: cyrius deps
+      - name: Check (deps + fmt + lint + build + full build + tests)
+        run: sh scripts/check.sh
 
-      - name: Build
-        run: |
-          mkdir -p build
-          cyrius build src/main.cyr build/${{ github.event.repository.name }}
+      - name: Benchmarks
+        run: ./scripts/bench-history.sh
+
+      - name: Distlib bundle
+        run: cyrius distlib
 
   docs:
     name: Documentation

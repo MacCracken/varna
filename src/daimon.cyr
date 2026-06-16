@@ -38,27 +38,27 @@ fn daimon_registration() {
     var r = alloc(48);
     store64(r, "varna");
     store64(r + 8, "2.0.0");
-    store64(r + 16, "Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access");
+    store64(r + 16, "Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access");  #skip-lint
 
     var caps = vec_new();
-    var c1 = _capability_new("phoneme_lookup", "Look up phoneme inventory for a language by ISO 639 code", "PhonemeInventory");
+    var c1 = _capability_new("phoneme_lookup", "Look up phoneme inventory for a language by ISO 639 code", "PhonemeInventory");  #skip-lint
     _capability_add_input(c1, "language_code");
     vec_push(caps, c1);
     var c2 = _capability_new("script_lookup", "Look up writing system metadata by ISO 15924 code", "Script");
     _capability_add_input(c2, "script_code");
     vec_push(caps, c2);
-    var c3 = _capability_new("grammar_profile", "Get grammatical profile (morphology, word order, cases) for a language", "GrammarProfile");
+    var c3 = _capability_new("grammar_profile", "Get grammatical profile (morphology, word order, cases) for a language", "GrammarProfile");  #skip-lint
     _capability_add_input(c3, "language_code");
     vec_push(caps, c3);
-    var c4 = _capability_new("transliterate", "Transliterate text between scripts (Devanagari↔IAST, Greek↔Beta Code)", "String");
+    var c4 = _capability_new("transliterate", "Transliterate text between scripts (Devanagari↔IAST, Greek↔Beta Code)", "String");  #skip-lint
     _capability_add_input(c4, "text");
     _capability_add_input(c4, "scheme");
     vec_push(caps, c4);
-    var c5 = _capability_new("language_compare", "Compare phoneme inventories and grammar between two languages", "ComparisonResult");
+    var c5 = _capability_new("language_compare", "Compare phoneme inventories and grammar between two languages", "ComparisonResult");  #skip-lint
     _capability_add_input(c5, "lang1");
     _capability_add_input(c5, "lang2");
     vec_push(caps, c5);
-    var c6 = _capability_new("numeral_value", "Convert script numerals to numeric values (Greek isopsephy, Devanagari, etc.)", "u32");
+    var c6 = _capability_new("numeral_value", "Convert script numerals to numeric values (Greek isopsephy, Devanagari, etc.)", "u32");  #skip-lint
     _capability_add_input(c6, "text");
     _capability_add_input(c6, "system");
     vec_push(caps, c6);

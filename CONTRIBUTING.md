@@ -7,7 +7,7 @@ Thank you for your interest in contributing to Varna.
 1. Fork and clone the repository
 2. Create a feature branch from `main`
 3. Make your changes
-4. Run `cyrius audit` to validate
+4. Run `sh scripts/check.sh` to validate
 5. Open a pull request
 
 ## Prerequisites
@@ -30,7 +30,7 @@ Thank you for your interest in contributing to Varna.
 | `cyrius vet src/main.cyr` | Audit include dependencies |
 | `cyrius deny src/main.cyr` | Enforce project policies |
 | `cyrius doc --check src/main.cyr` | Doc currency gate |
-| `cyrius audit` | Umbrella gate (fmt + lint + format + tests) |
+| `sh scripts/check.sh` | Local gate (deps + fmt + lint + build + full build + tests) |
 
 `./scripts/bench-history.sh` snapshots `cyrius bench` into the CSV trend history.
 

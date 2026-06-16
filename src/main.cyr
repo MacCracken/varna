@@ -25,6 +25,7 @@ include "src/daimon.cyr"
 include "src/hoosh.cyr"
 include "src/mcp.cyr"
 
+# Demo entry — loads the English inventory and confirms the engine links.
 fn main() {
     alloc_init();
     var en = phoneme_english();

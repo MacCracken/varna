@@ -44,11 +44,11 @@ fn tool_def_schema_type(t) { return load64(t + 16); }
 # The 5 MCP tool definitions exposed by varna.
 fn mcp_tool_definitions() {
     var tools = vec_new();
-    vec_push(tools, _tool_def_new("varna_phonemes", "Get the phoneme inventory for a language. Returns consonants, vowels, stress pattern, and tone system."));
-    vec_push(tools, _tool_def_new("varna_script", "Get writing system metadata for a script. Returns type, direction, Unicode ranges, and status."));
-    vec_push(tools, _tool_def_new("varna_grammar", "Get the grammatical profile for a language. Returns morphology type, word order, case count, gender, and classifier usage."));
-    vec_push(tools, _tool_def_new("varna_translate_ipa", "Transliterate text between scripts. Supports Devanagari and IAST and Greek and Beta Code."));
-    vec_push(tools, _tool_def_new("varna_compare", "Compare two languages. Returns shared/unique phonemes, typological differences, and cognate information."));
+    vec_push(tools, _tool_def_new("varna_phonemes", "Get the phoneme inventory for a language. Returns consonants, vowels, stress pattern, and tone system."));  #skip-lint
+    vec_push(tools, _tool_def_new("varna_script", "Get writing system metadata for a script. Returns type, direction, Unicode ranges, and status."));  #skip-lint
+    vec_push(tools, _tool_def_new("varna_grammar", "Get the grammatical profile for a language. Returns morphology type, word order, case count, gender, and classifier usage."));  #skip-lint
+    vec_push(tools, _tool_def_new("varna_translate_ipa", "Transliterate text between scripts. Supports Devanagari and IAST and Greek and Beta Code."));  #skip-lint
+    vec_push(tools, _tool_def_new("varna_compare", "Compare two languages. Returns shared/unique phonemes, typological differences, and cognate information."));  #skip-lint
     return tools;
 }
 

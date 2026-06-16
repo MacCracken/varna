@@ -126,7 +126,7 @@ cyrius deps                          # resolve stdlib + bote into lib/
 cyrius build src/main.cyr build/varna # compile the engine + demo entry
 cyrius distlib                       # bundle src/ → dist/varna.cyr for consumers
 
-cyrius audit                         # umbrella gate: fmt + lint + format + tests
+sh scripts/check.sh                  # local gate: deps + fmt + lint + build + tests
 cyrius tests                         # run tests/*.tcyr (recursive)
 cyrius bench tests/varna.bcyr        # run benchmarks (tests/*.bcyr)
 ./scripts/bench-history.sh           # benchmarks with CSV trend history

@@ -1,23 +1,112 @@
-# varna benchmarks
-# Run: cyrius bench tests/varna.bcyr
+# varna benchmarks — ported from rust-old/benches/benchmarks.rs (criterion).
+# Run: cyrius bench tests/varna.bcyr   (or ./scripts/bench-history.sh)
 
 include "lib/string.cyr"
 include "lib/fmt.cyr"
 include "lib/alloc.cyr"
+include "lib/vec.cyr"
+include "lib/str.cyr"
+include "lib/slice.cyr"
 include "lib/io.cyr"
+include "lib/hashmap.cyr"
 include "lib/fnptr.cyr"
 include "lib/bench.cyr"
 include "lib/syscalls.cyr"
 
-fn bench_noop() {
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+# Pre-built state for lookup benchmarks.
+var _b_en = 0;
+var _b_deva = 0;
+var _b_iast = 0;
+var _b_beta = 0;
+var _b_iso = 0;
+var _b_es = 0;
+var _b_allo = 0;
+var _b_phono = 0;
+var _b_rp = 0;
+
+fn b_english_inventory() { phoneme_english(); return 0; }
+fn b_sanskrit_inventory() { phoneme_sanskrit(); return 0; }
+fn b_greek_inventory() { phoneme_greek(); return 0; }
+fn b_phoneme_lookup() { phoneme_find(_b_en, "ʃ"); return 0; }
+fn b_registry_lookup() { registry_phonemes("sa"); return 0; }
+fn b_registry_all_codes_iter() {
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    var i = 0;
+    while (i < n) {
+        registry_info(vec_get(codes, i));
+        i = i + 1;
+    }
+    return 0;
+}
+fn b_script_lookup() { script_by_code("Deva"); return 0; }
+fn b_script_contains_codepoint() { script_contains_codepoint(_b_deva, 0x0915); return 0; }
+fn b_translit_deva_char() { translit_char(_b_iast, "क"); return 0; }
+fn b_translit_greek_word() { translit_apply(_b_beta, "φιλοσοφια"); return 0; }
+fn b_numeral_value_of() { numerals_value_of(_b_iso, "π"); return 0; }
+fn b_numeral_string_value() { numerals_string_value(_b_iso, "θεος"); return 0; }
+fn b_grammar_lookup() { grammar_by_code("ru"); return 0; }
+fn b_swadesh_lookup() { swadesh_by_code("ja"); return 0; }
+fn b_lexicon_find() { lexicon_find(_b_es, "agua"); return 0; }
+fn b_allophone_realize() { allophone_realize(_b_allo, "t", Environment.Intervocalic); return 0; }
+fn b_phonotactics_is_permitted() { phonotactics_is_permitted(_b_phono, "str", SyllablePosition.Onset); return 0; }
+fn b_dialect_apply() { dialect_apply(_b_rp, _b_en); return 0; }
+
+fn _bench(benches, name, fp, n) {
+    var b = bench_new(name);
+    bench_run(b, fp, n);
+    vec_push(benches, b);
     return 0;
 }
 
 fn main() {
     alloc_init();
-    var b = bench_new("noop");
-    bench_run(b, &bench_noop, 1000000);
-    bench_report(b);
+    _b_en = phoneme_english();
+    _b_deva = script_devanagari();
+    _b_iast = translit_devanagari_iast();
+    _b_beta = translit_greek_beta_code();
+    _b_iso = numerals_greek_isopsephy();
+    _b_es = swadesh_by_code("es");
+    _b_allo = allophone_english();
+    _b_phono = phonotactics_english();
+    _b_rp = dialect_british_english();
+
+    var benches = vec_new();
+    _bench(benches, "english_phoneme_inventory", &b_english_inventory, 100000);
+    _bench(benches, "sanskrit_phoneme_inventory", &b_sanskrit_inventory, 100000);
+    _bench(benches, "greek_phoneme_inventory", &b_greek_inventory, 100000);
+    _bench(benches, "phoneme_lookup_ipa", &b_phoneme_lookup, 1000000);
+    _bench(benches, "registry_phonemes_lookup", &b_registry_lookup, 100000);
+    _bench(benches, "registry_all_codes_iter", &b_registry_all_codes_iter, 100000);
+    _bench(benches, "script_by_code_lookup", &b_script_lookup, 1000000);
+    _bench(benches, "script_contains_codepoint", &b_script_contains_codepoint, 1000000);
+    _bench(benches, "transliterate_devanagari_char", &b_translit_deva_char, 1000000);
+    _bench(benches, "transliterate_greek_word", &b_translit_greek_word, 100000);
+    _bench(benches, "numeral_value_of_char", &b_numeral_value_of, 1000000);
+    _bench(benches, "numeral_string_value_word", &b_numeral_string_value, 1000000);
+    _bench(benches, "grammar_by_code_lookup", &b_grammar_lookup, 1000000);
+    _bench(benches, "swadesh_by_code_lookup", &b_swadesh_lookup, 100000);
+    _bench(benches, "lexicon_find_word", &b_lexicon_find, 1000000);
+    _bench(benches, "allophone_realize", &b_allophone_realize, 1000000);
+    _bench(benches, "phonotactics_is_permitted", &b_phonotactics_is_permitted, 1000000);
+    _bench(benches, "dialect_apply_overlay", &b_dialect_apply, 100000);
+    bench_report_all(benches);
     return 0;
 }
 

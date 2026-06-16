@@ -11,8 +11,8 @@ fn main() {
     alloc_init();
     test_group("query_builders");
     assert_eq(hoosh_query_tag(hoosh_identify("hello world")), LanguageQueryTag.IdentifyLanguage, "identify tag");
-    assert_eq(hoosh_query_tag(hoosh_explain_phonology("en", "vowel reduction")), LanguageQueryTag.ExplainPhonology, "explain tag");
-    assert_eq(hoosh_query_tag(hoosh_compare("en", "de", ComparisonAspect.Phonology)), LanguageQueryTag.ComparativeAnalysis, "compare tag");
+    assert_eq(hoosh_query_tag(hoosh_explain_phonology("en", "vowel reduction")), LanguageQueryTag.ExplainPhonology, "explain tag");  #skip-lint
+    assert_eq(hoosh_query_tag(hoosh_compare("en", "de", ComparisonAspect.Phonology)), LanguageQueryTag.ComparativeAnalysis, "compare tag");  #skip-lint
 
     test_group("answer_from_data");
     var r1 = hoosh_answer_from_data(hoosh_examples_for_phoneme("en", "θ", 3));

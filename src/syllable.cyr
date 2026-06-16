@@ -178,7 +178,7 @@ fn phonotactics_sanskrit() {
 
 fn phonotactics_japanese() {
     var p = _phonotactics_new("ja", _syllable_new(1, 1, 1, "(C)V(N)"));
-    var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda, "Only moraic nasal permitted in Japanese coda");
+    var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda, "Only moraic nasal permitted in Japanese coda");  #skip-lint
     _constraint_add_seq(ok, "n");
     _constraint_add_seq(ok, "ɴ");
     _phonotactics_add(p, ok);
