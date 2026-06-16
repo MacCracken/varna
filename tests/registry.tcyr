@@ -3,6 +3,7 @@
 include "src/error.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
+include "src/script.cyr"
 include "src/registry.cyr"
 
 fn main() {
@@ -19,6 +20,11 @@ fn main() {
     assert(phoneme_consonant_count(sa) > 0, "phonemes sa has consonants");
     assert_eq(registry_phonemes("xx"), 0, "phonemes xx unknown");
     assert_eq(registry_primary_script_code("xx"), 0, "script xx unknown");
+    # primary_script now resolves to a Script object (script.cyr linked)
+    var ps = registry_primary_script("en");
+    assert(ps != 0, "primary_script en found");
+    assert(streq(script_code(ps), "Latn"), "primary_script en is Latn");
+    assert_eq(registry_primary_script("xx"), 0, "primary_script xx unknown");
 
     test_group("registry_codes");
     var codes = registry_all_codes();

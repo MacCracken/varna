@@ -6,6 +6,7 @@
 include "src/error.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
+include "src/script.cyr"
 include "src/registry.cyr"
 
 fn main() {

@@ -108,13 +108,20 @@ fn registry_all_codes() {
 }
 
 # Primary script ISO 15924 code for a language, or 0 if unknown.
-# (registry_primary_script -> Script object lands with src/script.cyr.)
 fn registry_primary_script_code(code) {
     var li = registry_info(code);
     if (li == 0) { return 0; }
     var sv = registry_info_scripts(li);
     if (vec_len(sv) == 0) { return 0; }
     return vec_get(sv, 0);
+}
+
+# Primary Script object for a language, or 0 if unknown / script unregistered.
+# Requires src/script.cyr to be included before src/registry.cyr.
+fn registry_primary_script(code) {
+    var sc = registry_primary_script_code(code);
+    if (sc == 0) { return 0; }
+    return script_by_code(sc);
 }
 
 # Phoneme inventory for a language, or 0 if unavailable.

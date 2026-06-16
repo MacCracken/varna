@@ -1,0 +1,220 @@
+# src/script.cyr — writing-system metadata, queryable by ISO 15924 code.
+#
+# Ported from rust-old/src/script/mod.rs.
+#
+# Script (64B): [0]=code [8]=name [16]=type [24]=direction [32]=status
+#               [40]=attestation(cstr|0) [48]=unicode_ranges(vec) [56]=languages(vec)
+# range (16B):  [0]=lo  [8]=hi
+
+enum ScriptType {
+    Alphabet = 0;
+    Abugida = 1;
+    Abjad = 2;
+    Syllabary = 3;
+    Logographic = 4;
+    Mixed = 5;
+}
+
+enum Direction {
+    LeftToRight = 0;
+    RightToLeft = 1;
+    TopToBottom = 2;
+    Bidirectional = 3;
+}
+
+enum ScriptStatus {
+    Living = 0;
+    Limited = 1;
+    Historical = 2;
+}
+
+fn _range_new(lo, hi) {
+    var r = alloc(16);
+    store64(r, lo);
+    store64(r + 8, hi);
+    return r;
+}
+
+fn _script_new(code, name, stype, dir, status, attestation) {
+    var s = alloc(64);
+    store64(s, code);
+    store64(s + 8, name);
+    store64(s + 16, stype);
+    store64(s + 24, dir);
+    store64(s + 32, status);
+    store64(s + 40, attestation);
+    store64(s + 48, vec_new());
+    store64(s + 56, vec_new());
+    return s;
+}
+
+fn _script_add_range(s, lo, hi) {
+    vec_push(load64(s + 48), _range_new(lo, hi));
+    return s;
+}
+
+fn _script_add_lang(s, code) {
+    vec_push(load64(s + 56), code);
+    return s;
+}
+
+fn script_code(s) { return load64(s); }
+fn script_name(s) { return load64(s + 8); }
+fn script_type(s) { return load64(s + 16); }
+fn script_direction(s) { return load64(s + 24); }
+fn script_status(s) { return load64(s + 32); }
+fn script_attestation(s) { return load64(s + 40); }
+fn script_unicode_ranges(s) { return load64(s + 48); }
+fn script_languages(s) { return load64(s + 56); }
+
+# Check whether a Unicode code point falls within this script's ranges.
+fn script_contains_codepoint(s, cp) {
+    var ranges = load64(s + 48);
+    var n = vec_len(ranges);
+    var i = 0;
+    while (i < n) {
+        var r = vec_get(ranges, i);
+        if (cp >= load64(r) && cp <= load64(r + 8)) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# --- Pre-built script metadata -------------------------------------
+
+fn script_latin() {
+    var s = _script_new("Latn", "Latin", ScriptType.Alphabet, Direction.LeftToRight, ScriptStatus.Living, 0);
+    _script_add_range(s, 0x0041, 0x005A);
+    _script_add_range(s, 0x0061, 0x007A);
+    _script_add_range(s, 0x00C0, 0x00FF);
+    _script_add_range(s, 0x0100, 0x024F);
+    _script_add_lang(s, "en");
+    _script_add_lang(s, "fr");
+    _script_add_lang(s, "es");
+    _script_add_lang(s, "de");
+    _script_add_lang(s, "pt");
+    _script_add_lang(s, "it");
+    return s;
+}
+
+fn script_arabic() {
+    var s = _script_new("Arab", "Arabic", ScriptType.Abjad, Direction.RightToLeft, ScriptStatus.Living, 0);
+    _script_add_range(s, 0x0600, 0x06FF);
+    _script_add_range(s, 0x0750, 0x077F);
+    _script_add_range(s, 0xFB50, 0xFDFF);
+    _script_add_range(s, 0xFE70, 0xFEFF);
+    _script_add_lang(s, "ar");
+    _script_add_lang(s, "fa");
+    _script_add_lang(s, "ur");
+    return s;
+}
+
+fn script_devanagari() {
+    var s = _script_new("Deva", "Devanagari", ScriptType.Abugida, Direction.LeftToRight, ScriptStatus.Living, 0);
+    _script_add_range(s, 0x0900, 0x097F);
+    _script_add_range(s, 0xA8E0, 0xA8FF);
+    _script_add_lang(s, "hi");
+    _script_add_lang(s, "sa");
+    _script_add_lang(s, "mr");
+    _script_add_lang(s, "ne");
+    return s;
+}
+
+fn script_cjk() {
+    var s = _script_new("Hani", "CJK Unified Ideographs", ScriptType.Logographic, Direction.LeftToRight, ScriptStatus.Living, 0);
+    _script_add_range(s, 0x4E00, 0x9FFF);
+    _script_add_range(s, 0x3400, 0x4DBF);
+    _script_add_range(s, 0x20000, 0x2A6DF);
+    _script_add_lang(s, "zh");
+    _script_add_lang(s, "ja");
+    _script_add_lang(s, "ko");
+    return s;
+}
+
+fn script_cyrillic() {
+    var s = _script_new("Cyrl", "Cyrillic", ScriptType.Alphabet, Direction.LeftToRight, ScriptStatus.Living, 0);
+    _script_add_range(s, 0x0400, 0x04FF);
+    _script_add_range(s, 0x0500, 0x052F);
+    _script_add_lang(s, "ru");
+    _script_add_lang(s, "uk");
+    _script_add_lang(s, "bg");
+    _script_add_lang(s, "sr");
+    return s;
+}
+
+fn script_hangul() {
+    var s = _script_new("Hang", "Hangul", ScriptType.Alphabet, Direction.LeftToRight, ScriptStatus.Living, 0);
+    _script_add_range(s, 0xAC00, 0xD7AF);
+    _script_add_range(s, 0x1100, 0x11FF);
+    _script_add_range(s, 0x3130, 0x318F);
+    _script_add_lang(s, "ko");
+    return s;
+}
+
+fn script_kana() {
+    var s = _script_new("Kana", "Kana (Hiragana + Katakana)", ScriptType.Syllabary, Direction.LeftToRight, ScriptStatus.Living, 0);
+    _script_add_range(s, 0x3040, 0x309F);
+    _script_add_range(s, 0x30A0, 0x30FF);
+    _script_add_range(s, 0x31F0, 0x31FF);
+    _script_add_lang(s, "ja");
+    return s;
+}
+
+fn script_greek() {
+    var s = _script_new("Grek", "Greek", ScriptType.Alphabet, Direction.LeftToRight, ScriptStatus.Living, 0);
+    _script_add_range(s, 0x0370, 0x03FF);
+    _script_add_range(s, 0x1F00, 0x1FFF);
+    _script_add_lang(s, "el");
+    return s;
+}
+
+fn script_cuneiform() {
+    var s = _script_new("Xsux", "Cuneiform", ScriptType.Logographic, Direction.LeftToRight, ScriptStatus.Historical, "3400 BCE – 75 CE");
+    _script_add_range(s, 0x12000, 0x1237F);
+    _script_add_range(s, 0x12400, 0x1247F);
+    _script_add_range(s, 0x12480, 0x1254F);
+    _script_add_lang(s, "sux");
+    _script_add_lang(s, "akk");
+    return s;
+}
+
+fn script_egyptian() {
+    var s = _script_new("Egyp", "Egyptian Hieroglyphs", ScriptType.Logographic, Direction.RightToLeft, ScriptStatus.Historical, "3200 BCE – 400 CE");
+    _script_add_range(s, 0x13000, 0x1342F);
+    _script_add_range(s, 0x13430, 0x1345F);
+    _script_add_lang(s, "egy");
+    return s;
+}
+
+# --- Lookup --------------------------------------------------------
+
+# Look up a script by ISO 15924 code — Script ptr, or 0 if unregistered.
+fn script_by_code(code) {
+    if (streq(code, "Latn") == 1) { return script_latin(); }
+    if (streq(code, "Arab") == 1) { return script_arabic(); }
+    if (streq(code, "Deva") == 1) { return script_devanagari(); }
+    if (streq(code, "Hani") == 1) { return script_cjk(); }
+    if (streq(code, "Cyrl") == 1) { return script_cyrillic(); }
+    if (streq(code, "Hang") == 1) { return script_hangul(); }
+    if (streq(code, "Kana") == 1) { return script_kana(); }
+    if (streq(code, "Grek") == 1) { return script_greek(); }
+    if (streq(code, "Xsux") == 1) { return script_cuneiform(); }
+    if (streq(code, "Egyp") == 1) { return script_egyptian(); }
+    return 0;
+}
+
+# All registered ISO 15924 script codes — vec of cstrings.
+fn script_all_codes() {
+    var c = vec_new();
+    vec_push(c, "Latn");
+    vec_push(c, "Arab");
+    vec_push(c, "Deva");
+    vec_push(c, "Hani");
+    vec_push(c, "Cyrl");
+    vec_push(c, "Hang");
+    vec_push(c, "Kana");
+    vec_push(c, "Grek");
+    vec_push(c, "Xsux");
+    vec_push(c, "Egyp");
+    return c;
+}

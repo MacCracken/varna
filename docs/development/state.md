@@ -20,15 +20,16 @@ Rust preserved at `rust-old/` for parity reference. See
   - ✅ `src/error.cyr` — VarnaError codes
   - ✅ `src/phoneme.cyr` — phoneme types, builder, `english`/`sanskrit`/`greek`
   - ✅ `src/inventories.cyr` — 48 extended language inventories (51 languages total)
-  - ✅ `src/registry.cyr` — ISO 639 lookup: `info`/`phonemes`/`all_codes`/`primary_script_code`
-    (the `Script`-object `primary_script` waits on `script.cyr`)
-  - ⏳ script, transliteration, numerals, allophone, syllable, grammar,
+  - ✅ `src/registry.cyr` — ISO 639 lookup: `info`/`phonemes`/`all_codes`/`primary_script[_code]`
+  - ✅ `src/script.cyr` — 10 writing systems (type/direction/status/Unicode ranges,
+    `by_code`/`contains_codepoint`); unblocked `registry_primary_script`
+  - ⏳ transliteration, numerals, allophone, syllable, grammar,
     lexicon, swadesh, cognate, dialect; then the `-D` surfaces
 
 ## Tests
 
-- `cyrius tests` — green: 203 parity assertions + smoke — `tests/phoneme.tcyr` (32) +
-  `tests/inventories.tcyr` (159) + `tests/registry.tcyr` (12) + `tests/varna.tcyr` (smoke).
+- `cyrius tests` — green: 243 parity assertions + smoke — phoneme (32) + inventories (159) +
+  registry (15) + script (37) + `tests/varna.tcyr` (smoke).
 - `cyrius bench tests/varna.bcyr` — harness green (`noop` benchmark).
 - Parity tests against `rust-old/` land with each ported module.
 
