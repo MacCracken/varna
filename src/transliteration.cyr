@@ -1,0 +1,230 @@
+# src/transliteration.cyr — bidirectional script transliteration tables.
+# Ported from rust-old/src/script/transliteration.rs (data transpiled byte-exact).
+#
+# TransliterationTable (32B): [0]=scheme [8]=source_script [16]=target_script
+#                             [24]=forward(vec of pairs)
+# pair (16B): [0]=src(cstr) [8]=tgt(cstr)
+# Requires src/util.cyr (_utf8_len). transliterate_char/reverse-lookup return 0
+# when unmapped; transliterate() returns a fresh cstring.
+
+fn _tt_new(scheme, src_script, tgt_script) {
+    var tt = alloc(32);
+    store64(tt, scheme);
+    store64(tt + 8, src_script);
+    store64(tt + 16, tgt_script);
+    store64(tt + 24, vec_new());
+    return tt;
+}
+
+fn _tt_add(tt, src, tgt) {
+    var pair = alloc(16);
+    store64(pair, src);
+    store64(pair + 8, tgt);
+    vec_push(load64(tt + 24), pair);
+    return tt;
+}
+
+fn translit_scheme(tt) { return load64(tt); }
+fn translit_source_script(tt) { return load64(tt + 8); }
+fn translit_target_script(tt) { return load64(tt + 16); }
+fn translit_forward(tt) { return load64(tt + 24); }
+
+# Transliterate a single source grapheme — target cstr, or 0 if unmapped.
+fn translit_char(tt, ch) {
+    var fwd = load64(tt + 24);
+    var n = vec_len(fwd);
+    var i = 0;
+    while (i < n) {
+        var pair = vec_get(fwd, i);
+        if (streq(load64(pair), ch) == 1) { return load64(pair + 8); }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Reverse map (target -> source) as a hashmap; last source wins on collision.
+fn translit_reverse_map(tt) {
+    var fwd = load64(tt + 24);
+    var n = vec_len(fwd);
+    var rev = map_new();
+    var i = 0;
+    while (i < n) {
+        var pair = vec_get(fwd, i);
+        map_set(rev, load64(pair + 8), load64(pair));
+        i = i + 1;
+    }
+    return rev;
+}
+
+# Transliterate a string by greedily matching the longest source sequence
+# (up to 4 codepoints). Unmapped graphemes pass through unchanged.
+fn translit_apply(tt, input) {
+    var inlen = strlen(input);
+    var out = alloc(inlen * 4 + 16);
+    var olen = 0;
+    var p = 0;
+    while (p < inlen) {
+        var l1 = _utf8_len(load8(input + p) & 0xFF);
+        var b2 = p + l1;
+        var l2 = 0;
+        if (b2 < inlen) { l2 = _utf8_len(load8(input + b2) & 0xFF); }
+        var b3 = b2 + l2;
+        var l3 = 0;
+        if (b3 < inlen) { l3 = _utf8_len(load8(input + b3) & 0xFF); }
+        var b4 = b3 + l3;
+        var l4 = 0;
+        if (b4 < inlen) { l4 = _utf8_len(load8(input + b4) & 0xFF); }
+        var lens = vec_new();
+        vec_push(lens, l1);
+        vec_push(lens, l1 + l2);
+        vec_push(lens, l1 + l2 + l3);
+        vec_push(lens, l1 + l2 + l3 + l4);
+        var matched = 0;
+        var k = 3;
+        while (k >= 0 && matched == 0) {
+            var elen = vec_get(lens, k);
+            var cand = alloc(elen + 1);
+            memcpy(cand, input + p, elen);
+            store8(cand + elen, 0);
+            var rep = translit_char(tt, cand);
+            if (rep != 0) {
+                var rlen = strlen(rep);
+                memcpy(out + olen, rep, rlen);
+                olen = olen + rlen;
+                p = p + elen;
+                matched = 1;
+            }
+            k = k - 1;
+        }
+        if (matched == 0) {
+            memcpy(out + olen, input + p, l1);
+            olen = olen + l1;
+            p = p + l1;
+        }
+    }
+    store8(out + olen, 0);
+    return out;
+}
+
+# --- Pre-built tables ----------------------------------------------
+
+fn translit_devanagari_iast() {
+    var tt = _tt_new("IAST", "Deva", "Latn");
+    _tt_add(tt, "अ", "a");
+    _tt_add(tt, "आ", "ā");
+    _tt_add(tt, "इ", "i");
+    _tt_add(tt, "ई", "ī");
+    _tt_add(tt, "उ", "u");
+    _tt_add(tt, "ऊ", "ū");
+    _tt_add(tt, "ऋ", "ṛ");
+    _tt_add(tt, "ॠ", "ṝ");
+    _tt_add(tt, "ऌ", "ḷ");
+    _tt_add(tt, "ॡ", "ḹ");
+    _tt_add(tt, "ए", "e");
+    _tt_add(tt, "ऐ", "ai");
+    _tt_add(tt, "ओ", "o");
+    _tt_add(tt, "औ", "au");
+    _tt_add(tt, "ा", "ā");
+    _tt_add(tt, "ि", "i");
+    _tt_add(tt, "ी", "ī");
+    _tt_add(tt, "ु", "u");
+    _tt_add(tt, "ू", "ū");
+    _tt_add(tt, "ृ", "ṛ");
+    _tt_add(tt, "े", "e");
+    _tt_add(tt, "ै", "ai");
+    _tt_add(tt, "ो", "o");
+    _tt_add(tt, "ौ", "au");
+    _tt_add(tt, "क", "ka");
+    _tt_add(tt, "ख", "kha");
+    _tt_add(tt, "ग", "ga");
+    _tt_add(tt, "घ", "gha");
+    _tt_add(tt, "ङ", "ṅa");
+    _tt_add(tt, "च", "ca");
+    _tt_add(tt, "छ", "cha");
+    _tt_add(tt, "ज", "ja");
+    _tt_add(tt, "झ", "jha");
+    _tt_add(tt, "ञ", "ña");
+    _tt_add(tt, "ट", "ṭa");
+    _tt_add(tt, "ठ", "ṭha");
+    _tt_add(tt, "ड", "ḍa");
+    _tt_add(tt, "ढ", "ḍha");
+    _tt_add(tt, "ण", "ṇa");
+    _tt_add(tt, "त", "ta");
+    _tt_add(tt, "थ", "tha");
+    _tt_add(tt, "द", "da");
+    _tt_add(tt, "ध", "dha");
+    _tt_add(tt, "न", "na");
+    _tt_add(tt, "प", "pa");
+    _tt_add(tt, "फ", "pha");
+    _tt_add(tt, "ब", "ba");
+    _tt_add(tt, "भ", "bha");
+    _tt_add(tt, "म", "ma");
+    _tt_add(tt, "य", "ya");
+    _tt_add(tt, "र", "ra");
+    _tt_add(tt, "ल", "la");
+    _tt_add(tt, "व", "va");
+    _tt_add(tt, "श", "śa");
+    _tt_add(tt, "ष", "ṣa");
+    _tt_add(tt, "स", "sa");
+    _tt_add(tt, "ह", "ha");
+    _tt_add(tt, "ं", "ṃ");
+    _tt_add(tt, "ः", "ḥ");
+    _tt_add(tt, "्", "");
+    _tt_add(tt, "ॐ", "oṃ");
+    return tt;
+}
+
+fn translit_greek_beta_code() {
+    var tt = _tt_new("Beta Code", "Grek", "Latn");
+    _tt_add(tt, "α", "a");
+    _tt_add(tt, "β", "b");
+    _tt_add(tt, "γ", "g");
+    _tt_add(tt, "δ", "d");
+    _tt_add(tt, "ε", "e");
+    _tt_add(tt, "ζ", "z");
+    _tt_add(tt, "η", "h");
+    _tt_add(tt, "θ", "q");
+    _tt_add(tt, "ι", "i");
+    _tt_add(tt, "κ", "k");
+    _tt_add(tt, "λ", "l");
+    _tt_add(tt, "μ", "m");
+    _tt_add(tt, "ν", "n");
+    _tt_add(tt, "ξ", "c");
+    _tt_add(tt, "ο", "o");
+    _tt_add(tt, "π", "p");
+    _tt_add(tt, "ρ", "r");
+    _tt_add(tt, "σ", "s");
+    _tt_add(tt, "ς", "s");
+    _tt_add(tt, "τ", "t");
+    _tt_add(tt, "υ", "u");
+    _tt_add(tt, "φ", "f");
+    _tt_add(tt, "χ", "x");
+    _tt_add(tt, "ψ", "y");
+    _tt_add(tt, "ω", "w");
+    _tt_add(tt, "Α", "*a");
+    _tt_add(tt, "Β", "*b");
+    _tt_add(tt, "Γ", "*g");
+    _tt_add(tt, "Δ", "*d");
+    _tt_add(tt, "Ε", "*e");
+    _tt_add(tt, "Ζ", "*z");
+    _tt_add(tt, "Η", "*h");
+    _tt_add(tt, "Θ", "*q");
+    _tt_add(tt, "Ι", "*i");
+    _tt_add(tt, "Κ", "*k");
+    _tt_add(tt, "Λ", "*l");
+    _tt_add(tt, "Μ", "*m");
+    _tt_add(tt, "Ν", "*n");
+    _tt_add(tt, "Ξ", "*c");
+    _tt_add(tt, "Ο", "*o");
+    _tt_add(tt, "Π", "*p");
+    _tt_add(tt, "Ρ", "*r");
+    _tt_add(tt, "Σ", "*s");
+    _tt_add(tt, "Τ", "*t");
+    _tt_add(tt, "Υ", "*u");
+    _tt_add(tt, "Φ", "*f");
+    _tt_add(tt, "Χ", "*x");
+    _tt_add(tt, "Ψ", "*y");
+    _tt_add(tt, "Ω", "*w");
+    return tt;
+}
+

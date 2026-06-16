@@ -4,10 +4,13 @@
 # Stdlib auto-included via cyrius.cyml [deps]. Project modules below.
 
 include "src/error.cyr"
+include "src/util.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
 include "src/script.cyr"
 include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
 
 fn main() {
     alloc_init();

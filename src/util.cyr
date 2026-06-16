@@ -1,0 +1,10 @@
+# src/util.cyr — shared low-level helpers.
+
+# UTF-8 byte length of the codepoint whose lead byte is b (0-255).
+# Valid lead bytes: 0x00-0x7F=1, 0xC0-0xDF=2, 0xE0-0xEF=3, 0xF0-0xF7=4.
+fn _utf8_len(b) {
+    if (b < 0x80) { return 1; }
+    if (b < 0xE0) { return 2; }
+    if (b < 0xF0) { return 3; }
+    return 4;
+}

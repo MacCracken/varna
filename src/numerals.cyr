@@ -1,0 +1,172 @@
+# src/numerals.cyr — script-to-numeral value mappings.
+# Ported from rust-old/src/script/numerals.rs (data transpiled byte-exact).
+#
+# NumeralSystem (32B): [0]=script_code [8]=name [16]=kind [24]=mappings(vec)
+# NumeralMapping (16B): [0]=character(cstr) [8]=value
+# Sentinels: value_of -> (0-1) when unmapped (value 0 is valid, e.g. Deva 0);
+#            char_for / string_value -> 0 / (0-1) when not found.
+
+enum NumeralSystemKind {
+    Decimal = 0;
+    Alphabetic = 1;
+    Other = 2;
+}
+
+fn _nsys_new(script_code, name, kind) {
+    var sys = alloc(32);
+    store64(sys, script_code);
+    store64(sys + 8, name);
+    store64(sys + 16, kind);
+    store64(sys + 24, vec_new());
+    return sys;
+}
+
+fn _nsys_add(sys, character, value) {
+    var m = alloc(16);
+    store64(m, character);
+    store64(m + 8, value);
+    vec_push(load64(sys + 24), m);
+    return sys;
+}
+
+fn numerals_script_code(sys) { return load64(sys); }
+fn numerals_name(sys) { return load64(sys + 8); }
+fn numerals_kind(sys) { return load64(sys + 16); }
+fn numerals_mappings(sys) { return load64(sys + 24); }
+
+# Numeric value of a single-character string, or (0-1) if unmapped.
+fn numerals_value_of(sys, ch) {
+    var ms = load64(sys + 24);
+    var n = vec_len(ms);
+    var i = 0;
+    while (i < n) {
+        var m = vec_get(ms, i);
+        if (streq(load64(m), ch) == 1) { return load64(m + 8); }
+        i = i + 1;
+    }
+    return 0 - 1;
+}
+
+# Character (cstr) for a numeric value, or 0 if none.
+fn numerals_char_for(sys, value) {
+    var ms = load64(sys + 24);
+    var n = vec_len(ms);
+    var i = 0;
+    while (i < n) {
+        var m = vec_get(ms, i);
+        if (load64(m + 8) == value) { return load64(m); }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Additive value: sum each codepoint's value. (0-1) if any is unmapped.
+# (_utf8_len comes from src/util.cyr.)
+fn numerals_string_value(sys, s) {
+    var total = 0;
+    var p = 0;
+    var n = strlen(s);
+    while (p < n) {
+        var b = load8(s + p) & 0xFF;
+        var len = _utf8_len(b);
+        var ch = alloc(len + 1);
+        memcpy(ch, s + p, len);
+        store8(ch + len, 0);
+        var v = numerals_value_of(sys, ch);
+        if (v < 0) { return 0 - 1; }
+        total = total + v;
+        p = p + len;
+    }
+    return total;
+}
+
+# --- Pre-built numeral systems -------------------------------------
+
+fn numerals_devanagari_digits() {
+    var sys = _nsys_new("Deva", "Devanagari Digits", NumeralSystemKind.Decimal);
+    _nsys_add(sys, "०", 0);
+    _nsys_add(sys, "१", 1);
+    _nsys_add(sys, "२", 2);
+    _nsys_add(sys, "३", 3);
+    _nsys_add(sys, "४", 4);
+    _nsys_add(sys, "५", 5);
+    _nsys_add(sys, "६", 6);
+    _nsys_add(sys, "७", 7);
+    _nsys_add(sys, "८", 8);
+    _nsys_add(sys, "९", 9);
+    return sys;
+}
+
+fn numerals_greek_isopsephy() {
+    var sys = _nsys_new("Grek", "Greek Isopsephy", NumeralSystemKind.Alphabetic);
+    _nsys_add(sys, "α", 1);
+    _nsys_add(sys, "β", 2);
+    _nsys_add(sys, "γ", 3);
+    _nsys_add(sys, "δ", 4);
+    _nsys_add(sys, "ε", 5);
+    _nsys_add(sys, "ζ", 7);
+    _nsys_add(sys, "η", 8);
+    _nsys_add(sys, "θ", 9);
+    _nsys_add(sys, "ι", 10);
+    _nsys_add(sys, "κ", 20);
+    _nsys_add(sys, "λ", 30);
+    _nsys_add(sys, "μ", 40);
+    _nsys_add(sys, "ν", 50);
+    _nsys_add(sys, "ξ", 60);
+    _nsys_add(sys, "ο", 70);
+    _nsys_add(sys, "π", 80);
+    _nsys_add(sys, "ρ", 100);
+    _nsys_add(sys, "σ", 200);
+    _nsys_add(sys, "ς", 200);
+    _nsys_add(sys, "τ", 300);
+    _nsys_add(sys, "υ", 400);
+    _nsys_add(sys, "φ", 500);
+    _nsys_add(sys, "χ", 600);
+    _nsys_add(sys, "ψ", 700);
+    _nsys_add(sys, "ω", 800);
+    return sys;
+}
+
+fn numerals_babylonian_sexagesimal() {
+    var sys = _nsys_new("Xsux", "Babylonian Sexagesimal", NumeralSystemKind.Other);
+    _nsys_add(sys, "𒐕", 1);
+    _nsys_add(sys, "𒐖", 2);
+    _nsys_add(sys, "𒐗", 3);
+    _nsys_add(sys, "𒐘", 4);
+    _nsys_add(sys, "𒐙", 5);
+    _nsys_add(sys, "𒐚", 6);
+    _nsys_add(sys, "𒐛", 7);
+    _nsys_add(sys, "𒐜", 8);
+    _nsys_add(sys, "𒐝", 9);
+    _nsys_add(sys, "𒌋", 10);
+    _nsys_add(sys, "𒌋𒌋", 20);
+    _nsys_add(sys, "𒌍", 30);
+    return sys;
+}
+
+fn numerals_egyptian_hieroglyphic() {
+    var sys = _nsys_new("Egyp", "Egyptian Hieroglyphic Numerals", NumeralSystemKind.Other);
+    _nsys_add(sys, "𓏺", 1);
+    _nsys_add(sys, "𓎆", 10);
+    _nsys_add(sys, "𓍢", 100);
+    _nsys_add(sys, "𓆼", 1000);
+    _nsys_add(sys, "𓂭", 10000);
+    _nsys_add(sys, "𓆐", 100000);
+    _nsys_add(sys, "𓁨", 1000000);
+    return sys;
+}
+
+fn numerals_chinese_rod_numerals() {
+    var sys = _nsys_new("Hani", "Chinese Rod Numerals", NumeralSystemKind.Decimal);
+    _nsys_add(sys, "𝍠", 1);
+    _nsys_add(sys, "𝍡", 2);
+    _nsys_add(sys, "𝍢", 3);
+    _nsys_add(sys, "𝍣", 4);
+    _nsys_add(sys, "𝍤", 5);
+    _nsys_add(sys, "𝍥", 6);
+    _nsys_add(sys, "𝍦", 7);
+    _nsys_add(sys, "𝍧", 8);
+    _nsys_add(sys, "𝍨", 9);
+    return sys;
+}
+

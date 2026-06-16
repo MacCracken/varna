@@ -1,0 +1,57 @@
+# tests/numerals.tcyr — numeral parity tests (rust-old/src/script/numerals.rs).
+
+include "src/util.cyr"
+include "src/numerals.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("devanagari");
+    var dv = numerals_devanagari_digits();
+    assert_eq(numerals_value_of(dv, "०"), 0, "deva 0");
+    assert_eq(numerals_value_of(dv, "५"), 5, "deva 5");
+    assert_eq(numerals_value_of(dv, "९"), 9, "deva 9");
+    assert(streq(numerals_char_for(dv, 0), "०"), "deva char 0");
+    assert(streq(numerals_char_for(dv, 7), "७"), "deva char 7");
+    assert_eq(numerals_char_for(dv, 10), 0, "deva no char for 10");
+    assert_eq(numerals_string_value(dv, "१२३"), 6, "deva 1+2+3");
+    assert_eq(numerals_value_of(dv, "X"), 0 - 1, "deva unknown");
+    assert_eq(numerals_string_value(dv, "X"), 0 - 1, "deva string unknown");
+
+    test_group("greek");
+    var gk = numerals_greek_isopsephy();
+    assert_eq(numerals_value_of(gk, "α"), 1, "greek alpha");
+    assert_eq(numerals_value_of(gk, "ε"), 5, "greek epsilon");
+    assert_eq(numerals_value_of(gk, "θ"), 9, "greek theta");
+    assert_eq(numerals_value_of(gk, "ι"), 10, "greek iota");
+    assert_eq(numerals_value_of(gk, "π"), 80, "greek pi");
+    assert_eq(numerals_value_of(gk, "ρ"), 100, "greek rho");
+    assert_eq(numerals_value_of(gk, "ω"), 800, "greek omega");
+    assert_eq(numerals_string_value(gk, "αω"), 801, "greek 1+800");
+    assert_eq(numerals_string_value(gk, "πι"), 90, "greek 80+10");
+    assert(streq(numerals_char_for(gk, 1), "α"), "greek char 1");
+    assert(streq(numerals_char_for(gk, 80), "π"), "greek char 80");
+    assert_eq(numerals_char_for(gk, 999), 0, "greek no char 999");
+
+    test_group("ancient");
+    var bb = numerals_babylonian_sexagesimal();
+    assert_eq(numerals_value_of(bb, "𒐕"), 1, "bab 1");
+    assert_eq(numerals_value_of(bb, "𒐝"), 9, "bab 9");
+    assert_eq(numerals_value_of(bb, "𒌋"), 10, "bab 10");
+    assert(streq(numerals_char_for(bb, 1), "𒐕"), "bab char 1");
+    assert(streq(numerals_char_for(bb, 30), "𒌍"), "bab char 30");
+    var eg = numerals_egyptian_hieroglyphic();
+    assert_eq(numerals_value_of(eg, "𓏺"), 1, "egy 1");
+    assert_eq(numerals_value_of(eg, "𓎆"), 10, "egy 10");
+    assert_eq(numerals_value_of(eg, "𓍢"), 100, "egy 100");
+    assert_eq(numerals_value_of(eg, "𓆼"), 1000, "egy 1000");
+    assert_eq(numerals_value_of(eg, "𓁨"), 1000000, "egy 1000000");
+    var rd = numerals_chinese_rod_numerals();
+    assert_eq(numerals_value_of(rd, "𝍠"), 1, "rod 1");
+    assert_eq(numerals_value_of(rd, "𝍨"), 9, "rod 9");
+    assert_eq(numerals_kind(rd), NumeralSystemKind.Decimal, "rod decimal");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

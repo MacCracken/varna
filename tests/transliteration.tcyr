@@ -1,0 +1,33 @@
+# tests/transliteration.tcyr — parity (rust-old/src/script/transliteration.rs).
+
+include "src/util.cyr"
+include "src/transliteration.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("devanagari_iast");
+    var iast = translit_devanagari_iast();
+    assert(streq(translit_char(iast, "अ"), "a"), "deva a");
+    assert(streq(translit_char(iast, "आ"), "ā"), "deva aa");
+    assert(streq(translit_char(iast, "क"), "ka"), "deva ka");
+    assert_eq(translit_char(iast, "X"), 0, "deva unknown");
+    assert(streq(translit_apply(iast, "अ"), "a"), "deva apply a");
+    assert(streq(translit_apply(iast, "क"), "ka"), "deva apply ka");
+    var rev = translit_reverse_map(iast);
+    assert(streq(map_get(rev, "a"), "अ"), "rev a");
+    assert(streq(map_get(rev, "ā"), "ा"), "rev aa is matra (last wins)");
+
+    test_group("greek_beta");
+    var beta = translit_greek_beta_code();
+    assert(streq(translit_char(beta, "α"), "a"), "greek a");
+    assert(streq(translit_char(beta, "π"), "p"), "greek p");
+    assert(streq(translit_char(beta, "Σ"), "*s"), "greek cap sigma");
+    assert(streq(translit_apply(beta, "λογος"), "logos"), "greek logos");
+    assert(streq(translit_apply(beta, "Αθηνα"), "*aqhna"), "greek athena");
+    assert(streq(translit_apply(beta, "α 1"), "a 1"), "passthrough");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
