@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-07-21
+
+Toolchain-maintenance release: Cyrius upgrade and dependency refresh. No changes to
+the public API or linguistic data — the default build, the full
+`-D LOGGING -D MCP -D DAIMON -D HOOSH` build, and every test stay green against the
+newer stdlib.
+
+### Changed
+
+- **Toolchain** — Cyrius pin bumped `6.2.12` → `6.4.69` (`cyrius.cyml [package].cyrius`);
+  CI derives its install version from the pin, so the whole pipeline moves with it.
+- **Dependencies** — vendored Cyrius stdlib re-resolved against the 6.4.69 snapshot. Upstream
+  dropped `agnosys`; `async_win`/`protobuf`/`yantra` are new (none used by varna).
+- **cyrius.lock** — regenerated at 6.4.69. Now pins the exact 29-module dependency closure a
+  fresh `cyrius deps` resolves, so `cyrius deps --verify` is clean (29 verified, 0 failed).
+  Removed 8 stale entries that were never actually resolved or linked by any build config
+  (`agnosys`, `bote-core`, `libro`, `majra`, `log`, `sakshi`, `sigil`, `patra`) and added the
+  benchmark-harness dependency `bench`.
+- **daimon** — agent-registration version string bumped to `2.1.0` (`src/daimon.cyr`).
+- **dist** — `dist/varna.cyr` bundle regenerated (header `# Version: 2.1.0`).
+
+### Fixed
+
+- **scripts/bench-history.sh** — `to_ns()` now parses the fractional-unit benchmark
+  output Cyrius ≥6.3 emits (`1.396us`); the old converter only stripped leading integer
+  digits, so decimal timings were written to `bench-history.csv` unscaled (`1.396` instead
+  of `1396`). Results are rounded to integer nanoseconds, matching the existing history.
+
+### Performance
+
+- No regressions from the toolchain move (min ns, 6.2.12 → 6.4.69): `english_phoneme_inventory`
+  2000 → 1396, `transliterate_greek_word` 38000 → 36527, `registry_all_codes_iter` 37000 → 36666;
+  all other benchmarks within noise. See `bench-history.csv` / `BENCHMARKS.md`.
+
 ## [2.0.0] - 2026-06-16
 
 Ported from a Rust crate to the [Cyrius](https://github.com/MacCracken/cyrius)

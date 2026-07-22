@@ -5,7 +5,7 @@ description = "Varna — multilingual language engine: phoneme inventories, writ
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/varna"
 language = "cyrius"
-cyrius = "6.2.12"
+cyrius = "6.4.69"
 
 [build]
 entry = "src/main.cyr"

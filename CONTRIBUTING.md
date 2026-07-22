@@ -12,7 +12,7 @@ Thank you for your interest in contributing to Varna.
 
 ## Prerequisites
 
-- Cyrius toolchain (`cyrius`), pinned in `cyrius.cyml` (`cyrius = "6.2.12"`).
+- Cyrius toolchain (`cyrius`), pinned in `cyrius.cyml` (`cyrius = "6.4.69"`).
   Install via `curl -sSf https://raw.githubusercontent.com/MacCracken/cyrius/main/scripts/install.sh | sh`
 - `cyrius deps` to resolve the stdlib snapshot (+ `bote` for `-D MCP`) into `lib/`
 

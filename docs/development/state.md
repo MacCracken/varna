@@ -5,13 +5,15 @@
 
 ## Version
 
-**2.0.0** — ported from Rust to Cyrius (2026-06-16) via `cyrius port`. 8386 lines of
-Rust preserved at `rust-old/` for parity reference. See
+**2.1.0** — toolchain-maintenance release (2026-07-21): Cyrius pin `6.2.12` → `6.4.69`,
+vendored stdlib refreshed, `cyrius.lock` regenerated. No API or data changes.
+Originally ported from Rust to Cyrius at **2.0.0** (2026-06-16) via `cyrius port`; 8386
+lines of Rust preserved at `rust-old/` for parity reference. See
 [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md).
 
 ## Toolchain
 
-- **Cyrius pin**: `6.2.12` (in `cyrius.cyml [package].cyrius`)
+- **Cyrius pin**: `6.4.69` (in `cyrius.cyml [package].cyrius`)
 
 ## Source
 
@@ -58,9 +60,10 @@ Rust preserved at `rust-old/` for parity reference. See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.0.0):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.0.0]`); CI runs `check.sh` + bench + distlib; release.yml
-  bundles `dist/varna.cyr`.
+- **Release-ready (2.1.0):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.1.0]`); `cyrius.lock` regenerated at 6.4.69 and
+  `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
+  release.yml bundles `dist/varna.cyr`.
 
 ## Dependencies
 
@@ -69,10 +72,13 @@ Direct (declared in `cyrius.cyml [deps].stdlib`):
 - string, fmt, alloc, vec, str, slice, syscalls, io, args, assert, hashmap, bayan,
   fnptr, tagged, result, bench
 
-Deferred to their `-D`-gated surfaces (added with the module that needs them):
+Deferred to their `-D`-gated surfaces (planned, not yet wired — the surfaces
+currently self-contain, so these are absent from `cyrius.lock` until a module
+actually resolves them):
 
-- `-D LOGGING` → `sakshi`
+- `-D LOGGING` → `sakshi` (logging.cyr is a self-contained level logger today)
 - `-D MCP` → `bote` (`dist/bote-core.cyr`, tag 2.7.6) + crypto/thread companions
+  (mcp.cyr hand-builds JSON today, no bote/bayan)
 
 ## Consumers
 
@@ -80,7 +86,8 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port is complete and shipped as 2.0.0. Remaining work is post-port:
+The port shipped as 2.0.0; 2.1.0 is a toolchain-maintenance release (Cyrius 6.4.69).
+Remaining work is post-port:
 
 - **2.0.1 — remove `rust-old/`** (planned, separate session, after another review
   sweep). `rust-old/` is currently kept as the frozen parity oracle per

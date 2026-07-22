@@ -6,8 +6,8 @@
 
 - **Type**: Flat Cyrius library (`dist/varna.cyr` bundle) + thin demo entry — no longer a Rust crate; migrated at v2.0 (see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md))
 - **License**: GPL-3.0
-- **Toolchain**: Cyrius, pinned in `cyrius.cyml` (`cyrius = "6.2.12"`)
-- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.0.0**
+- **Toolchain**: Cyrius, pinned in `cyrius.cyml` (`cyrius = "6.4.69"`)
+- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.1.0**
 - **Rust archive**: the frozen v1.x crate lives in `rust-old/` — a historical artifact, gitignored from CI, never edited
 
 ## Consumers

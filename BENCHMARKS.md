@@ -5,25 +5,25 @@ History in `bench-history.csv`. `min` is the most representative
 per-op figure (the bump allocator never frees, so `avg` carries
 accumulating alloc overhead).
 
-Latest: **2026-06-16T19:39:46Z** commit `faa6580`
+Latest: **2026-07-22T00:20:39Z** commit `c4d1dcd`
 
 | Benchmark | min | avg |
 |-----------|-----|-----|
-| `english_phoneme_inventory` | 2us | 5us |
-| `sanskrit_phoneme_inventory` | 3us | 6us |
-| `greek_phoneme_inventory` | 1us | 3us |
-| `phoneme_lookup_ipa` | 419ns | 1us |
-| `registry_phonemes_lookup` | 4us | 6us |
-| `registry_all_codes_iter` | 40us | 45us |
-| `script_by_code_lookup` | 838ns | 2us |
-| `script_contains_codepoint` | 419ns | 1us |
-| `transliterate_devanagari_char` | 907ns | 2us |
-| `transliterate_greek_word` | 41us | 47us |
-| `numeral_value_of_char` | 419ns | 1us |
-| `numeral_string_value_word` | 1us | 3us |
-| `grammar_by_code_lookup` | 419ns | 1us |
-| `swadesh_by_code_lookup` | 2us | 4us |
-| `lexicon_find_word` | 907ns | 2us |
-| `allophone_realize` | 419ns | 1us |
-| `phonotactics_is_permitted` | 419ns | 1us |
-| `dialect_apply_overlay` | 3us | 5us |
+| `english_phoneme_inventory` | 1.396us | 3.659us |
+| `sanskrit_phoneme_inventory` | 1.815us | 4.210us |
+| `greek_phoneme_inventory` | 907ns | 2.771us |
+| `phoneme_lookup_ipa` | 489ns | 1.714us |
+| `registry_phonemes_lookup` | 1.816us | 4.206us |
+| `registry_all_codes_iter` | 36.666us | 39.428us |
+| `script_by_code_lookup` | 489ns | 1.881us |
+| `script_contains_codepoint` | 488ns | 1.376us |
+| `transliterate_devanagari_char` | 907ns | 2.222us |
+| `transliterate_greek_word` | 36.527us | 39.434us |
+| `numeral_value_of_char` | 489ns | 1.831us |
+| `numeral_string_value_word` | 1.396us | 2.927us |
+| `grammar_by_code_lookup` | 489ns | 1.707us |
+| `swadesh_by_code_lookup` | 1.396us | 3.068us |
+| `lexicon_find_word` | 907ns | 2.166us |
+| `allophone_realize` | 489ns | 1.406us |
+| `phonotactics_is_permitted` | 488ns | 1.459us |
+| `dialect_apply_overlay` | 2.793us | 4.578us |

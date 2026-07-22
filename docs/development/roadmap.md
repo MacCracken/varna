@@ -1,6 +1,6 @@
 # Development Roadmap
 
-> **Status**: v2.0 (Cyrius) | **Current**: 2.0.0
+> **Status**: v2.1 (Cyrius) | **Current**: 2.1.0
 >
 > Items marked `[S]` also unblock **sankhya** (ancient mathematical systems).
 >
@@ -11,6 +11,15 @@
 > sentinel returns, `str` literals; no `Cow`/`Option` types).
 
 ## Completed
+
+### 2.1.0 — Toolchain Maintenance (2026-07-21)
+
+- [x] Cyrius toolchain pin bumped `6.2.12` → `6.4.69` (`cyrius.cyml [package].cyrius`)
+- [x] Vendored Cyrius stdlib re-resolved against the 6.4.69 snapshot (`cyrius update`)
+- [x] `cyrius.lock` regenerated at 6.4.69 — pins the exact 29-module dependency closure
+      (`cyrius deps --verify` clean); dropped 8 vestigial entries never resolved or built
+      (`agnosys`/`bote-core`/`libro`/`majra`/`log`/`sakshi`/`sigil`/`patra`), added `bench`
+- [x] No public-API or linguistic-data changes; every build config + all tests stay green
 
 ### 2.0.0 — Cyrius Port (2026-06-16)
 

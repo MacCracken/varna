@@ -28,12 +28,14 @@ printf '%s\n' "$OUT" | awk \
     -v ts="$TS" -v commit="$COMMIT" -v branch="$BRANCH" \
     -v hist="$HISTORY" -v md="$MD" '
 function to_ns(v,   num, unit) {
+    # cyrius >=6.3 prints fractional units ("1.396us"); strip the trailing unit
+    # letters for the number and all digits/decimal point for the unit so both
+    # integer ("5us") and decimal ("36.806us") forms parse correctly.
     num = v; gsub(/[a-z]+$/, "", num)
-    unit = v; gsub(/^[0-9]+/, "", unit)
-    if (unit == "ns") return num
-    if (unit == "us") return num * 1000
-    if (unit == "ms") return num * 1000000
-    return num
+    unit = v; gsub(/[0-9.]+/, "", unit)
+    if (unit == "us") return int(num * 1000 + 0.5)
+    if (unit == "ms") return int(num * 1000000 + 0.5)
+    return int(num + 0.5)   # ns (and any unitless fallback)
 }
 BEGIN {
     print "# Benchmarks"                                                        > md
