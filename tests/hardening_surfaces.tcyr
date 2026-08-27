@@ -1,0 +1,133 @@
+# tests/hardening_surfaces.tcyr — buffer-bound regressions for the -D MCP and
+# -D HOOSH surfaces (2.1.2 hardening sweep).
+#
+# Both surfaces interpolate caller-supplied strings into fixed-size `alloc(N)`
+# buffers. Nothing capped those strings, so a long tool parameter wrote past the
+# allocation with attacker-controlled bytes. These tests pin the bound: the
+# rendered payload must always stay inside its buffer.
+
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/script.cyr"
+include "src/grammar.cyr"
+include "src/registry.cyr"
+include "src/transliteration.cyr"
+#define MCP
+include "src/mcp.cyr"
+#define HOOSH
+include "src/hoosh.cyr"
+
+# Build a heap cstring of `n` copies of byte `b`.
+fn _rep(b, n) {
+    var s = alloc(n + 1);
+    var i = 0;
+    while (i < n) {
+        store8(s + i, b);
+        i = i + 1;
+    }
+    store8(s + n, 0);
+    return s;
+}
+
+fn main() {
+    alloc_init();
+
+    # ---------------------------------------------------------------
+    test_group("mcp_error_bounds");
+    # _tool_err2 renders "<prefix><value>" into alloc(256). `value` is the
+    # caller's unvalidated parameter, so a 400-byte language code used to write
+    # ~418 bytes into that 256-byte buffer.
+    var long_code = _rep(65, 400);
+    assert_eq(strlen(long_code), 400, "probe string is 400 bytes");
+
+    var p1 = map_new();
+    map_set(p1, "language", long_code);
+    var r1 = mcp_invoke("varna_phonemes", p1);
+    assert_eq(mcp_result_is_error(r1), 1, "long language code is rejected");
+    assert(strlen(mcp_result_payload(r1)) < 256, "phonemes error stays inside its buffer");
+
+    var p2 = map_new();
+    map_set(p2, "code", long_code);
+    var r2 = mcp_invoke("varna_script", p2);
+    assert_eq(mcp_result_is_error(r2), 1, "long script code is rejected");
+    assert(strlen(mcp_result_payload(r2)) < 256, "script error stays inside its buffer");
+
+    var p3 = map_new();
+    map_set(p3, "language", long_code);
+    var r3 = mcp_invoke("varna_grammar", p3);
+    assert_eq(mcp_result_is_error(r3), 1, "long grammar code is rejected");
+    assert(strlen(mcp_result_payload(r3)) < 256, "grammar error stays inside its buffer");
+
+    var p4 = map_new();
+    map_set(p4, "text", "abc");
+    map_set(p4, "scheme", long_code);
+    var r4 = mcp_invoke("varna_translate_ipa", p4);
+    assert_eq(mcp_result_is_error(r4), 1, "long scheme is rejected");
+    assert(strlen(mcp_result_payload(r4)) < 256, "scheme error stays inside its buffer");
+
+    var p5 = map_new();
+    map_set(p5, "lang1", long_code);
+    map_set(p5, "lang2", "en");
+    var r5 = mcp_invoke("varna_compare", p5);
+    assert_eq(mcp_result_is_error(r5), 1, "long lang1 is rejected");
+    assert(strlen(mcp_result_payload(r5)) < 256, "compare error stays inside its buffer");
+
+    # The tool name itself reaches _tool_err2 too.
+    var r6 = mcp_invoke(long_code, map_new());
+    assert_eq(mcp_result_is_error(r6), 1, "long tool name is rejected");
+    assert(strlen(mcp_result_payload(r6)) < 256, "unknown-tool error stays inside its buffer");
+
+    # The truncated message still names the condition it reports.
+    assert_eq(load8(mcp_result_payload(r1)) & 0xFF, 117, "message still begins 'u' (unknown...)");
+
+    # ---------------------------------------------------------------
+    test_group("mcp_success_unchanged");
+    # Bounding must not have changed any well-formed payload.
+    var ok1 = map_new();
+    map_set(ok1, "language", "en");
+    var okr = mcp_invoke("varna_phonemes", ok1);
+    assert_eq(mcp_result_is_ok(okr), 1, "known language succeeds");
+    assert(strlen(mcp_result_payload(okr)) < 512, "phonemes payload inside its buffer");
+    assert(strlen(mcp_result_payload(okr)) > 20, "phonemes payload is non-trivial");
+
+    var ok2 = map_new();
+    map_set(ok2, "lang1", "sa");
+    map_set(ok2, "lang2", "ur");
+    var okc = mcp_invoke("varna_compare", ok2);
+    assert_eq(mcp_result_is_ok(okc), 1, "largest pair compares");
+    # sa+ur is the worst-case pair by array cost; it must still fit 4096 with
+    # room to spare, and the closing brace must survive.
+    assert(strlen(mcp_result_payload(okc)) < 4096, "compare payload inside its buffer");
+    var clen = strlen(mcp_result_payload(okc));
+    assert_eq(load8(mcp_result_payload(okc) + clen - 1) & 0xFF, 125, "compare payload ends with '}'");
+
+    # ---------------------------------------------------------------
+    test_group("hoosh_response_bounds");
+    # hoosh_answer_from_data interpolates `ipa` into alloc(256). On the
+    # not-in-inventory path the string is never matched against anything, so its
+    # length is entirely the caller's choice.
+    var long_ipa = _rep(66, 400);
+    var q = hoosh_examples_for_phoneme("en", long_ipa, 3);
+    var resp = hoosh_answer_from_data(q);
+    assert(resp != 0, "unmatched ipa still produces a response");
+    assert(strlen(hoosh_response_content(resp)) < 256, "response stays inside its buffer");
+    assert_eq(load8(hoosh_response_content(resp)) & 0xFF, 47, "response still begins with '/'");
+
+    # The in-inventory path is unchanged.
+    var q2 = hoosh_examples_for_phoneme("en", "θ", 3);
+    var resp2 = hoosh_answer_from_data(q2);
+    assert(resp2 != 0, "known phoneme answers from data");
+    assert(strlen(hoosh_response_content(resp2)) < 256, "known-phoneme response inside its buffer");
+    assert_eq(hoosh_response_confidence(resp2), 1000, "confidence unchanged");
+
+    var q3 = hoosh_compare("en", "sa", ComparisonAspect.Phonology);
+    var resp3 = hoosh_answer_from_data(q3);
+    assert(resp3 != 0, "phonology comparison answers from data");
+    assert(strlen(hoosh_response_content(resp3)) < 256, "comparison response inside its buffer");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

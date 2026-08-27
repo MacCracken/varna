@@ -5,6 +5,8 @@
 # LanguageInfo (24B): [0]=code  [8]=name  [16]=scripts(vec of cstrings)
 
 var _varna_langs = 0;   # vec of LanguageInfo ptrs, lazily built
+var _varna_lang_index = 0;   # map code -> LanguageInfo ptr, lazily built
+var _varna_all_codes = 0;    # cached vec of cstrings, lazily built
 
 fn _li_new(code, name, sc) {
     var li = alloc(24);
@@ -81,21 +83,41 @@ fn registry_languages() {
     return _varna_langs;
 }
 
-# Look up a language by ISO 639 code — LanguageInfo ptr, or 0 if unknown.
-fn registry_info(code) {
+# code -> LanguageInfo index, built once on first lookup.
+#
+# The lookup was a linear streq scan over all 51 entries, which put anything
+# iterating the registry at O(n^2) in string compares — `registry_all_codes_iter`
+# spent ~1,300 streq calls per pass and was by a wide margin the slowest
+# benchmark. LanguageInfo pointers are never 0, so map_get's 0 doubles as the
+# not-found sentinel.
+fn _registry_index() {
+    if (_varna_lang_index != 0) { return _varna_lang_index; }
     var langs = registry_languages();
     var n = vec_len(langs);
+    var idx = map_new();
     var i = 0;
     while (i < n) {
         var li = vec_get(langs, i);
-        if (streq(registry_info_code(li), code) == 1) { return li; }
+        map_set(idx, registry_info_code(li), li);
         i = i + 1;
     }
-    return 0;
+    _varna_lang_index = idx;
+    return idx;
+}
+
+# Look up a language by ISO 639 code — LanguageInfo ptr, or 0 if unknown.
+fn registry_info(code) {
+    return map_get(_registry_index(), code);
 }
 
 # All registered ISO 639 codes — vec of cstrings.
+#
+# The vec is built once and shared. It was rebuilt per call, which allocated a
+# fresh 51-element vec every time — and the bump allocator never frees, so a
+# caller polling this leaked steadily. Treat the result as read-only: pushing to
+# it mutates what every other caller sees.
 fn registry_all_codes() {
+    if (_varna_all_codes != 0) { return _varna_all_codes; }
     var langs = registry_languages();
     var n = vec_len(langs);
     var codes = vec_new();
@@ -104,6 +126,7 @@ fn registry_all_codes() {
         vec_push(codes, registry_info_code(vec_get(langs, i)));
         i = i + 1;
     }
+    _varna_all_codes = codes;
     return codes;
 }
 

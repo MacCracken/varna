@@ -99,6 +99,11 @@ fn phoneme_rounded(p) { return load64(p + 32); }
 # --- Inventory builder ---------------------------------------------
 # The builder and the inventory share one 40-byte layout; build() is identity.
 
+# `cap` is accepted for source compatibility with the v1.x Rust builder and is
+# currently ignored: lib/vec.cyr exposes no capacity-taking constructor, so the
+# backing vec always starts at its default size and grows. Kept in the signature
+# rather than dropped because the bundle is a published consumer API; it becomes
+# load-bearing the moment the stdlib grows `vec_new_with_capacity`.
 fn phoneme_builder_with_capacity(code, name, cap) {
     var inv = alloc(40);
     store64(inv, code);

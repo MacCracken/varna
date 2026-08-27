@@ -93,11 +93,26 @@ fn hoosh_response_content(r) { return load64(r + 16); }
 fn hoosh_response_confidence(r) { return load64(r + 24); }
 fn hoosh_response_structured_data(r) { return load64(r + 32); }
 
-# Append cstring `src` to `buf` at `off`; return the new offset.
-fn _hb_append(buf, off, src) {
+# Append cstring `src` to `buf` at `off`, writing no further than `cap - 1` so
+# the terminating NUL always fits; return the new offset.
+#
+# `hoosh_answer_from_data` interpolates the caller's `ipa` string into a fixed
+# 256-byte buffer. On the not-in-inventory path that string has not been matched
+# against anything, so its length is entirely the caller's choice — unbounded
+# appends overflowed the allocation. Truncating keeps the response well-formed.
+fn _hb_append(buf, off, cap, src) {
     var len = strlen(src);
+    var room = cap - off - 1;
+    if (room <= 0) { return off; }
+    if (len > room) { len = room; }
     memcpy(buf + off, src, len);
     return off + len;
+}
+
+# Bounded decimal append; fmt_int_buf needs up to 21 bytes of headroom.
+fn _hb_append_int(buf, off, cap, n) {
+    if (cap - off - 1 < 21) { return off; }
+    return off + fmt_int_buf(n, buf + off);
 }
 
 # Answer a query from varna's data — QueryResponse ptr, or 0 if it needs an LLM.
@@ -110,27 +125,29 @@ fn hoosh_answer_from_data(q) {
         if (inv == 0) { return 0; }
         var name = phoneme_language_name(inv);
         if (phoneme_has(inv, ipa) == 1) {
-            var buf = alloc(256);
+            var cap = 256;
+            var buf = alloc(cap);
             var off = 0;
-            off = _hb_append(buf, off, "/");
-            off = _hb_append(buf, off, ipa);
-            off = _hb_append(buf, off, "/ is present in ");
-            off = _hb_append(buf, off, name);
-            off = _hb_append(buf, off, " (");
-            off = off + fmt_int_buf(phoneme_consonant_count(inv), buf + off);
-            off = _hb_append(buf, off, "C + ");
-            off = off + fmt_int_buf(phoneme_vowel_count(inv), buf + off);
-            off = _hb_append(buf, off, "V inventory)");
+            off = _hb_append(buf, off, cap, "/");
+            off = _hb_append(buf, off, cap, ipa);
+            off = _hb_append(buf, off, cap, "/ is present in ");
+            off = _hb_append(buf, off, cap, name);
+            off = _hb_append(buf, off, cap, " (");
+            off = _hb_append_int(buf, off, cap, phoneme_consonant_count(inv));
+            off = _hb_append(buf, off, cap, "C + ");
+            off = _hb_append_int(buf, off, cap, phoneme_vowel_count(inv));
+            off = _hb_append(buf, off, cap, "V inventory)");
             store8(buf + off, 0);
             return _query_response_new(0, ResponseSource.VarnaData, buf, 1000, 0);
         }
-        var b2 = alloc(256);
+        var cap2 = 256;
+        var b2 = alloc(cap2);
         var o2 = 0;
-        o2 = _hb_append(b2, o2, "/");
-        o2 = _hb_append(b2, o2, ipa);
-        o2 = _hb_append(b2, o2, "/ is not in the ");
-        o2 = _hb_append(b2, o2, name);
-        o2 = _hb_append(b2, o2, " phoneme inventory");
+        o2 = _hb_append(b2, o2, cap2, "/");
+        o2 = _hb_append(b2, o2, cap2, ipa);
+        o2 = _hb_append(b2, o2, cap2, "/ is not in the ");
+        o2 = _hb_append(b2, o2, cap2, name);
+        o2 = _hb_append(b2, o2, cap2, " phoneme inventory");
         store8(b2 + o2, 0);
         return _query_response_new(0, ResponseSource.VarnaData, b2, 1000, 0);
     }
@@ -141,20 +158,21 @@ fn hoosh_answer_from_data(q) {
             var inv1 = registry_phonemes(vec_get(langs, 0));
             var inv2 = registry_phonemes(vec_get(langs, 1));
             if (inv1 == 0 || inv2 == 0) { return 0; }
-            var buf = alloc(256);
+            var cap = 256;
+            var buf = alloc(cap);
             var off = 0;
-            off = _hb_append(buf, off, phoneme_language_name(inv1));
-            off = _hb_append(buf, off, " has ");
-            off = off + fmt_int_buf(phoneme_consonant_count(inv1), buf + off);
-            off = _hb_append(buf, off, "C+");
-            off = off + fmt_int_buf(phoneme_vowel_count(inv1), buf + off);
-            off = _hb_append(buf, off, "V, ");
-            off = _hb_append(buf, off, phoneme_language_name(inv2));
-            off = _hb_append(buf, off, " has ");
-            off = off + fmt_int_buf(phoneme_consonant_count(inv2), buf + off);
-            off = _hb_append(buf, off, "C+");
-            off = off + fmt_int_buf(phoneme_vowel_count(inv2), buf + off);
-            off = _hb_append(buf, off, "V");
+            off = _hb_append(buf, off, cap, phoneme_language_name(inv1));
+            off = _hb_append(buf, off, cap, " has ");
+            off = _hb_append_int(buf, off, cap, phoneme_consonant_count(inv1));
+            off = _hb_append(buf, off, cap, "C+");
+            off = _hb_append_int(buf, off, cap, phoneme_vowel_count(inv1));
+            off = _hb_append(buf, off, cap, "V, ");
+            off = _hb_append(buf, off, cap, phoneme_language_name(inv2));
+            off = _hb_append(buf, off, cap, " has ");
+            off = _hb_append_int(buf, off, cap, phoneme_consonant_count(inv2));
+            off = _hb_append(buf, off, cap, "C+");
+            off = _hb_append_int(buf, off, cap, phoneme_vowel_count(inv2));
+            off = _hb_append(buf, off, cap, "V");
             store8(buf + off, 0);
             return _query_response_new(0, ResponseSource.VarnaData, buf, 1000, 0);
         }

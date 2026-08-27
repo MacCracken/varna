@@ -7,13 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-08-27
+
+Hardening release from a P(-1) scaffold sweep. Six memory-safety defects fixed —
+two of them heap overflows reachable from the `-D MCP` and `-D HOOSH` surfaces
+with caller-controlled length — plus the allocation-churn and lookup-complexity
+work the audit turned up. No public API or linguistic data changed.
+
+### Security
+
+- **mcp** — `_tool_err2` rendered `"<prefix><value>"` into a fixed `alloc(256)`
+  with no bound on `value`, which is an unvalidated tool parameter. A 400-byte
+  `language` / `code` / `scheme` / `lang1` / tool name wrote ~418 bytes into the
+  256-byte allocation — a heap overflow with both length and contents chosen by
+  the caller. Reachable from all five tools plus the unknown-tool path
+  (6 call sites). Every append in the file now takes the buffer capacity and
+  truncates; `tests/hardening_surfaces.tcyr` fails on the pre-fix code at all six.
+- **hoosh** — `hoosh_answer_from_data` interpolated the caller's `ipa` string into
+  a fixed `alloc(256)`. On the not-in-inventory branch that string is never matched
+  against anything first, so its length was entirely the caller's choice — the same
+  overflow. Bounded the same way.
+- **transliteration** — `translit_apply` walked the input with `_utf8_len`, which
+  classifies a lead byte without checking that its continuation bytes are present.
+  A truncated codepoint at the tail (a lone `0xF0`) advanced the cursor 4 bytes
+  with 1 byte left, so the following `memcpy` read up to 3 bytes past the end of
+  the input. Reachable through the `varna_translate_ipa` MCP tool.
+- **numerals** — `numerals_string_value` had the identical over-read, and is
+  reachable through daimon's `numeral_value` capability.
+- **util** — new `_utf8_step(s, p, n)` clamps every stride to the bytes actually
+  present and never returns 0; it is now the only way the tree walks UTF-8.
+  `_utf8_len` is kept and documented as lead-byte classification only.
+- **transliteration** — `translit_apply` sized its output at `inlen * 4`, which
+  held only because both bundled tables happen to contract. A table mapping a
+  short source to a longer target overflowed the buffer, and nothing
+  bounds-checked the writes. Output is now sized from the table's longest target
+  (`_translit_max_target`, memoised and invalidated by `_tt_add`) and every write
+  is checked against the capacity regardless.
+
+### Changed
+
+- **registry** — `registry_all_codes` caches its vec instead of rebuilding a
+  51-element one per call. **The result is now shared and must be treated as
+  read-only.** The old behaviour leaked a vec per call, since the bump allocator
+  never frees.
+- **phoneme** — documented that `phoneme_builder_with_capacity`'s `cap` argument
+  is ignored: `lib/vec.cyr` exposes no capacity-taking constructor. Kept in the
+  signature because the bundle is a published consumer API.
+
 ### Added
 
+- **tests** — `tests/hardening.tcyr` (26 assertions) and
+  `tests/hardening_surfaces.tcyr` (28) pin every fix above. Both were checked
+  against the pre-fix code: the surface tests fail 7 assertions and the
+  expanding-table test fails 2, so they are regression guards rather than
+  restatements of current behaviour.
+- **tests** — `registry_table_consistency` ties `registry_phonemes` to
+  `_registry_build`. The two list the same 51 codes in different forms with
+  nothing connecting them, so a language could be registered with no inventory
+  and only surface downstream.
 - **tests** — coverage sweep over the accessor surface `cyrius coverage` reported as
   unreferenced. Reference coverage 204/278 fns (73%) → 249/278 (89%), clearing the 80%
   floor in CLAUDE.md; `swadesh`, `syllable`, `lexicon`, `allophone`, `numerals`,
   `dialect` and `error` are now at 100%, and `error.cyr` went from no referenced fn at
-  all to covered. 222 new assertions, 17 → 19 test files.
+  all to covered. 222 new assertions, 17 → 19 test files (21 with the two above).
   - **swadesh** — `tests/swadesh.tcyr` (+100): all ten list builders called directly
     instead of only through the `swadesh_by_code` dispatch table, each checked for
     code, 25 entries and the first/last entry's word, IPA, gloss and Swadesh index;
@@ -37,6 +93,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `_removed`, and the RP intervocalic-/t/ override read through the rule accessors.
   - **error** — new `tests/error.tcyr` (15): `varna_error_str` for every `VarnaError`
     code plus the out-of-range fallback, so an unknown sentinel still renders.
+
+### Performance
+
+Measured by interleaving old and new builds in one session (`cyrius bench`, min
+ns) — a straight before/after against an earlier baseline showed a phantom
+15-25% regression across untouched rows that was pure machine drift.
+
+- **registry_all_codes_iter** — 42,499 → 3,310 ns (**-92%**, 12.8x).
+  `registry_info` was a linear `streq` scan over 51 entries, so iterating the
+  registry cost ~1,300 string compares; it is now a lazily built `map_get`.
+- **transliterate_greek_word** — 39,636 → 19,351 ns (**-51%**). `translit_apply`
+  allocated a `lens` vec plus up to four NUL-terminated candidate buffers *per
+  input grapheme*; matching is now done in place against the table literals.
+- **numeral_string_value_word** — 1,591 → 969 ns (**-39%**); the per-character
+  allocation is gone the same way.
+- **numeral_value_of_char** — 502 → 310 ns (**-38%**) and
+  **transliterate_devanagari_char** — 916 → 575 ns (**-37%**): one `strlen` of the
+  needle per call instead of one per table entry.
+- Every other row is flat within its run-to-run noise. `script_contains_codepoint`
+  reads 16 → 14 ns but that is inside its own ±14% spread and nothing in
+  `script.cyr` changed — not claimed as a win.
+
 
 ## [2.1.1] - 2026-08-27
 

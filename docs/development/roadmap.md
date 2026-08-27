@@ -1,6 +1,6 @@
 # Development Roadmap
 
-> **Status**: v2.1 (Cyrius) | **Current**: 2.1.1
+> **Status**: v2.1 (Cyrius) | **Current**: 2.1.2
 >
 > Items marked `[S]` also unblock **sankhya** (ancient mathematical systems).
 >
@@ -11,6 +11,33 @@
 > sentinel returns, `str` literals; no `Cow`/`Option` types).
 
 ## Completed
+
+### 2.1.2 — Hardening Sweep (2026-08-27)
+
+P(-1) scaffold sweep: audit, repair, optimise.
+
+- [x] **Heap overflow, `-D MCP`** — `_tool_err2` wrote an unbounded caller-supplied
+      parameter into a fixed `alloc(256)`; reachable from all five tools and the
+      unknown-tool path. All appends now carry the buffer capacity
+- [x] **Heap overflow, `-D HOOSH`** — same defect via `hoosh_answer_from_data`'s
+      unmatched `ipa` string
+- [x] **Out-of-bounds read** — `_utf8_len` trusts the lead byte, so a truncated
+      codepoint at the tail let `translit_apply` and `numerals_string_value` read past
+      the input. New `_utf8_step` clamps every stride to the bytes present
+- [x] **Output overflow** — `translit_apply` sized its buffer at `inlen * 4`, sound
+      only for tables that contract; now sized from the table's longest target and
+      bounds-checked regardless
+- [x] `registry_info` indexed (linear `streq` scan → `map_get`); `registry_all_codes`
+      cached instead of rebuilt per call — **the returned vec is now shared, read-only**
+- [x] Per-grapheme and per-character allocations removed from the transliteration and
+      numeral hot paths (the bump allocator never frees)
+- [x] `registry_phonemes` tied to `_registry_build` by test; `phoneme_builder_with_capacity`'s
+      ignored `cap` argument documented
+- [x] 54 new assertions across `tests/hardening.tcyr` + `tests/hardening_surfaces.tcyr`,
+      each verified to fail against the pre-fix code
+- [x] `registry_all_codes_iter` -92%, `transliterate_greek_word` -51%,
+      `numeral_string_value_word` -39%, `numeral_value_of_char` -38%,
+      `transliterate_devanagari_char` -37%; all other rows flat (interleaved A/B)
 
 ### 2.1.1 — Toolchain Maintenance (2026-08-27)
 
@@ -120,6 +147,26 @@
 - [x] MCP tools: `lipi_phonemes`, `lipi_script`, `lipi_grammar`, `lipi_translate_ipa`, `lipi_compare` (feature-gated `mcp`)
 - [x] Daimon agent registration: `AgentRegistration` with 6 capabilities (feature-gated `daimon`)
 - [x] Hoosh LLM query interface: `LanguageQuery`, `answer_from_data()` for data-only resolution (feature-gated `hoosh`)
+
+## Deferred from 2.1.2
+
+### Cache the pre-built data constructors
+
+Every `phoneme_*` / `script_*` / `grammar_*` / `swadesh_*` / `translit_*` /
+`numerals_*` constructor rebuilds its whole structure on each call —
+`phoneme_english()` allocates an inventory, a vec and 36 phoneme records every
+time, and `registry_phonemes` calls it fresh on every lookup. With a bump
+allocator that never frees, a consumer polling the registry leaks steadily, and
+this is the single largest remaining cost in the inventory benchmarks (the
+`*_phoneme_inventory` rows are almost entirely construction).
+
+Deferred out of the 2.1.2 hardening sweep deliberately: caching turns each
+constructor into a shared singleton, so a consumer mutating a returned inventory
+through the `phoneme_builder_*` functions would corrupt every other caller's
+copy. That is a public-API semantic change and wants its own release with a
+migration note — `registry_all_codes` took exactly this change in 2.1.2 and is
+now documented read-only. Options: cache and document read-only; or cache plus an
+explicit `phoneme_clone` for callers that need a mutable copy.
 
 ## Post-1.0 Roadmap — "World's Leading Authority"
 

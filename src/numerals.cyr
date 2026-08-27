@@ -36,12 +36,24 @@ fn numerals_mappings(sys) { return load64(sys + 24); }
 
 # Numeric value of a single-character string, or (0-1) if unmapped.
 fn numerals_value_of(sys, ch) {
+    return _numerals_value_of_bytes(sys, ch, strlen(ch));
+}
+
+# Value of the `len` bytes at `ch`, or (0-1) if unmapped.
+#
+# Compares in place so `numerals_string_value` can walk a string without
+# copying each codepoint into a fresh NUL-terminated buffer first — that
+# allocated once per character, and the bump allocator never frees.
+fn _numerals_value_of_bytes(sys, ch, len) {
     var ms = load64(sys + 24);
     var n = vec_len(ms);
     var i = 0;
     while (i < n) {
         var m = vec_get(ms, i);
-        if (streq(load64(m), ch) == 1) { return load64(m + 8); }
+        var c = load64(m);
+        if (strlen(c) == len) {
+            if (memeq(c, ch, len) == 1) { return load64(m + 8); }
+        }
         i = i + 1;
     }
     return 0 - 1;
@@ -61,18 +73,18 @@ fn numerals_char_for(sys, value) {
 }
 
 # Additive value: sum each codepoint's value. (0-1) if any is unmapped.
-# (_utf8_len comes from src/util.cyr.)
+#
+# `_utf8_step` (src/util.cyr) clamps each stride to the bytes actually present,
+# so a truncated codepoint at the tail is consumed rather than read past — it
+# then simply fails to match any mapping and the call returns the unmapped
+# sentinel, which is the right answer for malformed input.
 fn numerals_string_value(sys, s) {
     var total = 0;
     var p = 0;
     var n = strlen(s);
     while (p < n) {
-        var b = load8(s + p) & 0xFF;
-        var len = _utf8_len(b);
-        var ch = alloc(len + 1);
-        memcpy(ch, s + p, len);
-        store8(ch + len, 0);
-        var v = numerals_value_of(sys, ch);
+        var len = _utf8_step(s, p, n);
+        var v = _numerals_value_of_bytes(sys, s + p, len);
         if (v < 0) { return 0 - 1; }
         total = total + v;
         p = p + len;

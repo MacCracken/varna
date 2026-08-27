@@ -5,9 +5,9 @@ History in `bench-history.csv`. `min` is the most representative
 per-op figure (the bump allocator never frees, so `avg` carries
 accumulating alloc overhead).
 
-Latest: **2026-08-27T19:13:10Z** commit `1c92e48` on cyrius `6.5.35`
+Latest: **2026-08-27T23:52:03Z** commit `33f69af` on cyrius `6.5.35`
 
-Timer floor: **1.409us** per clock read (measured on this host,
+Timer floor: **1.345us** per clock read (measured on this host,
 subtracted from every sample). Cyrius >=6.5.19 calibrates this at
 runtime; the value is a property of the host clocksource and
 moves between reboots, so rows recorded under different floors are
@@ -23,21 +23,21 @@ not directly comparable.
 
 | Benchmark | min | avg |
 |-----------|-----|-----|
-| `english_phoneme_inventory` | 1.318us | 1.523us |
-| `sanskrit_phoneme_inventory` | 1.750us | 2.011us |
-| `greek_phoneme_inventory` | 892ns | 1.019us |
-| `phoneme_lookup_ipa` | 378ns | 401ns |
-| `registry_phonemes_lookup` | 1.778us | 2.052us |
-| `registry_all_codes_iter` | 42.785us | 45.927us |
-| `script_by_code_lookup` | 294ns | 332ns |
-| `script_contains_codepoint` | 14ns | 15ns |
-| `transliterate_devanagari_char` | 930ns | 969ns |
-| `transliterate_greek_word` | 39.875us | 42.025us |
-| `numeral_value_of_char` | 501ns | 522ns |
-| `numeral_string_value_word` | 1.586us | 1.661us |
-| `grammar_by_code_lookup` | 244ns | 259ns |
-| `swadesh_by_code_lookup` | 1.115us | 1.676us |
-| `lexicon_find_word` | 842ns | 886ns |
-| `allophone_realize` | 34ns | 35ns |
-| `phonotactics_is_permitted` | 141ns | 146ns |
-| `dialect_apply_overlay` | 2.895us | 3.383us |
+| `english_phoneme_inventory` | 1.277us | 1.906us |
+| `sanskrit_phoneme_inventory` | 1.718us | 2.533us |
+| `greek_phoneme_inventory` | 871ns | 1.247us |
+| `phoneme_lookup_ipa` | 368ns | 465ns |
+| `registry_phonemes_lookup` | 1.747us | 2.323us |
+| `registry_all_codes_iter` | 3.292us | 3.837us |
+| `script_by_code_lookup` | 324ns | 364ns |
+| `script_contains_codepoint` | 15ns | 16ns |
+| `transliterate_devanagari_char` | 572ns | 711ns |
+| `transliterate_greek_word` | 18.881us | 23.703us |
+| `numeral_value_of_char` | 349ns | 363ns |
+| `numeral_string_value_word` | 969ns | 1.212us |
+| `grammar_by_code_lookup` | 246ns | 300ns |
+| `swadesh_by_code_lookup` | 1.096us | 1.450us |
+| `lexicon_find_word` | 849ns | 1.057us |
+| `allophone_realize` | 36ns | 38ns |
+| `phonotactics_is_permitted` | 149ns | 164ns |
+| `dialect_apply_overlay` | 2.890us | 3.488us |

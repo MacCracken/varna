@@ -2,9 +2,30 @@
 
 # UTF-8 byte length of the codepoint whose lead byte is b (0-255).
 # Valid lead bytes: 0x00-0x7F=1, 0xC0-0xDF=2, 0xE0-0xEF=3, 0xF0-0xF7=4.
+#
+# This is a pure classification of the lead byte and does NOT validate that the
+# continuation bytes are present. Callers walking a buffer must clamp the result
+# to the bytes they actually have — use `_utf8_step` rather than calling this
+# directly, or a truncated/malformed sequence at the tail reads past the end.
 fn _utf8_len(b) {
     if (b < 0x80) { return 1; }
     if (b < 0xE0) { return 2; }
     if (b < 0xF0) { return 3; }
     return 4;
+}
+
+# Bytes to advance from offset `p` in a buffer of `n` bytes, clamped so that
+# `p + step <= n` and `step >= 1`.
+#
+# `_utf8_len` trusts the lead byte, so a truncated codepoint at the tail (a lone
+# 0xF0, say) or a stray continuation byte would otherwise carry the cursor past
+# the end of the buffer and let the following memcpy over-read. Clamping keeps
+# every walk inside the input; malformed trailing bytes are consumed one
+# codepoint's worth at a time rather than trusted.
+fn _utf8_step(s, p, n) {
+    if (p >= n) { return 1; }
+    var len = _utf8_len(load8(s + p) & 0xFF);
+    var avail = n - p;
+    if (len > avail) { return avail; }
+    return len;
 }

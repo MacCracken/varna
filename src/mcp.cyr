@@ -52,40 +52,60 @@ fn mcp_tool_definitions() {
     return tools;
 }
 
-fn _mcp_append(buf, off, src) {
+# Append `src` to `buf` at `off`, writing no further than `cap - 1` so the
+# caller can always store the terminating NUL. Returns the new offset.
+#
+# Every buffer in this file is a fixed `alloc(N)`, and several of the strings
+# appended to them come straight from tool params — a caller-supplied language
+# code or tool name is not length-limited, so the unbounded version overflowed
+# the allocation with attacker-controlled bytes. Truncating is the right
+# failure here: these are diagnostic strings, not data the caller round-trips.
+fn _mcp_append(buf, off, cap, src) {
     var len = strlen(src);
+    var room = cap - off - 1;
+    if (room <= 0) { return off; }
+    if (len > room) { len = room; }
     memcpy(buf + off, src, len);
     return off + len;
 }
 
+# Append the decimal form of `n`, bounded the same way. fmt_int_buf writes up to
+# 20 digits plus a sign, so it needs room reserved before it is let near the
+# buffer.
+fn _mcp_append_int(buf, off, cap, n) {
+    if (cap - off - 1 < 21) { return off; }
+    return off + fmt_int_buf(n, buf + off);
+}
+
 # Build an Error result with an interpolated value: "<prefix><value>".
 fn _tool_err2(prefix, value) {
-    var buf = alloc(256);
-    var off = _mcp_append(buf, 0, prefix);
-    off = _mcp_append(buf, off, value);
+    var cap = 256;
+    var buf = alloc(cap);
+    var off = _mcp_append(buf, 0, cap, prefix);
+    off = _mcp_append(buf, off, cap, value);
     store8(buf + off, 0);
     return _tool_err(buf);
 }
 
 # Append a JSON array of the IPA strings in `src_list` that satisfy a membership
 # test against `other` (want_shared=1 -> in other; 0 -> not in other).
-fn _mcp_append_ipa_array(buf, off, src_list, other, want_shared) {
-    off = _mcp_append(buf, off, "[");
+fn _mcp_append_ipa_array(buf, off, cap, src_list, other, want_shared) {
+    off = _mcp_append(buf, off, cap, "[");
     var n = vec_len(src_list);
     var count = 0;
     var i = 0;
     while (i < n) {
         var ipa = phoneme_ipa(vec_get(src_list, i));
         if (phoneme_has(other, ipa) == want_shared) {
-            if (count > 0) { off = _mcp_append(buf, off, ","); }
-            off = _mcp_append(buf, off, "\"");
-            off = _mcp_append(buf, off, ipa);
-            off = _mcp_append(buf, off, "\"");
+            if (count > 0) { off = _mcp_append(buf, off, cap, ","); }
+            off = _mcp_append(buf, off, cap, "\"");
+            off = _mcp_append(buf, off, cap, ipa);
+            off = _mcp_append(buf, off, cap, "\"");
             count = count + 1;
         }
         i = i + 1;
     }
-    off = _mcp_append(buf, off, "]");
+    off = _mcp_append(buf, off, cap, "]");
     return off;
 }
 
@@ -105,17 +125,18 @@ fn _mcp_handle_phonemes(params) {
     if (lang == 0) { return _tool_err("missing required parameter: language"); }
     var inv = registry_phonemes(lang);
     if (inv == 0) { return _tool_err2("unknown language: ", lang); }
-    var buf = alloc(512);
+    var cap = 512;
+    var buf = alloc(cap);
     var off = 0;
-    off = _mcp_append(buf, off, "{\"language_code\":\"");
-    off = _mcp_append(buf, off, phoneme_language_code(inv));
-    off = _mcp_append(buf, off, "\",\"language_name\":\"");
-    off = _mcp_append(buf, off, phoneme_language_name(inv));
-    off = _mcp_append(buf, off, "\",\"consonant_count\":");
-    off = off + fmt_int_buf(phoneme_consonant_count(inv), buf + off);
-    off = _mcp_append(buf, off, ",\"vowel_count\":");
-    off = off + fmt_int_buf(phoneme_vowel_count(inv), buf + off);
-    off = _mcp_append(buf, off, "}");
+    off = _mcp_append(buf, off, cap, "{\"language_code\":\"");
+    off = _mcp_append(buf, off, cap, phoneme_language_code(inv));
+    off = _mcp_append(buf, off, cap, "\",\"language_name\":\"");
+    off = _mcp_append(buf, off, cap, phoneme_language_name(inv));
+    off = _mcp_append(buf, off, cap, "\",\"consonant_count\":");
+    off = _mcp_append_int(buf, off, cap, phoneme_consonant_count(inv));
+    off = _mcp_append(buf, off, cap, ",\"vowel_count\":");
+    off = _mcp_append_int(buf, off, cap, phoneme_vowel_count(inv));
+    off = _mcp_append(buf, off, cap, "}");
     store8(buf + off, 0);
     return _tool_ok(buf);
 }
@@ -125,15 +146,16 @@ fn _mcp_handle_script(params) {
     if (code == 0) { return _tool_err("missing required parameter: code"); }
     var sc = script_by_code(code);
     if (sc == 0) { return _tool_err2("unknown script: ", code); }
-    var buf = alloc(256);
+    var cap = 256;
+    var buf = alloc(cap);
     var off = 0;
-    off = _mcp_append(buf, off, "{\"code\":\"");
-    off = _mcp_append(buf, off, script_code(sc));
-    off = _mcp_append(buf, off, "\",\"name\":\"");
-    off = _mcp_append(buf, off, script_name(sc));
-    off = _mcp_append(buf, off, "\",\"script_type\":");
-    off = off + fmt_int_buf(script_type(sc), buf + off);
-    off = _mcp_append(buf, off, "}");
+    off = _mcp_append(buf, off, cap, "{\"code\":\"");
+    off = _mcp_append(buf, off, cap, script_code(sc));
+    off = _mcp_append(buf, off, cap, "\",\"name\":\"");
+    off = _mcp_append(buf, off, cap, script_name(sc));
+    off = _mcp_append(buf, off, cap, "\",\"script_type\":");
+    off = _mcp_append_int(buf, off, cap, script_type(sc));
+    off = _mcp_append(buf, off, cap, "}");
     store8(buf + off, 0);
     return _tool_ok(buf);
 }
@@ -143,15 +165,16 @@ fn _mcp_handle_grammar(params) {
     if (lang == 0) { return _tool_err("missing required parameter: language"); }
     var g = grammar_by_code(lang);
     if (g == 0) { return _tool_err2("no grammar profile for: ", lang); }
-    var buf = alloc(256);
+    var cap = 256;
+    var buf = alloc(cap);
     var off = 0;
-    off = _mcp_append(buf, off, "{\"language_code\":\"");
-    off = _mcp_append(buf, off, grammar_language_code(g));
-    off = _mcp_append(buf, off, "\",\"case_count\":");
-    off = off + fmt_int_buf(grammar_case_count(g), buf + off);
-    off = _mcp_append(buf, off, ",\"gender_count\":");
-    off = off + fmt_int_buf(grammar_gender_count(g), buf + off);
-    off = _mcp_append(buf, off, "}");
+    off = _mcp_append(buf, off, cap, "{\"language_code\":\"");
+    off = _mcp_append(buf, off, cap, grammar_language_code(g));
+    off = _mcp_append(buf, off, cap, "\",\"case_count\":");
+    off = _mcp_append_int(buf, off, cap, grammar_case_count(g));
+    off = _mcp_append(buf, off, cap, ",\"gender_count\":");
+    off = _mcp_append_int(buf, off, cap, grammar_gender_count(g));
+    off = _mcp_append(buf, off, cap, "}");
     store8(buf + off, 0);
     return _tool_ok(buf);
 }
@@ -180,33 +203,34 @@ fn _mcp_handle_compare(params) {
 
     var ph1 = phoneme_list(inv1);
     var ph2 = phoneme_list(inv2);
-    var buf = alloc(4096);
+    var cap = 4096;
+    var buf = alloc(cap);
     var off = 0;
-    off = _mcp_append(buf, off, "{\"lang1\":\"");
-    off = _mcp_append(buf, off, lang1);
-    off = _mcp_append(buf, off, "\",\"lang2\":\"");
-    off = _mcp_append(buf, off, lang2);
-    off = _mcp_append(buf, off, "\",\"shared_phonemes\":");
-    off = _mcp_append_ipa_array(buf, off, ph1, inv2, 1);
-    off = _mcp_append(buf, off, ",\"unique_to_lang1\":");
-    off = _mcp_append_ipa_array(buf, off, ph1, inv2, 0);
-    off = _mcp_append(buf, off, ",\"unique_to_lang2\":");
-    off = _mcp_append_ipa_array(buf, off, ph2, inv1, 0);
-    off = _mcp_append(buf, off, ",\"shared_count\":");
-    off = off + fmt_int_buf(_mcp_shared_count(ph1, inv2), buf + off);
+    off = _mcp_append(buf, off, cap, "{\"lang1\":\"");
+    off = _mcp_append(buf, off, cap, lang1);
+    off = _mcp_append(buf, off, cap, "\",\"lang2\":\"");
+    off = _mcp_append(buf, off, cap, lang2);
+    off = _mcp_append(buf, off, cap, "\",\"shared_phonemes\":");
+    off = _mcp_append_ipa_array(buf, off, cap, ph1, inv2, 1);
+    off = _mcp_append(buf, off, cap, ",\"unique_to_lang1\":");
+    off = _mcp_append_ipa_array(buf, off, cap, ph1, inv2, 0);
+    off = _mcp_append(buf, off, cap, ",\"unique_to_lang2\":");
+    off = _mcp_append_ipa_array(buf, off, cap, ph2, inv1, 0);
+    off = _mcp_append(buf, off, cap, ",\"shared_count\":");
+    off = _mcp_append_int(buf, off, cap, _mcp_shared_count(ph1, inv2));
 
     var g1 = grammar_by_code(lang1);
     var g2 = grammar_by_code(lang2);
     if (g1 != 0 && g2 != 0) {
-        off = _mcp_append(buf, off, ",\"grammar_comparison\":{\"same_word_order\":");
-        if (grammar_word_order(g1) == grammar_word_order(g2)) { off = _mcp_append(buf, off, "true"); }
-        if (grammar_word_order(g1) != grammar_word_order(g2)) { off = _mcp_append(buf, off, "false"); }
-        off = _mcp_append(buf, off, ",\"same_morphology\":");
-        if (grammar_morphology(g1) == grammar_morphology(g2)) { off = _mcp_append(buf, off, "true"); }
-        if (grammar_morphology(g1) != grammar_morphology(g2)) { off = _mcp_append(buf, off, "false"); }
-        off = _mcp_append(buf, off, "}");
+        off = _mcp_append(buf, off, cap, ",\"grammar_comparison\":{\"same_word_order\":");
+        if (grammar_word_order(g1) == grammar_word_order(g2)) { off = _mcp_append(buf, off, cap, "true"); }
+        if (grammar_word_order(g1) != grammar_word_order(g2)) { off = _mcp_append(buf, off, cap, "false"); }
+        off = _mcp_append(buf, off, cap, ",\"same_morphology\":");
+        if (grammar_morphology(g1) == grammar_morphology(g2)) { off = _mcp_append(buf, off, cap, "true"); }
+        if (grammar_morphology(g1) != grammar_morphology(g2)) { off = _mcp_append(buf, off, cap, "false"); }
+        off = _mcp_append(buf, off, cap, "}");
     }
-    off = _mcp_append(buf, off, "}");
+    off = _mcp_append(buf, off, cap, "}");
     store8(buf + off, 0);
     return _tool_ok(buf);
 }

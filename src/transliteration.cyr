@@ -1,18 +1,19 @@
 # src/transliteration.cyr — bidirectional script transliteration tables.
 # Ported from rust-old/src/script/transliteration.rs (data transpiled byte-exact).
 #
-# TransliterationTable (32B): [0]=scheme [8]=source_script [16]=target_script
-#                             [24]=forward(vec of pairs)
+# TransliterationTable (40B): [0]=scheme [8]=source_script [16]=target_script
+#                             [24]=forward(vec of pairs) [32]=max_target(cache|0)
 # pair (16B): [0]=src(cstr) [8]=tgt(cstr)
-# Requires src/util.cyr (_utf8_len). transliterate_char/reverse-lookup return 0
+# Requires src/util.cyr (_utf8_step). transliterate_char/reverse-lookup return 0
 # when unmapped; transliterate() returns a fresh cstring.
 
 fn _tt_new(scheme, src_script, tgt_script) {
-    var tt = alloc(32);
+    var tt = alloc(40);
     store64(tt, scheme);
     store64(tt + 8, src_script);
     store64(tt + 16, tgt_script);
     store64(tt + 24, vec_new());
+    store64(tt + 32, 0);
     return tt;
 }
 
@@ -21,6 +22,7 @@ fn _tt_add(tt, src, tgt) {
     store64(pair, src);
     store64(pair + 8, tgt);
     vec_push(load64(tt + 24), pair);
+    store64(tt + 32, 0);
     return tt;
 }
 
@@ -31,12 +33,43 @@ fn translit_forward(tt) { return load64(tt + 24); }
 
 # Transliterate a single source grapheme — target cstr, or 0 if unmapped.
 fn translit_char(tt, ch) {
+    return _translit_lookup(tt, ch, strlen(ch));
+}
+
+# Longest target string in the table, used to size the output buffer in
+# `translit_apply`. Computed on demand and memoised in the table.
+fn _translit_max_target(tt) {
+    var cached = load64(tt + 32);
+    if (cached != 0) { return cached; }
+    var fwd = load64(tt + 24);
+    var n = vec_len(fwd);
+    var max = 1;
+    var i = 0;
+    while (i < n) {
+        var tlen = strlen(load64(vec_get(fwd, i) + 8));
+        if (tlen > max) { max = tlen; }
+        i = i + 1;
+    }
+    store64(tt + 32, max);
+    return max;
+}
+
+# Look up the `len` bytes at `ch` in the forward table — target cstr, or 0.
+#
+# Compares in place against each source literal instead of copying the candidate
+# into a NUL-terminated scratch buffer first: `translit_apply` probes up to four
+# candidates per input grapheme, and allocating each one leaked a buffer per
+# probe (the bump allocator never frees).
+fn _translit_lookup(tt, ch, len) {
     var fwd = load64(tt + 24);
     var n = vec_len(fwd);
     var i = 0;
     while (i < n) {
         var pair = vec_get(fwd, i);
-        if (streq(load64(pair), ch) == 1) { return load64(pair + 8); }
+        var src = load64(pair);
+        if (strlen(src) == len) {
+            if (memeq(src, ch, len) == 1) { return load64(pair + 8); }
+        }
         i = i + 1;
     }
     return 0;
@@ -58,37 +91,48 @@ fn translit_reverse_map(tt) {
 
 # Transliterate a string by greedily matching the longest source sequence
 # (up to 4 codepoints). Unmapped graphemes pass through unchanged.
+#
+# Output sizing: one input byte can expand to at most `_translit_max_target`
+# bytes, since the shortest match consumes one codepoint (>= 1 byte) and emits
+# at most the table's longest target. The old fixed `inlen * 4` held only
+# because both bundled tables happen to shrink; a caller-built table mapping a
+# short source to a long target overflowed it.
+#
+# Every write is still bounds-checked against `cap` and the walk is clamped to
+# `inlen`, so neither a table with an unexpected expansion ratio nor malformed
+# UTF-8 at the tail can run past the buffer.
 fn translit_apply(tt, input) {
     var inlen = strlen(input);
-    var out = alloc(inlen * 4 + 16);
+    var cap = inlen * _translit_max_target(tt) + 16;
+    var out = alloc(cap);
     var olen = 0;
     var p = 0;
     while (p < inlen) {
-        var l1 = _utf8_len(load8(input + p) & 0xFF);
+        var l1 = _utf8_step(input, p, inlen);
         var b2 = p + l1;
         var l2 = 0;
-        if (b2 < inlen) { l2 = _utf8_len(load8(input + b2) & 0xFF); }
+        if (b2 < inlen) { l2 = _utf8_step(input, b2, inlen); }
         var b3 = b2 + l2;
         var l3 = 0;
-        if (b3 < inlen) { l3 = _utf8_len(load8(input + b3) & 0xFF); }
+        if (b3 < inlen) { l3 = _utf8_step(input, b3, inlen); }
         var b4 = b3 + l3;
         var l4 = 0;
-        if (b4 < inlen) { l4 = _utf8_len(load8(input + b4) & 0xFF); }
-        var lens = vec_new();
-        vec_push(lens, l1);
-        vec_push(lens, l1 + l2);
-        vec_push(lens, l1 + l2 + l3);
-        vec_push(lens, l1 + l2 + l3 + l4);
+        if (b4 < inlen) { l4 = _utf8_step(input, b4, inlen); }
+        var e1 = l1;
+        var e2 = e1 + l2;
+        var e3 = e2 + l3;
+        var e4 = e3 + l4;
         var matched = 0;
-        var k = 3;
-        while (k >= 0 && matched == 0) {
-            var elen = vec_get(lens, k);
-            var cand = alloc(elen + 1);
-            memcpy(cand, input + p, elen);
-            store8(cand + elen, 0);
-            var rep = translit_char(tt, cand);
+        var k = 4;
+        while (k >= 1 && matched == 0) {
+            var elen = e1;
+            if (k == 2) { elen = e2; }
+            if (k == 3) { elen = e3; }
+            if (k == 4) { elen = e4; }
+            var rep = _translit_lookup(tt, input + p, elen);
             if (rep != 0) {
                 var rlen = strlen(rep);
+                if (olen + rlen + 1 > cap) { rlen = cap - olen - 1; }
                 memcpy(out + olen, rep, rlen);
                 olen = olen + rlen;
                 p = p + elen;
@@ -97,8 +141,10 @@ fn translit_apply(tt, input) {
             k = k - 1;
         }
         if (matched == 0) {
-            memcpy(out + olen, input + p, l1);
-            olen = olen + l1;
+            var passlen = l1;
+            if (olen + passlen + 1 > cap) { passlen = cap - olen - 1; }
+            memcpy(out + olen, input + p, passlen);
+            olen = olen + passlen;
             p = p + l1;
         }
     }

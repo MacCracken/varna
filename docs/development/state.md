@@ -5,6 +5,11 @@
 
 ## Version
 
+**2.1.2** — hardening release (2026-08-27) from a P(-1) scaffold sweep: six memory-safety
+defects fixed (two heap overflows reachable from `-D MCP` / `-D HOOSH` with
+caller-controlled length, two UTF-8 over-reads, one output-buffer overflow), the
+transliteration/numeral hot paths de-allocated and `registry_info` indexed. No API or data
+changes; `registry_all_codes` now returns a shared read-only vec.
 **2.1.1** — toolchain-maintenance release (2026-08-27): Cyrius pin `6.4.69` → `6.5.35`,
 vendored stdlib refreshed, `cyrius.lock` regenerated (and a wrong 2.1.0 hash fixed), the
 commented `[deps.bote]` recipe refreshed to `3.3.7`. No API or data changes.
@@ -66,15 +71,15 @@ lines of Rust preserved at `rust-old/` for parity reference. See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.1.1):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.1.1]`); `cyrius.lock` regenerated at 6.5.35 and
+- **Release-ready (2.1.2):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.1.2]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
-- **Gaps not closed by 2.1.1:** `cyrius coverage` reports 73% reference coverage (204/278
-  fns), under the 80% target in CLAUDE.md — thinnest in `swadesh.cyr` (6/19),
-  `syllable.cyr` (12/25), and `lexicon.cyr` (5/12). `error.cyr` has no referenced fn at all.
-  CI runs `cyrius deps`, never `cyrius deps --verify`, which is why the bad 2.1.0 lock hash
-  went unnoticed for a release.
+- **Gaps not closed by 2.1.2:** `cyrius coverage` reports 89% reference coverage
+  (249/278 fns), clearing the 80% target; the remainder is thinnest in `phoneme.cyr`
+  (20/30), `transliteration.cyr` (5/9) and `cognate.cyr` (11/15). The pre-built data
+  constructors are still rebuilt per call — see "Deferred from 2.1.2" in the roadmap for
+  why caching them was held back.
 
 ## Dependencies
 
@@ -98,7 +103,7 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.1 is a toolchain-maintenance release (Cyrius 6.5.35).
+The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35) and 2.1.2 a hardening sweep.
 Remaining work is post-port:
 
 - **2.0.1 — remove `rust-old/`** (planned, separate session, after another review

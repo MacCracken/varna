@@ -1,0 +1,153 @@
+# tests/hardening.tcyr — regression tests for the 2.1.2 hardening sweep.
+#
+# Each group pins a specific memory-safety fix. They are written so that the
+# PRE-fix code fails them: the assertions bound what was previously unbounded,
+# rather than merely checking that a call returns.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+# Build a heap cstring of `n` copies of byte `b`.
+fn _rep(b, n) {
+    var s = alloc(n + 1);
+    var i = 0;
+    while (i < n) {
+        store8(s + i, b);
+        i = i + 1;
+    }
+    store8(s + n, 0);
+    return s;
+}
+
+fn main() {
+    alloc_init();
+
+    # ---------------------------------------------------------------
+    test_group("utf8_step_clamps");
+    # _utf8_len trusts the lead byte: 0xF0 claims a 4-byte codepoint. _utf8_step
+    # must clamp that to the bytes actually present, or a truncated sequence at
+    # the tail carries the cursor past the buffer and the next memcpy over-reads.
+    var truncated = alloc(2);
+    store8(truncated, 0xF0);
+    store8(truncated + 1, 0);
+    assert_eq(_utf8_len(0xF0), 4, "lead byte 0xF0 claims 4 bytes");
+    assert_eq(_utf8_step(truncated, 0, 1), 1, "clamped to the 1 byte available");
+
+    var three = alloc(4);
+    store8(three, 0xE0);
+    store8(three + 1, 0xA4);
+    store8(three + 2, 0);
+    assert_eq(_utf8_step(three, 0, 2), 2, "3-byte lead with 2 bytes left clamps to 2");
+    assert_eq(_utf8_step("abc", 0, 3), 1, "ascii steps 1");
+    assert_eq(_utf8_step("क", 0, 3), 3, "devanagari ka steps 3");
+    # A stray continuation byte is classified as 2 by _utf8_len; the step must
+    # still never exceed the remaining bytes, and never stall at 0.
+    assert(_utf8_step(three, 1, 2) >= 1, "step is always at least 1");
+    assert(_utf8_step(three, 1, 2) <= 1, "step never passes the end");
+
+    # ---------------------------------------------------------------
+    test_group("translit_malformed_input");
+    var beta = translit_greek_beta_code();
+    # Well-formed input is unaffected by the clamping.
+    assert(streq(translit_apply(beta, "λογος"), "logos"), "greek logos still maps");
+    assert(streq(translit_apply(beta, "α 1"), "a 1"), "passthrough still works");
+    # A lone 4-byte lead is consumed rather than read past; the byte falls
+    # through unmapped, so it survives into the output and nothing else follows.
+    var lone = alloc(2);
+    store8(lone, 0xF0);
+    store8(lone + 1, 0);
+    var lone_out = translit_apply(beta, lone);
+    assert_eq(strlen(lone_out), 1, "lone 0xF0 emits exactly its one byte");
+    # A truncated codepoint after valid text keeps the valid prefix intact.
+    var tail = alloc(5);
+    store8(tail, 0xCE);          # start of "α"
+    store8(tail + 1, 0xB1);
+    store8(tail + 2, 0xF0);      # truncated 4-byte lead
+    store8(tail + 3, 0);
+    var tail_out = translit_apply(beta, tail);
+    assert_eq(load8(tail_out) & 0xFF, 97, "valid prefix still maps to 'a'");
+    assert_eq(strlen(tail_out), 2, "prefix + the single trailing byte");
+
+    # ---------------------------------------------------------------
+    test_group("translit_expanding_table");
+    # Output sizing used to assume 4x the input length, which held only because
+    # both bundled tables shrink. A table that expands one source byte into a
+    # longer target overflowed the buffer; sizing now follows the table's
+    # longest target.
+    var wide = _tt_new("Wide", "Latn", "Latn");
+    _tt_add(wide, "a", "0123456789");
+    assert_eq(_translit_max_target(wide), 10, "longest target measured");
+    var wide_out = translit_apply(wide, "aaa");
+    assert_eq(strlen(wide_out), 30, "3 x 10 bytes emitted in full");
+    assert(streq(wide_out, "012345678901234567890123456789"), "expansion is exact");
+    # Adding a longer mapping must invalidate the memoised maximum.
+    _tt_add(wide, "b", "0123456789abcde");
+    assert_eq(_translit_max_target(wide), 15, "cache invalidated by _tt_add");
+
+    # ---------------------------------------------------------------
+    test_group("numerals_malformed_input");
+    var iso = numerals_greek_isopsephy();
+    assert_eq(numerals_string_value(iso, "θεος"), 9 + 5 + 70 + 200, "theos still sums");
+    # A truncated lead byte matches no mapping, so the whole string is unmapped
+    # rather than being read past the end.
+    var bad = alloc(2);
+    store8(bad, 0xF0);
+    store8(bad + 1, 0);
+    assert_eq(numerals_string_value(iso, bad), 0 - 1, "truncated codepoint is unmapped");
+    var mixed = alloc(4);
+    store8(mixed, 0xCE);         # "α"
+    store8(mixed + 1, 0xB1);
+    store8(mixed + 2, 0xF0);     # truncated
+    store8(mixed + 3, 0);
+    assert_eq(numerals_string_value(iso, mixed), 0 - 1, "valid prefix + junk is unmapped");
+    assert_eq(numerals_value_of(iso, "π"), 80, "single char lookup unchanged");
+    assert_eq(numerals_value_of(iso, "zz"), 0 - 1, "wrong-length input is unmapped");
+
+    # ---------------------------------------------------------------
+    test_group("registry_table_consistency");
+    # registry_phonemes is a streq chain listing the same codes as
+    # _registry_build. Nothing tied the two together, so a language could be
+    # registered with no inventory (or the reverse) and only surface downstream.
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    assert_eq(n, 51, "51 registered languages");
+    var missing = 0;
+    var i = 0;
+    while (i < n) {
+        var code = vec_get(codes, i);
+        if (registry_phonemes(code) == 0) { missing = missing + 1; }
+        if (registry_info(code) == 0) { missing = missing + 1; }
+        i = i + 1;
+    }
+    assert_eq(missing, 0, "every registered code resolves to an inventory and an info record");
+    # And the inventory's own code agrees with the key it was looked up under.
+    var mismatched = 0;
+    i = 0;
+    while (i < n) {
+        var c = vec_get(codes, i);
+        var inv = registry_phonemes(c);
+        if (streq(phoneme_language_code(inv), c) == 0) { mismatched = mismatched + 1; }
+        i = i + 1;
+    }
+    assert_eq(mismatched, 0, "each inventory reports the code it is keyed by");
+    assert_eq(registry_phonemes("zzz"), 0, "unknown code has no inventory");
+    assert_eq(registry_info("zzz"), 0, "unknown code has no info record");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
