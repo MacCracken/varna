@@ -16,17 +16,33 @@ BRANCH=$(git -C "$REPO_ROOT" branch --show-current 2>/dev/null || echo unknown)
 
 # cyrius bench prints build chatter + DCE notes before the result lines; each
 # result line looks like: "  name: 5us avg (min=2us max=153us) [100000 iters]".
-OUT=$(cd "$REPO_ROOT" && cyrius bench tests/varna.bcyr 2>&1 \
+RAW=$(cd "$REPO_ROOT" && cyrius bench tests/varna.bcyr 2>&1)
+
+OUT=$(printf '%s\n' "$RAW" \
     | grep -E '^[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*: .* avg \(')
 
 if [ -z "$OUT" ]; then
     echo "error: no benchmark result lines captured" >&2
+    printf '%s\n' "$RAW" >&2
     exit 1
 fi
 
+# cyrius >=6.5.19 measures what one clock read costs on this host and subtracts
+# it from every sample, announcing it as
+#   "  [timer floor 1.403us per clock read, measured; subtracted from every sample]"
+# The floor is a property of the box's clocksource and moves between reboots, so
+# record it next to the numbers: rows measured under different floors are not
+# directly comparable. Older harnesses print no such line.
+FLOOR=$(printf '%s\n' "$RAW" \
+    | sed -n 's/^[[:space:]]*\[timer floor \([^ ]*\) per clock read.*/\1/p' | head -1)
+[ -n "$FLOOR" ] || FLOOR="unreported (pre-6.5.19 harness)"
+
+TOOLCHAIN=$(cyrius version 2>/dev/null | head -1 | awk '{print $2}')
+[ -n "$TOOLCHAIN" ] || TOOLCHAIN="unknown"
+
 printf '%s\n' "$OUT" | awk \
     -v ts="$TS" -v commit="$COMMIT" -v branch="$BRANCH" \
-    -v hist="$HISTORY" -v md="$MD" '
+    -v hist="$HISTORY" -v md="$MD" -v floor="$FLOOR" -v toolchain="$TOOLCHAIN" '
 function to_ns(v,   num, unit) {
     # cyrius >=6.3 prints fractional units ("1.396us"); strip the trailing unit
     # letters for the number and all digits/decimal point for the unit so both
@@ -45,7 +61,21 @@ BEGIN {
     print "per-op figure (the bump allocator never frees, so `avg` carries"    >> md
     print "accumulating alloc overhead)."                                      >> md
     print ""                                                                   >> md
-    print "Latest: **" ts "** commit `" commit "`"                             >> md
+    print "Latest: **" ts "** commit `" commit "` on cyrius `" toolchain "`"   >> md
+    print ""                                                                   >> md
+    print "Timer floor: **" floor "** per clock read (measured on this host,"  >> md
+    print "subtracted from every sample). Cyrius >=6.5.19 calibrates this at"  >> md
+    print "runtime; the value is a property of the host clocksource and"       >> md
+    print "moves between reboots, so rows recorded under different floors are" >> md
+    print "not directly comparable."                                           >> md
+    print ""                                                                   >> md
+    print "> **History discontinuity.** Rows in `bench-history.csv` before"    >> md
+    print "> 2026-08-27 were measured by the pre-6.5.19 harness, which wrapped">> md
+    print "> a clock pair around *every* iteration and so floored all 18 rows" >> md
+    print "> at roughly two clock reads (the ~419ns/489ns/907ns plateaus)."    >> md
+    print "> Since cyrius 6.5.19 `bench_run` sizes its own batches and nets"   >> md
+    print "> out the measured floor, so sub-microsecond rows finally resolve." >> md
+    print "> Do not read the step between those regimes as a code change."     >> md
     print ""                                                                   >> md
     print "| Benchmark | min | avg |"                                          >> md
     print "|-----------|-----|-----|"                                          >> md

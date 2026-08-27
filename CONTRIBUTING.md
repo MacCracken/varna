@@ -12,7 +12,7 @@ Thank you for your interest in contributing to Varna.
 
 ## Prerequisites
 
-- Cyrius toolchain (`cyrius`), pinned in `cyrius.cyml` (`cyrius = "6.4.69"`).
+- Cyrius toolchain (`cyrius`), pinned in `cyrius.cyml` (`cyrius = "6.5.35"`).
   Install via `curl -sSf https://raw.githubusercontent.com/MacCracken/cyrius/main/scripts/install.sh | sh`
 - `cyrius deps` to resolve the stdlib snapshot (+ `bote` for `-D MCP`) into `lib/`
 
@@ -21,6 +21,7 @@ Thank you for your interest in contributing to Varna.
 | Command | Description |
 |---------|-------------|
 | `cyrius deps` | Resolve stdlib + git deps into `lib/` |
+| `cyrius deps --verify` | Check `lib/` against the committed `cyrius.lock` |
 | `cyrius build src/main.cyr build/varna` | Build the engine + demo entry (`-D LOGGING -D MCP -D DAIMON -D HOOSH` for optional surfaces) |
 | `cyrius distlib` | Bundle `src/` → `dist/varna.cyr` for consumers |
 | `cyrius tests` | Run `tests/*.tcyr` (recursive) |
@@ -30,7 +31,7 @@ Thank you for your interest in contributing to Varna.
 | `cyrius vet src/main.cyr` | Audit include dependencies |
 | `cyrius deny src/main.cyr` | Enforce project policies |
 | `cyrius doc --check src/main.cyr` | Doc currency gate |
-| `sh scripts/check.sh` | Local gate (deps + fmt + lint + build + full build + tests) |
+| `sh scripts/check.sh` | Local gate (deps + lock verify + fmt + lint + build + full build + tests) |
 
 `./scripts/bench-history.sh` snapshots `cyrius bench` into the CSV trend history.
 

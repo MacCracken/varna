@@ -12,6 +12,12 @@ cd "$REPO_ROOT"
 echo "== deps =="
 cyrius deps >/dev/null
 
+# varna 2.1.0 shipped a lock whose hash for lib/syscalls_x86_64_agnos.cyr did not
+# match the snapshot it claimed to pin, and nothing caught it: plain `cyrius deps`
+# reproduces lib/ without checking it. --verify is the check.
+echo "== deps --verify =="
+cyrius deps --verify
+
 echo "== fmt --check =="
 for f in src/*.cyr tests/*.tcyr tests/*.bcyr; do
     cyrius fmt "$f" --check >/dev/null 2>&1 || { echo "FAIL fmt: $f"; exit 1; }

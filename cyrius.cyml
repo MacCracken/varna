@@ -5,7 +5,7 @@ description = "Varna — multilingual language engine: phoneme inventories, writ
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/varna"
 language = "cyrius"
-cyrius = "6.4.69"
+cyrius = "6.5.35"
 
 [build]
 entry = "src/main.cyr"
@@ -77,9 +77,9 @@ modules = [
 # WITH their module, so the core build stays lean (no crypto/thread/log
 # closure dragged in):
 #   -D LOGGING (src/logging.cyr) → add "sakshi"
-#   -D MCP     (src/mcp.cyr)     → add [deps.bote] + its crypto/thread
-#                                  companions (ct/keccak/random/thread/
-#                                  thread_local/sigil/freelist/chrono)
+#   -D MCP     (src/mcp.cyr)     → add [deps.bote] + "chrono", the one
+#                                  stdlib leaf its sidecar needs that is
+#                                  not already declared below
 [deps]
 stdlib = [
     "string",
@@ -102,9 +102,19 @@ stdlib = [
 
 # --- Added with -D MCP (src/mcp.cyr), not before -------------------
 # bote is the AGNOS MCP / JSON-RPC core, consumed as the transport-free
-# `dist/bote-core.cyr` bundle (the 9-module profile hoosh vendors).
-# `cyrius deps` copies dist/bote-core.cyr into lib/bote-core.cyr; it also
-# needs the crypto/thread stdlib companions appended to [deps].stdlib.
+# `dist/bote-core.cyr` bundle — 12 modules at 3.3.7 (error, protocol,
+# jsonx, registry, prompts, resources, events, audit, dispatch, codec,
+# schema, content). `cyrius deps` copies it into lib/bote-core.cyr.
+#
+# Its `dist/bote-core.deps` sidecar declares the stdlib leaves it needs:
+# hashmap, bayan, string, alloc, vec, str, fnptr, chrono, tagged. All but
+# `chrono` are already in [deps].stdlib above, so enabling this dep means
+# appending exactly one entry — no crypto/thread closure is dragged in.
+#
+# Kept commented on purpose: src/mcp.cyr hand-builds its JSON today and
+# links nothing from bote, so the recipe is documentation of how to wire
+# it, not an active dependency. bote 3.3.7 pins Cyrius 6.5.35, matching
+# [package].cyrius above.
 #
 # NOTE: the v1.x `daimon` and `hoosh` Cargo features did NOT link those
 # crates — they only flipped on serde_json. Their Cyrius equivalents are
@@ -115,5 +125,5 @@ stdlib = [
 # [deps.bote]
 # git = "https://github.com/MacCracken/bote"
 # path = "../bote"
-# tag = "2.7.6"
+# tag = "3.3.7"
 # modules = ["dist/bote-core.cyr"]

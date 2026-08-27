@@ -5,15 +5,21 @@
 
 ## Version
 
-**2.1.0** — toolchain-maintenance release (2026-07-21): Cyrius pin `6.2.12` → `6.4.69`,
-vendored stdlib refreshed, `cyrius.lock` regenerated. No API or data changes.
+**2.1.1** — toolchain-maintenance release (2026-08-27): Cyrius pin `6.4.69` → `6.5.35`,
+vendored stdlib refreshed, `cyrius.lock` regenerated (and a wrong 2.1.0 hash fixed), the
+commented `[deps.bote]` recipe refreshed to `3.3.7`. No API or data changes.
 Originally ported from Rust to Cyrius at **2.0.0** (2026-06-16) via `cyrius port`; 8386
 lines of Rust preserved at `rust-old/` for parity reference. See
 [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md).
 
 ## Toolchain
 
-- **Cyrius pin**: `6.4.69` (in `cyrius.cyml [package].cyrius`)
+- **Cyrius pin**: `6.5.35` (in `cyrius.cyml [package].cyrius`)
+- **Lock authority**: `cyrius deps` — it walks the include graph. 6.5.35's `cyrius lib sync`
+  name-matches `[deps].stdlib` instead and yields a different 29-module set (adds the
+  unreferenced `hashmap_fast.cyr`, drops `atomic.cyr` which `lib/alloc.cyr` includes), so
+  locking its output breaks `cyrius deps --verify`. Sequence for a pin bump: edit the pin →
+  `rm -rf lib && cyrius deps` → `cyrius deps --lock` → `cyrius deps --verify`.
 
 ## Source
 
@@ -60,10 +66,15 @@ lines of Rust preserved at `rust-old/` for parity reference. See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.1.0):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.1.0]`); `cyrius.lock` regenerated at 6.4.69 and
+- **Release-ready (2.1.1):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.1.1]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
+- **Gaps not closed by 2.1.1:** `cyrius coverage` reports 73% reference coverage (204/278
+  fns), under the 80% target in CLAUDE.md — thinnest in `swadesh.cyr` (6/19),
+  `syllable.cyr` (12/25), and `lexicon.cyr` (5/12). `error.cyr` has no referenced fn at all.
+  CI runs `cyrius deps`, never `cyrius deps --verify`, which is why the bad 2.1.0 lock hash
+  went unnoticed for a release.
 
 ## Dependencies
 
@@ -77,7 +88,8 @@ currently self-contain, so these are absent from `cyrius.lock` until a module
 actually resolves them):
 
 - `-D LOGGING` → `sakshi` (logging.cyr is a self-contained level logger today)
-- `-D MCP` → `bote` (`dist/bote-core.cyr`, tag 2.7.6) + crypto/thread companions
+- `-D MCP` → `bote` (`dist/bote-core.cyr`, tag 3.3.7 — a 12-module profile) plus `chrono`,
+  the only stdlib leaf in its `dist/bote-core.deps` sidecar not already declared
   (mcp.cyr hand-builds JSON today, no bote/bayan)
 
 ## Consumers
@@ -86,7 +98,7 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.0 is a toolchain-maintenance release (Cyrius 6.4.69).
+The port shipped as 2.0.0; 2.1.1 is a toolchain-maintenance release (Cyrius 6.5.35).
 Remaining work is post-port:
 
 - **2.0.1 — remove `rust-old/`** (planned, separate session, after another review

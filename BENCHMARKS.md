@@ -5,25 +5,39 @@ History in `bench-history.csv`. `min` is the most representative
 per-op figure (the bump allocator never frees, so `avg` carries
 accumulating alloc overhead).
 
-Latest: **2026-07-22T00:20:39Z** commit `c4d1dcd`
+Latest: **2026-08-27T19:13:10Z** commit `1c92e48` on cyrius `6.5.35`
+
+Timer floor: **1.409us** per clock read (measured on this host,
+subtracted from every sample). Cyrius >=6.5.19 calibrates this at
+runtime; the value is a property of the host clocksource and
+moves between reboots, so rows recorded under different floors are
+not directly comparable.
+
+> **History discontinuity.** Rows in `bench-history.csv` before
+> 2026-08-27 were measured by the pre-6.5.19 harness, which wrapped
+> a clock pair around *every* iteration and so floored all 18 rows
+> at roughly two clock reads (the ~419ns/489ns/907ns plateaus).
+> Since cyrius 6.5.19 `bench_run` sizes its own batches and nets
+> out the measured floor, so sub-microsecond rows finally resolve.
+> Do not read the step between those regimes as a code change.
 
 | Benchmark | min | avg |
 |-----------|-----|-----|
-| `english_phoneme_inventory` | 1.396us | 3.659us |
-| `sanskrit_phoneme_inventory` | 1.815us | 4.210us |
-| `greek_phoneme_inventory` | 907ns | 2.771us |
-| `phoneme_lookup_ipa` | 489ns | 1.714us |
-| `registry_phonemes_lookup` | 1.816us | 4.206us |
-| `registry_all_codes_iter` | 36.666us | 39.428us |
-| `script_by_code_lookup` | 489ns | 1.881us |
-| `script_contains_codepoint` | 488ns | 1.376us |
-| `transliterate_devanagari_char` | 907ns | 2.222us |
-| `transliterate_greek_word` | 36.527us | 39.434us |
-| `numeral_value_of_char` | 489ns | 1.831us |
-| `numeral_string_value_word` | 1.396us | 2.927us |
-| `grammar_by_code_lookup` | 489ns | 1.707us |
-| `swadesh_by_code_lookup` | 1.396us | 3.068us |
-| `lexicon_find_word` | 907ns | 2.166us |
-| `allophone_realize` | 489ns | 1.406us |
-| `phonotactics_is_permitted` | 488ns | 1.459us |
-| `dialect_apply_overlay` | 2.793us | 4.578us |
+| `english_phoneme_inventory` | 1.318us | 1.523us |
+| `sanskrit_phoneme_inventory` | 1.750us | 2.011us |
+| `greek_phoneme_inventory` | 892ns | 1.019us |
+| `phoneme_lookup_ipa` | 378ns | 401ns |
+| `registry_phonemes_lookup` | 1.778us | 2.052us |
+| `registry_all_codes_iter` | 42.785us | 45.927us |
+| `script_by_code_lookup` | 294ns | 332ns |
+| `script_contains_codepoint` | 14ns | 15ns |
+| `transliterate_devanagari_char` | 930ns | 969ns |
+| `transliterate_greek_word` | 39.875us | 42.025us |
+| `numeral_value_of_char` | 501ns | 522ns |
+| `numeral_string_value_word` | 1.586us | 1.661us |
+| `grammar_by_code_lookup` | 244ns | 259ns |
+| `swadesh_by_code_lookup` | 1.115us | 1.676us |
+| `lexicon_find_word` | 842ns | 886ns |
+| `allophone_realize` | 34ns | 35ns |
+| `phonotactics_is_permitted` | 141ns | 146ns |
+| `dialect_apply_overlay` | 2.895us | 3.383us |

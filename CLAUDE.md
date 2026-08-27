@@ -6,8 +6,8 @@
 
 - **Type**: Flat Cyrius library (`dist/varna.cyr` bundle) + thin demo entry — no longer a Rust crate; migrated at v2.0 (see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md))
 - **License**: GPL-3.0
-- **Toolchain**: Cyrius, pinned in `cyrius.cyml` (`cyrius = "6.4.69"`)
-- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.1.0**
+- **Toolchain**: Cyrius, pinned in `cyrius.cyml` (`cyrius = "6.5.35"`)
+- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.1.1**
 - **Rust archive**: the frozen v1.x crate lives in `rust-old/` — a historical artifact, gitignored from CI, never edited
 
 ## Consumers
@@ -22,7 +22,7 @@ lint, and bench with the cyrius toolchain only.
 | Action | Command | Notes |
 |---|---|---|
 | Resolve deps | `cyrius deps` | Reads `cyrius.cyml`, copies stdlib into `lib/` (gitignored); bote is added under `-D MCP` |
-| Verify lock | `cyrius deps --verify` | Checks `cyrius.lock` hashes |
+| Verify lock | `cyrius deps --verify` | Checks `cyrius.lock` hashes; part of `scripts/check.sh` |
 | Build | `cyrius build src/main.cyr build/varna` | `-D LOGGING -D MCP -D DAIMON -D HOOSH` for optional surfaces |
 | Bundle | `cyrius distlib` | Concatenates `src/` → `dist/varna.cyr` for consumers (`distlib core` → `dist/varna-core.cyr`) |
 | Run tests | `cyrius tests` | Recursively runs `tests/*.tcyr` |
@@ -32,7 +32,7 @@ lint, and bench with the cyrius toolchain only.
 | Vet deps | `cyrius vet src/main.cyr` | Audit include dependencies |
 | Enforce policy | `cyrius deny src/main.cyr` | Deny-list checks |
 | Doc | `cyrius doc --check src/main.cyr` | Doc currency gate |
-| Local gate | `sh scripts/check.sh` | deps + fmt + lint + build (default + full) + tests (`cyrius audit` needs the cyrius-repo check.sh, not installed for consumers) |
+| Local gate | `sh scripts/check.sh` | deps + lock verify + fmt + lint + build (default + full) + tests (`cyrius audit` needs the cyrius-repo check.sh, not installed for consumers) |
 
 **Never run `cargo`, `clippy`, `rustc`, `cargo-audit`, or `cargo-deny`** — those are
 stale references from the pre-2.0 Rust era. They survive only in `rust-old/`, which is

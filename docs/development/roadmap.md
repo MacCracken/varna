@@ -1,6 +1,6 @@
 # Development Roadmap
 
-> **Status**: v2.1 (Cyrius) | **Current**: 2.1.0
+> **Status**: v2.1 (Cyrius) | **Current**: 2.1.1
 >
 > Items marked `[S]` also unblock **sankhya** (ancient mathematical systems).
 >
@@ -11,6 +11,28 @@
 > sentinel returns, `str` literals; no `Cow`/`Option` types).
 
 ## Completed
+
+### 2.1.1 — Toolchain Maintenance (2026-08-27)
+
+- [x] Cyrius toolchain pin bumped `6.4.69` → `6.5.35` (`cyrius.cyml [package].cyrius`)
+- [x] Vendored Cyrius stdlib re-resolved against the 6.5.35 snapshot — same 29-module
+      closure, 20 modules changed content (`bayan` most heavily, ~10.8k lines)
+- [x] `cyrius.lock` regenerated at 6.5.35 (`cyrius deps --verify` clean, 29/0) — and the
+      2.1.0 lock's wrong hash for `lib/syscalls_x86_64_agnos.cyr` fixed
+- [x] `cyrius deps` (include-graph walk) confirmed as the lock authority over 6.5.35's new
+      `cyrius lib sync`, which name-matches `[deps].stdlib` and resolves a closure missing
+      `atomic.cyr` (a transitive include of `lib/alloc.cyr`)
+- [x] Commented `[deps.bote]` recipe refreshed `2.7.6` → `3.3.7` and its companion notes
+      corrected against `dist/bote-core.deps` (12-module profile; `chrono` is the one
+      undeclared stdlib leaf)
+- [x] `dist/` gains the `cyrius distlib` sidecars + core profile bundle (`varna.deps`,
+      `varna-core.cyr`, `varna-core.deps`)
+- [x] Build gate now warning-free (6.5.35's `bayan` retyped the TOML string parsers that
+      emitted three pointer warnings per compile at 6.4.69)
+- [x] `scripts/bench-history.sh` records the toolchain version + measured timer floor, and
+      marks the pre-/post-6.5.19 benchmark-harness discontinuity in `BENCHMARKS.md`
+- [x] Stdlib refresh proved performance-neutral (harness held constant; all rows in noise)
+- [x] No public-API or linguistic-data changes; every build config + all tests stay green
 
 ### 2.1.0 — Toolchain Maintenance (2026-07-21)
 

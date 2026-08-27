@@ -28,8 +28,11 @@ varna/
 │   ├── daimon.cyr        — agent registration payload                [-D DAIMON]
 │   └── hoosh.cyr         — LLM query interface                       [-D HOOSH]
 ├── lib/                   — vendored Cyrius stdlib snapshot (cyrius deps; gitignored)
-├── dist/
-│   └── varna.cyr          — single-file bundle for consumers (cyrius distlib)
+├── dist/                  — consumer bundles (cyrius distlib --all)
+│   ├── varna.cyr          — full data engine, single file
+│   ├── varna.deps         — stdlib leaves varna.cyr needs (16; read by cyrius deps)
+│   ├── varna-core.cyr     — [lib.core] profile (same modules today, see note)
+│   └── varna-core.deps    — its tighter leaf set (4: string, alloc, vec, hashmap)
 └── tests/
     ├── *.tcyr             — cross-module integration tests (cyrius tests)
     └── *.bcyr             — cyrius bench harness (lib/bench.cyr)
@@ -171,7 +174,7 @@ varna
 
 - **Data-driven**: Language data as structured Cyrius `struct`s, not embedded strings
 - **Queryable**: Every inventory supports lookup, filtering, counting, and `by_code()` dispatch
-- **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`)
+- **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`). `[lib]` and `[lib.core]` currently declare identical module lists, so the two bundle *bodies* are byte-identical; what differs is the `.deps` sidecar, and folding the core bundle pulls four stdlib leaves instead of sixteen
 - **Serializable**: All types emit JSON via `#derive(Serialize)` / `bayan` for data exchange
 - **Extensible**: tagged enums everywhere — new variants are additive, no break for consumers
 - **Static-literal data**: pre-built inventories hold `'static` `str` literals — no per-build heap churn (Cyrius has no `Cow`)

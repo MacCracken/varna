@@ -48,11 +48,15 @@ Depend on varna from another Cyrius project by adding it to `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.1.0"
+tag = "2.1.1"
 modules = ["dist/varna.cyr"]
 ```
 
-`cyrius deps` clones varna at the tag and copies the bundle into `lib/varna.cyr`:
+`cyrius deps` clones varna at the tag and copies the bundle into `lib/varna.cyr`,
+reading `dist/varna.deps` to pull the stdlib leaves the bundle needs. For the
+linguistic data engine without the `-D`-gated AI surfaces, use
+`modules = ["dist/varna-core.cyr"]` — its sidecar declares only four leaves
+(`string`, `alloc`, `vec`, `hashmap`):
 
 ```cyrius
 include "lib/varna.cyr"
@@ -123,8 +127,9 @@ Also feeds:
 
 ```bash
 cyrius deps                          # resolve stdlib + bote into lib/
+cyrius deps --verify                 # check lib/ against cyrius.lock
 cyrius build src/main.cyr build/varna # compile the engine + demo entry
-cyrius distlib                       # bundle src/ → dist/varna.cyr for consumers
+cyrius distlib --all                 # bundle src/ → dist/varna.cyr + varna-core.cyr
 
 sh scripts/check.sh                  # local gate: deps + fmt + lint + build + tests
 cyrius tests                         # run tests/*.tcyr (recursive)

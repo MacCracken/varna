@@ -7,6 +7,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-08-27
+
+Toolchain-maintenance release: Cyrius upgrade and dependency refresh. No changes to
+the public API or linguistic data — the default build, the full
+`-D LOGGING -D MCP -D DAIMON -D HOOSH` build, and every test stay green against the
+newer stdlib.
+
+### Changed
+
+- **Toolchain** — Cyrius pin bumped `6.4.69` → `6.5.35` (`cyrius.cyml [package].cyrius`);
+  CI and the release workflow derive their install version from the pin, so the whole
+  pipeline moves with it.
+- **Dependencies** — vendored Cyrius stdlib re-resolved against the 6.5.35 snapshot.
+  The closure is the same 29 modules as at 2.1.0, but 20 of them changed content —
+  most substantially `bayan` (TOML/JSON parser, ~10.8k changed lines), `syscalls_x86_64_agnos`,
+  `alloc`, `bench`, `io`, `vec`, and the per-arch `syscalls_*` set. Upstream added
+  `async_macos`/`thread_macos` to the snapshot; neither is in varna's closure.
+- **cyrius.lock** — regenerated at 6.5.35; `cyrius deps --verify` is clean (29 verified,
+  0 failed). Resolved with `cyrius deps`, whose include-graph walk is the authority:
+  6.5.35's new `cyrius lib sync` matches on declared `[deps].stdlib` names instead and
+  produces a *different* 29-module set — it adds the unreferenced `hashmap_fast.cyr`
+  and drops `atomic.cyr`, which `lib/alloc.cyr` includes transitively and the build
+  needs. Locking that set would break a fresh `cyrius deps --verify`.
+- **bote** — the commented-out `[deps.bote]` recipe in `cyrius.cyml` (inert; `-D MCP`
+  hand-builds its JSON today) refreshed from the stale `tag = "2.7.6"` to `3.3.7`,
+  which pins the same Cyrius 6.5.35 toolchain. Its companion notes were corrected
+  against the real `dist/bote-core.deps` sidecar: the profile is 12 modules (not 9),
+  and the only stdlib leaf varna does not already declare is `chrono` — not the
+  `ct`/`keccak`/`random`/`thread`/`thread_local`/`sigil`/`freelist` set the old
+  comment listed.
+- **daimon** — agent-registration version string bumped to `2.1.1` (`src/daimon.cyr`).
+- **dist** — bundles regenerated at `2.1.1`. `cyrius distlib` now also emits a `.deps`
+  stdlib-leaf sidecar per profile, and `cyrius distlib --all` writes the `core` profile
+  bundle, so three files join the tracked `dist/`: `varna.deps` (16 leaves),
+  `varna-core.cyr`, and `varna-core.deps` (4 leaves — `string`, `alloc`, `vec`,
+  `hashmap`). `[lib]` and `[lib.core]` declare identical module lists, so the two
+  bundle bodies are byte-identical; the sidecar is what distinguishes them.
+- **scripts/check.sh** — the gate now runs `cyrius deps --verify` after `cyrius deps`,
+  so a lock that does not match the snapshot it claims to pin fails locally and in CI
+  instead of shipping (see *Fixed* below).
+- **scripts/bench-history.sh** — now records the toolchain version and the harness's
+  measured timer floor in `BENCHMARKS.md`, plus a note marking the pre-/post-6.5.19
+  measurement discontinuity. On a parse failure it echoes the captured output instead
+  of failing silently.
+
+### Fixed
+
+- **cyrius.lock** — the lock shipped at 2.1.0 recorded a wrong hash for
+  `lib/syscalls_x86_64_agnos.cyr` (`c5e63ab…` against the 6.4.69 snapshot's actual
+  `e53e129…`), so `cyrius deps --verify` reported `28 verified, 1 failed` on a clean
+  checkout. CI never caught it because `scripts/check.sh` ran plain `cyrius deps`,
+  not `--verify`. Regenerating at 6.5.35 clears it, and the gate now runs `--verify`
+  so a stale lock cannot ship again.
+- **Build warnings** — the gate is now warning-free. 6.4.69's vendored `lib/bayan.cyr`
+  emitted three `assigning non-pointer to typed pointer` warnings on *every* compile
+  (`_toml_parse_str`/`_toml_parse_multiline_q` were declared `: i64` but assigned into
+  a `Str`); 6.5.35 declares them `: Str`. The `toolchain drift` warning is gone too,
+  now that the pin matches the installed `cycc`.
+
+### Performance
+
+- **Stdlib refresh is performance-neutral.** Holding the benchmark harness constant at
+  6.5.35 and swapping only the other 28 vendored modules, every benchmark lands within
+  run-to-run noise (min ns, 6.4.69 → 6.5.35 stdlib): `english_phoneme_inventory`
+  1272 → 1341, `registry_all_codes_iter` 42306 → 42820, `transliterate_greek_word`
+  39686 → 40632, `dialect_apply_overlay` 2906 → 3215. Binary size is unchanged at
+  597,976 bytes for the default build.
+- **The recorded numbers moved, but the instrument moved — not the code.** Cyrius
+  6.5.19 rewrote `lib/bench.cyr`: `bench_run` used to wrap a clock pair around every
+  iteration, flooring all 18 varna benchmarks at roughly two clock reads (the
+  ~419ns/489ns/907ns plateaus visible throughout the old history). It now sizes its own
+  batches and subtracts a *measured* per-host clock cost (1.409us on the recording
+  host). Sub-microsecond rows finally resolve — `script_contains_codepoint` reads 14ns
+  and `allophone_realize` 34ns where both previously bottomed out at 419ns — and the
+  heavier rows shift because they are no longer inflated by an unsubtracted floor.
+  Rows in `bench-history.csv` on either side of 2026-08-27 are **not** comparable;
+  the floor is a property of the host clocksource and moves between reboots. See
+  `BENCHMARKS.md`.
+
 ## [2.1.0] - 2026-07-21
 
 Toolchain-maintenance release: Cyrius upgrade and dependency refresh. No changes to
