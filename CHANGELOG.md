@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **tests** — coverage sweep over the accessor surface `cyrius coverage` reported as
+  unreferenced. Reference coverage 204/278 fns (73%) → 249/278 (89%), clearing the 80%
+  floor in CLAUDE.md; `swadesh`, `syllable`, `lexicon`, `allophone`, `numerals`,
+  `dialect` and `error` are now at 100%, and `error.cyr` went from no referenced fn at
+  all to covered. 222 new assertions, 17 → 19 test files.
+  - **swadesh** — `tests/swadesh.tcyr` (+100): all ten list builders called directly
+    instead of only through the `swadesh_by_code` dispatch table, each checked for
+    code, 25 entries and the first/last entry's word, IPA, gloss and Swadesh index;
+    `swadesh_entry` / `_word` / `_ipa` / `_gloss` pinned against the shared gloss set.
+  - **syllable** — `tests/syllable.tcyr` (+42): `SyllableTemplate` accessors read
+    directly and cross-checked against the delegating `phonotactics_*` ones;
+    `phonotactics_language_code` / `_syllable` / `_constraints`; `constraint_kind` /
+    `_position` / `_sequences` / `_description` over the English, Japanese and
+    Sanskrit profiles; and an open-syllable (`max_coda 0`) template for the coda
+    thresholds no pre-built profile reaches.
+  - **lexicon** — new `tests/lexicon.tcyr` (24): `LexEntry` field accessors, the
+    `(0-1)` None sentinel for `frequency_rank` / `swadesh_index`, `lexicon_entries`
+    insertion order, and `lexicon_find_gloss` vs `lexicon_find` on a non-English
+    lexicon where native word and English gloss cannot agree.
+  - **numerals** — `tests/numerals.tcyr` (+19): `numerals_script_code` / `_name` /
+    `_mappings` for all five systems, pinning each Unicode script tag and table size.
+  - **allophone** — `tests/allophone.tcyr` (+11): `allophone_rule_phoneme` /
+    `_allophone` / `_environment` / `_obligatory` — the environment and obligatoriness
+    that `allophone_realize` collapses away.
+  - **dialect** — `tests/dialect.tcyr` (+11): `dialect_code` / `_name` / `_added` /
+    `_removed`, and the RP intervocalic-/t/ override read through the rule accessors.
+  - **error** — new `tests/error.tcyr` (15): `varna_error_str` for every `VarnaError`
+    code plus the out-of-range fallback, so an unknown sentinel still renders.
+
 ## [2.1.1] - 2026-08-27
 
 Toolchain-maintenance release: Cyrius upgrade and dependency refresh. No changes to

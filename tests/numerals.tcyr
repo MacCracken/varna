@@ -50,6 +50,29 @@ fn main() {
     assert_eq(numerals_value_of(rd, "𝍨"), 9, "rod 9");
     assert_eq(numerals_kind(rd), NumeralSystemKind.Decimal, "rod decimal");
 
+    test_group("system_metadata");
+    # script_code/name/mappings are what a consumer indexes systems by; they
+    # must match the Unicode script tag the rest of varna uses (src/script.cyr).
+    assert(streq(numerals_script_code(dv), "Deva"), "deva script Deva");
+    assert(streq(numerals_name(dv), "Devanagari Digits"), "deva name");
+    assert_eq(numerals_kind(dv), NumeralSystemKind.Decimal, "deva decimal");
+    assert_eq(vec_len(numerals_mappings(dv)), 10, "deva 10 mappings");
+    assert(streq(numerals_script_code(gk), "Grek"), "greek script Grek");
+    assert(streq(numerals_name(gk), "Greek Isopsephy"), "greek name");
+    assert_eq(numerals_kind(gk), NumeralSystemKind.Alphabetic, "greek alphabetic");
+    assert_eq(vec_len(numerals_mappings(gk)), 25, "greek 25 mappings");
+    assert(streq(numerals_script_code(bb), "Xsux"), "bab script Xsux");
+    assert(streq(numerals_name(bb), "Babylonian Sexagesimal"), "bab name");
+    assert_eq(numerals_kind(bb), NumeralSystemKind.Other, "bab other");
+    assert_eq(vec_len(numerals_mappings(bb)), 12, "bab 12 mappings");
+    assert(streq(numerals_script_code(eg), "Egyp"), "egy script Egyp");
+    assert(streq(numerals_name(eg), "Egyptian Hieroglyphic Numerals"), "egy name");
+    assert_eq(numerals_kind(eg), NumeralSystemKind.Other, "egy other");
+    assert_eq(vec_len(numerals_mappings(eg)), 7, "egy 7 mappings");
+    assert(streq(numerals_script_code(rd), "Hani"), "rod script Hani");
+    assert(streq(numerals_name(rd), "Chinese Rod Numerals"), "rod name");
+    assert_eq(vec_len(numerals_mappings(rd)), 9, "rod 9 mappings");
+
     return assert_summary();
 }
 

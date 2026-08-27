@@ -25,6 +25,26 @@ fn main() {
     assert(phoneme_has(ga, "ɹ"), "parent still has ɹ");
     assert_eq(phoneme_has(ga, "ɒ"), 0, "parent still lacks ɒ");
 
+    test_group("variety_metadata");
+    assert(streq(dialect_code(rp), "en-GB"), "code en-GB");
+    assert(streq(dialect_name(rp), "British English (RP)"), "name RP");
+    # dialect_adds/removes answer the membership question; the vecs behind them
+    # are what dialect_apply walks, so their contents are pinned too.
+    assert_eq(vec_len(dialect_added(rp)), 1, "1 added phoneme");
+    assert(streq(vec_get(dialect_added(rp), 0), "ɒ"), "added[0] ɒ");
+    assert_eq(vec_len(dialect_removed(rp)), 1, "1 removed phoneme");
+    assert(streq(vec_get(dialect_removed(rp), 0), "ɹ"), "removed[0] ɹ");
+    assert_eq(dialect_removes(rp, "ɒ"), 0, "added phoneme is not removed");
+
+    test_group("allophone_overrides");
+    # RP keeps intervocalic /t/ unflapped — the override restates t as itself,
+    # which is only visible through the rule accessors.
+    var ov = vec_get(dialect_overrides(rp), 0);
+    assert(streq(allophone_rule_phoneme(ov), "t"), "override on t");
+    assert(streq(allophone_rule_allophone(ov), "t"), "override keeps t");
+    assert_eq(allophone_rule_environment(ov), Environment.Intervocalic, "override intervocalic");
+    assert_eq(allophone_rule_obligatory(ov), 1, "override obligatory");
+
     return assert_summary();
 }
 

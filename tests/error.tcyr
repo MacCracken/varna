@@ -1,0 +1,35 @@
+# tests/error.tcyr — VarnaError code/message parity (rust-old/src/error.rs).
+
+include "src/error.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("error_codes");
+    assert_eq(VarnaError.VARNA_OK, 0, "VARNA_OK is 0");
+    assert_eq(VarnaError.VARNA_UNKNOWN_LANGUAGE, 1, "VARNA_UNKNOWN_LANGUAGE is 1");
+    assert_eq(VarnaError.VARNA_UNKNOWN_SCRIPT, 2, "VARNA_UNKNOWN_SCRIPT is 2");
+    assert_eq(VarnaError.VARNA_PHONEME_NOT_IN_INVENTORY, 3, "VARNA_PHONEME_NOT_IN_INVENTORY is 3");
+    assert_eq(VarnaError.VARNA_INVALID_IPA, 4, "VARNA_INVALID_IPA is 4");
+    assert_eq(VarnaError.VARNA_WORD_NOT_FOUND, 5, "VARNA_WORD_NOT_FOUND is 5");
+
+    test_group("error_messages");
+    assert(streq(varna_error_str(VarnaError.VARNA_OK), "ok"), "ok message");
+    assert(streq(varna_error_str(VarnaError.VARNA_UNKNOWN_LANGUAGE), "unknown language"), "unknown language message");
+    assert(streq(varna_error_str(VarnaError.VARNA_UNKNOWN_SCRIPT), "unknown script"), "unknown script message");
+    assert(streq(varna_error_str(VarnaError.VARNA_PHONEME_NOT_IN_INVENTORY), "phoneme not in inventory"), "phoneme not in inventory message");
+    assert(streq(varna_error_str(VarnaError.VARNA_INVALID_IPA), "invalid IPA symbol"), "invalid IPA message");
+    assert(streq(varna_error_str(VarnaError.VARNA_WORD_NOT_FOUND), "word not found"), "word not found message");
+
+    test_group("error_fallback");
+    # Codes outside the enum fall through to the catch-all, so a consumer that
+    # forwards an unknown sentinel still renders a message rather than reading
+    # past the table.
+    assert(streq(varna_error_str(6), "unknown error"), "6 unknown");
+    assert(streq(varna_error_str(99), "unknown error"), "99 unknown");
+    assert(streq(varna_error_str(0 - 1), "unknown error"), "-1 unknown");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

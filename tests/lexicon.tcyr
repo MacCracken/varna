@@ -1,0 +1,59 @@
+# tests/lexicon.tcyr — LexEntry/Lexicon accessor parity (rust-old/src/lexicon/mod.rs).
+#
+# tests/swadesh.tcyr exercises the query side (find / swadesh / most_frequent);
+# this file pins the field accessors and the None sentinels they carry.
+
+include "src/lexicon.cyr"
+
+fn main() {
+    alloc_init();
+    test_group("lex_entry_fields");
+    var water = _lex_entry_new("water", "ˈwɔːtər", "water", PartOfSpeech.Noun, 250, 1);
+    assert(streq(lex_word(water), "water"), "word");
+    assert(streq(lex_ipa(water), "ˈwɔːtər"), "ipa");
+    assert(streq(lex_gloss(water), "water"), "gloss");
+    assert_eq(lex_pos(water), PartOfSpeech.Noun, "pos Noun");
+    assert_eq(lex_frequency_rank(water), 250, "frequency_rank 250");
+    assert_eq(lex_swadesh_index(water), 1, "swadesh_index 1");
+
+    # (0-1) is the None sentinel for both optional fields — a 0 rank/index is
+    # a real value, so absence cannot be encoded as 0.
+    var the = _lex_entry_new("the", "ðə", "the", PartOfSpeech.Determiner, 1, 0 - 1);
+    assert_eq(lex_pos(the), PartOfSpeech.Determiner, "pos Determiner");
+    assert_eq(lex_frequency_rank(the), 1, "frequency_rank 1");
+    assert_eq(lex_swadesh_index(the), 0 - 1, "swadesh_index None");
+    var eau = _lex_entry_new("eau", "o", "water", PartOfSpeech.Noun, 0 - 1, 23);
+    assert_eq(lex_frequency_rank(eau), 0 - 1, "frequency_rank None");
+    assert_eq(lex_swadesh_index(eau), 23, "swadesh_index 23");
+
+    test_group("lexicon_entries");
+    var en = _lexicon_new("en");
+    assert(streq(lexicon_language_code(en), "en"), "code en");
+    assert_eq(vec_len(lexicon_entries(en)), 0, "new lexicon empty");
+    _lexicon_add(en, water);
+    _lexicon_add(en, the);
+    assert_eq(vec_len(lexicon_entries(en)), 2, "2 entries after add");
+    assert_eq(vec_get(lexicon_entries(en), 0), water, "entries keep insertion order");
+    assert_eq(vec_get(lexicon_entries(en), 1), the, "entries[1] is the");
+
+    test_group("find_gloss");
+    var hit = lexicon_find_gloss(en, "water");
+    assert(hit != 0, "gloss water found");
+    assert(streq(lex_word(hit), "water"), "gloss water resolves to water");
+    assert_eq(lexicon_find_gloss(en, "fire"), 0, "gloss fire absent");
+    assert_eq(lexicon_find_gloss(en, ""), 0, "empty gloss absent");
+
+    # find() keys on the native word, find_gloss() on the English gloss — for a
+    # non-English lexicon the two never agree.
+    var fr = _lexicon_new("fr");
+    _lexicon_add(fr, eau);
+    assert_eq(lexicon_find_gloss(fr, "water"), eau, "fr gloss water -> eau");
+    assert_eq(lexicon_find(fr, "water"), 0, "fr word water absent");
+    assert_eq(lexicon_find(fr, "eau"), eau, "fr word eau found");
+    assert_eq(lexicon_find_gloss(fr, "eau"), 0, "fr gloss eau absent");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

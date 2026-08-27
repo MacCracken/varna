@@ -3,6 +3,25 @@
 include "src/lexicon.cyr"
 include "src/swadesh.cyr"
 
+# Shape check for one pre-built Swadesh-25 list: language code, entry count,
+# and the entry accessors on the first ("I") and last ("sun") slot. Insertion
+# order is Swadesh order, so entry i carries swadesh index i+1.
+fn _check_list(lex, code, word, ipa) {
+    assert(streq(lexicon_language_code(lex), code), "language_code matches");
+    assert_eq(swadesh_count(lex), 25, "25 entries");
+    var first = swadesh_entry(lex, 0);
+    assert(streq(swadesh_entry_word(first), word), "entry 0 word");
+    assert(streq(swadesh_entry_ipa(first), ipa), "entry 0 ipa");
+    assert(streq(swadesh_entry_gloss(first), "I"), "entry 0 gloss I");
+    assert_eq(swadesh_entry_index(first), 1, "entry 0 index 1");
+    var last = swadesh_entry(lex, 24);
+    assert(streq(swadesh_entry_gloss(last), "sun"), "entry 24 gloss sun");
+    assert_eq(swadesh_entry_index(last), 25, "entry 24 index 25");
+    # frequency_rank is None (0-1) throughout — these lists carry no ranking.
+    assert_eq(lex_frequency_rank(first), 0 - 1, "entry 0 rank None");
+    return 0;
+}
+
 fn main() {
     alloc_init();
     test_group("swadesh_lists");
@@ -24,6 +43,39 @@ fn main() {
         i = i + 1;
     }
     assert_eq(swadesh_by_code("xx"), 0, "unknown code");
+
+    test_group("swadesh_builders");
+    # Each builder called directly — swadesh_by_code above only proves the
+    # dispatch table, not that every list transpiled byte-exact from v1.x.
+    _check_list(swadesh_arabic(), "ar", "أنا", "ʔana");
+    _check_list(swadesh_mandarin(), "zh", "我", "wɔ˧˩˦");
+    _check_list(swadesh_hindi(), "hi", "मैं", "mɛ̃ː");
+    _check_list(swadesh_japanese(), "ja", "私", "ʋataɕi");
+    _check_list(swadesh_spanish(), "es", "yo", "ɟ͡ʝo");
+    _check_list(swadesh_french(), "fr", "je", "ʒə");
+    _check_list(swadesh_german(), "de", "ich", "ɪç");
+    _check_list(swadesh_russian(), "ru", "я", "ja");
+    _check_list(swadesh_korean(), "ko", "나", "na");
+    _check_list(swadesh_portuguese(), "pt", "eu", "ew");
+
+    test_group("swadesh_entry_accessors");
+    # The Swadesh-25 gloss set is shared, so the same gloss resolves to each
+    # language's own word/IPA pair.
+    var ja = swadesh_japanese();
+    var mizu = swadesh_find_gloss(ja, "water");
+    assert(mizu != 0, "ja has water");
+    assert(streq(swadesh_entry_word(mizu), "水"), "ja water word");
+    assert(streq(swadesh_entry_ipa(mizu), "mizɯ"), "ja water ipa");
+    assert(streq(swadesh_entry_gloss(mizu), "water"), "ja water gloss");
+    assert_eq(swadesh_entry_index(mizu), 23, "ja water index 23");
+    var de = swadesh_german();
+    var wasser = swadesh_find_gloss(de, "water");
+    assert(streq(swadesh_entry_word(wasser), "Wasser"), "de water word");
+    assert(streq(swadesh_entry_ipa(wasser), "vasɐ"), "de water ipa");
+    assert_eq(swadesh_entry_index(wasser), 23, "de water index 23");
+    assert_eq(swadesh_find_gloss(ja, "aeroplane"), 0, "gloss outside the 25 absent");
+    # swadesh_entry indexes the raw entry vec, so it agrees with the gloss hit.
+    assert_eq(swadesh_entry(ja, 22), mizu, "entry 22 is water");
 
     test_group("lexicon_methods");
     # synthetic lexicon mirrors rust-old mod.rs sample_lexicon

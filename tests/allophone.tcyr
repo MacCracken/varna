@@ -14,6 +14,27 @@ fn main() {
     assert(streq(allophone_realize(r, "t", Environment.WordFinal), "t"), "t word-final unchanged");
     assert(streq(allophone_realize(r, "l", Environment.SyllableFinal), "ɫ"), "l dark");
     assert_eq(vec_len(allophone_rules_for(r, "ʀ")), 0, "unknown phoneme no rules");
+
+    test_group("rule_fields");
+    # allophone_realize collapses a rule to its output; the accessors are how a
+    # consumer reads the rest of it (environment, obligatoriness).
+    var trules = allophone_rules_for(r, "t");
+    var flap = vec_get(trules, 0);
+    assert(streq(allophone_rule_phoneme(flap), "t"), "flap phoneme t");
+    assert(streq(allophone_rule_allophone(flap), "ɾ"), "flap allophone ɾ");
+    assert_eq(allophone_rule_environment(flap), Environment.Intervocalic, "flap intervocalic");
+    assert_eq(allophone_rule_obligatory(flap), 0, "flapping optional");
+    var asp = vec_get(trules, 1);
+    assert(streq(allophone_rule_phoneme(asp), "t"), "aspiration phoneme t");
+    assert(streq(allophone_rule_allophone(asp), "tʰ"), "aspiration allophone tʰ");
+    assert_eq(allophone_rule_environment(asp), Environment.WordInitial, "aspiration word-initial");
+    assert_eq(allophone_rule_obligatory(asp), 1, "aspiration obligatory");
+    # Vowel reduction is the one non-consonant rule and is optional.
+    var schwa = vec_get(allophone_rules_for(r, "ə"), 0);
+    assert(streq(allophone_rule_allophone(schwa), "ɨ"), "schwa raises to ɨ");
+    assert_eq(allophone_rule_environment(schwa), Environment.Unstressed, "schwa unstressed");
+    assert_eq(allophone_rule_obligatory(schwa), 0, "schwa raising optional");
+
     return assert_summary();
 }
 
