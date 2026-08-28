@@ -1,4 +1,4 @@
-# tests/logging.tcyr — logging init smoke (rust-old/src/logging.rs has no tests).
+# tests/logging.tcyr — logging init smoke (v1.x Rust src/logging.rs has no tests).
 
 #define LOGGING
 include "src/logging.cyr"

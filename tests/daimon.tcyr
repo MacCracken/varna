@@ -1,4 +1,4 @@
-# tests/daimon.tcyr — daimon registration parity (rust-old/src/daimon.rs).
+# tests/daimon.tcyr — daimon registration parity (v1.x Rust src/daimon.rs).
 
 include "src/phoneme.cyr"
 include "src/inventories.cyr"

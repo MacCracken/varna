@@ -1,6 +1,6 @@
 # src/script.cyr — writing-system metadata, queryable by ISO 15924 code.
 #
-# Ported from rust-old/src/script/mod.rs.
+# Ported from v1.x Rust src/script/mod.rs.
 #
 # Script (64B): [0]=code [8]=name [16]=type [24]=direction [32]=status
 #               [40]=attestation(cstr|0) [48]=unicode_ranges(vec) [56]=languages(vec)

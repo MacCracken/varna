@@ -1,6 +1,6 @@
 # src/hoosh.cyr — structured LLM query interface (-D HOOSH).
 #
-# Ported from rust-old/src/hoosh.rs. Requires registry.cyr + phoneme.cyr.
+# Ported from v1.x Rust src/hoosh.rs. Requires registry.cyr + phoneme.cyr.
 # Divergences from the v1.x serde shape: confidence is per-mille (1000 = 1.0,
 # (0-1) = None) to avoid f64; structured_data is deferred (0 = None) — it needs
 # the JSON path that lands with mcp.cyr.

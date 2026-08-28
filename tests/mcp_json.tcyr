@@ -1,6 +1,6 @@
 # tests/mcp_json.tcyr — well-formedness of the hand-built MCP JSON.
 #
-# Stands in for rust-old/tests/serde_roundtrip.rs (27 tests), the fourth of the
+# Stands in for v1.x Rust tests/serde_roundtrip.rs (27 tests), the fourth of the
 # standalone Rust suites and the one that does not port directly: the Cyrius port
 # has no serde (ADR 0001), records are raw heap structs, and `src/mcp.cyr` builds
 # its JSON by appending into a fixed buffer.

@@ -1,4 +1,4 @@
-# tests/script.tcyr — script module parity tests (rust-old/src/script/mod.rs).
+# tests/script.tcyr — script module parity tests (v1.x Rust src/script/mod.rs).
 
 include "src/script.cyr"
 

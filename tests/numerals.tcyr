@@ -1,4 +1,4 @@
-# tests/numerals.tcyr — numeral parity tests (rust-old/src/script/numerals.rs).
+# tests/numerals.tcyr — numeral parity tests (v1.x Rust src/script/numerals.rs).
 
 include "src/util.cyr"
 include "src/numerals.cyr"

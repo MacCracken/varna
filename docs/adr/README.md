@@ -19,7 +19,8 @@ Decisions about varna — what we chose, the context, and the consequences we ac
 
 ## Index
 
-- [0001 — Port from Rust to Cyrius](0001-port-from-rust-to-cyrius.md) — Accepted (2026-06-16)
+- [0001 — Port from Rust to Cyrius](0001-port-from-rust-to-cyrius.md) — Accepted (2026-06-16); its `rust-old/` freeze superseded by 0002
+- [0002 — Remove the `rust-old/` archive](0002-remove-the-rust-old-archive.md) — Accepted (2026-08-27)
 
 Historical (pre-2.0 Rust crate; 3-digit numbering; type/build decisions superseded by 0001):
 

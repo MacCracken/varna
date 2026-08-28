@@ -1,4 +1,4 @@
-# tests/swadesh.tcyr — Swadesh parity (rust-old/src/lexicon/swadesh.rs).
+# tests/swadesh.tcyr — Swadesh parity (v1.x Rust src/lexicon/swadesh.rs).
 
 include "src/lexicon.cyr"
 include "src/swadesh.cyr"
@@ -78,7 +78,7 @@ fn main() {
     assert_eq(swadesh_entry(ja, 22), mizu, "entry 22 is water");
 
     test_group("lexicon_methods");
-    # synthetic lexicon mirrors rust-old mod.rs sample_lexicon
+    # synthetic lexicon mirrors the v1.x Rust src/lexicon/mod.rs sample_lexicon
     var lex = _lexicon_new("en");
     _lexicon_add(lex, _lex_entry_new("water", "ˈwɔːtər", "water", PartOfSpeech.Noun, 250, 1));
     _lexicon_add(lex, _lex_entry_new("fire", "ˈfaɪər", "fire", PartOfSpeech.Noun, 800, 2));

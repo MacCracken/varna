@@ -1,4 +1,4 @@
-# tests/lexicon.tcyr — LexEntry/Lexicon accessor parity (rust-old/src/lexicon/mod.rs).
+# tests/lexicon.tcyr — LexEntry/Lexicon accessor parity (v1.x Rust src/lexicon/mod.rs).
 #
 # tests/swadesh.tcyr exercises the query side (find / swadesh / most_frequent);
 # this file pins the field accessors and the None sentinels they carry.

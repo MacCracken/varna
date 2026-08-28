@@ -1,6 +1,6 @@
 # tests/integration.tcyr — cross-module behaviour.
 #
-# Port of the non-serde half of rust-old/tests/integration.rs — the third of the
+# Port of the non-serde half of v1.x Rust tests/integration.rs — the third of the
 # four standalone Rust suites the 2.0.0 port left behind.
 #
 # Of its 33 tests, 15 were `serde_json` roundtrips of types that no longer exist

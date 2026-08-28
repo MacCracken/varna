@@ -1,4 +1,4 @@
-# tests/mcp.tcyr — MCP tool parity (rust-old/src/mcp.rs).
+# tests/mcp.tcyr — MCP tool parity (v1.x Rust src/mcp.rs).
 # JSON payloads are verified by substring (the Rust tests check key presence /
 # value equality, which map directly to `contains` on the hand-built JSON).
 

@@ -1,4 +1,4 @@
-# tests/grammar.tcyr — grammar parity (rust-old/src/grammar/mod.rs).
+# tests/grammar.tcyr — grammar parity (v1.x Rust src/grammar/mod.rs).
 
 include "src/grammar.cyr"
 

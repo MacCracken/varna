@@ -16,7 +16,7 @@ the Rust `benches/benchmarks.rs`).
 > is untouched.
 
 - **Rust** — `criterion` statistical **median**, final pre-port commit `aadcd67`
-  (2026-04-01). Source: `rust-old/bench-history.csv`.
+  (2026-04-01). Source: the v1.x crate's `bench-history.csv`.
 - **Cyrius** — `lib/bench.cyr` wall-clock **min** over N iterations, v2.0.0 commit
   `faa6580` (2026-06-16). Source: [`../bench-history.csv`](../bench-history.csv) /
   [`../BENCHMARKS.md`](../BENCHMARKS.md).
@@ -121,4 +121,7 @@ consumer is removing the Rust↔Cyrius language boundary entirely.
 ---
 
 Regenerate the Cyrius side with `./scripts/bench-history.sh`. The frozen Rust
-suite lives at `rust-old/benches/benchmarks.rs` and `rust-old/bench-history.csv`.
+suite lived at `benches/benchmarks.rs` and `bench-history.csv` in the v1.x Rust crate,
+which was removed from the tree at 2.1.4 ([ADR 0002](adr/0002-remove-the-rust-old-archive.md)).
+This document is kept because the criterion figures below are not reproducible from
+anything still present — recover the source with `git show 2.1.3:rust-old/benches/benchmarks.rs`.

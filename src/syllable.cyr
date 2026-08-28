@@ -1,6 +1,6 @@
 # src/syllable.cyr — syllable structure + phonotactic constraints.
 #
-# Ported from rust-old/src/phoneme/syllable.rs.
+# Ported from v1.x Rust src/phoneme/syllable.rs.
 #
 # SyllableTemplate (32B):      [0]=max_onset [8]=max_coda [16]=complex_nucleus(0/1) [24]=pattern
 # PhonotacticConstraint (32B): [0]=kind [8]=position [16]=sequences(vec) [24]=description

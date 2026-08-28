@@ -1,4 +1,4 @@
-# varna benchmarks — ported from rust-old/benches/benchmarks.rs (criterion).
+# varna benchmarks — ported from v1.x Rust benches/benchmarks.rs (criterion).
 # Run: cyrius bench tests/varna.bcyr   (or ./scripts/bench-history.sh)
 
 include "lib/string.cyr"

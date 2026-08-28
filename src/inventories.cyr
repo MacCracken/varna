@@ -1,5 +1,5 @@
 # src/inventories.cyr — extended language phoneme inventories.
-# Ported from rust-old/src/phoneme/inventories.rs (transpiled, byte-exact IPA).
+# Ported from v1.x Rust src/phoneme/inventories.rs (transpiled, byte-exact IPA).
 # Uses the phoneme.cyr builder API + enums. 48 inventories.
 
 fn phoneme_yucatec_maya() {

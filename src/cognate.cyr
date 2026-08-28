@@ -1,6 +1,6 @@
 # src/cognate.cyr — cognate sets + etymology.
 #
-# Ported from rust-old/src/lexicon/cognate.rs.
+# Ported from v1.x Rust src/lexicon/cognate.rs.
 #
 # CognateSet (32B):   [0]=proto_form(cstr|0) [8]=proto_language(cstr|0) [16]=gloss [24]=entries(vec)
 # CognateEntry (24B): [0]=language [8]=word [16]=ipa

@@ -1,5 +1,5 @@
 # src/transliteration.cyr — bidirectional script transliteration tables.
-# Ported from rust-old/src/script/transliteration.rs (data transpiled byte-exact).
+# Ported from v1.x Rust src/script/transliteration.rs (data transpiled byte-exact).
 #
 # TransliterationTable (40B): [0]=scheme [8]=source_script [16]=target_script
 #                             [24]=forward(vec of pairs) [32]=max_target(cache|0)

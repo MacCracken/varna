@@ -1,5 +1,5 @@
 # src/grammar.cyr — grammatical typology profiles by ISO 639 code.
-# Ported from rust-old/src/grammar/mod.rs.
+# Ported from v1.x Rust src/grammar/mod.rs.
 #
 # GrammarProfile (64B): [0]=language_code [8]=morphology [16]=word_order
 #   [24]=case_count [32]=has_gender [40]=gender_count [48]=has_dual [56]=has_classifiers

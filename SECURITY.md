@@ -22,7 +22,7 @@ and uses no `@unsafe` blocks.
 | Version | Supported |
 |---------|-----------|
 | 2.x | Yes (Cyrius) |
-| 1.x | No (Rust crate, frozen in `rust-old/`) |
+| 1.x | No (Rust crate; source removed at 2.1.4, recoverable from git tags `1.0.0`–`2.1.3`) |
 | < 1.0 | No |
 
 ## Reporting

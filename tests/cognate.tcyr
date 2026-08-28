@@ -1,4 +1,4 @@
-# tests/cognate.tcyr — cognate/etymology parity (rust-old/src/lexicon/cognate.rs).
+# tests/cognate.tcyr — cognate/etymology parity (v1.x Rust src/lexicon/cognate.rs).
 
 include "src/cognate.cyr"
 

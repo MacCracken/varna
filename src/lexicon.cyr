@@ -1,6 +1,6 @@
 # src/lexicon.cyr — core vocabulary types + Lexicon queries.
 #
-# Ported from rust-old/src/lexicon/mod.rs.
+# Ported from v1.x Rust src/lexicon/mod.rs.
 #
 # LexEntry (48B): [0]=word [8]=ipa [16]=gloss [24]=pos
 #                 [32]=frequency_rank [40]=swadesh_index   ((0-1) = None for both)

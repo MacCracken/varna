@@ -21,34 +21,8 @@ tracks only what is still open.
 ## 2.1.x — Carry-over
 
 Work identified but deliberately not taken in the release that surfaced it.
-2.1.3 (porting the Rust test suites) landed — see the CHANGELOG.
-
-### 2.1.4 — Remove `rust-old/`
-
-`rust-old/` is the frozen parity oracle: 35 files, 8,386 lines, 484K. The public
-API port is verified complete (all 150 Rust `pub fn` have Cyrius counterparts;
-48/48 inventories match by name), so nothing in `src/` depends on it.
-
-**Unblocked as of 2.1.3** — the four standalone suites under `rust-old/tests/`
-are now ported (`tests/invariants.tcyr`, `tests/adversarial.tcyr`,
-`tests/integration.tcyr`, `tests/mcp_json.tcyr`), so deleting the directory no
-longer loses the record of what they asserted. Four Rust tests were documented as
-non-portable rather than carried; see the 2.1.3 CHANGELOG entry.
-
-When it goes, sweep with it:
-
-- 93 `rust-old/...` provenance references across 49 files (`# Ported from
-  rust-old/src/...` headers in `src/*.cyr` and `tests/*.tcyr`). Decide: keep as
-  historical provenance, or rewrite to cite [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)
-- `docs/benchmarks-rust-vs-cyrius.md` — a Rust-vs-Cyrius comparison that outlives
-  its subject; keep as a historical document or fold into the ADR
-- The `rust-old/target/` entry in `.gitignore`
-- The "Rust archive" line in `CLAUDE.md` and the `rust-old/` mentions in
-  `README.md`, `SECURITY.md`, `docs/guides/getting-started.md`,
-  `docs/development/state.md`
-
-The directory is tracked in git, so tags `1.0.0` and `2.0.0` keep it recoverable
-after deletion.
+2.1.3 (porting the Rust test suites) and 2.1.4 (removing `rust-old/`) have landed —
+see the CHANGELOG and [ADR 0002](../adr/0002-remove-the-rust-old-archive.md).
 
 ### 2.1.5 — Deferred from the 2.1.2 hardening sweep
 

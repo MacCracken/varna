@@ -1,4 +1,4 @@
-# tests/error.tcyr — VarnaError code/message parity (rust-old/src/error.rs).
+# tests/error.tcyr — VarnaError code/message parity (v1.x Rust src/error.rs).
 
 include "src/error.cyr"
 

@@ -1,5 +1,5 @@
 # src/numerals.cyr — script-to-numeral value mappings.
-# Ported from rust-old/src/script/numerals.rs (data transpiled byte-exact).
+# Ported from v1.x Rust src/script/numerals.rs (data transpiled byte-exact).
 #
 # NumeralSystem (32B): [0]=script_code [8]=name [16]=kind [24]=mappings(vec)
 # NumeralMapping (16B): [0]=character(cstr) [8]=value

@@ -1,7 +1,13 @@
 # 0001 — Port from Rust to Cyrius
 
-**Status**: Accepted
+**Status**: Accepted — the `rust-old/` freeze is superseded by [ADR 0002](0002-remove-the-rust-old-archive.md)
 **Date**: 2026-06-16
+
+> **Amendment (2026-08-27, v2.1.4).** This ADR froze the Rust source into `rust-old/`
+> as a parity oracle. That directory was deleted at 2.1.4 once the port was verified
+> complete and the four standalone Rust test suites were carried over — see
+> [ADR 0002](0002-remove-the-rust-old-archive.md). References to `rust-old/` below are
+> preserved as written; the crate remains recoverable from git tags `1.0.0`–`2.1.3`.
 
 ## Context
 

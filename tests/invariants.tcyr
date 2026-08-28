@@ -1,6 +1,6 @@
 # tests/invariants.tcyr — linguistic consistency properties that must always hold.
 #
-# Port of rust-old/tests/invariants.rs (33 tests) — one of the four standalone
+# Port of v1.x Rust tests/invariants.rs (33 tests) — one of the four standalone
 # Rust suites the 2.0.0 port left behind. These verify structural invariants
 # across the whole dataset: registry alignment, phoneme uniqueness, index
 # completeness and cross-module consistency.

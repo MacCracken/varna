@@ -1,6 +1,6 @@
 # src/phoneme.cyr — IPA phoneme inventories, articulatory features.
 #
-# Ported from rust-old/src/phoneme/mod.rs. Records are heap structs (alloc +
+# Ported from v1.x Rust src/phoneme/mod.rs. Records are heap structs (alloc +
 # store64/load64 at 8-byte slots); enums are integer constants; IPA symbols are
 # cstring literals compared with streq. Sentinel 0 = "not found" (was Option).
 #

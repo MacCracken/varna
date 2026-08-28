@@ -4,7 +4,7 @@
 # caller checks. This enum gives stable codes for the conditions the v1.x Rust
 # crate modeled as the VarnaError enum. `varna_error_str` renders a message.
 #
-# Ported from rust-old/src/error.rs (VarnaError).
+# Ported from v1.x Rust src/error.rs (VarnaError).
 
 enum VarnaError {
     VARNA_OK = 0;

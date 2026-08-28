@@ -1,4 +1,4 @@
-# tests/registry.tcyr — registry parity tests (rust-old/src/registry.rs).
+# tests/registry.tcyr — registry parity tests (v1.x Rust src/registry.rs).
 
 include "src/error.cyr"
 include "src/phoneme.cyr"

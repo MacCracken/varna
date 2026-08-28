@@ -5,7 +5,7 @@
 Structured, queryable corpus of human language data. Phoneme inventories, writing
 system metadata, grammar profiles, and lexicon access for 50+ languages — written in
 [Cyrius](https://github.com/MacCracken/cyrius). (Migrated from a Rust crate at v2.0;
-the frozen Rust source lives in `rust-old/` — see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md).)
+the v1.x Rust source was removed at 2.1.4 and remains in git tags `1.0.0`–`2.1.3` — see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md) and [ADR 0002](docs/adr/0002-remove-the-rust-old-archive.md).)
 
 Used by [shabda](https://github.com/MacCracken/shabda) (G2P conversion),
 [shabdakosh](https://github.com/MacCracken/shabdakosh) (pronunciation dictionary),
@@ -48,7 +48,7 @@ Depend on varna from another Cyrius project by adding it to `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.1.3"
+tag = "2.1.4"
 modules = ["dist/varna.cyr"]
 ```
 

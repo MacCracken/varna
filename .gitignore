@@ -35,8 +35,7 @@ tarpaulin-report.*
 *.pem
 *.key
 
-# Cyrius port
-/rust-old/target/
+# Cyrius build output
 /build/
 # Vendored Cyrius stdlib — re-resolved by `cyrius deps`. cyrius.lock IS tracked.
 /lib/

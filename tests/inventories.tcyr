@@ -1,5 +1,5 @@
 # tests/inventories.tcyr — extended-inventory parity tests.
-# Counts: 39 from rust-old inventory_test! macro + 9 verified against source.
+# Counts: 39 from the v1.x Rust inventory_test! macro + 9 verified against source.
 
 include "src/error.cyr"
 include "src/phoneme.cyr"

@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-08-27
+
+Roadmap item 2.1.4: remove the frozen v1.x Rust crate. The tree is single-language
+again. No source behaviour changed — the only edits to `src/` are comment rewrites —
+so benchmarks are unmoved and no new `bench-history.csv` row was recorded.
+
+### Removed
+
+- **`rust-old/`** — the frozen v1.x Rust crate: 35 files, 8,386 lines, 484K. Deleted per
+  [ADR 0002](docs/adr/0002-remove-the-rust-old-archive.md), which supersedes the
+  "freeze the Rust source" half of [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md).
+
+  It was kept as the parity oracle because the 2.0.0 port was source-level
+  reimplementation, not translation. Two things made removal decidable: the API port was
+  verified complete at 2.1.3 (19 modules 1:1, 150/150 `pub fn`, 48/48 inventories matching
+  by name, and nothing under `src/` or `tests/` ever compiled against it), and the four
+  standalone suites under `rust-old/tests/` — the real dependency, 147 tests — were ported
+  in the same release. Recoverable from git tags `1.0.0`–`2.1.3`:
+  `git show 2.1.3:rust-old/src/lib.rs`. Recoverability was checked against tags `2.0.0`
+  and `2.1.3` before deleting.
+- **`.gitignore`** — the `/rust-old/target/` entry, and the stale "Cyrius port" heading
+  above it.
+
+### Changed
+
+- **Provenance comments** — 43 references across 42 files in `src/` and `tests/` rewritten
+  from `rust-old/src/X.rs` to `v1.x Rust src/X.rs`. The provenance is worth keeping; a path
+  that no longer resolves is not. Three bare-form references (`rust-old/` with no file,
+  `rust-old inventory_test!`, `rust-old mod.rs sample_lexicon`) were reworded individually
+  rather than pattern-matched.
+- **docs/adr/0001-port-from-rust-to-cyrius.md** — status amended to note the supersession,
+  with a dated amendment block. The body is left as written: an ADR records what was
+  decided at the time, so its `rust-old/` references stay.
+- **README.md**, **SECURITY.md**, **CLAUDE.md**, **docs/guides/getting-started.md**,
+  **docs/development/state.md** — `rust-old/` mentions replaced with the tag-recovery
+  route. `getting-started.md` lost its "cross-check parity against `rust-old/`" step
+  (the oracle it named is gone; the behaviour now lives in the ported suites) and gained
+  `dist/` in the layout list, which was never described.
+- **docs/benchmarks-rust-vs-cyrius.md** — **kept**, deliberately. Its criterion figures
+  are the only surviving record of v1.x performance and are not reproducible from anything
+  still in the tree. Annotated with where the source went and how to recover it.
+
+### Notes
+
+- `git rm` was used, so the 35 deletions are staged. Nothing is committed.
+- The "93 references across 49 files" figure quoted in the 2.1.3 roadmap counted the
+  generated `dist/*.cyr` bundles alongside their sources. The real hand-edited count was
+  43 across 42 files; the bundles picked up the rewrite when `cyrius distlib` regenerated.
+
+
 ## [2.1.3] - 2026-08-27
 
 Roadmap item 2.1.3: port the four standalone Rust test suites the 2.0.0 port left

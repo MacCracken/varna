@@ -1,6 +1,6 @@
 # src/mcp.cyr — MCP tool definitions for AI-agent integration (-D MCP).
 #
-# Ported from rust-old/src/mcp.rs. The v1.x version used bote::ToolDef and
+# Ported from v1.x Rust src/mcp.rs. The v1.x version used bote::ToolDef and
 # serde_json; this port uses a lightweight ToolDef and hand-built JSON strings
 # (the core types are raw structs, not #derive(Serialize)). Output is valid JSON
 # with the same field set as the oracle handlers. Requires registry/script/

@@ -5,6 +5,10 @@
 
 ## Version
 
+**2.1.4** — `rust-old/` removed (2026-08-27): the frozen v1.x Rust crate (35 files,
+8,386 lines, 484K) deleted from the tree per [ADR 0002](../adr/0002-remove-the-rust-old-archive.md),
+with its 43 provenance comments rewritten and the doc references swept. Recoverable from
+git tags `1.0.0`–`2.1.3`.
 **2.1.3** — test-suite port (2026-08-27): the four standalone Rust suites under
 `rust-old/tests/` (147 tests) finally carried over as `tests/invariants.tcyr`,
 `adversarial.tcyr`, `integration.tcyr` and `mcp_json.tcyr`. Test-only; 21 → 25 test
@@ -18,7 +22,7 @@ changes; `registry_all_codes` now returns a shared read-only vec.
 vendored stdlib refreshed, `cyrius.lock` regenerated (and a wrong 2.1.0 hash fixed), the
 commented `[deps.bote]` recipe refreshed to `3.3.7`. No API or data changes.
 Originally ported from Rust to Cyrius at **2.0.0** (2026-06-16) via `cyrius port`; 8386
-lines of Rust preserved at `rust-old/` for parity reference. See
+lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
 [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md).
 
 ## Toolchain
@@ -32,11 +36,11 @@ lines of Rust preserved at `rust-old/` for parity reference. See
 
 ## Source
 
-- Rust reference: 8386 lines at `rust-old/` (frozen, do not edit). Port verified
-  complete at the API level (2026-08-27): 19 Rust modules → 19 Cyrius modules,
-  150/150 `pub fn` covered, 48/48 inventories matching by name. The four
-  standalone test suites under `rust-old/tests/` are the outstanding gap.
-- Cyrius port (complete, module by module against the `rust-old/` oracle):
+- Rust reference: removed at 2.1.4. The port was verified complete at the API level
+  first (19 Rust modules → 19 Cyrius modules, 150/150 `pub fn` covered, 48/48
+  inventories matching by name) and its four standalone test suites ported at 2.1.3.
+  Recover any v1.x file with `git show 2.1.3:rust-old/<path>`.
+- Cyrius port (complete; each module was written against the v1.x Rust oracle):
   - ✅ `src/error.cyr` — VarnaError codes
   - ✅ `src/phoneme.cyr` — phoneme types, builder, `english`/`sanskrit`/`greek`
   - ✅ `src/inventories.cyr` — 48 extended language inventories (51 languages total)
@@ -78,11 +82,11 @@ lines of Rust preserved at `rust-old/` for parity reference. See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.1.3):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.1.3]`); `cyrius.lock` regenerated at 6.5.35 and
+- **Release-ready (2.1.4):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.1.4]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
-- **Gaps not closed by 2.1.3:** `cyrius coverage` reports 94% reference coverage
+- **Gaps not closed by 2.1.4:** `cyrius coverage` reports 94% reference coverage
   (262/278 fns). The pre-built data constructors are still rebuilt per call — see
   roadmap 2.1.5 for why caching them was held back — and `src/mcp.cyr` still emits
   JSON without escaping, and `varna_translate_ipa` still returns a bare string where
@@ -110,18 +114,13 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port.
+The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal.
 
 See the [roadmap](roadmap.md) `2.1.x — Carry-over` section for the scheduled items
-(2.1.3 test-suite port, 2.1.4 `rust-old/` removal, 2.1.5 deferred hardening work,
-2.1.6 script-registry completeness). In brief:
+(2.1.5 deferred hardening work, 2.1.6 script-registry completeness). In brief:
 
-- **`rust-old/` removal is unblocked** as of 2.1.3. The API port was already
-  verified complete — all 150 Rust `pub fn` have Cyrius counterparts and the 48
-  inventories match by name — and the four suites under `rust-old/tests/` (147
-  tests: `invariants` 33, `adversarial` 54, `integration` 33, `serde_roundtrip` 27)
-  are now ported, so deleting the directory no longer loses the record of what they
-  asserted. Remaining work for 2.1.4 is the reference sweep, not the tests.
+- **`rust-old/` was removed at 2.1.4** — see [ADR 0002](../adr/0002-remove-the-rust-old-archive.md).
+  The tree is single-language again.
 - **Optimization** (unstarted, see `docs/benchmarks-rust-vs-cyrius.md`): cache the immutable
   pre-built inventories/scripts/profiles (build-once); intern lookups. Parity-safe wins.
   Held back from 2.1.2 because it changes public semantics — see roadmap 2.1.5.

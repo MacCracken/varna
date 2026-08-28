@@ -1,5 +1,5 @@
 # src/swadesh.cyr — Swadesh-25 starter lists for 10 core languages.
-# Ported from rust-old/src/lexicon/swadesh.rs (data transpiled byte-exact).
+# Ported from v1.x Rust src/lexicon/swadesh.rs (data transpiled byte-exact).
 # Requires src/lexicon.cyr. Entries carry frequency_rank = None (0-1).
 
 fn _sw_entry(lex, word, ipa, gloss, pos, swadesh) {

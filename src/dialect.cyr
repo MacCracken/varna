@@ -1,6 +1,6 @@
 # src/dialect.cyr — language-variety overlays on a base inventory.
 #
-# Ported from rust-old/src/dialect.rs. Requires phoneme.cyr (apply) and
+# Ported from v1.x Rust src/dialect.rs. Requires phoneme.cyr (apply) and
 # allophone.cyr (AllophoneRule overrides).
 #
 # LanguageVariety (56B): [0]=code [8]=name [16]=parent [24]=kind

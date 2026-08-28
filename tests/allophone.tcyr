@@ -1,4 +1,4 @@
-# tests/allophone.tcyr — allophone parity (rust-old/src/phoneme/allophone.rs).
+# tests/allophone.tcyr — allophone parity (v1.x Rust src/phoneme/allophone.rs).
 
 include "src/allophone.cyr"
 

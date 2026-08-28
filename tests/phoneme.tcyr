@@ -1,5 +1,5 @@
 # tests/phoneme.tcyr — phoneme module parity tests.
-# Mirrors the #[test] assertions in rust-old/src/phoneme/mod.rs.
+# Mirrors the #[test] assertions in v1.x Rust src/phoneme/mod.rs.
 
 include "src/error.cyr"
 include "src/phoneme.cyr"

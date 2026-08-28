@@ -1,6 +1,6 @@
 # tests/adversarial.tcyr — edge-case and boundary inputs for all public APIs.
 #
-# Port of rust-old/tests/adversarial.rs (54 tests) — the second of the four
+# Port of v1.x Rust tests/adversarial.rs (54 tests) — the second of the four
 # standalone Rust suites the 2.0.0 port left behind, and the one that matters
 # most: it is the class of test that would have caught the 2.1.2 heap overflows
 # (`registry_info_very_long_code`, `phoneme_find_very_long_string`,

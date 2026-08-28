@@ -7,8 +7,8 @@
 - **Type**: Flat Cyrius library (`dist/varna.cyr` bundle) + thin demo entry — no longer a Rust crate; migrated at v2.0 (see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md))
 - **License**: GPL-3.0
 - **Toolchain**: Cyrius, pinned in `cyrius.cyml` (`cyrius = "6.5.35"`)
-- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.1.3**
-- **Rust archive**: the frozen v1.x crate lives in `rust-old/` — a historical artifact, never edited. It **is** tracked in git (35 files; only `rust-old/target/` is ignored), so tags `1.0.0`/`2.0.0` keep it recoverable. Removal is scheduled as roadmap 2.1.4, unblocked now that its test suites are ported (2.1.3)
+- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.1.4**
+- **Rust archive**: none in the tree. The v1.x crate was frozen in `rust-old/` at 2.0.0 and deleted at 2.1.4 ([ADR 0002](docs/adr/0002-remove-the-rust-old-archive.md)); it stays recoverable from git tags `1.0.0`–`2.1.3` (`git show 2.1.3:rust-old/src/...`)
 
 ## Consumers
 
@@ -35,8 +35,8 @@ lint, and bench with the cyrius toolchain only.
 | Local gate | `sh scripts/check.sh` | deps + lock verify + fmt + lint + build (default + full) + tests (`cyrius audit` needs the cyrius-repo check.sh, not installed for consumers) |
 
 **Never run `cargo`, `clippy`, `rustc`, `cargo-audit`, or `cargo-deny`** — those are
-stale references from the pre-2.0 Rust era. They survive only in `rust-old/`, which is
-frozen.
+stale references from the pre-2.0 Rust era. There is no Rust left in the tree to run
+them against.
 
 ## Development Process
 
@@ -98,7 +98,7 @@ frozen.
 ## DO NOT
 - **Do not commit or push** — the user handles all git operations (commit, push, tag)
 - **NEVER use `gh` CLI** — use `curl` to GitHub API only
-- **Never run `cargo` / `clippy` / `rustc` / `cargo-audit` / `cargo-deny`** against the project — varna migrated off Rust at v2.0; those tools apply only to the frozen `rust-old/`
+- **Never run `cargo` / `clippy` / `rustc` / `cargo-audit` / `cargo-deny`** against the project — varna migrated off Rust at v2.0 and the archived crate was deleted at 2.1.4; there is no Rust in the tree
 - Do not add unnecessary dependencies — keep it lean
 - Do not introduce implicit aborts — there is no `unwrap()`/`panic!()`; check sentinel/`Result` returns from every fallible call
 - Do not skip benchmarks before claiming performance improvements

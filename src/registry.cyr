@@ -1,5 +1,5 @@
 # src/registry.cyr — central ISO 639 language lookup.
-# Ported from rust-old/src/registry.rs. Maps codes -> LanguageInfo / phoneme
+# Ported from v1.x Rust src/registry.rs. Maps codes -> LanguageInfo / phoneme
 # inventory / primary script code. Needs phoneme.cyr + inventories.cyr.
 #
 # LanguageInfo (24B): [0]=code  [8]=name  [16]=scripts(vec of cstrings)

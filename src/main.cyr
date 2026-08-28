@@ -1,5 +1,5 @@
 # varna — multilingual language engine (Cyrius port)
-# Ported from 8386 lines of Rust (rust-old/).
+# Ported from the 8386-line v1.x Rust crate (removed at 2.1.4; see ADR 0002).
 #
 # Stdlib auto-included via cyrius.cyml [deps]. Project modules below.
 

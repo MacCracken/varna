@@ -1,6 +1,6 @@
 # src/allophone.cyr — context-dependent allophone rules.
 #
-# Ported from rust-old/src/phoneme/allophone.rs.
+# Ported from v1.x Rust src/phoneme/allophone.rs.
 #
 # AllophoneRule (32B):    [0]=phoneme [8]=allophone [16]=environment [24]=obligatory(0/1)
 # AllophoneRuleSet (16B): [0]=language_code [8]=rules(vec)

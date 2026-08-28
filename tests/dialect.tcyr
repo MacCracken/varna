@@ -1,4 +1,4 @@
-# tests/dialect.tcyr — dialect-overlay parity (rust-old/src/dialect.rs).
+# tests/dialect.tcyr — dialect-overlay parity (v1.x Rust src/dialect.rs).
 
 include "src/phoneme.cyr"
 include "src/allophone.cyr"

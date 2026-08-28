@@ -1,6 +1,6 @@
 # src/logging.cyr — optional logging init (-D LOGGING).
 #
-# Ported from rust-old/src/logging.rs. The v1.x tracing-subscriber + VARNA_LOG
+# Ported from v1.x Rust src/logging.rs. The v1.x tracing-subscriber + VARNA_LOG
 # env-filter is approximated by a level-gated stderr writer (lib/io.cyr). Reading
 # the VARNA_LOG env var and routing through sakshi are future enhancements (see
 # ADR 0001's logging note) — kept dependency-light here to stay warning-free.

@@ -1,4 +1,4 @@
-# tests/syllable.tcyr — phonotactics parity (rust-old/src/phoneme/syllable.rs).
+# tests/syllable.tcyr — phonotactics parity (v1.x Rust src/phoneme/syllable.rs).
 
 include "src/syllable.cyr"
 

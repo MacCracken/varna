@@ -1,4 +1,4 @@
-# tests/hoosh.tcyr — hoosh query-resolution parity (rust-old/src/hoosh.rs).
+# tests/hoosh.tcyr — hoosh query-resolution parity (v1.x Rust src/hoosh.rs).
 
 include "src/phoneme.cyr"
 include "src/inventories.cyr"

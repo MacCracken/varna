@@ -1,4 +1,4 @@
-# tests/transliteration.tcyr — parity (rust-old/src/script/transliteration.rs).
+# tests/transliteration.tcyr — parity (v1.x Rust src/script/transliteration.rs).
 
 include "src/util.cyr"
 include "src/transliteration.cyr"
