@@ -130,6 +130,29 @@ decimal place. They are not citations of WALS, Glottolog or any other database.*
 | `zh` | Safe | Eurasia | 34 | 113 | medium |
 | `zu` | Safe | Africa | -28.5 | 31 | high |
 
+## Corrections applied at 2.3.1
+
+A systematic audit of the classification table (four lenses over the whole column
+at once, after the row-by-row review had returned zero disputes) found three
+**partition violations** — values that are proper ancestors of other values in the
+same column. All three were individually defensible, which is why per-row review
+could not see them. The encoded data in `src/registry.cyr` differs from the table
+above accordingly:
+
+| code | table says | encoded as | why |
+|---|---|---|---|
+| `ar` | genus `Central Semitic` | `Arabic` | Central Semitic contains `he`'s Northwest Semitic |
+| `sa` | genus `Indo-Aryan (Old Indo-Aryan)` | `Indo-Aryan` | the table was right; the parenthetical was wrongly promoted into the field |
+| `haw` | subfamily `Oceanic` | `Malayo-Polynesian` | Oceanic is four nodes inside `id`/`tl`'s subfamily |
+
+Also renamed for scope accuracy: `qu` → *Southern Quechua*, `nah` → *Classical
+Nahuatl*. Both ISO codes cover more than the entry describes.
+
+**Re-levelling the genus column was considered and rejected.** Two auditors
+prescribed opposite fixes for the same depth variance (flatten to the WALS tier vs
+deepen), so there is no single right depth to reach for. The rank rule is written
+into the `src/registry.cyr` header instead.
+
 ## Caveats — read before encoding any of this
 
 - **Korean (`ko`) is missing from the endangerment/geography table.** The gathering

@@ -474,7 +474,7 @@ var _c_phoneme_nahuatl = 0;
 fn phoneme_nahuatl() {
     if (_c_phoneme_nahuatl != 0) { return _c_phoneme_nahuatl; }
 
-    var b = phoneme_builder_with_capacity("nah", "Nahuatl", 23);
+    var b = phoneme_builder_with_capacity("nah", "Classical Nahuatl", 23);
     phoneme_builder_stress(b, StressPattern.Fixed);
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
@@ -2223,7 +2223,7 @@ var _c_phoneme_quechua = 0;
 fn phoneme_quechua() {
     if (_c_phoneme_quechua != 0) { return _c_phoneme_quechua; }
 
-    var b = phoneme_builder_with_capacity("qu", "Quechua", 27);
+    var b = phoneme_builder_with_capacity("qu", "Southern Quechua", 27);
     phoneme_builder_stress(b, StressPattern.Fixed);
     # Plain stops
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);

@@ -7,6 +7,105 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-08-28
+
+Second slice of the 2.3.x Typological Depth line: genealogical classification on
+every registry entry. Additive — the three original `LanguageInfo` fields and
+their accessors are untouched.
+
+### Added
+
+- **registry** — `family`, `subfamily` and `genus` on all 51 languages, with
+  `registry_info_family` / `_subfamily` / `_genus`, the `registry_family(code)`
+  shortcut, and `registry_by_family(family)` returning every code in a family.
+  An entry built without a classification reads back `0`, which is
+  distinguishable from any placeholder string.
+
+- **registry** — a written **rank rule** in the module header, which is what the
+  file lacked and what let the defects below through: family is the conventional
+  top-level stock, subfamily is always a *primary* (depth-1) branch, genus is the
+  smallest conventionally named clade the language's close relatives still share.
+  Two consequences are documented as correct rather than left to look like
+  oversights: genus depth varies between families because family diversity does,
+  and `genus == subfamily` is the right answer for a low-diversity family (seven
+  rows do this). `la` is recorded as the one intentional exception to non-nesting.
+
+- **tests/classification.tcyr** (176 assertions), including two groups that exist
+  because of the audit: `non_nesting`, which checks the invariant a rank column
+  must satisfy — no value may be a proper ancestor of another in the same column —
+  and `subfamily_is_always_a_primary_branch`. Plus `rejected_groupings`, scanning
+  all three fields of all 51 rows for **Altaic, Ural-Altaic, Nostratic,
+  Hamito-Semitic, Mon-Khmer and Quechumaran**.
+
+### Fixed
+
+Three **partition violations**, found by a systematic audit after the row-by-row
+review had passed them, and fixed before release:
+
+- **`ar`** genus was `Central Semitic`, which strictly contains `he`'s
+  `Northwest Semitic` — so grouping by genus asserted Hebrew sits outside Central
+  Semitic. Now `Arabic`, the actual sister node.
+- **`sa`** genus was `Old Indo-Aryan`, a stratum *inside* the `Indo-Aryan` that
+  `hi`/`ur`/`bn` carry, not a sister of it. Now `Indo-Aryan`, with the stage in a
+  comment — the same treatment `grc` and `lzh` already had. This value also
+  contradicted the table it was derived from, which had the stage as a
+  parenthetical.
+- **`haw`** subfamily was `Oceanic`, four nodes inside the `Malayo-Polynesian`
+  that `id` and `tl` carry. It was the only row in all 51 whose subfamily was not
+  a primary branch.
+
+- **tests/classification.tcyr** had *locked one of these in*: it asserted
+  "Sanskrit and Hindi are different genera", which is only true while the nesting
+  bug exists. Inverted to `_same_genus("sa", "hi")`.
+
+### Changed
+
+- **LanguageInfo** is 48 bytes, up from 24.
+- **`qu`** is named *Southern Quechua* and **`nah`** *Classical Nahuatl*, in both
+  the registry and the inventory. Both ISO codes have wider scope than the entry
+  describes — `qu` is a macrolanguage spanning both Quechua branches and `nah` a
+  639-3 collection code — so the previous names made the subfamily false for part
+  of that scope. Naming the entry for the variety it actually models is the
+  pattern `zh` already used. The codes are untouched.
+- Comment pass on the four Niger-Congo rows, which asserted `Niger-Congo` in the
+  field while using `Atlantic-Congo` in their own prose, and on `am`, whose
+  "South Semitic" node is superseded. Fields unchanged — only the marked set is
+  now complete rather than arbitrary.
+
+### Notes
+
+- **Caveats live in comments, not in fields.** The source table carried values like
+  `Ugric (contested; Glottolog rejects the node)` — prose inside a queryable field.
+  The encoded value is the clean conventional label with the objection beside it.
+  Four subfamilies are contested this way (`hu`, `wo`, `my`, `qu`), each pinned by a
+  test so the choice stays visible in code.
+
+- **The audit is why this release is correct.** Four independent lenses over the
+  whole table at once — granularity, cross-row coherence, rejected nodes,
+  macrolanguage treatment — after a row-by-row review had returned **zero
+  disputes**. Every one of the three bad values was individually defensible, which
+  is exactly why per-row review could not see them: the defect was only visible in
+  the column read as a whole. The reintroduced-defect check confirms the new
+  invariant catches all three (9 assertions fail, including 5 genus nestings and 2
+  subfamily nestings from the generic scan).
+
+- **Re-levelling the genus column was considered and rejected.** Two auditors
+  flagged the same depth variance and prescribed opposite fixes — one to flatten to
+  the WALS tier, one to deepen. When careful reviewers reach opposite conclusions
+  from the same column, there is no single right depth to reach for; and the churn
+  would touch all 51 rows, the assertions, both bundles and the doc table for no
+  consumer-visible gain, since no `registry_by_genus` exists yet. The rank rule is
+  written down instead, to be revisited if that accessor lands.
+
+### Performance
+
+- **Flat.** The rows this release could touch are unmoved: `registry_all_codes_iter`
+  -0.4%, `registry_phonemes_lookup` 0.0%. Three other rows tripped a 10% threshold
+  and all three are min-of-N artifacts — `allophone_realize` showed "-78.8%" on a new
+  spread of 7-33 ns, i.e. one outlier sample against a stable 33. Reporting spreads
+  alongside minima is now routine here precisely because this statistic has produced
+  a phantom result in three consecutive releases.
+
 ## [2.3.0] - 2026-08-27
 
 First slice of the 2.3.x Typological Depth line: eight WALS-style dimensions on

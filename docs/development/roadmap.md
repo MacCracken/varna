@@ -83,21 +83,13 @@ languages points at a copy-paste from the Mandarin entry.
 
 ### 2.3.x — Typological Depth (P2)
 
-**2.3.0 (grammar expansion) has landed.** The verified data for the two remaining
-slices is in [typology-data.md](typology-data.md) — gathered and adversarially
+**2.3.0 (grammar expansion) and 2.3.1 (classification) have landed.** The verified
+data for the remaining slice is in [typology-data.md](typology-data.md) — gathered and adversarially
 verified, so 2.3.1 and 2.3.2 are encoding work rather than research work. Read that
 file's caveats first.
 
 The "Missing script entries" sub-item was listed here in error: all nine scripts
 shipped at **2.1.6**.
-
-#### 2.3.1 — Language classification
-
-- [ ] `family`, `subfamily`, `genus` on `LanguageInfo` (Indo-European > Germanic >
-      West Germanic). Table for all 51 is in typology-data.md; the verifier raised
-      **0 disputes** on it. Rejected groupings (Altaic, Ural-Altaic, Nostratic) were
-      explicitly excluded during gathering — Japanese is Japonic, Korean Koreanic,
-      Georgian Kartvelian.
 
 #### 2.3.2 — Endangerment and geography
 

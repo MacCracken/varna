@@ -5,6 +5,9 @@
 
 ## Version
 
+**2.3.1** — genealogical classification (2026-08-28): `family`/`subfamily`/`genus` on
+all 51 registry entries, with `registry_by_family` for grouping. Contested nodes carry
+the conventional label with the objection in a comment. `LanguageInfo` 24 B → 48 B.
 **2.3.0** — typological depth, grammar expansion (2026-08-27): eight WALS-style
 dimensions on `GrammarProfile` (alignment, adposition order, tense, future,
 evidentiality, negation, articles, adjective and relative-clause order) across the 11
@@ -119,16 +122,16 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.3.0):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.3.0]`); `cyrius.lock` regenerated at 6.5.35 and
+- **Release-ready (2.3.1):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.3.1]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
-- **Gaps not closed by 2.3.0:** `cyrius coverage` reports 94% reference coverage
-  (306/324 fns). Four data items are filed in the roadmap — ATR vowel systems, the
+- **Gaps not closed by 2.3.1:** `cyrius coverage` reports 94% reference coverage
+  (311/329 fns). Four data items are filed in the roadmap — ATR vowel systems, the
   Sanskrit voiced-aspirate transcription, the Thai/Vietnamese tone values, and
-  Glottocodes (which need an authoritative source, not generation). 2.3.1 and 2.3.2
-  are encoding work: their data is verified and waiting in
-  [typology-data.md](typology-data.md), with Korean still to be sourced for 2.3.2.
+  Glottocodes (which need an authoritative source, not generation). 2.3.2 is the last
+  slice: its data is verified and waiting in [typology-data.md](typology-data.md),
+  **with Korean still to be sourced** — the gathering pass silently returned 50 of 51.
 
 ## Dependencies
 
@@ -152,7 +155,7 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis, 2.2.1 consonant secondary features, 2.2.2 vowel features, 2.2.3 distinctive features, 2.2.4 structured tone, 2.3.0 grammar expansion.
+The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis, 2.2.1 consonant secondary features, 2.2.2 vowel features, 2.2.3 distinctive features, 2.2.4 structured tone, 2.3.0 grammar expansion, 2.3.1 classification.
 
 See the [roadmap](roadmap.md) `2.1.x — Carry-over` section for the scheduled items
 (2.1.6 script-registry completeness). In brief:

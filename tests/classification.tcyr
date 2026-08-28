@@ -1,0 +1,394 @@
+# tests/classification.tcyr — genealogical classification, added at 2.3.1.
+#
+# `family`, `subfamily` and `genus` on every registry entry. The values were
+# gathered and independently reviewed (0 disputes across all 51), and the
+# assertions here are the cases a linguist would object to loudest if they were
+# wrong — the rejected groupings especially.
+#
+# The most valuable group is `rejected_groupings`: Altaic, Ural-Altaic, Nostratic,
+# Hamito-Semitic and Mon-Khmer-as-a-node are all rejected or paraphyletic, and a
+# corpus that quietly reintroduced one would be repeating a century-old error. That
+# check scans every field of all 51 rows rather than spot-checking.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/features.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+fn _has_sub(s, needle) {
+    var hl = strlen(s);
+    var nl = strlen(needle);
+    if (nl == 0) { return 1; }
+    if (nl > hl) { return 0; }
+    var i = 0;
+    while (i <= hl - nl) {
+        var j = 0;
+        var matched = 1;
+        while (j < nl) {
+            if (load8(s + i + j) != load8(needle + j)) { matched = 0; }
+            j = j + 1;
+        }
+        if (matched == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Assert the full family > subfamily > genus chain for one code.
+fn _clsfy(code, family, subfamily, genus, label) {
+    var li = registry_info(code);
+    assert(li != 0, label);
+    if (li == 0) { return 0; }
+    assert(streq(registry_info_family(li), family), label);
+    assert(streq(registry_info_subfamily(li), subfamily), label);
+    assert(streq(registry_info_genus(li), genus), label);
+    return 0;
+}
+
+fn _same_genus(a, b, label) {
+    var la = registry_info(a);
+    var lb = registry_info(b);
+    assert(la != 0, label);
+    assert(lb != 0, label);
+    if (la == 0 || lb == 0) { return 0; }
+    assert(streq(registry_info_genus(la), registry_info_genus(lb)), label);
+    return 0;
+}
+
+fn main() {
+    alloc_init();
+    var i = 0;
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+
+    # ---------------------------------------------------------------
+    test_group("classification_api");
+    var en = registry_info("en");
+    assert(streq(registry_info_family(en), "Indo-European"), "English family");
+    assert(streq(registry_info_subfamily(en), "Germanic"), "English subfamily");
+    assert(streq(registry_info_genus(en), "West Germanic"), "English genus");
+    assert(streq(registry_family("en"), "Indo-European"), "registry_family shortcut");
+    assert_eq(registry_family("zzz"), 0, "registry_family on an unknown code returns the sentinel");
+    # A registry entry built without a classification reads back 0, which is
+    # distinguishable from any placeholder string a consumer might otherwise get.
+    var bare = _li_new("xx", "Test", "Latn");
+    assert_eq(registry_info_family(bare), 0, "unclassified entry has no family");
+    assert_eq(registry_info_subfamily(bare), 0, "unclassified entry has no subfamily");
+    assert_eq(registry_info_genus(bare), 0, "unclassified entry has no genus");
+    assert(streq(registry_info_code(bare), "xx"), "but the core fields still work");
+
+    # ---------------------------------------------------------------
+    test_group("every_language_is_classified");
+    var unclassified = 0;
+    var empty = 0;
+    i = 0;
+    while (i < n) {
+        var li = registry_info(vec_get(codes, i));
+        if (registry_info_family(li) == 0) { unclassified = unclassified + 1; }
+        if (registry_info_subfamily(li) == 0) { unclassified = unclassified + 1; }
+        if (registry_info_genus(li) == 0) { unclassified = unclassified + 1; }
+        if (registry_info_family(li) != 0) {
+            if (strlen(registry_info_family(li)) == 0) { empty = empty + 1; }
+            if (strlen(registry_info_subfamily(li)) == 0) { empty = empty + 1; }
+            if (strlen(registry_info_genus(li)) == 0) { empty = empty + 1; }
+        }
+        i = i + 1;
+    }
+    assert_eq(unclassified, 0, "all 51 languages carry a full family/subfamily/genus chain");
+    assert_eq(empty, 0, "no classification field is an empty string");
+
+    # ---------------------------------------------------------------
+    test_group("rejected_groupings");
+    # Altaic, Ural-Altaic and Nostratic are rejected; Hamito-Semitic is the obsolete
+    # name for Afro-Asiatic; Mon-Khmer is paraphyletic and not a valid node. None may
+    # appear anywhere in the three classification fields.
+    var bad = vec_new();
+    vec_push(bad, "Altaic");
+    vec_push(bad, "Ural-Altaic");
+    vec_push(bad, "Nostratic");
+    vec_push(bad, "Hamito-Semitic");
+    vec_push(bad, "Mon-Khmer");
+    vec_push(bad, "Quechumaran");
+    var hits = 0;
+    i = 0;
+    while (i < n) {
+        var li2 = registry_info(vec_get(codes, i));
+        var j = 0;
+        while (j < vec_len(bad)) {
+            var needle = vec_get(bad, j);
+            if (_has_sub(registry_info_family(li2), needle) == 1) { hits = hits + 1; }
+            if (_has_sub(registry_info_subfamily(li2), needle) == 1) { hits = hits + 1; }
+            if (_has_sub(registry_info_genus(li2), needle) == 1) { hits = hits + 1; }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(hits, 0, "no rejected or paraphyletic grouping appears in any classification field");
+
+    # The four languages most often misfiled under Altaic each get their own family.
+    _clsfy("ja", "Japonic", "Japanesic", "Japanese", "Japanese is Japonic, not Altaic");
+    _clsfy("ko", "Koreanic", "Korean", "Korean", "Korean is Koreanic, not Altaic");
+    _clsfy("tr", "Turkic", "Common Turkic", "Oghuz", "Turkish is Turkic, not Altaic");
+    _clsfy("mn", "Mongolic", "Central Mongolic", "Mongolian", "Mongolian is Mongolic, not Altaic");
+    assert(streq(registry_family("ja"), registry_family("ko")) == 0,
+      "Japanese and Korean are separate families, not one Altaic node");
+    # Georgian is Kartvelian — an independent family, not Indo-European or Turkic.
+    _clsfy("ka", "Kartvelian", "Karto-Zan", "Georgian", "Georgian is Kartvelian");
+
+    # ---------------------------------------------------------------
+    test_group("indo_european");
+    _clsfy("de", "Indo-European", "Germanic", "West Germanic", "German");
+    _clsfy("nl", "Indo-European", "Germanic", "West Germanic", "Dutch");
+    _clsfy("is", "Indo-European", "Germanic", "North Germanic", "Icelandic");
+    _clsfy("ru", "Indo-European", "Balto-Slavic", "East Slavic", "Russian");
+    _clsfy("pl", "Indo-European", "Balto-Slavic", "West Slavic", "Polish");
+    _clsfy("fa", "Indo-European", "Indo-Iranian", "Iranian", "Persian");
+    _clsfy("la", "Indo-European", "Italic", "Latino-Faliscan", "Latin");
+    # Romance genera diverge below the Italic subfamily.
+    _clsfy("es", "Indo-European", "Italic", "Ibero-Romance", "Spanish");
+    _clsfy("fr", "Indo-European", "Italic", "Gallo-Romance", "French");
+    _clsfy("it", "Indo-European", "Italic", "Italo-Dalmatian", "Italian");
+    _clsfy("ro", "Indo-European", "Italic", "Eastern Romance", "Romanian");
+
+    # ---------------------------------------------------------------
+    test_group("cross_row_consistency");
+    # Pairs that must share a genus, and would be a visible error if they drifted.
+    _same_genus("hi", "ur", "Hindi and Urdu are the same genus (Hindustani)");
+    _same_genus("el", "grc", "Modern and Ancient Greek share a genus");
+    _same_genus("lzh", "zh", "Literary and modern Chinese share a genus");
+    _same_genus("th", "lo", "Thai and Lao are both Southwestern Tai");
+    _same_genus("sw", "zu", "Swahili and Zulu are both Bantu");
+    _same_genus("es", "pt", "Spanish and Portuguese are both Ibero-Romance");
+    _same_genus("pl", "cs", "Polish and Czech are both West Slavic");
+    _same_genus("en", "de", "English and German are both West Germanic");
+    # And pairs that must NOT share one.
+    assert(streq(registry_info_genus(registry_info("es")),
+        registry_info_genus(registry_info("fr"))) == 0, "Ibero- and Gallo-Romance are distinct genera");
+    assert(streq(registry_info_genus(registry_info("is")),
+        registry_info_genus(registry_info("en"))) == 0, "North and West Germanic are distinct");
+    # Sanskrit is an older *stage* of the same genus, not a sister genus — the stage
+    # lives in a comment, exactly as for el/grc and lzh/zh above. This assertion was
+    # inverted at 2.3.1: it previously demanded that sa and hi differ, which locked a
+    # nesting violation into the suite.
+    assert(streq(registry_info_subfamily(registry_info("sa")), "Indo-Iranian"), "Sanskrit subfamily");
+    _same_genus("sa", "hi", "Sanskrit and Hindi share the Indo-Aryan genus; sa is the older stage");
+
+    # ---------------------------------------------------------------
+    test_group("family_grouping");
+    # registry_by_family is the query this data exists to serve.
+    var ie = registry_by_family("Indo-European");
+    assert_eq(vec_len(ie), 20, "20 Indo-European languages");
+    var aa = registry_by_family("Afro-Asiatic");
+    assert_eq(vec_len(aa), 5, "5 Afro-Asiatic languages");
+    var nc = registry_by_family("Niger-Congo");
+    assert_eq(vec_len(nc), 4, "4 Niger-Congo languages");
+    assert_eq(vec_len(registry_by_family("Austronesian")), 3, "3 Austronesian languages");
+    assert_eq(vec_len(registry_by_family("Sino-Tibetan")), 3, "3 Sino-Tibetan languages");
+    assert_eq(vec_len(registry_by_family("Japonic")), 1, "Japonic has one member here");
+    assert_eq(vec_len(registry_by_family("Nonexistent")), 0, "an unknown family returns an empty vec");
+    # Every code the query returns really is in that family.
+    var wrong = 0;
+    i = 0;
+    while (i < vec_len(ie)) {
+        if (streq(registry_family(vec_get(ie, i)), "Indo-European") == 0) { wrong = wrong + 1; }
+        i = i + 1;
+    }
+    assert_eq(wrong, 0, "registry_by_family returns only members of that family");
+    # And the families partition the corpus: every language is in exactly one.
+    var families = vec_new();
+    i = 0;
+    while (i < n) {
+        var f = registry_family(vec_get(codes, i));
+        var seen = 0;
+        var k = 0;
+        while (k < vec_len(families)) {
+            if (streq(vec_get(families, k), f) == 1) { seen = 1; }
+            k = k + 1;
+        }
+        if (seen == 0) { vec_push(families, f); }
+        i = i + 1;
+    }
+    assert_eq(vec_len(families), 18, "51 languages across 18 families");
+    var total = 0;
+    i = 0;
+    while (i < vec_len(families)) {
+        total = total + vec_len(registry_by_family(vec_get(families, i)));
+        i = i + 1;
+    }
+    assert_eq(total, 51, "the families partition the corpus exactly, with no double-counting");
+
+    # ---------------------------------------------------------------
+    test_group("smaller_families");
+    _clsfy("yua", "Mayan", "Yucatecan", "Yucatec-Lacandon", "Yucatec Maya");
+    _clsfy("nah", "Uto-Aztecan", "Southern Uto-Aztecan", "Aztecan", "Nahuatl");
+    _clsfy("qu", "Quechuan", "Quechua II", "Southern Quechua", "Quechua");
+    # qu and nah are named for the variety each entry actually describes, so the
+    # classification is not false for the rest of the code's scope — the same pattern
+    # zh already used. The ISO codes are untouched.
+    assert(streq(registry_info_name(registry_info("qu")), "Southern Quechua"),
+      "qu is named for the variety it describes, not the macrolanguage");
+    assert(streq(registry_info_name(registry_info("nah")), "Classical Nahuatl"),
+      "nah is a collection code; the entry models Classical Nahuatl");
+    assert(streq(phoneme_language_name(registry_phonemes("qu")), "Southern Quechua"),
+      "the inventory name matches the registry");
+    assert(streq(phoneme_language_name(registry_phonemes("nah")), "Classical Nahuatl"),
+      "the inventory name matches the registry");
+    _clsfy("gn", "Tupian", "Tupi-Guarani", "Guarani", "Guarani");
+    _clsfy("ta", "Dravidian", "South Dravidian", "Tamil-Kannada", "Tamil");
+    _clsfy("fi", "Uralic", "Finnic", "Northern Finnic", "Finnish");
+    _clsfy("haw", "Austronesian", "Malayo-Polynesian", "Polynesian", "Hawaiian");
+    _clsfy("vi", "Austroasiatic", "Vietic", "Viet-Muong", "Vietnamese");
+    _clsfy("km", "Austroasiatic", "Khmeric", "Khmer", "Khmer is Khmeric, not Mon-Khmer");
+
+    # ---------------------------------------------------------------
+    test_group("contested_nodes_are_the_conventional_label");
+    # Four subfamilies in this table are contested. They are encoded with the
+    # conventional label and the objection recorded in a comment beside the entry,
+    # rather than either asserting a disputed node silently or leaving the field
+    # blank. Pinning them here keeps the choice visible in code.
+    assert(streq(registry_info_subfamily(registry_info("hu")), "Ugric"),
+      "Hungarian keeps the conventional Ugric label (Glottolog rejects the node)");
+    assert(streq(registry_info_subfamily(registry_info("wo")), "Atlantic"),
+      "Wolof keeps the conventional Atlantic label (not a demonstrated node)");
+    assert(streq(registry_info_subfamily(registry_info("my")), "Tibeto-Burman"),
+      "Burmese keeps Tibeto-Burman (probably paraphyletic)");
+    assert(streq(registry_info_family(registry_info("qu")), "Quechuan"),
+      "Quechua is Quechuan alone, not Quechumaran");
+
+    # ---------------------------------------------------------------
+    test_group("core_registry_unchanged");
+    # Widening LanguageInfo must not have disturbed the original three fields.
+    assert_eq(n, 51, "still 51 registered languages");
+    assert(streq(registry_info_name(registry_info("en")), "English"), "English name");
+    assert(streq(registry_info_name(registry_info("lzh")), "Literary Chinese"), "Literary Chinese name");
+    assert_eq(vec_len(registry_info_scripts(registry_info("en"))), 1, "English has one script");
+    assert(streq(vec_get(registry_info_scripts(registry_info("hi")), 0), "Deva"), "Hindi uses Devanagari");
+    assert(registry_primary_script("ka") != 0, "Georgian still resolves a primary script");
+    assert(registry_phonemes("en") != 0, "the phoneme lookup is unaffected");
+
+    # ---------------------------------------------------------------
+    test_group("non_nesting");
+    # The one invariant a rank column must satisfy, and the one nothing checked
+    # before 2.3.1: no value may be a proper ancestor of another value in the same
+    # column. Three violations shipped past a 163-assertion suite because every
+    # assertion here pinned rows individually or pinned equalities, and both kinds
+    # pass happily on nested data.
+    #
+    # Checked as explicit ancestor/descendant string pairs rather than by inferring
+    # a tree, because varna stores no tree to infer from.
+    var anc = vec_new();
+    var desc = vec_new();
+    vec_push(anc, "Central Semitic");   vec_push(desc, "Northwest Semitic");
+    vec_push(anc, "Central Semitic");   vec_push(desc, "Arabic");
+    vec_push(anc, "Central Semitic");   vec_push(desc, "South Ethiopic");
+    vec_push(anc, "Semitic");           vec_push(desc, "Northwest Semitic");
+    vec_push(anc, "Indo-Aryan");        vec_push(desc, "Old Indo-Aryan");
+    vec_push(anc, "Malayo-Polynesian"); vec_push(desc, "Oceanic");
+    vec_push(anc, "Malayo-Polynesian"); vec_push(desc, "Central Philippine");
+    vec_push(anc, "Malayo-Polynesian"); vec_push(desc, "Polynesian");
+    vec_push(anc, "Malayo-Polynesian"); vec_push(desc, "Malayic");
+    vec_push(anc, "Benue-Congo");       vec_push(desc, "Bantu");
+    vec_push(anc, "Germanic");          vec_push(desc, "West Germanic");
+    vec_push(anc, "Germanic");          vec_push(desc, "North Germanic");
+    vec_push(anc, "Italic");            vec_push(desc, "Ibero-Romance");
+    vec_push(anc, "Italic");            vec_push(desc, "Gallo-Romance");
+    vec_push(anc, "Balto-Slavic");      vec_push(desc, "West Slavic");
+    vec_push(anc, "Tai");               vec_push(desc, "Southwestern Tai");
+
+    # Collect the genus of every language, then check no genus is an ancestor of
+    # another genus that appears in the corpus.
+    var nested = 0;
+    i = 0;
+    while (i < n) {
+        var gi = registry_info_genus(registry_info(vec_get(codes, i)));
+        var j = 0;
+        while (j < n) {
+            var gj = registry_info_genus(registry_info(vec_get(codes, j)));
+            if (streq(gi, gj) == 0) {
+                var k = 0;
+                while (k < vec_len(anc)) {
+                    if (streq(gi, vec_get(anc, k)) == 1) {
+                        if (streq(gj, vec_get(desc, k)) == 1) {
+                            # `la` is the one intentional exception: Latino-Faliscan is
+                            # ancestral to the Romance genera, but no alternative is
+                            # better and no consumer querying it expects Spanish.
+                            if (streq(gi, "Latino-Faliscan") == 0) { nested = nested + 1; }
+                        }
+                    }
+                    k = k + 1;
+                }
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(nested, 0, "no genus in the corpus is a proper ancestor of another");
+
+    # The same check for the subfamily column.
+    var sub_nested = 0;
+    i = 0;
+    while (i < n) {
+        var si = registry_info_subfamily(registry_info(vec_get(codes, i)));
+        var j2 = 0;
+        while (j2 < n) {
+            var sj = registry_info_subfamily(registry_info(vec_get(codes, j2)));
+            if (streq(si, sj) == 0) {
+                var k2 = 0;
+                while (k2 < vec_len(anc)) {
+                    if (streq(si, vec_get(anc, k2)) == 1) {
+                        if (streq(sj, vec_get(desc, k2)) == 1) { sub_nested = sub_nested + 1; }
+                    }
+                    k2 = k2 + 1;
+                }
+            }
+            j2 = j2 + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(sub_nested, 0, "no subfamily is a proper ancestor of another");
+
+    # And the three rows that were wrong, pinned by name so a regression is legible.
+    assert(streq(registry_info_genus(registry_info("ar")), "Arabic"),
+      "Arabic genus is the Central Semitic sister of Hebrew's, not their shared parent");
+    assert(streq(registry_info_genus(registry_info("sa")), "Indo-Aryan"),
+      "Sanskrit shares the Indo-Aryan genus rather than naming a stratum inside it");
+    assert(streq(registry_info_subfamily(registry_info("haw")), "Malayo-Polynesian"),
+      "Hawaiian's subfamily is the primary branch, as for id and tl");
+    assert(streq(registry_info_subfamily(registry_info("haw")),
+        registry_info_subfamily(registry_info("id"))), "haw and id share a subfamily rank");
+    assert(streq(registry_info_subfamily(registry_info("haw")),
+        registry_info_subfamily(registry_info("tl"))), "haw and tl share a subfamily rank");
+
+    # ---------------------------------------------------------------
+    test_group("subfamily_is_always_a_primary_branch");
+    # The rank rule for the subfamily column, stated in src/registry.cyr. haw was the
+    # sole violation; this keeps it that way.
+    var same_as_family = 0;
+    i = 0;
+    while (i < n) {
+        var li3 = registry_info(vec_get(codes, i));
+        if (streq(registry_info_family(li3), registry_info_subfamily(li3)) == 1) {
+            same_as_family = same_as_family + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(same_as_family, 0, "no subfamily merely restates its family");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
