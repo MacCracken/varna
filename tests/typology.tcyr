@@ -1,0 +1,242 @@
+# tests/typology.tcyr — WALS-style typological dimensions, added at 2.3.0.
+#
+# Eight dimensions on GrammarProfile: alignment, adposition order, tense marking,
+# a distinct future, evidentiality, negation strategy, article type, adjective
+# order and relative-clause order.
+#
+# The values were gathered and then independently checked by a reviewer that saw
+# only the claims and was told to refute them. Of 44 grammar values, 43 survived
+# unchanged; the one dispute concerned how to gloss English -n't in a comment, not
+# the encoded value. The assertions here are the well-established cases — Hindi is
+# split-ergative, French negation is discontinuous, Mandarin and Japanese are
+# prenominal-relative — so a regression shows up as a linguistic error, not just a
+# diff.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/features.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+fn _count_align(value) {
+    var codes = grammar_all_codes();
+    var c = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        if (grammar_alignment(grammar_by_code(vec_get(codes, i))) == value) { c = c + 1; }
+        i = i + 1;
+    }
+    return c;
+}
+
+fn _count_article(value) {
+    var codes = grammar_all_codes();
+    var c = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        if (grammar_article_type(grammar_by_code(vec_get(codes, i))) == value) { c = c + 1; }
+        i = i + 1;
+    }
+    return c;
+}
+
+fn main() {
+    alloc_init();
+    var i = 0;
+
+    # ---------------------------------------------------------------
+    test_group("alignment");
+    # Ten of the eleven are plainly nominative-accusative; Hindi is the split.
+    assert_eq(grammar_alignment(grammar_english()), Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, "English");
+    assert_eq(grammar_alignment(grammar_russian()), Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, "Russian");
+    assert_eq(grammar_alignment(grammar_hindi()), Alignment.ALIGN_SPLIT_ERGATIVE,
+        "Hindi is split-ergative, not plain accusative");
+    assert_eq(_count_align(Alignment.ALIGN_SPLIT_ERGATIVE), 1, "Hindi is the only split-ergative profile");
+    assert_eq(_count_align(Alignment.ALIGN_NOMINATIVE_ACCUSATIVE), 10, "the other ten are accusative");
+    # The enum carries the full classification even where the corpus attests none —
+    # a consumer filtering for ergative languages needs the concept to exist.
+    assert_eq(_count_align(Alignment.ALIGN_ERGATIVE_ABSOLUTIVE), 0, "no fully ergative profile yet");
+    assert_eq(_count_align(Alignment.ALIGN_ACTIVE_STATIVE), 0, "no active-stative profile yet");
+
+    # ---------------------------------------------------------------
+    test_group("adposition_order");
+    # Head-initial vs head-final tracks word order closely, and Mandarin is the
+    # documented WALS 85A exception.
+    assert_eq(grammar_adposition_order(grammar_english()), AdpositionOrder.ADP_PREPOSITIONAL, "English");
+    assert_eq(grammar_adposition_order(grammar_arabic()), AdpositionOrder.ADP_PREPOSITIONAL, "Arabic");
+    assert_eq(grammar_adposition_order(grammar_hindi()), AdpositionOrder.ADP_POSTPOSITIONAL, "Hindi");
+    assert_eq(grammar_adposition_order(grammar_japanese()), AdpositionOrder.ADP_POSTPOSITIONAL, "Japanese");
+    assert_eq(grammar_adposition_order(grammar_korean()), AdpositionOrder.ADP_POSTPOSITIONAL, "Korean");
+    assert_eq(grammar_adposition_order(grammar_mandarin()), AdpositionOrder.ADP_NO_DOMINANT,
+        "Mandarin has no dominant adposition order (WALS 85A)");
+    # SOV languages here are postpositional, SVO/VSO prepositional — except Mandarin.
+    var mismatched = 0;
+    var codes = grammar_all_codes();
+    i = 0;
+    while (i < vec_len(codes)) {
+        var g = grammar_by_code(vec_get(codes, i));
+        if (grammar_word_order(g) == WordOrder.SOV) {
+            if (grammar_adposition_order(g) != AdpositionOrder.ADP_POSTPOSITIONAL) {
+                mismatched = mismatched + 1;
+            }
+        }
+        i = i + 1;
+    }
+    assert_eq(mismatched, 0, "every SOV profile is postpositional");
+
+    # ---------------------------------------------------------------
+    test_group("tense_and_future");
+    assert_eq(grammar_tense_marking(grammar_mandarin()), TenseMarking.TENSE_NONE,
+        "Mandarin has no verbal inflection at all");
+    assert_eq(grammar_tense_marking(grammar_arabic()), TenseMarking.TENSE_NO_DOMINANT,
+        "Arabic's suffix/prefix opposition has no settled tense-vs-aspect answer");
+    assert_eq(grammar_tense_marking(grammar_english()), TenseMarking.TENSE_INFLECTIONAL, "English");
+    # The future tri-state. Romance has a synthetic future; English and German do not
+    # (their futures are auxiliaries); Russian's is the perfective present; Korean is
+    # genuinely disputed.
+    assert_eq(grammar_has_future(grammar_spanish()), 1, "Spanish has a synthetic future");
+    assert_eq(grammar_has_future(grammar_french()), 1, "French has a synthetic future");
+    assert_eq(grammar_has_future(grammar_portuguese()), 1, "Portuguese has a synthetic future");
+    assert_eq(grammar_has_future(grammar_hindi()), 1, "Hindi has a synthetic future");
+    assert_eq(grammar_has_future(grammar_english()), 0, "English 'will' is a modal, not a future inflection");
+    assert_eq(grammar_has_future(grammar_german()), 0, "German 'werden' is periphrastic");
+    assert_eq(grammar_has_future(grammar_russian()), 0,
+        "Russian future is the perfective present, not future morphology");
+    assert_eq(grammar_has_future(grammar_korean()), 0 - 1, "Korean -gess- is disputed, so the value is unspecified");
+
+    # ---------------------------------------------------------------
+    test_group("evidentiality");
+    # None of these eleven is an evidential language in Aikhenvald's obligatory
+    # sense. Two are borderline; the rest are plainly none. Asserting the negative
+    # matters here — inventing evidentiality is the classic failure on this dimension.
+    assert_eq(grammar_evidentiality(grammar_english()), Evidentiality.EVID_NONE, "English");
+    assert_eq(grammar_evidentiality(grammar_arabic()), Evidentiality.EVID_NONE, "Arabic");
+    assert_eq(grammar_evidentiality(grammar_mandarin()), Evidentiality.EVID_NONE, "Mandarin");
+    assert_eq(grammar_evidentiality(grammar_hindi()), Evidentiality.EVID_NONE, "Hindi");
+    assert_eq(grammar_evidentiality(grammar_russian()), Evidentiality.EVID_NONE, "Russian");
+    assert_eq(grammar_evidentiality(grammar_japanese()), Evidentiality.EVID_BORDERLINE,
+        "Japanese has evidential semantics but no obligatory paradigm");
+    assert_eq(grammar_evidentiality(grammar_korean()), Evidentiality.EVID_BORDERLINE,
+        "Korean -deo- is bound but still not obligatory");
+    var grammaticalized = 0;
+    i = 0;
+    while (i < vec_len(codes)) {
+        if (grammar_evidentiality(grammar_by_code(vec_get(codes, i))) == Evidentiality.EVID_GRAMMATICALIZED) {
+            grammaticalized = grammaticalized + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(grammaticalized, 0, "no profile claims fully grammaticalised evidentiality");
+
+    # ---------------------------------------------------------------
+    test_group("negation");
+    assert_eq(grammar_negation(grammar_english()), NegationStrategy.NEG_PARTICLE, "English 'not'");
+    assert_eq(grammar_negation(grammar_french()), NegationStrategy.NEG_DOUBLE,
+        "French ne ... pas is discontinuous");
+    assert_eq(grammar_negation(grammar_japanese()), NegationStrategy.NEG_AFFIX,
+        "Japanese -(a)nai is an affix, not a particle");
+    assert_eq(grammar_negation(grammar_korean()), NegationStrategy.NEG_NO_DOMINANT,
+        "Korean long and short negation are both productive");
+    assert_eq(grammar_negation(grammar_russian()), NegationStrategy.NEG_PARTICLE, "Russian ne");
+
+    # ---------------------------------------------------------------
+    test_group("articles");
+    # The article-less languages are the interesting half of this dimension.
+    assert_eq(grammar_article_type(grammar_russian()), ArticleType.ART_NONE, "Russian has no articles");
+    assert_eq(grammar_article_type(grammar_mandarin()), ArticleType.ART_NONE, "Mandarin has no articles");
+    assert_eq(grammar_article_type(grammar_japanese()), ArticleType.ART_NONE, "Japanese has no articles");
+    assert_eq(grammar_article_type(grammar_korean()), ArticleType.ART_NONE, "Korean has no articles");
+    assert_eq(grammar_article_type(grammar_hindi()), ArticleType.ART_NONE, "Hindi has no articles");
+    assert_eq(grammar_article_type(grammar_arabic()), ArticleType.ART_DEFINITE_ONLY,
+        "Arabic has al- but no indefinite article");
+    assert_eq(grammar_article_type(grammar_english()), ArticleType.ART_DEFINITE_AND_INDEFINITE, "English");
+    assert_eq(_count_article(ArticleType.ART_NONE), 5, "5 article-less profiles");
+    assert_eq(_count_article(ArticleType.ART_DEFINITE_AND_INDEFINITE), 5, "5 with both articles");
+    assert_eq(_count_article(ArticleType.ART_DEFINITE_ONLY), 1, "Arabic alone has a definite article only");
+    assert_eq(_count_article(ArticleType.ART_INDEFINITE_ONLY), 0, "no indefinite-only profile");
+
+    # ---------------------------------------------------------------
+    test_group("adjective_and_relative_order");
+    # Romance is postnominal for both; the East Asian languages are prenominal for
+    # relatives; Hindi uses correlatives.
+    assert_eq(grammar_adjective_order(grammar_english()), AdjectiveOrder.ADJ_BEFORE_NOUN, "English");
+    assert_eq(grammar_adjective_order(grammar_spanish()), AdjectiveOrder.ADJ_AFTER_NOUN, "Spanish");
+    assert_eq(grammar_adjective_order(grammar_french()), AdjectiveOrder.ADJ_AFTER_NOUN, "French");
+    assert_eq(grammar_adjective_order(grammar_arabic()), AdjectiveOrder.ADJ_AFTER_NOUN, "Arabic");
+    assert_eq(grammar_relative_order(grammar_mandarin()), RelativeClauseOrder.REL_BEFORE_NOUN,
+        "Mandarin relatives precede the head");
+    assert_eq(grammar_relative_order(grammar_japanese()), RelativeClauseOrder.REL_BEFORE_NOUN, "Japanese");
+    assert_eq(grammar_relative_order(grammar_korean()), RelativeClauseOrder.REL_BEFORE_NOUN, "Korean");
+    assert_eq(grammar_relative_order(grammar_hindi()), RelativeClauseOrder.REL_CORRELATIVE,
+        "Hindi uses correlatives, not a simple pre/post order");
+    assert_eq(grammar_relative_order(grammar_english()), RelativeClauseOrder.REL_AFTER_NOUN, "English");
+    # Mandarin is prenominal for relatives despite being SVO — the classic
+    # counterexample to a naive word-order correlation.
+    assert_eq(grammar_word_order(grammar_mandarin()), WordOrder.SVO, "Mandarin is SVO");
+
+    # ---------------------------------------------------------------
+    test_group("every_profile_is_populated");
+    # A profile built through the core `_gp_new` path defaults every new dimension
+    # to its no-dominant variant. All eleven shipped profiles must have moved off
+    # those defaults, or the data did not actually land.
+    var unset_alignment = 0;
+    var unset_adposition = 0;
+    var unset_tense = 0;
+    var out_of_range = 0;
+    i = 0;
+    while (i < vec_len(codes)) {
+        var gp = grammar_by_code(vec_get(codes, i));
+        if (grammar_alignment(gp) == Alignment.ALIGN_NO_DOMINANT) { unset_alignment = unset_alignment + 1; }
+        # Mandarin is legitimately ADP_NO_DOMINANT, so that one is expected.
+        if (grammar_adposition_order(gp) == AdpositionOrder.ADP_NO_DOMINANT) {
+            if (streq(grammar_language_code(gp), "zh") == 0) { unset_adposition = unset_adposition + 1; }
+        }
+        # Arabic is legitimately TENSE_NO_DOMINANT.
+        if (grammar_tense_marking(gp) == TenseMarking.TENSE_NO_DOMINANT) {
+            if (streq(grammar_language_code(gp), "ar") == 0) { unset_tense = unset_tense + 1; }
+        }
+        # Every value inside its enum, and the future tri-state in {1, 0, -1}.
+        if (grammar_alignment(gp) > Alignment.ALIGN_NO_DOMINANT) { out_of_range = out_of_range + 1; }
+        if (grammar_negation(gp) > NegationStrategy.NEG_NO_DOMINANT) { out_of_range = out_of_range + 1; }
+        if (grammar_article_type(gp) > ArticleType.ART_NONE) { out_of_range = out_of_range + 1; }
+        if (grammar_relative_order(gp) > RelativeClauseOrder.REL_CORRELATIVE) { out_of_range = out_of_range + 1; }
+        if (grammar_has_future(gp) > 1) { out_of_range = out_of_range + 1; }
+        if (grammar_has_future(gp) < 0 - 1) { out_of_range = out_of_range + 1; }
+        i = i + 1;
+    }
+    assert_eq(unset_alignment, 0, "every profile carries a real alignment value");
+    assert_eq(unset_adposition, 0, "only Mandarin is ADP_NO_DOMINANT");
+    assert_eq(unset_tense, 0, "only Arabic is TENSE_NO_DOMINANT");
+    assert_eq(out_of_range, 0, "every typological value is inside its enum");
+
+    # ---------------------------------------------------------------
+    test_group("core_fields_unchanged");
+    # Widening the record must not have disturbed the eight original fields.
+    assert(streq(grammar_language_code(grammar_german()), "de"), "German code");
+    assert_eq(grammar_morphology(grammar_german()), Morphology.Fusional, "German morphology");
+    assert_eq(grammar_word_order(grammar_german()), WordOrder.SVO, "German word order");
+    assert_eq(grammar_case_count(grammar_german()), 4, "German has 4 cases");
+    assert_eq(grammar_has_gender(grammar_german()), 1, "German has gender");
+    assert_eq(grammar_gender_count(grammar_german()), 3, "German has 3 genders");
+    assert_eq(grammar_case_count(grammar_russian()), 6, "Russian has 6 cases");
+    assert_eq(grammar_has_classifiers(grammar_mandarin()), 1, "Mandarin has classifiers");
+    assert_eq(grammar_has_dual(grammar_arabic()), 1, "Arabic has a dual");
+    assert_eq(vec_len(grammar_all_codes()), 11, "still 11 grammar profiles");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

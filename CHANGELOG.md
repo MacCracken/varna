@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-08-27
+
+First slice of the 2.3.x Typological Depth line: eight WALS-style dimensions on
+`GrammarProfile`. Additive — the eight original fields and their accessors are
+untouched.
+
+### Added
+
+- **grammar** — eight dimensions across the 11 language profiles, with accessors
+  `grammar_alignment`, `grammar_adposition_order`, `grammar_tense_marking`,
+  `grammar_has_future`, `grammar_evidentiality`, `grammar_negation`,
+  `grammar_article_type`, `grammar_adjective_order`, `grammar_relative_order`,
+  and five new enums.
+
+  Every dimension carries an explicit "no dominant value" variant, and three
+  profiles use one: Mandarin's adposition order (WALS 85A), Arabic's
+  tense-vs-aspect question, and Korean negation. `grammar_has_future` is a
+  tri-state (1 / 0 / -1) because Korean's `-gess-` is genuinely disputed.
+
+- **tests/typology.tcyr** (73 assertions) pinning the well-established cases —
+  Hindi split-ergative, French discontinuous negation, Mandarin and Japanese
+  prenominal relatives, the five article-less profiles — so a regression reads as a
+  linguistic error rather than a diff. Plus range checks and a guard that all
+  eleven profiles moved off the constructor defaults.
+
+- **docs/development/typology-data.md** — the verified classification and
+  endangerment/geography tables for **2.3.1** and **2.3.2**, so that verification
+  is not repeated. Carries its own caveats.
+
+### Changed
+
+- **GrammarProfile** is 136 bytes, up from 64. Only 11 instances exist.
+- **roadmap** — the "Missing script entries" sub-item is marked shipped: all nine
+  scripts landed at **2.1.6**, verified against `script_by_code` and
+  `script_all_codes` rather than taken on trust. It was listed in error.
+
+### Notes
+
+- **The data was gathered and adversarially verified.** Twelve agents in a
+  gather-then-verify pipeline; each verifier saw only the claims, not the
+  reasoning, and was told to refute rather than confirm. **43 of 44 grammar values
+  survived unchanged.** The single dispute was about how to gloss English `-n't` in
+  a comment — the verifier confirmed the encoded value (`NEG_PARTICLE`) was right.
+
+- **The verifier caught a real error elsewhere**: Guarani was proposed as
+  `Vulnerable` and corrected to `Safe` (~6.5M speakers, co-official in Paraguay,
+  full intergenerational transmission). That correction is applied in the 2.3.2
+  reference table.
+
+- **The verification design has a hole, and it bit.** The endangerment agent
+  returned 50 of 51 languages, silently omitting Korean, and the verifier did not
+  notice — a reviewer checking claims only sees what is present, never what is
+  absent. Caught by comparing the returned codes against the registry. Recorded in
+  `typology-data.md`; any future gather/verify pass needs a completeness check
+  independent of the reviewer.
+
+- **Glottocode support is deliberately not implemented.** Glottocodes are opaque
+  identifiers (`stan1293`) that can only be looked up, never derived. Generating 51
+  from memory would produce plausible-looking fabrications indistinguishable from
+  real ones — the worst failure mode for a reference corpus. Filed as a data item
+  needing an authoritative source.
+
+- Alignment records **syntactic** alignment. WALS 98A (case marking on full NPs)
+  is a separate feature that would code both English and Mandarin as *Neutral*;
+  it is not encoded here, and the profiles say so at the point of decision.
+
+### Performance
+
+- **Flat.** A first two-round A/B suggested `phoneme_lookup_ipa` had regressed
+  10.5%, which would have been unexplainable — nothing in this release touches
+  phoneme lookup. Five rounds dissolved it: the old build's spread is 306-346 ns
+  and the new one's 338-341, overlapping distributions where the min-of-N statistic
+  had latched onto one lucky low sample. `grammar_by_code_lookup`, the row that
+  would actually move, is +0.9%.
+
+
 ## [2.2.4] - 2026-08-27
 
 Last slice of the 2.2.x Phonological Depth line: tone becomes structured data.

@@ -1,8 +1,18 @@
 # src/grammar.cyr — grammatical typology profiles by ISO 639 code.
 # Ported from v1.x Rust src/grammar/mod.rs.
 #
-# GrammarProfile (64B): [0]=language_code [8]=morphology [16]=word_order
+# GrammarProfile (128B): [0]=language_code [8]=morphology [16]=word_order
 #   [24]=case_count [32]=has_gender [40]=gender_count [48]=has_dual [56]=has_classifiers
+#   --- WALS-style typology, added at 2.3.0 ---
+#   [64]=alignment [72]=adposition_order [80]=tense_marking [88]=has_future(1/0/-1)
+#   [96]=evidentiality [104]=negation [112]=article_type [120]=adjective_order
+#   ...and [128]=relative_order — see _gp_new_full; the record is 136B in total.
+#
+# Every one of the eight new dimensions carries an explicit "no dominant value"
+# or "borderline" variant. That is not padding: Mandarin genuinely has no dominant
+# adposition order (WALS 85A), Arabic has no dominant answer on the tense-vs-aspect
+# question, and Korean negation splits between a long and a short form. Forcing
+# those into a single label would encode a decision the linguistics does not make.
 
 enum Morphology {
     Isolating = 0;
@@ -22,8 +32,92 @@ enum WordOrder {
     OSV = 5;
 }
 
+# --- WALS-style typological dimensions (2.3.0) ---------------------
+# Variant names are prefixed: Cyrius enum variants share one flat symbol
+# namespace, and several of these would otherwise collide across enums (NONE,
+# NO_DOMINANT) or with existing constants.
+#
+# Each enum carries the full standard classification, not merely the values the
+# 51-language corpus happens to attest. Unlike a per-phoneme feature bit, a
+# typological classification is a closed space a consumer filters over: asking
+# "which languages are ergative-absolutive?" needs the concept to exist even when
+# the answer today is none. `tests/typology.tcyr` pins which values are actually
+# attested so that stays visible.
+
+enum Alignment {
+    ALIGN_NOMINATIVE_ACCUSATIVE = 0;
+    ALIGN_ERGATIVE_ABSOLUTIVE = 1;
+    ALIGN_SPLIT_ERGATIVE = 2;
+    ALIGN_ACTIVE_STATIVE = 3;
+    ALIGN_NO_DOMINANT = 4;
+}
+
+enum AdpositionOrder {
+    ADP_PREPOSITIONAL = 0;
+    ADP_POSTPOSITIONAL = 1;
+    ADP_INPOSITIONAL = 2;
+    ADP_NO_DOMINANT = 3;
+}
+
+# Whether tense is marked by inflection at all. The separate `has_future` slot is
+# a tri-state (1 yes / 0 no / -1 disputed) because several languages genuinely
+# have no settled answer: Russian's future is the perfective present, and whether
+# Korean -gess- is a future or a modal is contested.
+enum TenseMarking {
+    TENSE_INFLECTIONAL = 0;
+    TENSE_NONE = 1;
+    TENSE_NO_DOMINANT = 2;
+}
+
+enum Evidentiality {
+    EVID_NONE = 0;
+    EVID_GRAMMATICALIZED = 1;
+    EVID_BORDERLINE = 2;
+}
+
+enum NegationStrategy {
+    NEG_PARTICLE = 0;
+    NEG_AFFIX = 1;
+    NEG_AUXILIARY = 2;
+    NEG_DOUBLE = 3;
+    NEG_NO_DOMINANT = 4;
+}
+
+enum ArticleType {
+    ART_DEFINITE_AND_INDEFINITE = 0;
+    ART_DEFINITE_ONLY = 1;
+    ART_INDEFINITE_ONLY = 2;
+    ART_NONE = 3;
+}
+
+enum AdjectiveOrder {
+    ADJ_BEFORE_NOUN = 0;
+    ADJ_AFTER_NOUN = 1;
+    ADJ_NO_DOMINANT = 2;
+}
+
+enum RelativeClauseOrder {
+    REL_AFTER_NOUN = 0;
+    REL_BEFORE_NOUN = 1;
+    REL_INTERNALLY_HEADED = 2;
+    REL_CORRELATIVE = 3;
+}
+
+# Core profile only; the 2.3.0 typological dimensions default to their
+# "no dominant value" variants so a profile built this way is honest about not
+# carrying them rather than silently claiming the zero variant.
 fn _gp_new(code, morph, order, case_count, has_gender, gender_count, has_dual, has_classifiers) {
-    var g = alloc(64);
+    return _gp_new_full(code, morph, order, case_count, has_gender, gender_count, has_dual,
+        has_classifiers, Alignment.ALIGN_NO_DOMINANT, AdpositionOrder.ADP_NO_DOMINANT,
+        TenseMarking.TENSE_NO_DOMINANT, 0 - 1, Evidentiality.EVID_NONE,
+        NegationStrategy.NEG_NO_DOMINANT, ArticleType.ART_NONE,
+        AdjectiveOrder.ADJ_NO_DOMINANT, RelativeClauseOrder.REL_AFTER_NOUN);
+}
+
+fn _gp_new_full(code, morph, order, case_count, has_gender, gender_count, has_dual,
+    has_classifiers, alignment, adposition, tense, future, evidentiality, negation,
+    article, adjective, relative) {
+    var g = alloc(136);
     store64(g, code);
     store64(g + 8, morph);
     store64(g + 16, order);
@@ -32,6 +126,15 @@ fn _gp_new(code, morph, order, case_count, has_gender, gender_count, has_dual, h
     store64(g + 40, gender_count);
     store64(g + 48, has_dual);
     store64(g + 56, has_classifiers);
+    store64(g + 64, alignment);
+    store64(g + 72, adposition);
+    store64(g + 80, tense);
+    store64(g + 88, future);
+    store64(g + 96, evidentiality);
+    store64(g + 104, negation);
+    store64(g + 112, article);
+    store64(g + 120, adjective);
+    store64(g + 128, relative);
     return g;
 }
 
@@ -44,80 +147,152 @@ fn grammar_gender_count(g) { return load64(g + 40); }
 fn grammar_has_dual(g) { return load64(g + 48); }
 fn grammar_has_classifiers(g) { return load64(g + 56); }
 
+# --- WALS-style dimensions (2.3.0) ---
+fn grammar_alignment(g) { return load64(g + 64); }
+fn grammar_adposition_order(g) { return load64(g + 72); }
+fn grammar_tense_marking(g) { return load64(g + 80); }
+# 1 = a distinct morphological future, 0 = none, (0-1) = disputed.
+fn grammar_has_future(g) { return load64(g + 88); }
+fn grammar_evidentiality(g) { return load64(g + 96); }
+fn grammar_negation(g) { return load64(g + 104); }
+fn grammar_article_type(g) { return load64(g + 112); }
+fn grammar_adjective_order(g) { return load64(g + 120); }
+fn grammar_relative_order(g) { return load64(g + 128); }
+
 var _c_grammar_english = 0;
 fn grammar_english() {
     if (_c_grammar_english != 0) { return _c_grammar_english; }
-    _c_grammar_english = _gp_new("en", Morphology.Fusional, WordOrder.SVO, 2, 0, 0, 0, 0);
+    # Two-way past vs. non-past only; 'will' is a modal auxiliary, not a future inflection.
+    _c_grammar_english = _gp_new_full("en", Morphology.Fusional, WordOrder.SVO, 2, 0, 0, 0, 0,
+        Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, AdpositionOrder.ADP_PREPOSITIONAL, TenseMarking.TENSE_INFLECTIONAL, 0,
+        Evidentiality.EVID_NONE, NegationStrategy.NEG_PARTICLE, ArticleType.ART_DEFINITE_AND_INDEFINITE,
+        AdjectiveOrder.ADJ_BEFORE_NOUN, RelativeClauseOrder.REL_AFTER_NOUN);
     return _c_grammar_english;
 }
 
 var _c_grammar_arabic = 0;
 fn grammar_arabic() {
     if (_c_grammar_arabic != 0) { return _c_grammar_arabic; }
-    _c_grammar_arabic = _gp_new("ar", Morphology.Fusional, WordOrder.VSO, 3, 1, 2, 1, 0);
+    # TENSE_NO_DOMINANT is deliberate: the suffix/prefix conjugation opposition is
+    # traditionally aspect (perfective/imperfective) with strong past/non-past
+    # alignment, and the tense-vs-aspect question has no settled answer. Future is
+    # the bare imperfect or sa-/sawfa, not a dedicated inflection. Definite al- with
+    # no indefinite counterpart (indefiniteness is nunation).
+    _c_grammar_arabic = _gp_new_full("ar", Morphology.Fusional, WordOrder.VSO, 3, 1, 2, 1, 0,
+        Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, AdpositionOrder.ADP_PREPOSITIONAL, TenseMarking.TENSE_NO_DOMINANT, 0,
+        Evidentiality.EVID_NONE, NegationStrategy.NEG_PARTICLE, ArticleType.ART_DEFINITE_ONLY,
+        AdjectiveOrder.ADJ_AFTER_NOUN, RelativeClauseOrder.REL_AFTER_NOUN);
     return _c_grammar_arabic;
 }
 
 var _c_grammar_mandarin = 0;
 fn grammar_mandarin() {
     if (_c_grammar_mandarin != 0) { return _c_grammar_mandarin; }
-    _c_grammar_mandarin = _gp_new("zh", Morphology.Isolating, WordOrder.SVO, 0, 0, 0, 0, 1);
+    # ADP_NO_DOMINANT is the WALS 85A value, not an evasion: coverb prepositions
+    # (zai, gei, cong) coexist with productive localizer postpositions (-shang, -li)
+    # in circumpositional frames. No verbal inflection at all, hence TENSE_NONE.
+    _c_grammar_mandarin = _gp_new_full("zh", Morphology.Isolating, WordOrder.SVO, 0, 0, 0, 0, 1,
+        Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, AdpositionOrder.ADP_NO_DOMINANT, TenseMarking.TENSE_NONE, 0,
+        Evidentiality.EVID_NONE, NegationStrategy.NEG_PARTICLE, ArticleType.ART_NONE,
+        AdjectiveOrder.ADJ_BEFORE_NOUN, RelativeClauseOrder.REL_BEFORE_NOUN);
     return _c_grammar_mandarin;
 }
 
 var _c_grammar_hindi = 0;
 fn grammar_hindi() {
     if (_c_grammar_hindi != 0) { return _c_grammar_hindi; }
-    _c_grammar_hindi = _gp_new("hi", Morphology.Fusional, WordOrder.SOV, 3, 1, 2, 0, 0);
+    # Ergative -ne on the A argument in perfective transitives, accusative alignment
+    # elsewhere — aspectually conditioned. WALS 98A actually codes Hindi Tripartite,
+    # since perfective clauses distinguish A (-ne), O (-ko) and S (unmarked).
+    _c_grammar_hindi = _gp_new_full("hi", Morphology.Fusional, WordOrder.SOV, 3, 1, 2, 0, 0,
+        Alignment.ALIGN_SPLIT_ERGATIVE, AdpositionOrder.ADP_POSTPOSITIONAL, TenseMarking.TENSE_INFLECTIONAL, 1,
+        Evidentiality.EVID_NONE, NegationStrategy.NEG_PARTICLE, ArticleType.ART_NONE,
+        AdjectiveOrder.ADJ_BEFORE_NOUN, RelativeClauseOrder.REL_CORRELATIVE);
     return _c_grammar_hindi;
 }
 
 var _c_grammar_japanese = 0;
 fn grammar_japanese() {
     if (_c_grammar_japanese != 0) { return _c_grammar_japanese; }
-    _c_grammar_japanese = _gp_new("ja", Morphology.Agglutinative, WordOrder.SOV, 0, 0, 0, 0, 1);
+    # EVID_BORDERLINE: -so da, -rashii and the quotatives carry evidential semantics
+    # but form no obligatory paradigm, so Aikhenvald's criterion excludes them.
+    _c_grammar_japanese = _gp_new_full("ja", Morphology.Agglutinative, WordOrder.SOV, 0, 0, 0, 0, 1,
+        Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, AdpositionOrder.ADP_POSTPOSITIONAL, TenseMarking.TENSE_INFLECTIONAL, 0,
+        Evidentiality.EVID_BORDERLINE, NegationStrategy.NEG_AFFIX, ArticleType.ART_NONE,
+        AdjectiveOrder.ADJ_BEFORE_NOUN, RelativeClauseOrder.REL_BEFORE_NOUN);
     return _c_grammar_japanese;
 }
 
 var _c_grammar_spanish = 0;
 fn grammar_spanish() {
     if (_c_grammar_spanish != 0) { return _c_grammar_spanish; }
-    _c_grammar_spanish = _gp_new("es", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+    _c_grammar_spanish = _gp_new_full("es", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0,
+        Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, AdpositionOrder.ADP_PREPOSITIONAL, TenseMarking.TENSE_INFLECTIONAL, 1,
+        Evidentiality.EVID_NONE, NegationStrategy.NEG_PARTICLE, ArticleType.ART_DEFINITE_AND_INDEFINITE,
+        AdjectiveOrder.ADJ_AFTER_NOUN, RelativeClauseOrder.REL_AFTER_NOUN);
     return _c_grammar_spanish;
 }
 
 var _c_grammar_french = 0;
 fn grammar_french() {
     if (_c_grammar_french != 0) { return _c_grammar_french; }
-    _c_grammar_french = _gp_new("fr", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+    # NEG_DOUBLE for the discontinuous ne ... pas frame.
+    _c_grammar_french = _gp_new_full("fr", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0,
+        Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, AdpositionOrder.ADP_PREPOSITIONAL, TenseMarking.TENSE_INFLECTIONAL, 1,
+        Evidentiality.EVID_NONE, NegationStrategy.NEG_DOUBLE, ArticleType.ART_DEFINITE_AND_INDEFINITE,
+        AdjectiveOrder.ADJ_AFTER_NOUN, RelativeClauseOrder.REL_AFTER_NOUN);
     return _c_grammar_french;
 }
 
 var _c_grammar_german = 0;
 fn grammar_german() {
     if (_c_grammar_german != 0) { return _c_grammar_german; }
-    _c_grammar_german = _gp_new("de", Morphology.Fusional, WordOrder.SVO, 4, 1, 3, 0, 0);
+    # ADP_PREPOSITIONAL is the dominant value, not an absolute one: German has real
+    # postpositions (die Strasse entlang, dem Haus gegenueber) and circumpositions.
+    # Two-way present/preterite inflection; the future is periphrastic werden.
+    _c_grammar_german = _gp_new_full("de", Morphology.Fusional, WordOrder.SVO, 4, 1, 3, 0, 0,
+        Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, AdpositionOrder.ADP_PREPOSITIONAL, TenseMarking.TENSE_INFLECTIONAL, 0,
+        Evidentiality.EVID_NONE, NegationStrategy.NEG_PARTICLE, ArticleType.ART_DEFINITE_AND_INDEFINITE,
+        AdjectiveOrder.ADJ_BEFORE_NOUN, RelativeClauseOrder.REL_AFTER_NOUN);
     return _c_grammar_german;
 }
 
 var _c_grammar_russian = 0;
 fn grammar_russian() {
     if (_c_grammar_russian != 0) { return _c_grammar_russian; }
-    _c_grammar_russian = _gp_new("ru", Morphology.Fusional, WordOrder.SVO, 6, 1, 3, 0, 0);
+    # has_future = 0 is the subtle one: future time uses the non-past inflection of a
+    # perfective verb, the same paradigm as the imperfective present. There is no
+    # future morphology of its own.
+    _c_grammar_russian = _gp_new_full("ru", Morphology.Fusional, WordOrder.SVO, 6, 1, 3, 0, 0,
+        Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, AdpositionOrder.ADP_PREPOSITIONAL, TenseMarking.TENSE_INFLECTIONAL, 0,
+        Evidentiality.EVID_NONE, NegationStrategy.NEG_PARTICLE, ArticleType.ART_NONE,
+        AdjectiveOrder.ADJ_BEFORE_NOUN, RelativeClauseOrder.REL_AFTER_NOUN);
     return _c_grammar_russian;
 }
 
 var _c_grammar_korean = 0;
 fn grammar_korean() {
     if (_c_grammar_korean != 0) { return _c_grammar_korean; }
-    _c_grammar_korean = _gp_new("ko", Morphology.Agglutinative, WordOrder.SOV, 0, 0, 0, 0, 1);
+    # has_future = -1 (disputed): -gess- fills the tense slot but is core-modal, and
+    # the ordinary future is periphrastic -(u)l geos-i-.
+    # EVID_BORDERLINE, but the strongest case in this set: -deo- (retrospective) is a
+    # bound inflectional suffix, unlike Japanese's particles. Still not obligatory.
+    # NEG_NO_DOMINANT: long -ji anh- and short an/mot are both fully productive.
+    _c_grammar_korean = _gp_new_full("ko", Morphology.Agglutinative, WordOrder.SOV, 0, 0, 0, 0, 1,
+        Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, AdpositionOrder.ADP_POSTPOSITIONAL,
+        TenseMarking.TENSE_INFLECTIONAL, 0 - 1,
+        Evidentiality.EVID_BORDERLINE, NegationStrategy.NEG_NO_DOMINANT, ArticleType.ART_NONE,
+        AdjectiveOrder.ADJ_BEFORE_NOUN, RelativeClauseOrder.REL_BEFORE_NOUN);
     return _c_grammar_korean;
 }
 
 var _c_grammar_portuguese = 0;
 fn grammar_portuguese() {
     if (_c_grammar_portuguese != 0) { return _c_grammar_portuguese; }
-    _c_grammar_portuguese = _gp_new("pt", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+    _c_grammar_portuguese = _gp_new_full("pt", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0,
+        Alignment.ALIGN_NOMINATIVE_ACCUSATIVE, AdpositionOrder.ADP_PREPOSITIONAL, TenseMarking.TENSE_INFLECTIONAL, 1,
+        Evidentiality.EVID_NONE, NegationStrategy.NEG_PARTICLE, ArticleType.ART_DEFINITE_AND_INDEFINITE,
+        AdjectiveOrder.ADJ_AFTER_NOUN, RelativeClauseOrder.REL_AFTER_NOUN);
     return _c_grammar_portuguese;
 }
 

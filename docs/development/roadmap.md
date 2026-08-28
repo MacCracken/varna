@@ -81,14 +81,44 @@ languages points at a copy-paste from the Mandarin entry.
       they are breathy in all four. Decide one transcription and apply it; the
       assertion in `tests/features.tcyr` that pins the current state documents it.
 
-### 2.3.0 — Typological Depth (P2)
+### 2.3.x — Typological Depth (P2)
 
-- [ ] **Grammar expansion** toward WALS parity: alignment type (nom-acc/erg-abs/active-stative), adposition order, tense/aspect system, evidentiality, negation strategy, adjective order, relative clause order, article type
-- [ ] **Language classification**: Add `family`, `subfamily`, `genus` to `LanguageInfo` (Indo-European > Germanic > West Germanic)
-- [ ] **Missing script entries**: Hebrew, Thai, Tamil, Georgian, Ethiopic, Myanmar, Khmer, Lao, Bengali (9 scripts for already-registered languages)
-- [ ] **Glottocode support**: Add a nullable `glottocode` field (str) alongside ISO 639 codes
-- [ ] **Endangerment status**: `EndangermentLevel` enum (Safe/Vulnerable/Threatened/Shifting/Moribund/NearlyExtinct/Extinct)
-- [ ] **Geographic metadata**: Latitude/longitude per language, macro-area classification
+**2.3.0 (grammar expansion) has landed.** The verified data for the two remaining
+slices is in [typology-data.md](typology-data.md) — gathered and adversarially
+verified, so 2.3.1 and 2.3.2 are encoding work rather than research work. Read that
+file's caveats first.
+
+The "Missing script entries" sub-item was listed here in error: all nine scripts
+shipped at **2.1.6**.
+
+#### 2.3.1 — Language classification
+
+- [ ] `family`, `subfamily`, `genus` on `LanguageInfo` (Indo-European > Germanic >
+      West Germanic). Table for all 51 is in typology-data.md; the verifier raised
+      **0 disputes** on it. Rejected groupings (Altaic, Ural-Altaic, Nostratic) were
+      explicitly excluded during gathering — Japanese is Japonic, Korean Koreanic,
+      Georgian Kartvelian.
+
+#### 2.3.2 — Endangerment and geography
+
+- [ ] `EndangermentLevel` enum (Safe/Vulnerable/Threatened/Shifting/Moribund/
+      NearlyExtinct/Extinct), macro-area, and approximate lat/long per language.
+- [ ] **Source Korean separately.** The gathering pass returned 50 of 51 rows and
+      silently dropped `ko`; the verifier did not catch it, because a reviewer sees
+      only the claims it is given, never the ones that are missing.
+- [ ] Decide the semantics for `la`, `grc`, `sa` and `lzh` before encoding — whether
+      a liturgical or scholarly language with no native speakers is `Extinct`.
+- [ ] Treat the coordinates as approximate centroids, and say so in the API docs.
+      They were generated, not looked up.
+
+#### Data: Glottocode support
+
+Deferred out of 2.3.0 and **not** a coding task. Glottocodes are opaque identifiers
+(`stan1293`, `nucl1301`) that can only be looked up. Generating them from memory
+would produce plausible-looking fabrications indistinguishable from real ones, which
+is the worst failure mode for a reference corpus.
+
+- [ ] Obtain the 51 Glottocodes from Glottolog itself, then add the nullable field.
 
 ### 2.4.0 — Gematria & Numeric Letter Values (P2)
 
