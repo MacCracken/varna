@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **docs/development/roadmap.md** — reduced to open work only. The `Completed`
+  section (2.1.2 back through the 0.x Rust-crate line) is dropped; release history
+  lives in this file and the git tags. Added a `2.1.x — Carry-over` section for
+  work identified but not taken: 2.1.3 port the Rust integration suites, 2.1.4
+  remove `rust-old/` (gated on 2.1.3), 2.1.5 the deferments from the 2.1.2
+  hardening sweep, 2.1.6 script-registry completeness. The retired `v1.0 Criteria`
+  checklist left one unmet item (shabda/shabdakosh consumption), now under
+  `Downstream`; its "full JSON roundtrip tests for all public types" line was
+  inaccurate post-port and is corrected there.
+- **docs/development/state.md**, **CLAUDE.md** — record the port-completeness
+  verdict, and correct CLAUDE.md's claim that `rust-old/` is "gitignored from CI"
+  (it is tracked; only `rust-old/target/` is ignored).
+
+### Verified
+
+- **Rust → Cyrius port is complete at the API level.** 19 Rust modules map 1:1 to
+  19 Cyrius modules (plus `util.cyr`); all 150 Rust `pub fn` have Cyrius
+  counterparts, checked name by name; the 48 language inventories match exactly.
+  Nothing in `src/` or `tests/` compiles against `rust-old/` — the 93 references
+  across 49 files are provenance comments.
+- **The gap is test coverage, not code.** The four suites under `rust-old/tests/`
+  — `invariants.rs` (33), `adversarial.rs` (54), `integration.rs` (33),
+  `serde_roundtrip.rs` (27) — were never ported. `adversarial.rs` already contains
+  `registry_info_very_long_code`, `phoneme_find_very_long_string` and
+  `error_display_very_long`: the class of test that would have caught the 2.1.2
+  heap overflows. `rust-old/` is therefore **not yet safe to delete** — porting
+  those suites first is scheduled as 2.1.3.
+- **26 of 27 checkable Rust invariants hold** against current Cyrius data
+  (uniqueness, consonant+vowel totals, no duplicate/empty IPA symbols, well-formed
+  Unicode ranges, 25-entry Swadesh lists with indices 1-25, numeral tables,
+  registered dialect parents and cognate languages). The 27th,
+  `registry_script_codes_resolve`, finds 9 languages whose primary script is
+  unregistered — **not a port regression**: the Rust invariant explicitly tolerated
+  the same gap ("Some scripts may not be registered yet (Thai, Beng, etc.)").
+  Tracked as 2.1.6.
+
+
 ## [2.1.2] - 2026-08-27
 
 Hardening release from a P(-1) scaffold sweep. Six memory-safety defects fixed —

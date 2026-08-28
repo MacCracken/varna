@@ -28,8 +28,11 @@ lines of Rust preserved at `rust-old/` for parity reference. See
 
 ## Source
 
-- Rust reference: 8386 lines at `rust-old/` (frozen, do not edit).
-- Cyrius port (in-flight, module by module against the `rust-old/` oracle):
+- Rust reference: 8386 lines at `rust-old/` (frozen, do not edit). Port verified
+  complete at the API level (2026-08-27): 19 Rust modules → 19 Cyrius modules,
+  150/150 `pub fn` covered, 48/48 inventories matching by name. The four
+  standalone test suites under `rust-old/tests/` are the outstanding gap.
+- Cyrius port (complete, module by module against the `rust-old/` oracle):
   - ✅ `src/error.cyr` — VarnaError codes
   - ✅ `src/phoneme.cyr` — phoneme types, builder, `english`/`sanskrit`/`greek`
   - ✅ `src/inventories.cyr` — 48 extended language inventories (51 languages total)
@@ -104,17 +107,17 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 ## Next
 
 The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35) and 2.1.2 a hardening sweep.
-Remaining work is post-port:
 
-- **2.0.1 — remove `rust-old/`** (planned, separate session, after another review
-  sweep). `rust-old/` is currently kept as the frozen parity oracle per
-  [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md). When it's removed, sweep the
-  references that point into it:
-  - ADR 0001 — supersede/annotate the "preserve `rust-old/`" decision
-  - CHANGELOG `[2.0.0]`, SECURITY.md (`frozen in rust-old/`), CLAUDE.md, this file, roadmap
-  - module headers (`# Ported from rust-old/src/...`) across `src/*.cyr`
-  - `docs/benchmarks-rust-vs-cyrius.md` bottom pointer; `.gitignore` `/rust-old/target/`
-  - the Rust criterion numbers are already preserved in `docs/benchmarks-rust-vs-cyrius.md`,
-    so removal loses no benchmark history
+See the [roadmap](roadmap.md) `2.1.x — Carry-over` section for the scheduled items
+(2.1.3 test-suite port, 2.1.4 `rust-old/` removal, 2.1.5 deferred hardening work,
+2.1.6 script-registry completeness). In brief:
+
+- **`rust-old/` removal is gated on porting the Rust integration suites.** The
+  API port is verified complete — all 150 Rust `pub fn` have Cyrius counterparts
+  and the 48 inventories match by name — but the four suites under
+  `rust-old/tests/` (147 tests: `invariants` 33, `adversarial` 54, `integration`
+  33, `serde_roundtrip` 27) were never carried over. Delete the directory and the
+  record of what they asserted goes with it. Port, then delete.
 - **Optimization** (unstarted, see `docs/benchmarks-rust-vs-cyrius.md`): cache the immutable
   pre-built inventories/scripts/profiles (build-once); intern lookups. Parity-safe wins.
+  Held back from 2.1.2 because it changes public semantics — see roadmap 2.1.5.

@@ -2,176 +2,124 @@
 
 > **Status**: v2.1 (Cyrius) | **Current**: 2.1.2
 >
+> Open work only — shipped releases are in [CHANGELOG.md](../../CHANGELOG.md).
+>
 > Items marked `[S]` also unblock **sankhya** (ancient mathematical systems).
 >
-> The 0.x–1.0 history below records the **Rust crate** (frozen in `rust-old/`).
-> Mechanics named there (`Cow`, `#[non_exhaustive]`, `criterion`, `serde`) are
-> historical; their Cyrius equivalents are in [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md).
-> Backlog signatures are illustrative — they land as Cyrius forms (tagged enums,
-> sentinel returns, `str` literals; no `Cow`/`Option` types).
+> Backlog signatures are illustrative and pre-date the port; they land as Cyrius
+> forms (tagged enums, sentinel returns, `str` literals — no `Cow`/`Option`
+> types). Rust mechanics named in them (`Cow`, `#[non_exhaustive]`, `criterion`,
+> `serde`) map to Cyrius equivalents per [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md).
 
-## Completed
+## Shipped
 
-### 2.1.2 — Hardening Sweep (2026-08-27)
+Release history lives in [CHANGELOG.md](../../CHANGELOG.md) and the git tags —
+`2.1.2` (hardening sweep), `2.1.1` / `2.1.0` (toolchain maintenance), `2.0.0`
+(the Cyrius port), and the `0.x`–`1.0` Rust-crate line before it. This file
+tracks only what is still open.
 
-P(-1) scaffold sweep: audit, repair, optimise.
+## 2.1.x — Carry-over
 
-- [x] **Heap overflow, `-D MCP`** — `_tool_err2` wrote an unbounded caller-supplied
-      parameter into a fixed `alloc(256)`; reachable from all five tools and the
-      unknown-tool path. All appends now carry the buffer capacity
-- [x] **Heap overflow, `-D HOOSH`** — same defect via `hoosh_answer_from_data`'s
-      unmatched `ipa` string
-- [x] **Out-of-bounds read** — `_utf8_len` trusts the lead byte, so a truncated
-      codepoint at the tail let `translit_apply` and `numerals_string_value` read past
-      the input. New `_utf8_step` clamps every stride to the bytes present
-- [x] **Output overflow** — `translit_apply` sized its buffer at `inlen * 4`, sound
-      only for tables that contract; now sized from the table's longest target and
-      bounds-checked regardless
-- [x] `registry_info` indexed (linear `streq` scan → `map_get`); `registry_all_codes`
-      cached instead of rebuilt per call — **the returned vec is now shared, read-only**
-- [x] Per-grapheme and per-character allocations removed from the transliteration and
-      numeral hot paths (the bump allocator never frees)
-- [x] `registry_phonemes` tied to `_registry_build` by test; `phoneme_builder_with_capacity`'s
-      ignored `cap` argument documented
-- [x] 54 new assertions across `tests/hardening.tcyr` + `tests/hardening_surfaces.tcyr`,
-      each verified to fail against the pre-fix code
-- [x] `registry_all_codes_iter` -92%, `transliterate_greek_word` -51%,
-      `numeral_string_value_word` -39%, `numeral_value_of_char` -38%,
-      `transliterate_devanagari_char` -37%; all other rows flat (interleaved A/B)
+Work identified but deliberately not taken in the release that surfaced it.
 
-### 2.1.1 — Toolchain Maintenance (2026-08-27)
+### 2.1.3 — Port the Rust integration suites [blocks 2.1.4]
 
-- [x] Cyrius toolchain pin bumped `6.4.69` → `6.5.35` (`cyrius.cyml [package].cyrius`)
-- [x] Vendored Cyrius stdlib re-resolved against the 6.5.35 snapshot — same 29-module
-      closure, 20 modules changed content (`bayan` most heavily, ~10.8k lines)
-- [x] `cyrius.lock` regenerated at 6.5.35 (`cyrius deps --verify` clean, 29/0) — and the
-      2.1.0 lock's wrong hash for `lib/syscalls_x86_64_agnos.cyr` fixed
-- [x] `cyrius deps` (include-graph walk) confirmed as the lock authority over 6.5.35's new
-      `cyrius lib sync`, which name-matches `[deps].stdlib` and resolves a closure missing
-      `atomic.cyr` (a transitive include of `lib/alloc.cyr`)
-- [x] Commented `[deps.bote]` recipe refreshed `2.7.6` → `3.3.7` and its companion notes
-      corrected against `dist/bote-core.deps` (12-module profile; `chrono` is the one
-      undeclared stdlib leaf)
-- [x] `dist/` gains the `cyrius distlib` sidecars + core profile bundle (`varna.deps`,
-      `varna-core.cyr`, `varna-core.deps`)
-- [x] Build gate now warning-free (6.5.35's `bayan` retyped the TOML string parsers that
-      emitted three pointer warnings per compile at 6.4.69)
-- [x] `scripts/bench-history.sh` records the toolchain version + measured timer floor, and
-      marks the pre-/post-6.5.19 benchmark-harness discontinuity in `BENCHMARKS.md`
-- [x] Stdlib refresh proved performance-neutral (harness held constant; all rows in noise)
-- [x] No public-API or linguistic-data changes; every build config + all tests stay green
+The 2.0.0 port carried every module's public API and its in-module unit tests,
+but **not** the four standalone suites under `rust-old/tests/` — 147 tests that
+never had a Cyrius counterpart:
 
-### 2.1.0 — Toolchain Maintenance (2026-07-21)
+| Suite | Tests | Status |
+|---|---|---|
+| `invariants.rs` | 33 | Structural guarantees; **not ported** |
+| `adversarial.rs` | 54 | Edge-case/robustness; **not ported** |
+| `integration.rs` | 33 | Cross-module; ~15 are serde-only, rest **not ported** |
+| `serde_roundtrip.rs` | 27 | N/A — no serde in Cyrius (see [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)) |
 
-- [x] Cyrius toolchain pin bumped `6.2.12` → `6.4.69` (`cyrius.cyml [package].cyrius`)
-- [x] Vendored Cyrius stdlib re-resolved against the 6.4.69 snapshot (`cyrius update`)
-- [x] `cyrius.lock` regenerated at 6.4.69 — pins the exact 29-module dependency closure
-      (`cyrius deps --verify` clean); dropped 8 vestigial entries never resolved or built
-      (`agnosys`/`bote-core`/`libro`/`majra`/`log`/`sakshi`/`sigil`/`patra`), added `bench`
-- [x] No public-API or linguistic-data changes; every build config + all tests stay green
+This is the highest-value item on the list. `adversarial.rs` is precisely the
+class of test that would have caught the 2.1.2 heap overflows years earlier — it
+already contains `registry_info_very_long_code`, `phoneme_find_very_long_string`,
+`error_display_very_long` and `transliteration_null_bytes`.
 
-### 2.0.0 — Cyrius Port (2026-06-16)
+The invariants were probed against current data during the 2.1.2 review: 26 of
+the 27 checkable ones hold. Porting them is guarding behaviour that is already
+correct, not repairing it — but nothing currently stops a future edit breaking
+them. Suggested landing spots: `tests/invariants.tcyr` and
+`tests/adversarial.tcyr`.
 
-- [x] Ported from a Rust crate to the Cyrius systems language ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md))
-- [x] `cyrius.cyml` manifest: `[package]` + `[build]` + `[lib]`/`[lib.core]` + `[deps]`
-- [x] Dependency mapping to Cyrius stdlib (serde/serde_json→`bayan`, thiserror→`result`/`tagged`, tracing→`log`/`sakshi`, criterion→`cyrius bench`); `bote-core` git dep under `-D MCP`
-- [x] Feature flags → `-D` build defines (`LOGGING`/`MCP`/`DAIMON`/`HOOSH`)
-- [x] Legacy `lipi`/`LIPI` naming retired → `varna`/`VARNA`
-- [x] Documentation ported (README, CLAUDE.md, architecture, CONTRIBUTING, SECURITY, this roadmap)
-- [x] Source-level reimplementation of every domain as `src/*.cyr` — 19 modules (15 core + 4 `-D` surfaces), 523 parity assertions green against the `rust-old/` oracle
+For the serde suite, the equivalent Cyrius concern is the hand-built JSON in
+`src/mcp.cyr`, which has 22 assertions in `tests/mcp.tcyr` against 27 Rust
+roundtrip tests. Worth a pass for output well-formedness (escaping, in
+particular — see the note under 2.1.5).
 
-### 0.1.0 — Scaffold (2026-03-30)
+### 2.1.4 — Remove `rust-old/` [gated on 2.1.3]
 
-- [x] Core type system: Phoneme, Script, GrammarProfile, Lexicon, LexEntry
-- [x] Articulatory features: Manner, Place, Height, Backness, voicing, rounding
-- [x] Writing system classification: Alphabet, Abugida, Abjad, Syllabary, Logographic, Mixed
-- [x] Grammar typology: Isolating, Agglutinative, Fusional, Polysynthetic
-- [x] Word order variants: SVO, SOV, VSO, VOS, OVS, OSV, Free
-- [x] Lexicon with Swadesh indexing and frequency ranking
-- [x] English (General American) phoneme inventory
-- [x] Error types with thiserror
-- [x] Optional structured logging
-- [x] Initial criterion benchmarks
+`rust-old/` is the frozen parity oracle: 35 files, 8,386 lines, 484K. The public
+API port is verified complete (all 150 Rust `pub fn` have Cyrius counterparts;
+48/48 inventories match by name), so nothing in `src/` depends on it. What still
+does is 2.1.3: once the directory is gone, we can no longer read what those 147
+tests asserted. Port first, delete second.
 
-### 0.1.0 — Scaffold Hardening (2026-03-31)
+When it goes, sweep with it:
 
-- [x] Cow<'static, str> migration for zero-alloc static inventories
-- [x] PartialEq/Eq derives on all public types
-- [x] #[non_exhaustive] on PhonemeKind variants with Phoneme::consonant/vowel constructors
-- [x] LabialVelar place of articulation, /w/ reclassified
-- [x] Tracing instrumentation on public methods
-- [x] Expanded test coverage (29 tests)
-- [x] Cargo.lock removed from tracking
+- 93 `rust-old/...` provenance references across 49 files (`# Ported from
+  rust-old/src/...` headers in `src/*.cyr` and `tests/*.tcyr`). Decide: keep as
+  historical provenance, or rewrite to cite [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)
+- `docs/benchmarks-rust-vs-cyrius.md` — a Rust-vs-Cyrius comparison that outlives
+  its subject; keep as a historical document or fold into the ADR
+- The `rust-old/target/` entry in `.gitignore`
+- The "Rust archive" line in `CLAUDE.md` and the `rust-old/` mentions in
+  `README.md`, `SECURITY.md`, `docs/guides/getting-started.md`,
+  `docs/development/state.md`
 
-### 0.2.0 — Sankhya Foundation & Script Registry (2026-03-31)
+The directory is tracked in git, so tags `1.0.0` and `2.0.0` keep it recoverable
+after deletion.
 
-- [x] `[S]` Sanskrit phoneme inventory (36 consonants + 15 vowels, 5 vargas for Katapayadi)
-- [x] `[S]` Greek phoneme inventory (20 consonants + 5 vowels)
-- [x] Script metadata for: Latin, Arabic, Devanagari, CJK, Cyrillic, Hangul, Kana
-- [x] `[S]` Script metadata for: Greek alphabet (Unicode range, directionality)
-- [x] Builder pattern for PhonemeInventory construction (`PhonemeInventoryBuilder`)
-- [x] Language registry with ISO 639 lookup (`registry` module)
+### 2.1.5 — Deferred from the 2.1.2 hardening sweep
 
-### 0.3.0 — Allophone & Phonotactics (2026-03-31)
+- [ ] **Cache the pre-built data constructors.** Every `phoneme_*` / `script_*` /
+      `grammar_*` / `swadesh_*` / `translit_*` / `numerals_*` constructor rebuilds
+      its whole structure on each call — `phoneme_english()` allocates an
+      inventory, a vec and 36 phoneme records every time, and `registry_phonemes`
+      calls it fresh on every lookup. With a bump allocator that never frees, a
+      consumer polling the registry leaks steadily, and this is the single largest
+      remaining cost in the inventory benchmarks.
 
-- [x] Allophone rules per language (`phoneme::allophone` — Environment, PhonemeClass, AllophoneRule, AllophoneRuleSet)
-- [x] Phonotactic constraints (`phoneme::syllable` — PhonotacticConstraint, ConstraintKind, Phonotactics)
-- [x] Syllable structure templates (SyllableTemplate — onset/nucleus/coda, English/Sanskrit/Japanese profiles)
-- [x] `[S]` Romanization/transliteration tables (`script::transliteration` — Devanagari↔IAST, Greek↔Beta Code)
-- [x] `[S]` Script-to-numeral mapping API (`script::numerals` — Devanagari digits, Greek isopsephy)
+      Held back deliberately: caching turns each constructor into a shared
+      singleton, so a consumer mutating a returned inventory through the
+      `phoneme_builder_*` functions would corrupt every other caller's copy. That
+      is a public-API semantic change wanting its own release and migration note —
+      `registry_all_codes` took exactly this change in 2.1.2 and is now documented
+      read-only. Options: cache and document read-only; or cache plus an explicit
+      `phoneme_clone` for callers needing a mutable copy.
+- [ ] **JSON escaping in `src/mcp.cyr`.** Tool payloads interpolate strings into
+      hand-built JSON with no escaping. Every value written today is either a
+      validated ISO code or internal data, so nothing malformed reaches the output
+      — but the invariant is unenforced and one new field could break it.
+- [ ] **`varna_translate_ipa` returns a bare string** where the other four MCP
+      tools return JSON objects. A consumer parsing every payload as JSON gets
+      malformed data from this one. Decide the contract and make it uniform.
 
-### 0.4.0 — Extended Coverage (2026-03-31)
+### 2.1.6 — Script registry completeness
 
-- [x] `[S]` Yucatec Maya phoneme inventory (21C + 10V, ejectives for Mayan calendar)
-- [x] 11 additional language inventories: Swahili, Yoruba, Zulu, Thai, Vietnamese, Tagalog, Turkish, Finnish, Hawaiian, Nahuatl (14 total languages)
-- [x] Dialect/variety support (`dialect` module — LanguageVariety, VarietyKind, phoneme overlays)
-- [x] Cognate detection types (`lexicon::cognate` — CognateSet, CognateEntry, proto-forms)
-- [x] Loanword tracking and etymology (`Etymology`, `BorrowingType`)
+Nine registered languages name a primary script that `script_by_code` cannot
+resolve, so `registry_primary_script` silently returns 0 for them: **Thai**
+(Thai), **Bengali** (Beng), **Tamil** (Taml), **Amharic** (Ethi), **Hebrew**
+(Hebr), **Georgian** (Geor), **Burmese** (Mymr), **Khmer** (Khmr), **Lao**
+(Laoo). `src/script.cyr` defines 10 scripts; the registry names 17.
 
-### 0.4.1 — Classical & Ancient Scripts (2026-03-31)
-
-- [x] `[S]` Cuneiform script metadata (Xsux) + Babylonian sexagesimal numeral system
-- [x] `[S]` Egyptian hieroglyphic script metadata (Egyp) + additive decimal numeral system
-- [x] `[S]` Chinese rod numeral system (positional decimal, vertical forms)
-- [x] Classical/Liturgical language profiles: Latin, Classical Arabic, Koine Greek, Literary Chinese (Sanskrit already in 0.2.0)
-- [x] Dead script classification: `ScriptStatus` (Living/Limited/Historical) + attestation periods
-
-### 0.5.0 — Core Languages (2026-03-31)
-
-- [x] Language inventories: Mandarin, Hindi, Japanese, Spanish, French, German, Russian, Korean, Portuguese (Arabic in 0.4.1)
-- [x] Grammar profiles for all 10 core languages (`grammar::by_code()`)
-- [x] Swadesh-25 starter lists for each language (`lexicon::swadesh::by_code()`, 250 entries)
-
-### 0.6.0 — AI Integration (2026-03-31)
-
-- [x] MCP tools: `lipi_phonemes`, `lipi_script`, `lipi_grammar`, `lipi_translate_ipa`, `lipi_compare` (feature-gated `mcp`)
-- [x] Daimon agent registration: `AgentRegistration` with 6 capabilities (feature-gated `daimon`)
-- [x] Hoosh LLM query interface: `LanguageQuery`, `answer_from_data()` for data-only resolution (feature-gated `hoosh`)
-
-## Deferred from 2.1.2
-
-### Cache the pre-built data constructors
-
-Every `phoneme_*` / `script_*` / `grammar_*` / `swadesh_*` / `translit_*` /
-`numerals_*` constructor rebuilds its whole structure on each call —
-`phoneme_english()` allocates an inventory, a vec and 36 phoneme records every
-time, and `registry_phonemes` calls it fresh on every lookup. With a bump
-allocator that never frees, a consumer polling the registry leaks steadily, and
-this is the single largest remaining cost in the inventory benchmarks (the
-`*_phoneme_inventory` rows are almost entirely construction).
-
-Deferred out of the 2.1.2 hardening sweep deliberately: caching turns each
-constructor into a shared singleton, so a consumer mutating a returned inventory
-through the `phoneme_builder_*` functions would corrupt every other caller's
-copy. That is a public-API semantic change and wants its own release with a
-migration note — `registry_all_codes` took exactly this change in 2.1.2 and is
-now documented read-only. Options: cache and document read-only; or cache plus an
-explicit `phoneme_clone` for callers that need a mutable copy.
+Not a port regression — the Rust crate had the identical gap, and its
+`registry_script_codes_resolve` invariant explicitly tolerated it ("Some scripts
+may not be registered yet (Thai, Beng, etc.)"). Adding the nine closes the gap
+and lets 2.1.3 port that invariant in its strict form.
 
 ## Post-1.0 Roadmap — "World's Leading Authority"
 
 > Gaps identified by comparing varna against PHOIBLE, WALS, Glottolog, Unicode CLDR,
 > and the IPA specification. Prioritized by impact on credibility and utility.
+>
+> The `1.x` numbering below is the **pre-port** plan and no longer tracks the
+> shipping version (varna is on `2.1.x`). Read the headings as priority tiers
+> P1-P4, not as releases; they will be renumbered when one is scheduled.
 
 ### 1.1.0 — Phonological Depth (P1)
 
@@ -224,13 +172,14 @@ Extend `script::numerals` into a full character→number mapping system across s
 - [ ] Sign language phonology (handshape, location, movement features)
 - [ ] ScriptType.Featural for Hangul reclassification
 
-## v1.0 Criteria
+## Downstream
 
-- [x] 50+ language inventories with verified phoneme data (51 languages)
-- [x] All modules have 80%+ test coverage (98.53% measured on the Rust crate; re-measured under `cyrius coverage` post-port)
-- [x] `cyrius bench` benchmarks with 3-point trend history (`bench-history.csv`)
-- [x] Full `bayan`-JSON roundtrip tests for all public types
-- [ ] shabda + shabdakosh consuming varna for multilingual G2P (external Cyrius project work)
-- [x] `[S]` sankhya consuming varna for script-aware numeral display and transliteration
-- [x] Documentation: architecture overview, usage guide, API docs
-- [x] English grammar profile added; 11 grammar profiles total
+- [ ] shabda + shabdakosh consuming varna for multilingual G2P (external Cyrius
+      project work — the last unmet v1.0 criterion; sankhya, jnana and vidya
+      already consume it)
+
+> The old **v1.0 Criteria** checklist retired here: varna passed it before the
+> 2.0.0 port and everything on it except the line above is met. One of its
+> entries — "full JSON roundtrip tests for all public types" — did **not**
+> survive the port intact: the Rust `serde_roundtrip.rs` suite was never carried
+> over and `src/mcp.cyr` hand-builds its JSON. See 2.1.3.
