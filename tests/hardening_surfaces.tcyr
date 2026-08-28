@@ -7,6 +7,7 @@
 # rendered payload must always stay inside its buffer.
 
 include "src/util.cyr"
+include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
 include "src/script.cyr"

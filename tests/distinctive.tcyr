@@ -13,6 +13,7 @@
 
 include "src/error.cyr"
 include "src/util.cyr"
+include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/features.cyr"
 include "src/inventories.cyr"

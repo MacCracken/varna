@@ -7,6 +7,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.4] - 2026-08-27
+
+Last slice of the 2.2.x Phonological Depth line: tone becomes structured data.
+Includes one **breaking** change to `phoneme_tones`.
+
+### Breaking
+
+- **phoneme** — `phoneme_tones(inv)` now returns a vec of **Tone records** rather
+  than a vec of Chao strings.
+
+  **Migration**: wrap element reads in `tone_letters(t)` to get the old string
+  back. Nothing the previous representation carried is lost — the letters are
+  preserved verbatim, and the record adds contour, register, endpoint levels and
+  features alongside them.
+
+  `phoneme_builder_tones` still *takes* strings and parses them, so the corpus
+  stays declarative and the letters remain the single source of truth.
+
+### Added
+
+- **src/tone.cyr** — a new module (wired into `src/main.cyr` and both
+  `cyrius.cyml` profiles) parsing Chao tone-letter notation into records:
+
+  ```
+  tone_parse(letters)   -> Tone
+  tone_contour(t)       -> level / rising / falling / dipping / peaking
+  tone_register(t)      -> high / mid / low  (from the mean pitch level)
+  tone_start_level(t), tone_end_level(t)     -> the 1-5 Chao scale
+  tone_features(t)      -> glottalized (ˀ) | checked (final ʔ)
+  tone_letters(t)       -> the original string
+  ```
+
+  U+02E5..U+02E9 normalise to 5..1; ˀ (U+02C0) and a final ʔ (U+0294) are recorded
+  as features rather than pitch. Unmodelled bytes are skipped rather than rejected,
+  so an unknown diacritic degrades the record instead of discarding the tone.
+
+- **tests/tone.tcyr** (163 assertions). Expectations come from each language's
+  tonology, not from re-running the parser: Mandarin's 55/35/214/51 must come out
+  level/rising/dipping/falling, Vietnamese ngã and nặng must be the glottalised
+  pair, the Literary Chinese entering tone must be checked. Plus corpus-wide
+  structure — every level on the 1-5 scale, every contour consistent with its own
+  endpoints — and a round-trip check that every record returns its original letters.
+
+### Notes
+
+- **Nine languages carry tones, not the five the roadmap listed.** It named `zh`,
+  `yo`, `th`, `vi`, `lzh`; **Hausa, Burmese, Somali and Lao** also have tone
+  inventories, for 37 tones in total. The existing tonal/non-tonal test in
+  `tests/integration.tcyr` had not caught this because those four appeared in
+  neither of its two hard-coded lists. The corpus-wide assertion here pins 9 and 37,
+  so a tenth cannot be added silently.
+
+- **Parsed, not hand-transcribed** — the same choice `src/features.cyr` made at
+  2.2.3, for the same reason: two hand-maintained encodings of one fact drift apart.
+
+- **A data error surfaced and was left alone.** Both Thai and Vietnamese list a
+  `˨˩˦` tone, which is the shape of *Mandarin's* third tone. Thai's inventory is
+  missing its falling tone `˥˩` and has `˨˩˦` where that should be; Vietnamese's
+  huyền should be `˨˩`, not `˨˩˦`. The same wrong value in two unrelated languages
+  points at a copy-paste from the Mandarin entry. Correcting tone transcriptions is
+  a data change beyond this release, so it is filed in the roadmap rather than made
+  silently — the structured records are what made it visible.
+
+- **Adding a module costs 19 test files.** Every test including `src/phoneme.cyr`
+  needed `src/tone.cyr` ahead of it, since the builder now calls into it. Worth
+  knowing before the next module lands.
+
+### Performance
+
+- **Flat** — no benchmark row moves more than run-to-run noise. Memory for all 51
+  inventories goes 139,152 → 147,920 bytes (+8,768) for the 37 tone records and
+  their vecs, paid once at build since the constructors have been cached since
+  2.1.5.
+
+
 ## [2.2.3] - 2026-08-27
 
 Fourth slice of the 2.2.x Phonological Depth line: the SPE/Hayes distinctive-feature

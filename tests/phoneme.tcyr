@@ -2,6 +2,7 @@
 # Mirrors the #[test] assertions in v1.x Rust src/phoneme/mod.rs.
 
 include "src/error.cyr"
+include "src/tone.cyr"
 include "src/phoneme.cyr"
 
 fn main() {

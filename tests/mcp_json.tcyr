@@ -12,6 +12,7 @@
 # because the buffers are fixed-size and the append path is manual.
 
 include "src/util.cyr"
+include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
 include "src/script.cyr"

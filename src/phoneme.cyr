@@ -9,7 +9,8 @@
 #                    [48]=features (PhonemeFeature bitmask)
 #                    consonant → f0=manner f1=place    f2=voiced(0/1)
 #                    vowel     → f0=height f1=backness f2=rounded(0/1)
-#   Inventory (40B): [0]=code  [8]=name  [16]=phonemes(vec)  [24]=stress  [32]=tones(vec|0)
+#   Inventory (40B): [0]=code  [8]=name  [16]=phonemes(vec)  [24]=stress
+#                    [32]=tones(vec of Tone records | 0)
 
 # Airstream mechanism — orthogonal to manner of articulation.
 #
@@ -208,8 +209,22 @@ fn phoneme_builder_stress(inv, pattern) {
     return inv;
 }
 
+# Set the inventory's tone inventory from a vec of Chao tone-letter strings.
+#
+# BREAKING at 2.2.4: the strings are parsed into Tone records (src/tone.cyr), so
+# `phoneme_tones` now returns a vec of records rather than a vec of cstrings. The
+# builder still takes strings — that keeps the corpus declarative and means the
+# letters remain the single source of truth. `tone_letters(t)` returns the original
+# string, so nothing the old representation carried is lost.
 fn phoneme_builder_tones(inv, tones) {
-    store64(inv + 32, tones);
+    var parsed = vec_new();
+    var n = vec_len(tones);
+    var i = 0;
+    while (i < n) {
+        vec_push(parsed, tone_parse(vec_get(tones, i)));
+        i = i + 1;
+    }
+    store64(inv + 32, parsed);
     return inv;
 }
 

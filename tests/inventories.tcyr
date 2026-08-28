@@ -2,6 +2,7 @@
 # Counts: 39 from the v1.x Rust inventory_test! macro + 9 verified against source.
 
 include "src/error.cyr"
+include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
 

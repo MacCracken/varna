@@ -3,6 +3,7 @@
 # value equality, which map directly to `contains` on the hand-built JSON).
 
 include "src/util.cyr"
+include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
 include "src/script.cyr"

@@ -1,6 +1,7 @@
 # tests/registry.tcyr — registry parity tests (v1.x Rust src/registry.rs).
 
 include "src/error.cyr"
+include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
 include "src/script.cyr"

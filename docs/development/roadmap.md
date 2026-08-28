@@ -35,17 +35,18 @@ is the `2.2.0+` tier below.
 > Renumbered from the pre-port `1.1.0`-`1.5.0` plan (2026-08-27) — the old numbers
 > predated the 2.0.0 Cyrius port and no longer tracked the shipping version.
 
-### 2.2.x — Phonological Depth (P1)
+### 2.2.x — Phonological Depth (P1) — COMPLETE
 
-Split out of the original single 2.2.0 item. **2.2.0 (airstream), 2.2.1 (consonant secondary features), 2.2.2 (vowel
-features) and 2.2.3 (distinctive features) have landed**; 2.2.4 is the last.
+All five slices have landed: 2.2.0 (airstream), 2.2.1 (consonant secondary
+features), 2.2.2 (vowel features), 2.2.3 (distinctive features) and 2.2.4
+(structured tone). See the CHANGELOG.
 
-The original bullet proposed adding `Click`/`Implosive`/`Ejective` to the `Manner`
-enum. That was rejected during 2.2.0: they are airstream mechanisms, not manners, and
-folding them in would have destroyed the manner of 19 of the 38 affected phonemes
-(/ŋǀ/ is a *nasal* click, /t͡sʼ/ an *ejective affricate*, /ǁ/ a *lateral* click).
-`Airstream` is a separate axis, which is also how PHOIBLE models it. See the 2.2.0
-CHANGELOG entry.
+The original single bullet proposed adding `Click`/`Implosive`/`Ejective` to the
+`Manner` enum. That was rejected during 2.2.0: they are airstream mechanisms, not
+manners, and folding them in would have destroyed the manner of 19 of the 38
+affected phonemes. `Airstream` is a separate axis, as in PHOIBLE.
+
+Three data items surfaced along the way and remain open:
 
 #### Data: ATR vowel systems
 
@@ -61,6 +62,17 @@ have incomplete vowel systems — so it is a data item, not a feature bit.
       i.e. 10 qualities; likewise incomplete.
 - [ ] Then add the `AdvancedTongueRoot` bit, once something sets it.
 
+#### Data: Thai and Vietnamese tone transcription
+
+Surfaced by 2.2.4's structured records. Both languages list a `˨˩˦` tone, which is
+the shape of *Mandarin's* third tone; the same wrong value in two unrelated
+languages points at a copy-paste from the Mandarin entry.
+
+- [ ] **Thai** — has `˧ ˨˩ ˨˩˦ ˦˥ ˩˧˥`. The falling tone `˥˩` is missing and `˨˩˦`
+      stands where it should be.
+- [ ] **Vietnamese** — huyền is listed as `˨˩˦`; it is a low falling tone, `˨˩`.
+- [ ] Re-check the other seven toned inventories against a reference while there.
+
 #### Data: Sanskrit voiced-aspirate transcription
 
 - [ ] Sanskrit spells its voiced aspirates /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/ with U+02B0 while
@@ -68,12 +80,6 @@ have incomplete vowel systems — so it is a data item, not a feature bit.
       2.2.1 derives `Aspirated` for one and `Breathy` for the other. Phonetically
       they are breathy in all four. Decide one transcription and apply it; the
       assertion in `tests/features.tcyr` that pins the current state documents it.
-
-#### 2.2.4 — Tone as structured data
-
-- [ ] Replace the string tone labels with `Tone` records (contour, register,
-      features). Five languages carry tone lists today (`zh`, `yo`, `th`, `vi`,
-      `lzh`), pinned by the tonal/non-tonal invariants in `tests/integration.tcyr`.
 
 ### 2.3.0 — Typological Depth (P2)
 

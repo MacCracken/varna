@@ -1,0 +1,269 @@
+# tests/tone.tcyr — structured tone, added at 2.2.4.
+#
+# An inventory's tones were a vec of opaque Chao strings; they are now records with
+# contour, register, endpoint levels and features, parsed from those same strings.
+# `tone_letters` returns the original, so the change adds structure without losing
+# anything.
+#
+# The expectations here come from the tonology of each language rather than from
+# re-running the parser: Mandarin's four tones are 55/35/214/51 and are level,
+# rising, dipping and falling in that order; Vietnamese ngã and nặng are the
+# glottalised pair; the Literary Chinese entering tone is checked. If the parser
+# disagrees with any of that, it is the parser that is wrong.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/features.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+# Assert the whole shape of one tone in an inventory's list.
+fn _tone_is(inv, idx, letters, contour, register, start, end, feats, label) {
+    var ts = phoneme_tones(inv);
+    assert(ts != 0, label);
+    if (ts == 0) { return 0; }
+    assert(idx < vec_len(ts), label);
+    if (idx >= vec_len(ts)) { return 0; }
+    var t = vec_get(ts, idx);
+    assert(streq(tone_letters(t), letters), label);
+    assert_eq(tone_contour(t), contour, label);
+    assert_eq(tone_register(t), register, label);
+    assert_eq(tone_start_level(t), start, label);
+    assert_eq(tone_end_level(t), end, label);
+    assert_eq(tone_features(t), feats, label);
+    return 0;
+}
+
+fn _count_contour(inv, contour) {
+    var ts = phoneme_tones(inv);
+    if (ts == 0) { return 0; }
+    var c = 0;
+    var i = 0;
+    while (i < vec_len(ts)) {
+        if (tone_contour(vec_get(ts, i)) == contour) { c = c + 1; }
+        i = i + 1;
+    }
+    return c;
+}
+
+fn main() {
+    alloc_init();
+    var i = 0;
+
+    # ---------------------------------------------------------------
+    test_group("tone_parse_api");
+    # Level tones: one pitch letter, start == end, no movement.
+    var high = tone_parse("˥");
+    assert_eq(tone_contour(high), ToneContour.TONE_LEVEL, "˥ is level");
+    assert_eq(tone_register(high), ToneRegister.TONE_HIGH, "˥ is high register");
+    assert_eq(tone_start_level(high), 5, "˥ starts at 5");
+    assert_eq(tone_end_level(high), 5, "˥ ends at 5");
+    assert_eq(tone_is_contour(high), 0, "˥ is not a contour");
+    assert(streq(tone_letters(high), "˥"), "the original string is preserved");
+
+    var low = tone_parse("˩");
+    assert_eq(tone_register(low), ToneRegister.TONE_LOW, "˩ is low register");
+    assert_eq(tone_start_level(low), 1, "˩ starts at 1");
+    var mid = tone_parse("˧");
+    assert_eq(tone_register(mid), ToneRegister.TONE_MID, "˧ is mid register");
+    assert_eq(tone_start_level(mid), 3, "˧ starts at 3");
+
+    # Contours.
+    var rise = tone_parse("˧˥");
+    assert_eq(tone_contour(rise), ToneContour.TONE_RISING, "35 rises");
+    assert_eq(tone_is_contour(rise), 1, "35 is a contour");
+    var fall = tone_parse("˥˩");
+    assert_eq(tone_contour(fall), ToneContour.TONE_FALLING, "51 falls");
+    assert_eq(tone_start_level(fall), 5, "51 starts high");
+    assert_eq(tone_end_level(fall), 1, "51 ends low");
+    var dip = tone_parse("˨˩˦");
+    assert_eq(tone_contour(dip), ToneContour.TONE_DIPPING, "214 dips");
+    var peak = tone_parse("˩˥˩");
+    assert_eq(tone_contour(peak), ToneContour.TONE_PEAKING, "151 peaks");
+    # A repeated level is still level.
+    assert_eq(tone_contour(tone_parse("˥˥")), ToneContour.TONE_LEVEL, "55 is level, not a contour");
+
+    # Names render.
+    assert(streq(tone_contour_name(ToneContour.TONE_DIPPING), "dipping"), "contour names render");
+    assert(streq(tone_register_name(ToneRegister.TONE_LOW), "low"), "register names render");
+    assert(streq(tone_contour_name(99), "unknown contour"), "unknown contour falls back");
+    assert(streq(tone_register_name(99), "unknown register"), "unknown register falls back");
+
+    # ---------------------------------------------------------------
+    test_group("tone_features");
+    # ˀ marks creaky phonation through the tone; a final ʔ marks a checked syllable.
+    var glot = tone_parse("˧ˀ˥");
+    assert_eq(tone_has_feature(glot, ToneFeature.TONE_GLOTTALIZED), 1, "˧ˀ˥ is glottalized");
+    assert_eq(tone_has_feature(glot, ToneFeature.TONE_CHECKED), 0, "˧ˀ˥ is not checked");
+    assert_eq(tone_contour(glot), ToneContour.TONE_RISING, "the ˀ does not disturb the contour");
+    assert_eq(tone_start_level(glot), 3, "the ˀ does not disturb the pitch levels");
+    assert_eq(tone_end_level(glot), 5, "nor the endpoint");
+    var checked = tone_parse("˩ʔ");
+    assert_eq(tone_has_feature(checked, ToneFeature.TONE_CHECKED), 1, "˩ʔ is checked");
+    assert_eq(tone_has_feature(checked, ToneFeature.TONE_GLOTTALIZED), 0, "˩ʔ is not glottalized");
+    assert_eq(tone_contour(checked), ToneContour.TONE_LEVEL, "˩ʔ is a level tone");
+
+    # ---------------------------------------------------------------
+    test_group("robustness");
+    # Unmodelled marks are skipped rather than rejected — a tone with an unknown
+    # diacritic should degrade, not vanish.
+    var odd = tone_parse("˥x˩");
+    assert_eq(tone_contour(odd), ToneContour.TONE_FALLING, "unknown bytes are skipped");
+    assert_eq(tone_start_level(odd), 5, "and the pitch letters still parse");
+    # No pitch letters at all still yields a usable record rather than a null.
+    var empty = tone_parse("");
+    assert(empty != 0, "an empty string still yields a record");
+    assert_eq(tone_contour(empty), ToneContour.TONE_LEVEL, "with a level contour");
+    assert_eq(tone_register(empty), ToneRegister.TONE_MID, "and mid register");
+
+    # ---------------------------------------------------------------
+    test_group("mandarin");
+    # The canonical four tones plus the neutral tone: 55, 35, 214, 51, and a mid
+    # neutral. If any of these came out wrong the parser would be wrong.
+    var zh = phoneme_mandarin();
+    assert_eq(vec_len(phoneme_tones(zh)), 5, "Mandarin has 5 tone entries");
+    _tone_is(zh, 0, "˥˥", ToneContour.TONE_LEVEL, ToneRegister.TONE_HIGH, 5, 5, 0, "tone 1 is high level");
+    _tone_is(zh, 1, "˧˥", ToneContour.TONE_RISING, ToneRegister.TONE_HIGH, 3, 5, 0, "tone 2 rises");
+    _tone_is(zh, 2, "˨˩˦", ToneContour.TONE_DIPPING, ToneRegister.TONE_LOW, 2, 4, 0, "tone 3 dips");
+    _tone_is(zh, 3, "˥˩", ToneContour.TONE_FALLING, ToneRegister.TONE_MID, 5, 1, 0, "tone 4 falls");
+    _tone_is(zh, 4, "˧", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3, 0, "the neutral tone is mid level");
+    assert_eq(_count_contour(zh, ToneContour.TONE_LEVEL), 2, "Mandarin has 2 level tones");
+
+    # ---------------------------------------------------------------
+    test_group("vietnamese");
+    # Six tones, two of them glottalised: ngã (˧ˀ˥) and nặng (˨˩ˀ).
+    var vi = phoneme_vietnamese();
+    assert_eq(vec_len(phoneme_tones(vi)), 6, "Vietnamese has 6 tones");
+    _tone_is(vi, 4, "˧ˀ˥", ToneContour.TONE_RISING, ToneRegister.TONE_HIGH, 3, 5,
+        ToneFeature.TONE_GLOTTALIZED, "ngã is a glottalized rise");
+    _tone_is(vi, 5, "˨˩ˀ", ToneContour.TONE_FALLING, ToneRegister.TONE_LOW, 2, 1,
+        ToneFeature.TONE_GLOTTALIZED, "nặng is a glottalized fall");
+    _tone_is(vi, 3, "˧˩˧", ToneContour.TONE_DIPPING, ToneRegister.TONE_LOW, 3, 3, 0,
+        "hỏi dips and returns to its starting pitch");
+    var glot_count = 0;
+    var ts = phoneme_tones(vi);
+    i = 0;
+    while (i < vec_len(ts)) {
+        if (tone_has_feature(vec_get(ts, i), ToneFeature.TONE_GLOTTALIZED) == 1) {
+            glot_count = glot_count + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(glot_count, 2, "exactly 2 Vietnamese tones are glottalized");
+
+    # ---------------------------------------------------------------
+    test_group("checked_tones");
+    # The entering tone of Literary Chinese and the creaky/checked pair in Burmese.
+    var lzh = phoneme_literary_chinese();
+    assert_eq(vec_len(phoneme_tones(lzh)), 4, "Literary Chinese has 4 tones");
+    _tone_is(lzh, 3, "˩ʔ", ToneContour.TONE_LEVEL, ToneRegister.TONE_LOW, 1, 1,
+        ToneFeature.TONE_CHECKED, "the entering tone is checked");
+    var my = phoneme_burmese();
+    _tone_is(my, 1, "˧ˀ", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3,
+        ToneFeature.TONE_GLOTTALIZED, "the Burmese creaky tone is glottalized");
+    _tone_is(my, 3, "˩ʔ", ToneContour.TONE_LEVEL, ToneRegister.TONE_LOW, 1, 1,
+        ToneFeature.TONE_CHECKED, "the Burmese checked tone");
+
+    # ---------------------------------------------------------------
+    test_group("level_tone_languages");
+    # Yoruba, Hausa and Somali are register-tone languages: every tone is level.
+    var yo = phoneme_yoruba();
+    assert_eq(vec_len(phoneme_tones(yo)), 3, "Yoruba has 3 tones");
+    assert_eq(_count_contour(yo, ToneContour.TONE_LEVEL), 3, "all Yoruba tones are level");
+    _tone_is(yo, 0, "˥", ToneContour.TONE_LEVEL, ToneRegister.TONE_HIGH, 5, 5, 0, "Yoruba high");
+    _tone_is(yo, 1, "˧", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3, 0, "Yoruba mid");
+    _tone_is(yo, 2, "˩", ToneContour.TONE_LEVEL, ToneRegister.TONE_LOW, 1, 1, 0, "Yoruba low");
+    assert_eq(_count_contour(phoneme_hausa(), ToneContour.TONE_LEVEL), 2, "both Hausa tones are level");
+    assert_eq(_count_contour(phoneme_somali(), ToneContour.TONE_LEVEL), 2, "both Somali tones are level");
+
+    # ---------------------------------------------------------------
+    test_group("corpus_wide");
+    # Nine languages carry tones, not the five the roadmap listed — Hausa, Burmese,
+    # Somali and Lao were missing from it. Pinning the count means a tenth cannot be
+    # added silently.
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    var tonal_langs = 0;
+    var total_tones = 0;
+    var bad_level = 0;
+    var bad_contour = 0;
+    var bad_register = 0;
+    var not_tonal_stress = 0;
+    i = 0;
+    while (i < n) {
+        var inv = registry_phonemes(vec_get(codes, i));
+        var tl = phoneme_tones(inv);
+        if (tl != 0) {
+            tonal_langs = tonal_langs + 1;
+            if (phoneme_stress(inv) != StressPattern.Tonal) { not_tonal_stress = not_tonal_stress + 1; }
+            var j = 0;
+            while (j < vec_len(tl)) {
+                var t = vec_get(tl, j);
+                total_tones = total_tones + 1;
+                # Every pitch level lands on the 1..5 Chao scale.
+                if (tone_start_level(t) < 1 || tone_start_level(t) > 5) { bad_level = bad_level + 1; }
+                if (tone_end_level(t) < 1 || tone_end_level(t) > 5) { bad_level = bad_level + 1; }
+                # Every contour and register is inside its enum.
+                if (tone_contour(t) < ToneContour.TONE_LEVEL) { bad_contour = bad_contour + 1; }
+                if (tone_contour(t) > ToneContour.TONE_PEAKING) { bad_contour = bad_contour + 1; }
+                if (tone_register(t) < ToneRegister.TONE_HIGH) { bad_register = bad_register + 1; }
+                if (tone_register(t) > ToneRegister.TONE_LOW) { bad_register = bad_register + 1; }
+                # A level contour must not move, and a moving one must not be level.
+                if (tone_contour(t) == ToneContour.TONE_LEVEL) {
+                    if (tone_start_level(t) != tone_end_level(t)) { bad_contour = bad_contour + 1; }
+                }
+                if (tone_contour(t) == ToneContour.TONE_RISING) {
+                    if (tone_end_level(t) <= tone_start_level(t)) { bad_contour = bad_contour + 1; }
+                }
+                if (tone_contour(t) == ToneContour.TONE_FALLING) {
+                    if (tone_end_level(t) >= tone_start_level(t)) { bad_contour = bad_contour + 1; }
+                }
+                j = j + 1;
+            }
+        }
+        i = i + 1;
+    }
+    assert_eq(tonal_langs, 9, "9 languages carry tone inventories");
+    assert_eq(total_tones, 37, "37 tones in the corpus");
+    assert_eq(bad_level, 0, "every pitch level is on the 1-5 Chao scale");
+    assert_eq(bad_contour, 0, "every contour is in range and consistent with its endpoints");
+    assert_eq(bad_register, 0, "every register is in range");
+    assert_eq(not_tonal_stress, 0, "every toned language has Tonal stress");
+
+    # ---------------------------------------------------------------
+    test_group("letters_round_trip");
+    # The parse is lossless in the direction that matters: the original Chao string
+    # is always recoverable, so nothing the pre-2.2.4 representation carried is gone.
+    var empty_letters = 0;
+    i = 0;
+    while (i < n) {
+        var inv2 = registry_phonemes(vec_get(codes, i));
+        var tl2 = phoneme_tones(inv2);
+        if (tl2 != 0) {
+            var k = 0;
+            while (k < vec_len(tl2)) {
+                if (strlen(tone_letters(vec_get(tl2, k))) == 0) { empty_letters = empty_letters + 1; }
+                k = k + 1;
+            }
+        }
+        i = i + 1;
+    }
+    assert_eq(empty_letters, 0, "every tone record carries back its original letters");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
