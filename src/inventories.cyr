@@ -38,15 +38,15 @@ fn phoneme_yucatec_maya() {
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels (5 short + 5 long)
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_yucatec_maya = phoneme_builder_build(b);
     return _c_phoneme_yucatec_maya;
 }
@@ -313,7 +313,7 @@ fn phoneme_vietnamese() {
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ɤ̆", Height.CloseMid, Backness.Back, 0);
+    phoneme_builder_vowel_full(b, "ɤ̆", Height.CloseMid, Backness.Back, 0, PhonemeFeature.ExtraShort);
     _c_phoneme_vietnamese = phoneme_builder_build(b);
     return _c_phoneme_vietnamese;
 }
@@ -427,14 +427,14 @@ fn phoneme_finnish() {
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     # Long vowels
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "æː", Height.NearOpen, Backness.Front, 0);
-    phoneme_builder_vowel(b, "yː", Height.Close, Backness.Front, 1);
-    phoneme_builder_vowel(b, "øː", Height.CloseMid, Backness.Front, 1);
-    phoneme_builder_vowel(b, "ɑː", Height.Open, Backness.Back, 0);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "æː", Height.NearOpen, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "yː", Height.Close, Backness.Front, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "øː", Height.CloseMid, Backness.Front, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "ɑː", Height.Open, Backness.Back, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_finnish = phoneme_builder_build(b);
     return _c_phoneme_finnish;
 }
@@ -461,11 +461,11 @@ fn phoneme_hawaiian() {
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     # Long vowels
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_hawaiian = phoneme_builder_build(b);
     return _c_phoneme_hawaiian;
 }
@@ -501,10 +501,10 @@ fn phoneme_nahuatl() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     # Long vowels
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_nahuatl = phoneme_builder_build(b);
     return _c_phoneme_nahuatl;
 }
@@ -543,11 +543,11 @@ fn phoneme_latin() {
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     # Long vowels
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_latin = phoneme_builder_build(b);
     return _c_phoneme_latin;
 }
@@ -601,9 +601,9 @@ fn phoneme_classical_arabic() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_classical_arabic = phoneme_builder_build(b);
     return _c_phoneme_classical_arabic;
 }
@@ -835,14 +835,14 @@ fn phoneme_hindi() {
     # Vowels (short and long pairs + schwa)
     phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ɛː", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "ɛː", Height.OpenMid, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "ɔː", Height.OpenMid, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_hindi = phoneme_builder_build(b);
     return _c_phoneme_hindi;
 }
@@ -982,10 +982,10 @@ fn phoneme_french() {
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
     # Nasal vowels
-    phoneme_builder_vowel(b, "ɛ̃", Height.OpenMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ɑ̃", Height.Open, Backness.Back, 0);
-    phoneme_builder_vowel(b, "œ̃", Height.OpenMid, Backness.Front, 1);
-    phoneme_builder_vowel(b, "ɔ̃", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "ɛ̃", Height.OpenMid, Backness.Front, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ɑ̃", Height.Open, Backness.Back, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "œ̃", Height.OpenMid, Backness.Front, 1, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ɔ̃", Height.OpenMid, Backness.Back, 1, PhonemeFeature.Nasalized);
     _c_phoneme_french = phoneme_builder_build(b);
     return _c_phoneme_french;
 }
@@ -1035,14 +1035,14 @@ fn phoneme_german() {
     phoneme_builder_vowel(b, "œ", Height.OpenMid, Backness.Front, 1);
     phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
     # Long vowels
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ɛː", Height.OpenMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "yː", Height.Close, Backness.Front, 1);
-    phoneme_builder_vowel(b, "øː", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "ɛː", Height.OpenMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "yː", Height.Close, Backness.Front, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "øː", Height.CloseMid, Backness.Front, 1, PhonemeFeature.Long);
     _c_phoneme_german = phoneme_builder_build(b);
     return _c_phoneme_german;
 }
@@ -1481,15 +1481,15 @@ fn phoneme_tamil() {
         Airstream.Pulmonic, PhonemeFeature.Lateral);
     # Vowels (5 short + 5 long)
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_tamil = phoneme_builder_build(b);
     return _c_phoneme_tamil;
 }
@@ -1559,14 +1559,14 @@ fn phoneme_urdu() {
     # Vowels (short and long pairs + schwa)
     phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ɛː", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "ɛː", Height.OpenMid, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "ɔː", Height.OpenMid, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_urdu = phoneme_builder_build(b);
     return _c_phoneme_urdu;
 }
@@ -1669,15 +1669,15 @@ fn phoneme_hausa() {
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     # Vowels: 5 short + 5 long
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_hausa = phoneme_builder_build(b);
     return _c_phoneme_hausa;
 }
@@ -1915,15 +1915,15 @@ fn phoneme_czech() {
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels — 5 short + 5 long
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_czech = phoneme_builder_build(b);
     return _c_phoneme_czech;
 }
@@ -1967,19 +1967,19 @@ fn phoneme_hungarian() {
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels — 7 short + 7 long (front rounded y/ø included)
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "y", Height.Close, Backness.Front, 1);
-    phoneme_builder_vowel(b, "yː", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel_full(b, "yː", Height.Close, Backness.Front, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ø", Height.CloseMid, Backness.Front, 1);
-    phoneme_builder_vowel(b, "øː", Height.CloseMid, Backness.Front, 1);
+    phoneme_builder_vowel_full(b, "øː", Height.CloseMid, Backness.Front, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Back, 1);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Back, 0);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Back, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_hungarian = phoneme_builder_build(b);
     return _c_phoneme_hungarian;
 }
@@ -2153,15 +2153,15 @@ fn phoneme_khmer() {
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     # Long vowels (9)
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ɛː", Height.OpenMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "ɨː", Height.Close, Backness.Central, 0);
-    phoneme_builder_vowel(b, "əː", Height.Mid, Backness.Central, 0);
-    phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "ɛː", Height.OpenMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "ɨː", Height.Close, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "əː", Height.Mid, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "ɔː", Height.OpenMid, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_khmer = phoneme_builder_build(b);
     return _c_phoneme_khmer;
 }
@@ -2210,11 +2210,11 @@ fn phoneme_somali() {
     phoneme_builder_vowel(b, "o", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     # Long vowels (5)
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.OpenMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "oː", Height.OpenMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "eː", Height.OpenMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "oː", Height.OpenMid, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_somali = phoneme_builder_build(b);
     return _c_phoneme_somali;
 }
@@ -2310,7 +2310,7 @@ fn phoneme_guarani() {
     phoneme_builder_vowel(b, "ĩ", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "õ", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "ũ", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ɨ̃", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "ɨ̃", Height.Close, Backness.Central, 0, PhonemeFeature.Nasalized);
     _c_phoneme_guarani = phoneme_builder_build(b);
     return _c_phoneme_guarani;
 }
@@ -2416,10 +2416,10 @@ fn phoneme_wolof() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     # Vowels — long
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
     _c_phoneme_wolof = phoneme_builder_build(b);
     return _c_phoneme_wolof;
 }
@@ -2470,13 +2470,13 @@ fn phoneme_lao() {
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels — short/long pairs
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ɯ", Height.Close, Backness.Back, 0);
-    phoneme_builder_vowel(b, "ɯː", Height.Close, Backness.Back, 0);
+    phoneme_builder_vowel_full(b, "ɯː", Height.Close, Backness.Back, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
     # Diphthong
     phoneme_builder_vowel(b, "ia", Height.CloseMid, Backness.Front, 0);
     _c_phoneme_lao = phoneme_builder_build(b);
@@ -2528,13 +2528,13 @@ fn phoneme_mongolian() {
     phoneme_builder_vowel(b, "ø", Height.CloseMid, Backness.Front, 1);
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     # Vowels — long pairs
-    phoneme_builder_vowel(b, "aː", Height.Open, Backness.Back, 0);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "øː", Height.CloseMid, Backness.Front, 1);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Back, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "ɔː", Height.OpenMid, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "øː", Height.CloseMid, Backness.Front, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     _c_phoneme_mongolian = phoneme_builder_build(b);
     return _c_phoneme_mongolian;
 }

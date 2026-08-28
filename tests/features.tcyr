@@ -55,12 +55,21 @@ fn _feats(inv, ipa, feats, label) {
 }
 
 fn _count_feature(inv, feature) {
+    return _count_feature_kind(inv, feature, PhonemeKind.Consonant);
+}
+
+# Count phonemes of `kind` carrying `feature`. Kind-aware since 2.2.2 made `Long`
+# shared: an unfiltered count of long segments now sweeps up 110 long vowels.
+fn _count_feature_kind(inv, feature, kind) {
     var ph = phoneme_list(inv);
     var n = vec_len(ph);
     var c = 0;
     var i = 0;
     while (i < n) {
-        if (phoneme_has_feature(vec_get(ph, i), feature) == 1) { c = c + 1; }
+        var p = vec_get(ph, i);
+        if (phoneme_kind(p) == kind) {
+            if (phoneme_has_feature(p, feature) == 1) { c = c + 1; }
+        }
         i = i + 1;
     }
     return c;
@@ -89,9 +98,9 @@ fn main() {
     assert_eq(phoneme_manner(made), Manner.Plosive, "features do not disturb the manner");
     # The shorter constructors still work and still default to no features.
     assert_eq(phoneme_features(phoneme_consonant("t", Manner.Plosive, Place.Alveolar, 0)), 0,
-        "phoneme_consonant defaults to no features");
+      "phoneme_consonant defaults to no features");
     assert_eq(phoneme_features(phoneme_vowel("a", Height.Open, Backness.Central, 0)), 0,
-        "phoneme_vowel defaults to no features");
+      "phoneme_vowel defaults to no features");
 
     # ---------------------------------------------------------------
     test_group("aspiration");
@@ -110,7 +119,7 @@ fn main() {
     # feature derivation; retranscribing Sanskrit is a data change beyond 2.2.1 and
     # is filed for a later pass rather than made silently here.
     assert_eq(phoneme_find(sa, "ɡʱ"), 0,
-        "Sanskrit has no /ɡʱ/ spelling — it uses /ɡʰ/ (see the note above)");
+      "Sanskrit has no /ɡʱ/ spelling — it uses /ɡʰ/ (see the note above)");
     assert(phoneme_find(sa, "ɡʰ") != 0, "Sanskrit spells the voiced aspirate /ɡʰ/");
     assert_eq(_count_feature(sa, PhonemeFeature.Breathy), 0, "Sanskrit marks no breathy voice today");
     var zu = phoneme_zulu();
@@ -128,7 +137,7 @@ fn main() {
     _feats(hi, "ɡʱ", PhonemeFeature.Breathy, "Hindi /ɡʱ/ is breathy, not aspirated");
     _feats(hi, "bʱ", PhonemeFeature.Breathy, "Hindi /bʱ/");
     assert_eq(phoneme_has_feature(phoneme_find(hi, "ɡʱ"), PhonemeFeature.Aspirated), 0,
-        "breathy voice is a distinct feature from aspiration");
+      "breathy voice is a distinct feature from aspiration");
     assert_eq(_count_feature(hi, PhonemeFeature.Breathy), 5, "Hindi has 5 breathy consonants");
     assert_eq(_count_feature(phoneme_bengali(), PhonemeFeature.Breathy), 5, "Bengali has 5");
     assert_eq(_count_feature(phoneme_urdu(), PhonemeFeature.Breathy), 5, "Urdu has 5");
@@ -272,7 +281,12 @@ fn main() {
             var pp = vec_get(ph3, q2);
             var ipa = phoneme_ipa(pp);
             if (phoneme_kind(pp) == PhonemeKind.Vowel) {
-                if (phoneme_features(pp) != 0) { vowel_marked = vowel_marked + 1; }
+                var consonant_only = PhonemeFeature.Aspirated | PhonemeFeature.Breathy
+                | PhonemeFeature.Palatalized | PhonemeFeature.Labialized
+                | PhonemeFeature.Pharyngealized | PhonemeFeature.Tense
+                | PhonemeFeature.Devoiced | PhonemeFeature.Prenasalized
+                | PhonemeFeature.Raised | PhonemeFeature.Lateral;
+                if ((phoneme_features(pp) & consonant_only) != 0) { vowel_marked = vowel_marked + 1; }
             }
             else {
                 if (_has_sub(ipa, "ʰ") != phoneme_has_feature(pp, PhonemeFeature.Aspirated)) {
@@ -305,7 +319,10 @@ fn main() {
         i = i + 1;
     }
     assert_eq(mismatched, 0, "every secondary-articulation diacritic matches its feature bit");
-    assert_eq(vowel_marked, 0, "no vowel carries a consonant feature yet (2.2.2)");
+    # Since 2.2.2 vowels do carry features, but only the ones that apply to a
+    # vowel: Long is shared, Nasalized/Syllabic/ExtraShort are vowel-side, and no
+    # vowel may claim a consonant-only articulation.
+    assert_eq(vowel_marked, 0, "no vowel claims a consonant-only feature");
 
     # ---------------------------------------------------------------
     test_group("corpus_totals");

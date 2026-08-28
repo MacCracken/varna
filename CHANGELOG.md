@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-08-27
+
+Third slice of the 2.2.x Phonological Depth line: vowel length, nasalization and
+syllabicity become queryable. No struct growth and no breaking changes — the vowel
+features reuse the `PhonemeFeature` word 2.2.1 added.
+
+### Added
+
+- **phoneme** — three vowel-side bits on the existing mask: `Nasalized` (2048),
+  `Syllabic` (4096), `ExtraShort` (8192). `Long` (256) is **shared** with the
+  consonant side rather than duplicated. Construct with `phoneme_vowel_full(...)`
+  or `phoneme_builder_vowel_full(...)`; `phoneme_vowel` keeps its arity and
+  defaults to no features.
+
+- **inventories** — **118 vowels marked**, carrying 120 feature bits: 110 long
+  across 20 languages, 5 nasal (French /ɛ̃ ɑ̃ œ̃ ɔ̃/, Guarani /ɨ̃/), 4 syllabic
+  (Sanskrit /r̩ l̩ r̩ː l̩ː/) and 1 extra-short (Vietnamese /ɤ̆/). Sanskrit's /r̩ː l̩ː/
+  are the only segments in the corpus carrying two vowel features at once.
+
+- **tests/vowel_features.tcyr** (72 assertions) — per-language cases, corpus
+  totals, a `symbol_vowel_feature_agreement` guard matching the consonant one, and
+  a `long_is_shared_across_kinds` group that separates the 110 long vowels from
+  the 1 long consonant.
+
+### Changed
+
+- **tests/features.tcyr** — `_count_feature` is now kind-aware. Sharing the `Long`
+  bit meant an unfiltered count of long segments swept the new vowels into the
+  consonant total; the existing assertion caught it (111 where 1 was expected).
+  The "no vowel carries a consonant feature" assertion, which 2.2.2 makes false by
+  design, is replaced by the stronger claim that no vowel carries a
+  *consonant-only* feature — aspiration, laterality and the rest.
+
+### Notes
+
+- **ATR was named in the roadmap and is deliberately not implemented.**
+  `tests/vowel_features.tcyr` has an `atr_is_absent` group that pins the reasons so
+  the omission is not read as an oversight:
+  1. **No corpus segment is transcribed with an ATR/RTR diacritic** (U+0318 /
+     U+0319) — the assertion counts zero. Adding an `AdvancedTongueRoot` bit would
+     ship a feature nothing sets, the same mistake `Velarized` was kept out of
+     2.2.1 to avoid.
+  2. **It is not a one-bit change.** Three corpus languages have ATR harmony and
+     two have incomplete vowel systems for it: Yoruba's /i e ɛ a ɔ o u/ is the
+     classic 7-vowel ATR set and could be marked as it stands, but Wolof lists only
+     /i e a o/ and Somali /i e a o u/ — both missing the vowels the contrast needs.
+     Marking Yoruba alone would leave ATR present in one language and silently
+     absent in two that have it, which is worse than uniformly absent.
+
+  Filed in the roadmap as a data item naming the three languages and what each
+  needs, rather than shipped half-done.
+
+### Performance
+
+- **Flat**, and **memory unchanged**: no row moves more than run-to-run noise, and
+  building all 51 inventories still takes 139,152 bytes. The vowel features occupy
+  bits in the word 2.2.1 already allocated, so unlike the previous two releases
+  this one widens nothing.
+
+
 ## [2.2.1] - 2026-08-27
 
 Second slice of the 2.2.x Phonological Depth line: secondary articulation and

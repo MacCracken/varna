@@ -55,9 +55,13 @@ enum PhonemeFeature {
     Tense = 32;           # ͈  — Korean fortis
     Devoiced = 64;        # ̥ / ̊ — voiceless sonorant
     Prenasalized = 128;   # homorganic nasal onset (Wolof mb, nd, ŋɡ, ɲɟ)
-    Long = 256;           # ː  — geminate/long
+    Long = 256;           # ː  — geminate/long (consonants and vowels)
     Raised = 512;         # ̝  — raised articulation (Czech /r̝/)
     Lateral = 1024;       # lateral airflow, including the lateral clicks
+    # --- vowel features, added at 2.2.2 (Long above is shared) ---------
+    Nasalized = 2048;     # ̃  — French /ɛ̃ ɑ̃ œ̃ ɔ̃/, Guarani /ɨ̃/
+    Syllabic = 4096;      # ̩  — syllabic sonorant (Sanskrit /r̩ l̩ r̩ː l̩ː/)
+    ExtraShort = 8192;    # ̆  — extra-short (Vietnamese /ɤ̆/)
 }
 
 enum Manner {
@@ -144,6 +148,11 @@ fn phoneme_consonant_full(ipa, manner, place, voiced, airstream, features) {
 
 # Vowels are pulmonic egressive without exception in the corpus.
 fn phoneme_vowel(ipa, height, backness, rounded) {
+    return phoneme_vowel_full(ipa, height, backness, rounded, 0);
+}
+
+# Vowel carrying secondary features (length, nasalization, syllabicity).
+fn phoneme_vowel_full(ipa, height, backness, rounded, features) {
     var p = alloc(56);
     store64(p, ipa);
     store64(p + 8, PhonemeKind.Vowel);
@@ -151,7 +160,7 @@ fn phoneme_vowel(ipa, height, backness, rounded) {
     store64(p + 24, backness);
     store64(p + 32, rounded);
     store64(p + 40, Airstream.Pulmonic);
-    store64(p + 48, 0);
+    store64(p + 48, features);
     return p;
 }
 
@@ -223,6 +232,12 @@ fn phoneme_builder_consonant_full(inv, ipa, manner, place, voiced, airstream, fe
 
 fn phoneme_builder_vowel(inv, ipa, height, backness, rounded) {
     vec_push(load64(inv + 16), phoneme_vowel(ipa, height, backness, rounded));
+    return inv;
+}
+
+# Push a vowel carrying secondary features.
+fn phoneme_builder_vowel_full(inv, ipa, height, backness, rounded, features) {
+    vec_push(load64(inv + 16), phoneme_vowel_full(ipa, height, backness, rounded, features));
     return inv;
 }
 
@@ -363,16 +378,16 @@ fn phoneme_english() {
     phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
     # Vowels (General American)
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ɪ", Height.NearClose, Backness.Front, 0);
     phoneme_builder_vowel(b, "eɪ", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "æ", Height.NearOpen, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ɑː", Height.Open, Backness.Back, 0);
-    phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "ɑː", Height.Open, Backness.Back, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "ɔː", Height.OpenMid, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "oʊ", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "ʊ", Height.NearClose, Backness.Back, 1);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ʌ", Height.OpenMid, Backness.Central, 0);
     phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
     _c_phoneme_english = phoneme_builder_build(b);
@@ -445,18 +460,20 @@ fn phoneme_sanskrit() {
     phoneme_builder_vowel(b, "ɐ", Height.NearOpen, Backness.Central, 0);
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "r̩", Height.Close, Backness.Central, 0);
-    phoneme_builder_vowel(b, "l̩", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "r̩", Height.Close, Backness.Central, 0, PhonemeFeature.Syllabic);
+    phoneme_builder_vowel_full(b, "l̩", Height.Close, Backness.Central, 0, PhonemeFeature.Syllabic);
     # Long
-    phoneme_builder_vowel(b, "ɐː", Height.NearOpen, Backness.Central, 0);
-    phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "r̩ː", Height.Close, Backness.Central, 0);
-    phoneme_builder_vowel(b, "l̩ː", Height.Close, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "ɐː", Height.NearOpen, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "r̩ː", Height.Close, Backness.Central, 0,
+        PhonemeFeature.Long | PhonemeFeature.Syllabic);
+    phoneme_builder_vowel_full(b, "l̩ː", Height.Close, Backness.Central, 0,
+        PhonemeFeature.Long | PhonemeFeature.Syllabic);
     # Diphthongs
-    phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ɐi", Height.NearOpen, Backness.Front, 0);
-    phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ɐu", Height.NearOpen, Backness.Back, 1);
     _c_phoneme_sanskrit = phoneme_builder_build(b);
     return _c_phoneme_sanskrit;

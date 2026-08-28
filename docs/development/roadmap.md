@@ -37,8 +37,9 @@ is the `2.2.0+` tier below.
 
 ### 2.2.x — Phonological Depth (P1)
 
-Split out of the original single 2.2.0 item. **2.2.0 (airstream) and 2.2.1 (consonant secondary features) have landed**;
-the rest follow one per release, each verifiable on its own.
+Split out of the original single 2.2.0 item. **2.2.0 (airstream), 2.2.1 (consonant secondary features) and 2.2.2 (vowel
+features) have landed**; the rest follow one per release, each verifiable on
+its own.
 
 The original bullet proposed adding `Click`/`Implosive`/`Ejective` to the `Manner`
 enum. That was rejected during 2.2.0: they are airstream mechanisms, not manners, and
@@ -47,6 +48,20 @@ folding them in would have destroyed the manner of 19 of the 38 affected phoneme
 `Airstream` is a separate axis, which is also how PHOIBLE models it. See the 2.2.0
 CHANGELOG entry.
 
+#### Data: ATR vowel systems
+
+Deferred out of 2.2.2. `atr` was named there, but no corpus segment is transcribed
+with an ATR/RTR diacritic, and two of the three languages that need the contrast
+have incomplete vowel systems — so it is a data item, not a feature bit.
+
+- [ ] **Yoruba** — /i e ɛ a ɔ o u/ is already the classic 7-vowel ATR set;
+      /e o/ are +ATR, /ɛ ɔ/ are −ATR. Markable as it stands.
+- [ ] **Wolof** — lists only /i e a o/ (+ long). Real Wolof has /i e ɛ a ɔ o u/
+      with ATR harmony; the missing vowels have to be added first.
+- [ ] **Somali** — lists /i e a o u/ (+ long). Real Somali has a 5-pair ATR system,
+      i.e. 10 qualities; likewise incomplete.
+- [ ] Then add the `AdvancedTongueRoot` bit, once something sets it.
+
 #### Data: Sanskrit voiced-aspirate transcription
 
 - [ ] Sanskrit spells its voiced aspirates /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/ with U+02B0 while
@@ -54,11 +69,6 @@ CHANGELOG entry.
       2.2.1 derives `Aspirated` for one and `Breathy` for the other. Phonetically
       they are breathy in all four. Decide one transcription and apply it; the
       assertion in `tests/features.tcyr` that pins the current state documents it.
-
-#### 2.2.2 — Vowel features
-
-- [ ] `long`, `nasalized`, `atr` (Advanced Tongue Root) on vowels. Same situation:
-      /iː/ vs /i/ and /ɐː/ vs /ɐ/ are symbol-only distinctions today.
 
 #### 2.2.3 — Distinctive feature system
 

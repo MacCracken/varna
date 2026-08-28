@@ -1,0 +1,253 @@
+# tests/vowel_features.tcyr — vowel secondary features, added at 2.2.2.
+#
+# Length, nasalization, syllabicity and extra-shortness reuse the `PhonemeFeature`
+# mask 2.2.1 put on the phoneme record. `Long` is shared across both kinds, which
+# is the one thing here that can quietly break a consonant count — the assertions
+# below check the kinds separately for exactly that reason.
+#
+# ATR is absent on purpose. See the `atr_is_absent` group.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+fn _has_sub(s, needle) {
+    var hl = strlen(s);
+    var nl = strlen(needle);
+    if (nl == 0) { return 1; }
+    if (nl > hl) { return 0; }
+    var i = 0;
+    while (i <= hl - nl) {
+        var j = 0;
+        var matched = 1;
+        while (j < nl) {
+            if (load8(s + i + j) != load8(needle + j)) { matched = 0; }
+            j = j + 1;
+        }
+        if (matched == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Assert a vowel carries exactly `feats`.
+fn _vfeats(inv, ipa, feats, label) {
+    var p = phoneme_find(inv, ipa);
+    assert(p != 0, label);
+    if (p == 0) { return 0; }
+    assert_eq(phoneme_kind(p), PhonemeKind.Vowel, label);
+    assert_eq(phoneme_features(p), feats, label);
+    return 0;
+}
+
+fn _count_kind(inv, feature, kind) {
+    var ph = phoneme_list(inv);
+    var n = vec_len(ph);
+    var c = 0;
+    var i = 0;
+    while (i < n) {
+        var p = vec_get(ph, i);
+        if (phoneme_kind(p) == kind) {
+            if (phoneme_has_feature(p, feature) == 1) { c = c + 1; }
+        }
+        i = i + 1;
+    }
+    return c;
+}
+
+fn main() {
+    alloc_init();
+    var i = 0;
+
+    # ---------------------------------------------------------------
+    test_group("vowel_feature_api");
+    assert_eq(PhonemeFeature.Nasalized, 2048, "Nasalized is bit 11");
+    assert_eq(PhonemeFeature.Syllabic, 4096, "Syllabic is bit 12");
+    assert_eq(PhonemeFeature.ExtraShort, 8192, "ExtraShort is bit 13");
+    var made = phoneme_vowel_full("ɛ̃ː", Height.OpenMid, Backness.Front, 0,
+        PhonemeFeature.Long | PhonemeFeature.Nasalized);
+    assert_eq(phoneme_has_feature(made, PhonemeFeature.Long), 1, "composed vowel mask reads long");
+    assert_eq(phoneme_has_feature(made, PhonemeFeature.Nasalized), 1, "composed vowel mask reads nasalized");
+    assert_eq(phoneme_kind(made), PhonemeKind.Vowel, "still a vowel");
+    assert_eq(phoneme_airstream(made), Airstream.Pulmonic, "vowels stay pulmonic");
+    # The four-argument constructor still defaults to no features.
+    assert_eq(phoneme_features(phoneme_vowel("a", Height.Open, Backness.Central, 0)), 0,
+        "phoneme_vowel defaults to no features");
+
+    # ---------------------------------------------------------------
+    test_group("vowel_length");
+    var en = phoneme_english();
+    _vfeats(en, "iː", PhonemeFeature.Long, "English /iː/ is long");
+    _vfeats(en, "ɪ", 0, "English /ɪ/ is short");
+    assert_eq(_count_kind(en, PhonemeFeature.Long, PhonemeKind.Vowel), 4, "English has 4 long vowels");
+    var fi = phoneme_finnish();
+    assert_eq(_count_kind(fi, PhonemeFeature.Long, PhonemeKind.Vowel), 8, "Finnish has 8 long vowels");
+    _vfeats(fi, "yː", PhonemeFeature.Long, "Finnish /yː/");
+    _vfeats(fi, "y", 0, "Finnish /y/ is its short counterpart");
+    # Long and short forms sit side by side in the same inventory, differing only
+    # in the bit — which is the point of making length queryable.
+    var km = phoneme_khmer();
+    assert_eq(_count_kind(km, PhonemeFeature.Long, PhonemeKind.Vowel), 9, "Khmer has 9 long vowels");
+
+    # ---------------------------------------------------------------
+    test_group("nasalization");
+    var fr = phoneme_french();
+    _vfeats(fr, "ɛ̃", PhonemeFeature.Nasalized, "French /ɛ̃/");
+    _vfeats(fr, "ɑ̃", PhonemeFeature.Nasalized, "French /ɑ̃/");
+    _vfeats(fr, "œ̃", PhonemeFeature.Nasalized, "French /œ̃/");
+    _vfeats(fr, "ɔ̃", PhonemeFeature.Nasalized, "French /ɔ̃/");
+    _vfeats(fr, "ɛ", 0, "French oral /ɛ/ is unmarked");
+    assert_eq(_count_kind(fr, PhonemeFeature.Nasalized, PhonemeKind.Vowel), 4, "French has 4 nasal vowels");
+    # Nasalization on a vowel is not the Nasal *manner* a consonant carries.
+    assert_eq(phoneme_has_feature(phoneme_find(fr, "ɛ̃"), PhonemeFeature.Prenasalized), 0,
+        "a nasal vowel is not prenasalized");
+    _vfeats(phoneme_guarani(), "ɨ̃", PhonemeFeature.Nasalized, "Guarani /ɨ̃/");
+
+    # ---------------------------------------------------------------
+    test_group("syllabicity_and_length_combined");
+    # Sanskrit's syllabic liquids are filed as vowels, and two of them are long —
+    # the only segments in the corpus carrying two vowel features at once.
+    var sa = phoneme_sanskrit();
+    _vfeats(sa, "r̩", PhonemeFeature.Syllabic, "Sanskrit /r̩/ is syllabic");
+    _vfeats(sa, "l̩", PhonemeFeature.Syllabic, "Sanskrit /l̩/ is syllabic");
+    _vfeats(sa, "r̩ː", PhonemeFeature.Long | PhonemeFeature.Syllabic, "/r̩ː/ is syllabic AND long");
+    _vfeats(sa, "l̩ː", PhonemeFeature.Long | PhonemeFeature.Syllabic, "/l̩ː/ is syllabic AND long");
+    assert_eq(_count_kind(sa, PhonemeFeature.Syllabic, PhonemeKind.Vowel), 4, "Sanskrit has 4 syllabic vowels");
+
+    # ---------------------------------------------------------------
+    test_group("extra_short");
+    _vfeats(phoneme_vietnamese(), "ɤ̆", PhonemeFeature.ExtraShort, "Vietnamese /ɤ̆/ is extra-short");
+
+    # ---------------------------------------------------------------
+    test_group("long_is_shared_across_kinds");
+    # The one real hazard in reusing the bit: an unfiltered count of long segments
+    # mixes the 110 vowels with the 1 consonant.
+    var ru = phoneme_russian();
+    assert_eq(_count_kind(ru, PhonemeFeature.Long, PhonemeKind.Consonant), 1, "Russian has 1 long consonant");
+    assert_eq(_count_kind(ru, PhonemeFeature.Long, PhonemeKind.Vowel), 0, "Russian has no long vowels");
+    assert_eq(phoneme_kind(phoneme_find(ru, "ɕː")), PhonemeKind.Consonant, "/ɕː/ is a consonant");
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    var long_v = 0;
+    var long_c = 0;
+    i = 0;
+    while (i < n) {
+        var inv = registry_phonemes(vec_get(codes, i));
+        long_v = long_v + _count_kind(inv, PhonemeFeature.Long, PhonemeKind.Vowel);
+        long_c = long_c + _count_kind(inv, PhonemeFeature.Long, PhonemeKind.Consonant);
+        i = i + 1;
+    }
+    assert_eq(long_v, 110, "110 long vowels in the corpus");
+    assert_eq(long_c, 1, "1 long consonant in the corpus");
+
+    # ---------------------------------------------------------------
+    test_group("corpus_totals");
+    var nas = 0;
+    var syl = 0;
+    var xs = 0;
+    var marked_langs = 0;
+    i = 0;
+    while (i < n) {
+        var inv2 = registry_phonemes(vec_get(codes, i));
+        var a = _count_kind(inv2, PhonemeFeature.Nasalized, PhonemeKind.Vowel);
+        var b = _count_kind(inv2, PhonemeFeature.Syllabic, PhonemeKind.Vowel);
+        var c = _count_kind(inv2, PhonemeFeature.ExtraShort, PhonemeKind.Vowel);
+        var d = _count_kind(inv2, PhonemeFeature.Long, PhonemeKind.Vowel);
+        if (a + b + c + d > 0) { marked_langs = marked_langs + 1; }
+        nas = nas + a;
+        syl = syl + b;
+        xs = xs + c;
+        i = i + 1;
+    }
+    assert_eq(nas, 5, "5 nasal vowels in the corpus");
+    assert_eq(syl, 4, "4 syllabic vowels");
+    assert_eq(xs, 1, "1 extra-short vowel");
+    assert_eq(marked_langs, 23, "23 languages carry a marked vowel");
+
+    # ---------------------------------------------------------------
+    test_group("symbol_vowel_feature_agreement");
+    # Forward-looking guard, as for the consonants: a vowel added later with /ː/
+    # and no Long bit fails here.
+    var mismatched = 0;
+    i = 0;
+    while (i < n) {
+        var inv3 = registry_phonemes(vec_get(codes, i));
+        var ph3 = phoneme_list(inv3);
+        var j = 0;
+        while (j < vec_len(ph3)) {
+            var p = vec_get(ph3, j);
+            if (phoneme_kind(p) == PhonemeKind.Vowel) {
+                var ipa = phoneme_ipa(p);
+                if (_has_sub(ipa, "ː") != phoneme_has_feature(p, PhonemeFeature.Long)) {
+                    mismatched = mismatched + 1;
+                }
+                if (_has_sub(ipa, "̃") != phoneme_has_feature(p, PhonemeFeature.Nasalized)) {
+                    mismatched = mismatched + 1;
+                }
+                if (_has_sub(ipa, "̩") != phoneme_has_feature(p, PhonemeFeature.Syllabic)) {
+                    mismatched = mismatched + 1;
+                }
+                if (_has_sub(ipa, "̆") != phoneme_has_feature(p, PhonemeFeature.ExtraShort)) {
+                    mismatched = mismatched + 1;
+                }
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(mismatched, 0, "every vowel diacritic matches its feature bit");
+
+    # ---------------------------------------------------------------
+    test_group("atr_is_absent");
+    # The roadmap named `atr` alongside length and nasalization. It is deliberately
+    # NOT implemented, and this group pins why so the omission is not mistaken for
+    # an oversight.
+    #
+    # No vowel anywhere in the corpus is transcribed with an ATR/RTR diacritic
+    # (U+0318 / U+0319) — the count below is zero. Adding an `AdvancedTongueRoot`
+    # bit would therefore ship a feature nothing sets, which is the same mistake
+    # `Velarized` was kept out of 2.2.1 to avoid.
+    #
+    # It is also not a one-bit change. Three corpus languages have ATR harmony and
+    # two of them have incomplete vowel systems: Yoruba's /i e ɛ a ɔ o u/ is the
+    # classic 7-vowel ATR set and could be marked as-is, but Wolof lists only
+    # /i e a o/ and Somali /i e a o u/, both missing the vowels the contrast needs.
+    # Marking Yoruba alone would leave ATR present in one language and silently
+    # absent in two that have it — worse than uniformly absent. Filed in the
+    # roadmap as a data item.
+    var atr_marks = 0;
+    i = 0;
+    while (i < n) {
+        var inv4 = registry_phonemes(vec_get(codes, i));
+        var ph4 = phoneme_list(inv4);
+        var k = 0;
+        while (k < vec_len(ph4)) {
+            var q = vec_get(ph4, k);
+            if (_has_sub(phoneme_ipa(q), "̘") == 1) { atr_marks = atr_marks + 1; }
+            if (_has_sub(phoneme_ipa(q), "̙") == 1) { atr_marks = atr_marks + 1; }
+            k = k + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(atr_marks, 0, "no corpus segment is transcribed with an ATR/RTR diacritic");
+    # The incomplete inventories, pinned so the data item stays honest.
+    assert_eq(_count_kind(phoneme_yoruba(), PhonemeFeature.Long, PhonemeKind.Vowel), 0, "Yoruba has no long vowels");
+    assert_eq(vec_len(phoneme_list(phoneme_wolof())) > 0, 1, "Wolof inventory exists");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
