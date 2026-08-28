@@ -5,6 +5,10 @@
 
 ## Version
 
+**2.1.3** — test-suite port (2026-08-27): the four standalone Rust suites under
+`rust-old/tests/` (147 tests) finally carried over as `tests/invariants.tcyr`,
+`adversarial.tcyr`, `integration.tcyr` and `mcp_json.tcyr`. Test-only; 21 → 25 test
+files, 652 → 1,005 assertions, coverage 89% → 94%. Unblocks `rust-old/` removal.
 **2.1.2** — hardening release (2026-08-27) from a P(-1) scaffold sweep: six memory-safety
 defects fixed (two heap overflows reachable from `-D MCP` / `-D HOOSH` with
 caller-controlled length, two UTF-8 over-reads, one output-buffer overflow), the
@@ -74,15 +78,15 @@ lines of Rust preserved at `rust-old/` for parity reference. See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.1.2):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.1.2]`); `cyrius.lock` regenerated at 6.5.35 and
+- **Release-ready (2.1.3):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.1.3]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
-- **Gaps not closed by 2.1.2:** `cyrius coverage` reports 89% reference coverage
-  (249/278 fns), clearing the 80% target; the remainder is thinnest in `phoneme.cyr`
-  (20/30), `transliteration.cyr` (5/9) and `cognate.cyr` (11/15). The pre-built data
-  constructors are still rebuilt per call — see "Deferred from 2.1.2" in the roadmap for
-  why caching them was held back.
+- **Gaps not closed by 2.1.3:** `cyrius coverage` reports 94% reference coverage
+  (262/278 fns). The pre-built data constructors are still rebuilt per call — see
+  roadmap 2.1.5 for why caching them was held back — and `src/mcp.cyr` still emits
+  JSON without escaping, and `varna_translate_ipa` still returns a bare string where
+  the other four tools return objects (both also 2.1.5).
 
 ## Dependencies
 
@@ -106,18 +110,18 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35) and 2.1.2 a hardening sweep.
+The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port.
 
 See the [roadmap](roadmap.md) `2.1.x — Carry-over` section for the scheduled items
 (2.1.3 test-suite port, 2.1.4 `rust-old/` removal, 2.1.5 deferred hardening work,
 2.1.6 script-registry completeness). In brief:
 
-- **`rust-old/` removal is gated on porting the Rust integration suites.** The
-  API port is verified complete — all 150 Rust `pub fn` have Cyrius counterparts
-  and the 48 inventories match by name — but the four suites under
-  `rust-old/tests/` (147 tests: `invariants` 33, `adversarial` 54, `integration`
-  33, `serde_roundtrip` 27) were never carried over. Delete the directory and the
-  record of what they asserted goes with it. Port, then delete.
+- **`rust-old/` removal is unblocked** as of 2.1.3. The API port was already
+  verified complete — all 150 Rust `pub fn` have Cyrius counterparts and the 48
+  inventories match by name — and the four suites under `rust-old/tests/` (147
+  tests: `invariants` 33, `adversarial` 54, `integration` 33, `serde_roundtrip` 27)
+  are now ported, so deleting the directory no longer loses the record of what they
+  asserted. Remaining work for 2.1.4 is the reference sweep, not the tests.
 - **Optimization** (unstarted, see `docs/benchmarks-rust-vs-cyrius.md`): cache the immutable
   pre-built inventories/scripts/profiles (build-once); intern lookups. Parity-safe wins.
   Held back from 2.1.2 because it changes public semantics — see roadmap 2.1.5.

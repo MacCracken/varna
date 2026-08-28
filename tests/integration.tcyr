@@ -1,0 +1,252 @@
+# tests/integration.tcyr — cross-module behaviour.
+#
+# Port of the non-serde half of rust-old/tests/integration.rs — the third of the
+# four standalone Rust suites the 2.0.0 port left behind.
+#
+# Of its 33 tests, 15 were `serde_json` roundtrips of types that no longer exist
+# in that form: the Cyrius port has no serde (see ADR 0001), records are raw heap
+# structs and JSON is hand-built in `src/mcp.cyr`. Those are covered instead by
+# the JSON well-formedness group in tests/mcp_json.tcyr. The 18 behavioural tests
+# are here.
+#
+# A few overlap with tests/invariants.tcyr (the consonant/vowel split, cognate
+# registration). Kept, because the Rust suite asserted them at both levels and
+# they are cheap.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+fn main() {
+    alloc_init();
+    var i = 0;
+    var j = 0;
+
+    # ---------------------------------------------------------------
+    test_group("phoneme_classification");
+
+    var en = phoneme_english();
+    assert_eq(phoneme_consonant_count(en) + phoneme_vowel_count(en), vec_len(phoneme_list(en)),
+        "English consonant + vowel == total");
+
+    # test_phoneme_kind_classification — every phoneme is Consonant or Vowel and
+    # nothing else. In Rust this was a match with a panicking catch-all; here the
+    # kind is an integer, so the check is that it is one of the two constants.
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    var bad_kind = 0;
+    i = 0;
+    while (i < n) {
+        var inv = registry_phonemes(vec_get(codes, i));
+        var ph = phoneme_list(inv);
+        j = 0;
+        while (j < vec_len(ph)) {
+            var kind = phoneme_kind(vec_get(ph, j));
+            if (kind != PhonemeKind.Consonant) {
+                if (kind != PhonemeKind.Vowel) { bad_kind = bad_kind + 1; }
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad_kind, 0, "every phoneme is a Consonant or a Vowel");
+
+    # test_all_inventories_consonant_vowel_split
+    var split_bad = 0;
+    i = 0;
+    while (i < n) {
+        var inv2 = registry_phonemes(vec_get(codes, i));
+        if (phoneme_consonant_count(inv2) + phoneme_vowel_count(inv2) != vec_len(phoneme_list(inv2))) {
+            split_bad = split_bad + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(split_bad, 0, "consonant + vowel == total for every inventory");
+
+    # ---------------------------------------------------------------
+    test_group("phoneme_constructors");
+
+    var c = phoneme_consonant("t", Manner.Plosive, Place.Alveolar, 0);
+    assert(streq(phoneme_ipa(c), "t"), "consonant keeps its IPA");
+    assert_eq(phoneme_kind(c), PhonemeKind.Consonant, "consonant kind");
+    assert_eq(phoneme_manner(c), Manner.Plosive, "consonant manner");
+    assert_eq(phoneme_place(c), Place.Alveolar, "consonant place");
+    assert_eq(phoneme_voiced(c), 0, "consonant voicing");
+
+    var v = phoneme_vowel("iː", Height.Close, Backness.Front, 0);
+    assert(streq(phoneme_ipa(v), "iː"), "vowel keeps its IPA");
+    assert_eq(phoneme_kind(v), PhonemeKind.Vowel, "vowel kind");
+    assert_eq(phoneme_height(v), Height.Close, "vowel height");
+    assert_eq(phoneme_backness(v), Backness.Front, "vowel backness");
+    assert_eq(phoneme_rounded(v), 0, "vowel rounding");
+
+    # ---------------------------------------------------------------
+    test_group("registry_script_consistency");
+
+    # Where a language's primary script resolves, the resolved Script's code must
+    # equal the first entry in the registry's own script list.
+    var mismatch = 0;
+    var resolved_count = 0;
+    i = 0;
+    while (i < n) {
+        var code = vec_get(codes, i);
+        var li = registry_info(code);
+        var first = vec_get(registry_info_scripts(li), 0);
+        var sc = registry_primary_script(code);
+        if (sc != 0) {
+            resolved_count = resolved_count + 1;
+            if (streq(script_code(sc), first) == 0) { mismatch = mismatch + 1; }
+        }
+        i = i + 1;
+    }
+    assert_eq(mismatch, 0, "resolved primary script matches the registry's first script code");
+    assert_eq(resolved_count, 42, "42 of 51 languages resolve a primary script (roadmap 2.1.6)");
+
+    # ---------------------------------------------------------------
+    test_group("allophone_cross_module");
+
+    # An allophone is a realization, not an inventory member: /t/ is in English,
+    # its intervocalic tap [ɾ] is not.
+    var rules = allophone_english();
+    assert_eq(phoneme_has(en, "t"), 1, "/t/ is in the English inventory");
+    assert(streq(allophone_realize(rules, "t", Environment.Intervocalic), "ɾ"),
+        "intervocalic /t/ realizes as [ɾ]");
+    assert_eq(phoneme_has(en, "ɾ"), 0, "[ɾ] is an allophone, not an inventory phoneme");
+
+    # ---------------------------------------------------------------
+    test_group("numerals_cross_module");
+
+    # θεος (theos) = 9 + 5 + 70 + 200
+    assert_eq(numerals_string_value(numerals_greek_isopsephy(), "θεος"), 284,
+        "Greek isopsephy of θεος is 284");
+
+    # ---------------------------------------------------------------
+    test_group("dialect_cross_module");
+
+    var rp = dialect_british_english();
+    var rp_inv = dialect_apply(rp, en);
+    assert_eq(phoneme_has(rp_inv, "ɒ"), 1, "RP adds /ɒ/");
+    assert_eq(phoneme_has(rp_inv, "ɹ"), 0, "RP removes /ɹ/");
+    assert_eq(phoneme_has(rp_inv, "p"), 1, "RP keeps /p/");
+    assert_eq(phoneme_has(rp_inv, "θ"), 1, "RP keeps /θ/");
+    assert(streq(phoneme_language_code(rp_inv), "en-GB"), "overlay carries the variety code");
+
+    # ---------------------------------------------------------------
+    test_group("cognate_cross_registry");
+
+    # Every registered cognate language resolves to a non-empty inventory.
+    var cog = cognate_water();
+    var cents = cognate_entries(cog);
+    var empty_inv = 0;
+    i = 0;
+    while (i < vec_len(cents)) {
+        var lang = cognate_entry_language(vec_get(cents, i));
+        if (registry_info(lang) != 0) {
+            if (vec_len(phoneme_list(registry_phonemes(lang))) == 0) { empty_inv = empty_inv + 1; }
+        }
+        i = i + 1;
+    }
+    assert_eq(empty_inv, 0, "registered cognate languages have non-empty inventories");
+
+    # ---------------------------------------------------------------
+    test_group("swadesh_cross_language");
+
+    # Swadesh index 23 is "water" in every list — the shared gloss set is what
+    # makes the lists comparable across languages.
+    var wcodes = swadesh_all_codes();
+    var missing_water = 0;
+    var wrong_gloss = 0;
+    i = 0;
+    while (i < vec_len(wcodes)) {
+        var lex = swadesh_by_code(vec_get(wcodes, i));
+        var ents = lexicon_entries(lex);
+        var found = 0;
+        j = 0;
+        while (j < vec_len(ents)) {
+            var e = vec_get(ents, j);
+            if (lex_swadesh_index(e) == 23) {
+                found = 1;
+                if (streq(lex_gloss(e), "water") == 0) { wrong_gloss = wrong_gloss + 1; }
+            }
+            j = j + 1;
+        }
+        if (found == 0) { missing_water = missing_water + 1; }
+        i = i + 1;
+    }
+    assert_eq(missing_water, 0, "every Swadesh list carries index 23");
+    assert_eq(wrong_gloss, 0, "index 23 glosses as water in every list");
+
+    # ---------------------------------------------------------------
+    test_group("tone_system_consistency");
+
+    # test_tonal_languages_have_tones — these five are tonal by construction.
+    var tonal = vec_new();
+    vec_push(tonal, "zh");
+    vec_push(tonal, "yo");
+    vec_push(tonal, "th");
+    vec_push(tonal, "vi");
+    vec_push(tonal, "lzh");
+    var no_tones = 0;
+    var not_tonal_stress = 0;
+    i = 0;
+    while (i < vec_len(tonal)) {
+        var tinv = registry_phonemes(vec_get(tonal, i));
+        if (phoneme_tones(tinv) == 0) { no_tones = no_tones + 1; }
+        if (phoneme_stress(tinv) != StressPattern.Tonal) { not_tonal_stress = not_tonal_stress + 1; }
+        i = i + 1;
+    }
+    assert_eq(no_tones, 0, "every tonal language carries a tone list");
+    assert_eq(not_tonal_stress, 0, "every tonal language has Tonal stress");
+
+    # test_non_tonal_languages_no_tones
+    var non_tonal = vec_new();
+    vec_push(non_tonal, "en");
+    vec_push(non_tonal, "es");
+    vec_push(non_tonal, "fr");
+    vec_push(non_tonal, "de");
+    vec_push(non_tonal, "ru");
+    vec_push(non_tonal, "pt");
+    vec_push(non_tonal, "la");
+    vec_push(non_tonal, "fi");
+    vec_push(non_tonal, "tr");
+    var stray_tones = 0;
+    i = 0;
+    while (i < vec_len(non_tonal)) {
+        if (phoneme_tones(registry_phonemes(vec_get(non_tonal, i))) != 0) {
+            stray_tones = stray_tones + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(stray_tones, 0, "no non-tonal language carries a tone list");
+
+    # ---------------------------------------------------------------
+    test_group("error_messages");
+
+    # test_error_display / test_all_error_variants_display asserted the formatted
+    # payload ("unknown language: zz"). The Cyrius enum carries no payload, so the
+    # portable half is the static message per code; the interpolating path lives
+    # in `_tool_err2` (src/mcp.cyr) and is covered by tests/hardening_surfaces.tcyr.
+    assert(streq(varna_error_str(VarnaError.VARNA_UNKNOWN_LANGUAGE), "unknown language"), "unknown language");
+    assert(streq(varna_error_str(VarnaError.VARNA_UNKNOWN_SCRIPT), "unknown script"), "unknown script");
+    assert(streq(varna_error_str(VarnaError.VARNA_INVALID_IPA), "invalid IPA symbol"), "invalid IPA");
+    assert(streq(varna_error_str(VarnaError.VARNA_WORD_NOT_FOUND), "word not found"), "word not found");
+    assert(streq(varna_error_str(VarnaError.VARNA_PHONEME_NOT_IN_INVENTORY), "phoneme not in inventory"),
+        "phoneme not in inventory");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

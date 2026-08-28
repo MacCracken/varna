@@ -1,0 +1,244 @@
+# tests/adversarial.tcyr — edge-case and boundary inputs for all public APIs.
+#
+# Port of rust-old/tests/adversarial.rs (54 tests) — the second of the four
+# standalone Rust suites the 2.0.0 port left behind, and the one that matters
+# most: it is the class of test that would have caught the 2.1.2 heap overflows
+# (`registry_info_very_long_code`, `phoneme_find_very_long_string`,
+# `error_display_very_long`) years earlier.
+#
+# Sentinel mapping — Rust `Option::None` becomes:
+#   0      for pointer returns (registry/script/grammar/lexicon/cognate/translit)
+#   (0-1)  for numeric returns (numerals_value_of, phonotactics_is_permitted)
+#
+# Three Rust tests do not port and are documented at their group below:
+# interior-NUL strings and the payload-carrying VarnaError have no Cyrius
+# equivalent. Nothing is silently dropped.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+# Heap cstring of `n` copies of the byte `b`.
+fn _rep_byte(b, n) {
+    var s = alloc(n + 1);
+    var i = 0;
+    while (i < n) {
+        store8(s + i, b);
+        i = i + 1;
+    }
+    store8(s + n, 0);
+    return s;
+}
+
+# Heap cstring repeating the multi-byte cstring `unit` `n` times.
+fn _rep_str(unit, n) {
+    var ulen = strlen(unit);
+    var s = alloc(ulen * n + 1);
+    var i = 0;
+    while (i < n) {
+        memcpy(s + i * ulen, unit, ulen);
+        i = i + 1;
+    }
+    store8(s + ulen * n, 0);
+    return s;
+}
+
+fn main() {
+    alloc_init();
+
+    # ---------------------------------------------------------------
+    test_group("registry_edge_cases");
+    assert_eq(registry_info(""), 0, "registry_info empty string");
+    assert_eq(registry_info(_rep_byte(97, 1000)), 0, "registry_info 1000-char code");
+    assert_eq(registry_info("🔥💀"), 0, "registry_info emoji");
+    assert_eq(registry_info("\u{FEFF}"), 0, "registry_info BOM");
+    assert_eq(registry_phonemes(""), 0, "registry_phonemes empty string");
+    assert_eq(registry_phonemes("🔥"), 0, "registry_phonemes emoji");
+    assert_eq(registry_primary_script(""), 0, "registry_primary_script empty");
+    assert_eq(registry_primary_script("zzzzz"), 0, "registry_primary_script invalid");
+    # DIVERGENCE: rust `registry_info("en\0")` asserted None, testing that a Rust
+    # String may carry an interior NUL. A Cyrius cstring terminates at the first
+    # NUL, so that literal simply *is* "en" and resolves. The property does not
+    # exist here; asserting it either way would be theatre.
+    assert(registry_info("en") != 0, "registry_info en resolves (interior-NUL case is N/A in Cyrius)");
+
+    # ---------------------------------------------------------------
+    test_group("script_edge_cases");
+    assert_eq(script_by_code(""), 0, "script_by_code empty");
+    assert_eq(script_by_code("latn"), 0, "ISO 15924 codes are case-sensitive");
+    assert_eq(script_by_code("🔥🔥🔥🔥"), 0, "script_by_code emoji");
+    var latin = script_latin();
+    assert_eq(script_contains_codepoint(latin, 0), 0, "codepoint 0 not in Latin");
+    assert_eq(script_contains_codepoint(latin, 4294967295), 0, "u32::MAX not in Latin");
+    var deva = script_devanagari();
+    assert_eq(script_contains_codepoint(deva, 0x08FF), 0, "just below Devanagari range");
+    assert_eq(script_contains_codepoint(deva, 0x0900), 1, "Devanagari range low bound");
+    assert_eq(script_contains_codepoint(deva, 0x097F), 1, "Devanagari range high bound");
+    assert_eq(script_contains_codepoint(deva, 0x0980), 0, "just above Devanagari range");
+
+    # ---------------------------------------------------------------
+    test_group("phoneme_lookup_edge_cases");
+    var en = phoneme_english();
+    assert_eq(phoneme_find(en, ""), 0, "phoneme_find empty string");
+    assert_eq(phoneme_has(en, ""), 0, "phoneme_has empty string");
+    assert_eq(phoneme_find(en, "🔥"), 0, "phoneme_find emoji");
+    assert_eq(phoneme_find(en, "\u{200B}"), 0, "phoneme_find zero-width space");
+    assert_eq(phoneme_find(en, _rep_str("ʃ", 1000)), 0, "phoneme_find 1000-symbol string");
+    # Lookalikes that are NOT the IPA symbol.
+    assert_eq(phoneme_find(en, "S"), 0, "Latin capital S is not IPA ʃ");
+    assert_eq(phoneme_find(en, "g"), 0, "ASCII g is not IPA ɡ");
+    assert(phoneme_find(en, "ɡ") != 0, "IPA ɡ (U+0261) is present");
+
+    # ---------------------------------------------------------------
+    test_group("builder_edge_cases");
+    var empty_inv = phoneme_builder_build(phoneme_builder_new("xx", "Empty"));
+    assert_eq(phoneme_consonant_count(empty_inv), 0, "empty builder has no consonants");
+    assert_eq(phoneme_vowel_count(empty_inv), 0, "empty builder has no vowels");
+    assert_eq(vec_len(phoneme_list(empty_inv)), 0, "empty builder has no phonemes");
+    assert_eq(phoneme_find(empty_inv, "a"), 0, "empty inventory finds nothing");
+    assert_eq(phoneme_has(empty_inv, "a"), 0, "empty inventory has nothing");
+
+    var blank = phoneme_builder_new("", "");
+    phoneme_builder_consonant(blank, "", Manner.Plosive, Place.Bilabial, 0);
+    blank = phoneme_builder_build(blank);
+    assert(streq(phoneme_language_code(blank), ""), "blank language code round-trips");
+    assert_eq(phoneme_consonant_count(blank), 1, "empty-string phoneme still counts");
+    assert_eq(phoneme_has(blank, ""), 1, "empty-string phoneme is findable");
+
+    var uni = phoneme_builder_new("xx", "Unicode Test");
+    phoneme_builder_consonant(uni, "🔥", Manner.Plosive, Place.Bilabial, 0);
+    uni = phoneme_builder_build(uni);
+    assert_eq(phoneme_has(uni, "🔥"), 1, "emoji IPA symbol is findable");
+
+    # `cap` is ignored in the Cyrius port (see src/phoneme.cyr) — the invariant
+    # the Rust test pinned, that a zero capacity still builds, holds regardless.
+    var zerocap = phoneme_builder_with_capacity("xx", "Zero Cap", 0);
+    phoneme_builder_consonant(zerocap, "p", Manner.Plosive, Place.Bilabial, 0);
+    zerocap = phoneme_builder_build(zerocap);
+    assert_eq(phoneme_consonant_count(zerocap), 1, "zero-capacity builder still accepts phonemes");
+
+    # ---------------------------------------------------------------
+    test_group("grammar_edge_cases");
+    assert_eq(grammar_by_code(""), 0, "grammar_by_code empty");
+    assert_eq(grammar_by_code("中文"), 0, "grammar_by_code CJK text");
+
+    # ---------------------------------------------------------------
+    test_group("lexicon_edge_cases");
+    var empty_lex = _lexicon_new("en");
+    assert_eq(lexicon_find(empty_lex, ""), 0, "find on an empty lexicon");
+    assert_eq(vec_len(lexicon_swadesh(empty_lex)), 0, "swadesh of an empty lexicon");
+    assert_eq(vec_len(lexicon_most_frequent(empty_lex, 100)), 0, "most_frequent of an empty lexicon");
+
+    var es = swadesh_by_code("es");
+    assert_eq(vec_len(lexicon_most_frequent(es, 0)), 0, "most_frequent(0) is empty");
+    var huge = lexicon_most_frequent(es, 1000000);
+    assert(vec_len(huge) <= vec_len(lexicon_entries(es)), "most_frequent(huge) is capped at what exists");
+
+    # ---------------------------------------------------------------
+    test_group("swadesh_edge_cases");
+    assert_eq(swadesh_by_code(""), 0, "swadesh_by_code empty");
+    assert_eq(swadesh_by_code("xx"), 0, "swadesh_by_code unknown");
+    assert_eq(swadesh_by_code("🔥"), 0, "swadesh_by_code emoji");
+
+    # ---------------------------------------------------------------
+    test_group("cognate_edge_cases");
+    var cog = cognate_water();
+    assert_eq(cognate_for_language(cog, ""), 0, "cognate_for_language empty");
+    assert_eq(cognate_for_language(cog, "zz"), 0, "cognate_for_language unknown");
+
+    # ---------------------------------------------------------------
+    test_group("transliteration_edge_cases");
+    var iast = translit_devanagari_iast();
+    var beta = translit_greek_beta_code();
+    assert(streq(translit_apply(iast, ""), ""), "empty input transliterates to empty");
+    assert(streq(translit_apply(iast, "hello world"), "hello world"), "ASCII passes through");
+    assert(streq(translit_apply(beta, "🔥"), "🔥"), "emoji passes through");
+    assert_eq(translit_char(iast, ""), 0, "translit_char empty");
+    assert(vec_len(translit_forward(iast)) > 0, "reverse map source table is non-empty");
+    var rev = translit_reverse_map(iast);
+    assert(map_get(rev, "a") != 0, "reverse map resolves a known target");
+    # DIVERGENCE: rust `transliterate("\0") == "\0"` pinned that an interior NUL
+    # survives the walk. A Cyrius cstring ends at the first NUL, so the literal is
+    # the empty string and the assertion above ("empty input transliterates to
+    # empty") is the same property expressed in this representation.
+
+    # ---------------------------------------------------------------
+    test_group("numeral_edge_cases");
+    var dev = numerals_devanagari_digits();
+    var iso = numerals_greek_isopsephy();
+    assert_eq(numerals_value_of(dev, ""), 0 - 1, "value_of empty is unmapped");
+    assert_eq(numerals_value_of(iso, "🔥"), 0 - 1, "value_of emoji is unmapped");
+    assert_eq(numerals_char_for(iso, 0), 0, "Greek isopsephy has no zero");
+    assert_eq(numerals_char_for(dev, 4294967295), 0, "char_for u32::MAX is absent");
+    assert_eq(numerals_string_value(iso, ""), 0, "sum of nothing is 0");
+    assert_eq(numerals_string_value(iso, "X"), 0 - 1, "Latin X is unmapped in Greek");
+    assert_eq(numerals_string_value(iso, "αX"), 0 - 1, "one unmapped char poisons the sum");
+    # value 0 is a legitimate Devanagari mapping, distinct from the unmapped
+    # sentinel — the reason value_of returns (0-1) rather than 0.
+    assert_eq(numerals_value_of(dev, "०"), 0, "Devanagari zero has value 0");
+
+    # ---------------------------------------------------------------
+    test_group("allophone_edge_cases");
+    var allo = allophone_english();
+    assert_eq(vec_len(allophone_rules_for(allo, "")), 0, "no rules for the empty phoneme");
+    assert(streq(allophone_realize(allo, "ʀ", Environment.WordInitial), "ʀ"),
+        "unmapped phoneme realizes to itself");
+    assert(streq(allophone_realize(allo, "", Environment.WordInitial), ""),
+        "empty phoneme realizes to itself");
+
+    # ---------------------------------------------------------------
+    test_group("phonotactics_edge_cases");
+    var phono = phonotactics_english();
+    assert_eq(phonotactics_is_permitted(phono, "", SyllablePosition.Onset), 0 - 1,
+        "empty sequence is unspecified, not forbidden");
+    assert_eq(vec_len(phonotactics_constraints_at(phono, SyllablePosition.Nucleus)), 0,
+        "no constraints at an unused position");
+
+    # ---------------------------------------------------------------
+    test_group("dialect_edge_cases");
+    var rp = dialect_british_english();
+    assert_eq(dialect_adds(rp, ""), 0, "dialect_adds empty");
+    assert_eq(dialect_removes(rp, ""), 0, "dialect_removes empty");
+    # dialect_apply_idempotent — re-applying the overlay changes nothing, because
+    # the added phonemes are already present and the removed ones already gone.
+    var first = dialect_apply(rp, en);
+    var second = dialect_apply(rp, first);
+    assert_eq(phoneme_consonant_count(second), phoneme_consonant_count(first),
+        "second apply keeps the consonant count");
+    assert_eq(phoneme_vowel_count(second), phoneme_vowel_count(first),
+        "second apply keeps the vowel count");
+
+    # ---------------------------------------------------------------
+    test_group("error_edge_cases");
+    # DIVERGENCE: the Rust VarnaError variants carried a payload String
+    # (`UnknownLanguage(String)`), so `error_display_empty_strings`,
+    # `error_display_unicode` and `error_display_very_long` tested formatting a
+    # caller-supplied string into the message. The Cyrius enum is a plain integer
+    # code with static messages (src/error.cyr), so those three do not port.
+    #
+    # The concern behind them — an unbounded caller string reaching a formatter —
+    # is real in this port and lives in `_tool_err2` (src/mcp.cyr), which is
+    # covered by tests/hardening_surfaces.tcyr after the 2.1.2 overflow fix.
+    assert(streq(varna_error_str(VarnaError.VARNA_UNKNOWN_LANGUAGE), "unknown language"),
+        "unknown language message is static, no payload");
+    assert(streq(varna_error_str(VarnaError.VARNA_UNKNOWN_SCRIPT), "unknown script"),
+        "unknown script message is static, no payload");
+    assert(streq(varna_error_str(0 - 1), "unknown error"), "out-of-range code still renders");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

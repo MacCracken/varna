@@ -7,8 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.3] - 2026-08-27
+
+Roadmap item 2.1.3: port the four standalone Rust test suites the 2.0.0 port left
+behind. Test-only — no source changes, so benchmarks are unmoved and no new
+`bench-history.csv` row was recorded.
+
+The 2.0.0 port carried every module's public API and its in-module unit tests, but
+not the 147 tests under `rust-old/tests/`. That gap is why `rust-old/` could not be
+deleted: removing it would have destroyed the record of what those tests asserted.
+It is now closed, which unblocks 2.1.4.
+
+### Added
+
+- **tests/invariants.tcyr** (39 assertions) — port of `rust-old/tests/invariants.rs`
+  (33 tests). Structural guarantees across the whole dataset: code uniqueness for
+  languages/scripts/grammar/Swadesh, consonant+vowel totals, no duplicate or empty
+  IPA symbols, inventory codes matching their registry key, tones and `Tonal` stress
+  implying each other, well-formed Unicode ranges, 25-entry Swadesh lists covering
+  indices 1-25, numeral tables without duplicates, decimal digit runs, and
+  registered dialect parents and cognate languages.
+- **tests/adversarial.tcyr** (74 assertions) — port of `rust-old/tests/adversarial.rs`
+  (54 tests): empty strings, 1000-character codes, emoji, BOM, zero-width space,
+  IPA lookalikes (`S` vs `ʃ`, ASCII `g` vs `ɡ`), case-sensitive ISO 15924 codes,
+  codepoint boundaries either side of every script range, `u32::MAX`, empty and
+  zero-capacity builders, `most_frequent(0)` and `most_frequent(1_000_000)`,
+  unmapped and mixed-validity numeral strings, and dialect idempotence. **This is
+  the suite whose absence let the 2.1.2 heap overflows survive** — it already
+  contained `registry_info_very_long_code`, `phoneme_find_very_long_string` and
+  `error_display_very_long`.
+- **tests/integration.tcyr** (35 assertions) — the 18 behavioural tests from
+  `rust-old/tests/integration.rs`: phoneme-kind classification, constructor field
+  round-trips, registry/script consistency, the allophone/inventory boundary
+  (`/t/` is an English phoneme, its intervocalic tap `[ɾ]` is not), Greek isopsephy
+  of θεος, the RP overlay, cognate/registry cross-checks, Swadesh index 23 glossing
+  as "water" in every list, and the tonal/non-tonal split.
+- **tests/mcp_json.tcyr** (28 assertions) — stands in for
+  `rust-old/tests/serde_roundtrip.rs` (27 tests), which cannot port directly: there
+  is no serde in Cyrius and no deserializer to round-trip against. It checks the
+  property the roundtrips were protecting — that every payload the library emits is
+  structurally valid JSON — across 51 phoneme payloads, every script and grammar
+  payload, and 204 compare payloads, using a structural validator that is itself
+  self-checked against eleven malformed inputs.
+
 ### Changed
 
+- **docs/development/roadmap.md** — the pre-port `1.1.0`-`1.5.0` tiers are
+  renumbered `2.2.0`-`2.6.0` and the section retitled; the old numbers predated the
+  2.0.0 port and no longer tracked the shipping version. 2.1.3 is removed from the
+  carry-over list and 2.1.4 (`rust-old/` removal) is no longer gated.
 - **docs/development/roadmap.md** — reduced to open work only. The `Completed`
   section (2.1.2 back through the 0.x Rust-crate line) is dropped; release history
   lives in this file and the git tags. Added a `2.1.x — Carry-over` section for
@@ -44,6 +91,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unregistered — **not a port regression**: the Rust invariant explicitly tolerated
   the same gap ("Some scripts may not be registered yet (Thai, Beng, etc.)").
   Tracked as 2.1.6.
+
+
+### Notes
+
+- **Four Rust tests do not port, and are documented inline rather than dropped
+  silently.** `registry_info("en\0")` and `transliterate("\0")` tested that a Rust
+  `String` may carry an interior NUL; a Cyrius cstring ends at the first NUL, so the
+  property does not exist here. The three `error_display_*` tests formatted a
+  payload into `VarnaError`, which in Cyrius is a plain integer code with static
+  messages — the concern behind them (an unbounded caller string reaching a
+  formatter) lives in `_tool_err2` and is covered by `tests/hardening_surfaces.tcyr`.
+- **All 26 checkable invariants hold.** The 27th, `registry_script_codes_resolve`,
+  is ported in the tolerant form the Rust original used and pins the current gap
+  exactly: 9 of 51 languages name an unregistered primary script (Thai, Bengali,
+  Tamil, Amharic, Hebrew, Georgian, Burmese, Khmer, Lao). Not a port regression —
+  the Rust invariant carried the same allowance in a comment. Roadmap 2.1.6 adds the
+  scripts, at which point the assertion can be tightened.
+- Suite totals: 21 → 25 test files, 652 → 1,005 assertions, reference coverage
+  89% → 94%.
 
 
 ## [2.1.2] - 2026-08-27

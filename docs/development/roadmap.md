@@ -21,43 +21,19 @@ tracks only what is still open.
 ## 2.1.x — Carry-over
 
 Work identified but deliberately not taken in the release that surfaced it.
+2.1.3 (porting the Rust test suites) landed — see the CHANGELOG.
 
-### 2.1.3 — Port the Rust integration suites [blocks 2.1.4]
-
-The 2.0.0 port carried every module's public API and its in-module unit tests,
-but **not** the four standalone suites under `rust-old/tests/` — 147 tests that
-never had a Cyrius counterpart:
-
-| Suite | Tests | Status |
-|---|---|---|
-| `invariants.rs` | 33 | Structural guarantees; **not ported** |
-| `adversarial.rs` | 54 | Edge-case/robustness; **not ported** |
-| `integration.rs` | 33 | Cross-module; ~15 are serde-only, rest **not ported** |
-| `serde_roundtrip.rs` | 27 | N/A — no serde in Cyrius (see [ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)) |
-
-This is the highest-value item on the list. `adversarial.rs` is precisely the
-class of test that would have caught the 2.1.2 heap overflows years earlier — it
-already contains `registry_info_very_long_code`, `phoneme_find_very_long_string`,
-`error_display_very_long` and `transliteration_null_bytes`.
-
-The invariants were probed against current data during the 2.1.2 review: 26 of
-the 27 checkable ones hold. Porting them is guarding behaviour that is already
-correct, not repairing it — but nothing currently stops a future edit breaking
-them. Suggested landing spots: `tests/invariants.tcyr` and
-`tests/adversarial.tcyr`.
-
-For the serde suite, the equivalent Cyrius concern is the hand-built JSON in
-`src/mcp.cyr`, which has 22 assertions in `tests/mcp.tcyr` against 27 Rust
-roundtrip tests. Worth a pass for output well-formedness (escaping, in
-particular — see the note under 2.1.5).
-
-### 2.1.4 — Remove `rust-old/` [gated on 2.1.3]
+### 2.1.4 — Remove `rust-old/`
 
 `rust-old/` is the frozen parity oracle: 35 files, 8,386 lines, 484K. The public
 API port is verified complete (all 150 Rust `pub fn` have Cyrius counterparts;
-48/48 inventories match by name), so nothing in `src/` depends on it. What still
-does is 2.1.3: once the directory is gone, we can no longer read what those 147
-tests asserted. Port first, delete second.
+48/48 inventories match by name), so nothing in `src/` depends on it.
+
+**Unblocked as of 2.1.3** — the four standalone suites under `rust-old/tests/`
+are now ported (`tests/invariants.tcyr`, `tests/adversarial.tcyr`,
+`tests/integration.tcyr`, `tests/mcp_json.tcyr`), so deleting the directory no
+longer loses the record of what they asserted. Four Rust tests were documented as
+non-portable rather than carried; see the 2.1.3 CHANGELOG entry.
 
 When it goes, sweep with it:
 
@@ -112,16 +88,17 @@ Not a port regression — the Rust crate had the identical gap, and its
 may not be registered yet (Thai, Beng, etc.)"). Adding the nine closes the gap
 and lets 2.1.3 port that invariant in its strict form.
 
-## Post-1.0 Roadmap — "World's Leading Authority"
+## 2.2.0+ — "World's Leading Authority"
 
 > Gaps identified by comparing varna against PHOIBLE, WALS, Glottolog, Unicode CLDR,
-> and the IPA specification. Prioritized by impact on credibility and utility.
+> and the IPA specification. Ordered by impact on credibility and utility; the
+> `(P1)`-`(P4)` tags are that priority, the version numbers are the intended
+> sequence after the `2.1.x` carry-over work lands.
 >
-> The `1.x` numbering below is the **pre-port** plan and no longer tracks the
-> shipping version (varna is on `2.1.x`). Read the headings as priority tiers
-> P1-P4, not as releases; they will be renumbered when one is scheduled.
+> Renumbered from the pre-port `1.1.0`-`1.5.0` plan (2026-08-27) — the old numbers
+> predated the 2.0.0 Cyrius port and no longer tracked the shipping version.
 
-### 1.1.0 — Phonological Depth (P1)
+### 2.2.0 — Phonological Depth (P1)
 
 - [ ] **Distinctive feature system**: Add `DistinctiveFeatures` bundle with 20+ binary features per phoneme (sonorant, continuant, strident, anterior, distributed, ATR/RTR, spread/constricted glottis, syllabic, etc.) — PHOIBLE parity
 - [ ] **Manner expansion**: Add `Click`, `Implosive`, `Ejective` to `Manner` enum — reclassify Zulu clicks, Georgian ejectives, Hausa implosives
@@ -129,7 +106,7 @@ and lets 2.1.3 port that invariant in its strict form.
 - [ ] **Vowel features**: `long`, `nasalized`, `atr` (Advanced Tongue Root) fields on the `PhonemeKind.Vowel` variant
 - [ ] **Tone as structured data**: Replace string tone labels with `Tone` structs (contour, register, features)
 
-### 1.2.0 — Typological Depth (P2)
+### 2.3.0 — Typological Depth (P2)
 
 - [ ] **Grammar expansion** toward WALS parity: alignment type (nom-acc/erg-abs/active-stative), adposition order, tense/aspect system, evidentiality, negation strategy, adjective order, relative clause order, article type
 - [ ] **Language classification**: Add `family`, `subfamily`, `genus` to `LanguageInfo` (Indo-European > Germanic > West Germanic)
@@ -138,7 +115,7 @@ and lets 2.1.3 port that invariant in its strict form.
 - [ ] **Endangerment status**: `EndangermentLevel` enum (Safe/Vulnerable/Threatened/Shifting/Moribund/NearlyExtinct/Extinct)
 - [ ] **Geographic metadata**: Latitude/longitude per language, macro-area classification
 
-### 1.3.0 — Gematria & Numeric Letter Values (P2)
+### 2.4.0 — Gematria & Numeric Letter Values (P2)
 
 Extend `script::numerals` into a full character→number mapping system across scripts. Foundation for classical cipher work and sankhya gematria computation.
 
@@ -151,7 +128,7 @@ Extend `script::numerals` into a full character→number mapping system across s
 - [ ] **`script_alphabet_values(script, system)`**: Full (char, value) mapping table per script
 - [ ] **Cipher foundation**: Character↔number round-trip enables Caesar, Vigenère, substitution cipher implementations downstream (a crypto Cyrius project or sankhya)
 
-### 1.4.0 — Coverage Scale (P3)
+### 2.5.0 — Coverage Scale (P3)
 
 - [ ] **Data-driven inventories**: Load from PHOIBLE CSV/JSON for 2000+ languages (feature-gated)
 - [ ] **Expanded allophone rules**: Mandarin, Spanish, Japanese, Russian, Arabic (currently English only)
@@ -160,7 +137,7 @@ Extend `script::numerals` into a full character→number mapping system across s
 - [ ] **Source provenance**: Track bibliography/reference for each inventory
 - [ ] **Multiple inventories per language**: Competing analyses like PHOIBLE
 
-### 1.5.0+ — Differentiators (P4)
+### 2.6.0+ — Differentiators (P4)
 
 - [ ] PHOIBLE-compatible export format
 - [ ] WALS feature code mapping

@@ -7,8 +7,8 @@
 - **Type**: Flat Cyrius library (`dist/varna.cyr` bundle) + thin demo entry — no longer a Rust crate; migrated at v2.0 (see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md))
 - **License**: GPL-3.0
 - **Toolchain**: Cyrius, pinned in `cyrius.cyml` (`cyrius = "6.5.35"`)
-- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.1.2**
-- **Rust archive**: the frozen v1.x crate lives in `rust-old/` — a historical artifact, never edited. It **is** tracked in git (35 files; only `rust-old/target/` is ignored), so tags `1.0.0`/`2.0.0` keep it recoverable. Removal is scheduled as roadmap 2.1.4, gated on porting its test suites (2.1.3)
+- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.1.3**
+- **Rust archive**: the frozen v1.x crate lives in `rust-old/` — a historical artifact, never edited. It **is** tracked in git (35 files; only `rust-old/target/` is ignored), so tags `1.0.0`/`2.0.0` keep it recoverable. Removal is scheduled as roadmap 2.1.4, unblocked now that its test suites are ported (2.1.3)
 
 ## Consumers
 

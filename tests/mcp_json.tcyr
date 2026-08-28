@@ -1,0 +1,253 @@
+# tests/mcp_json.tcyr — well-formedness of the hand-built MCP JSON.
+#
+# Stands in for rust-old/tests/serde_roundtrip.rs (27 tests), the fourth of the
+# standalone Rust suites and the one that does not port directly: the Cyrius port
+# has no serde (ADR 0001), records are raw heap structs, and `src/mcp.cyr` builds
+# its JSON by appending into a fixed buffer.
+#
+# A roundtrip is not available — there is no deserializer to feed. What replaces
+# it is the property the roundtrip was really protecting: that every payload the
+# library emits is structurally valid JSON. That is checked here across the whole
+# data set (5 tools x 51 languages x 10 scripts), not on a handful of samples,
+# because the buffers are fixed-size and the append path is manual.
+
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/script.cyr"
+include "src/grammar.cyr"
+include "src/registry.cyr"
+include "src/transliteration.cyr"
+#define MCP
+include "src/mcp.cyr"
+
+# Substring test (same helper as tests/mcp.tcyr).
+fn _contains(haystack, needle) {
+    var hl = strlen(haystack);
+    var nl = strlen(needle);
+    if (nl == 0) { return 1; }
+    if (nl > hl) { return 0; }
+    var i = 0;
+    while (i <= hl - nl) {
+        var j = 0;
+        var matched = 1;
+        while (j < nl) {
+            if (load8(haystack + i + j) != load8(needle + j)) { matched = 0; }
+            j = j + 1;
+        }
+        if (matched == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Structural JSON validation. Returns 0 if valid, or a non-zero code naming the
+# first fault:
+#   1 unbalanced { }        2 unbalanced [ ]        3 unterminated string
+#   4 raw control byte in a string (must be escaped)
+#   5 trailing comma before } or ]
+#   6 empty input
+#
+# Input with more than one fault reports whichever is detected first; at
+# end-of-input the order is string, then braces, then brackets. Callers should
+# treat any non-zero as "rejected" and not read meaning into which code came back
+# for a multiply-broken document.
+#
+# This is deliberately structural rather than a full parser: it catches the
+# failure modes a manual append path actually produces — a missing brace from a
+# truncated buffer, an unescaped quote or control byte from an uninspected value.
+fn json_fault(s) {
+    var n = strlen(s);
+    if (n == 0) { return 6; }
+    var braces = 0;
+    var brackets = 0;
+    var in_str = 0;
+    var escaped = 0;
+    var last_significant = 0;
+    var i = 0;
+    while (i < n) {
+        var ch = load8(s + i) & 0xFF;
+        if (in_str == 1) {
+            if (escaped == 1) {
+                escaped = 0;
+            }
+            elif (ch == 92) {
+                escaped = 1;
+            }
+            elif (ch == 34) {
+                in_str = 0;
+            }
+            elif (ch < 0x20) {
+                return 4;
+            }
+        }
+        else {
+            if (ch == 34) { in_str = 1; }
+            elif (ch == 123) { braces = braces + 1; }
+            elif (ch == 125) {
+                braces = braces - 1;
+                if (braces < 0) { return 1; }
+                if (last_significant == 44) { return 5; }
+            }
+            elif (ch == 91) { brackets = brackets + 1; }
+            elif (ch == 93) {
+                brackets = brackets - 1;
+                if (brackets < 0) { return 2; }
+                if (last_significant == 44) { return 5; }
+            }
+            if (ch != 32) { last_significant = ch; }
+        }
+        i = i + 1;
+    }
+    if (in_str == 1) { return 3; }
+    if (braces != 0) { return 1; }
+    if (brackets != 0) { return 2; }
+    return 0;
+}
+
+fn main() {
+    alloc_init();
+    var i = 0;
+    var j = 0;
+
+    # ---------------------------------------------------------------
+    test_group("validator_self_check");
+    # The validator has to reject what it claims to reject, or the sweep below
+    # proves nothing.
+    assert_eq(json_fault("{\"a\":1}"), 0, "accepts a minimal object");
+    assert_eq(json_fault("{\"a\":[1,2],\"b\":{\"c\":\"d\"}}"), 0, "accepts nesting");
+    assert_eq(json_fault("{\"a\":\"\\\"quoted\\\"\"}"), 0, "accepts an escaped quote");
+    assert_eq(json_fault("{\"a\":1"), 1, "rejects a missing closing brace");
+    assert_eq(json_fault("{\"a\":1}}"), 1, "rejects an extra closing brace");
+    # Both of these are broken two ways at once (a brace and a bracket), so pin
+    # only that they are rejected — the specific code is a precedence detail.
+    assert(json_fault("{\"a\":[1,2}") != 0, "rejects a mismatched bracket");
+    assert(json_fault("{\"a\":[1,2") != 0, "rejects an unclosed array");
+    assert_eq(json_fault("[1,2"), 2, "rejects an unclosed array on its own");
+    assert_eq(json_fault("[1,2]]"), 2, "rejects an extra closing bracket");
+    assert_eq(json_fault("{\"a\":\"unterminated}"), 3, "rejects an unterminated string");
+    assert_eq(json_fault("{\"a\":1,}"), 5, "rejects a trailing comma");
+    assert_eq(json_fault(""), 6, "rejects empty input");
+    var ctrl = alloc(10);
+    store8(ctrl, 123); store8(ctrl + 1, 34); store8(ctrl + 2, 97); store8(ctrl + 3, 34);
+    store8(ctrl + 4, 58); store8(ctrl + 5, 34); store8(ctrl + 6, 10); store8(ctrl + 7, 34);
+    store8(ctrl + 8, 125); store8(ctrl + 9, 0);
+    assert_eq(json_fault(ctrl), 4, "rejects a raw newline inside a string");
+
+    # ---------------------------------------------------------------
+    test_group("varna_phonemes_json");
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    var bad = 0;
+    i = 0;
+    while (i < n) {
+        var p = map_new();
+        map_set(p, "language", vec_get(codes, i));
+        var r = mcp_invoke("varna_phonemes", p);
+        if (mcp_result_is_ok(r) == 0) { bad = bad + 1; }
+        if (json_fault(mcp_result_payload(r)) != 0) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "all 51 phoneme payloads are well-formed JSON");
+
+    # ---------------------------------------------------------------
+    test_group("varna_script_json");
+    var scodes = script_all_codes();
+    bad = 0;
+    i = 0;
+    while (i < vec_len(scodes)) {
+        var sp = map_new();
+        map_set(sp, "code", vec_get(scodes, i));
+        var sr = mcp_invoke("varna_script", sp);
+        if (mcp_result_is_ok(sr) == 0) { bad = bad + 1; }
+        if (json_fault(mcp_result_payload(sr)) != 0) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "all script payloads are well-formed JSON");
+
+    # ---------------------------------------------------------------
+    test_group("varna_grammar_json");
+    var gcodes = grammar_all_codes();
+    bad = 0;
+    i = 0;
+    while (i < vec_len(gcodes)) {
+        var gp = map_new();
+        map_set(gp, "language", vec_get(gcodes, i));
+        var gr = mcp_invoke("varna_grammar", gp);
+        if (mcp_result_is_ok(gr) == 0) { bad = bad + 1; }
+        if (json_fault(mcp_result_payload(gr)) != 0) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "all grammar payloads are well-formed JSON");
+
+    # ---------------------------------------------------------------
+    test_group("varna_compare_json");
+    # Every language against a fixed set of partners, including the pair with the
+    # largest combined phoneme arrays (sa + ur), which is the one closest to the
+    # 4096-byte buffer.
+    var partners = vec_new();
+    vec_push(partners, "en");
+    vec_push(partners, "sa");
+    vec_push(partners, "ur");
+    vec_push(partners, "zh");
+    bad = 0;
+    i = 0;
+    while (i < n) {
+        j = 0;
+        while (j < vec_len(partners)) {
+            var cp = map_new();
+            map_set(cp, "lang1", vec_get(codes, i));
+            map_set(cp, "lang2", vec_get(partners, j));
+            var cr = mcp_invoke("varna_compare", cp);
+            if (mcp_result_is_ok(cr) == 0) { bad = bad + 1; }
+            if (json_fault(mcp_result_payload(cr)) != 0) { bad = bad + 1; }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "all 204 compare payloads are well-formed JSON");
+
+    # ---------------------------------------------------------------
+    test_group("field_presence");
+    # The roundtrip tests also pinned that fields survive serialization. Without a
+    # deserializer the equivalent is checking the keys are present and the values
+    # are the ones the accessors report.
+    var ep = map_new();
+    map_set(ep, "language", "en");
+    var er = mcp_invoke("varna_phonemes", ep);
+    var payload = mcp_result_payload(er);
+    assert_eq(json_fault(payload), 0, "English payload is well-formed");
+    assert(_contains(payload, "\"language_code\":\"en\""), "language_code present and correct");
+    assert(_contains(payload, "\"language_name\":\"English\""), "language_name present and correct");
+    assert(_contains(payload, "\"consonant_count\":24"), "consonant_count matches the inventory");
+    assert(_contains(payload, "\"vowel_count\":12"), "vowel_count matches the inventory");
+
+    var dp = map_new();
+    map_set(dp, "code", "Deva");
+    var dr = mcp_invoke("varna_script", dp);
+    assert(_contains(mcp_result_payload(dr), "\"code\":\"Deva\""), "script code present");
+    assert(_contains(mcp_result_payload(dr), "\"name\":\"Devanagari\""), "script name present");
+
+    # ---------------------------------------------------------------
+    test_group("error_payloads_are_not_json");
+    # Error payloads are plain diagnostic strings, not JSON objects — pinning that
+    # so a consumer is not led to parse them. (Roadmap 2.1.5 tracks making the
+    # success contract uniform; varna_translate_ipa likewise returns a bare string.)
+    var bp = map_new();
+    map_set(bp, "language", "zzz");
+    var br = mcp_invoke("varna_phonemes", bp);
+    assert_eq(mcp_result_is_error(br), 1, "unknown language is an error");
+    assert(_contains(mcp_result_payload(br), "unknown language: zzz"), "error names the bad value");
+
+    var tp = map_new();
+    map_set(tp, "text", "λογος");
+    map_set(tp, "scheme", "greek_beta");
+    var tr = mcp_invoke("varna_translate_ipa", tp);
+    assert_eq(mcp_result_is_ok(tr), 1, "transliteration succeeds");
+    assert(streq(mcp_result_payload(tr), "logos"), "transliteration payload is a bare string, not JSON");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

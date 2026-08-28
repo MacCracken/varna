@@ -1,0 +1,432 @@
+# tests/invariants.tcyr — linguistic consistency properties that must always hold.
+#
+# Port of rust-old/tests/invariants.rs (33 tests) — one of the four standalone
+# Rust suites the 2.0.0 port left behind. These verify structural invariants
+# across the whole dataset: registry alignment, phoneme uniqueness, index
+# completeness and cross-module consistency.
+#
+# Rust used HashSet for the uniqueness checks; the counts here are small (51
+# languages, 10 scripts, 11 grammar/Swadesh profiles) so a nested scan is both
+# clearer and fast enough.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+# Number of duplicate pairs in a vec of cstrings (0 = all unique).
+fn _dup_pairs(v) {
+    var n = vec_len(v);
+    var dups = 0;
+    var i = 0;
+    while (i < n) {
+        var j = i + 1;
+        while (j < n) {
+            if (streq(vec_get(v, i), vec_get(v, j)) == 1) { dups = dups + 1; }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    return dups;
+}
+
+# Is `needle` present in a vec of cstrings?
+fn _contains_code(v, needle) {
+    var n = vec_len(v);
+    var i = 0;
+    while (i < n) {
+        if (streq(vec_get(v, i), needle) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+fn _numeral_systems() {
+    var v = vec_new();
+    vec_push(v, numerals_devanagari_digits());
+    vec_push(v, numerals_greek_isopsephy());
+    vec_push(v, numerals_babylonian_sexagesimal());
+    vec_push(v, numerals_egyptian_hieroglyphic());
+    vec_push(v, numerals_chinese_rod_numerals());
+    return v;
+}
+
+# Does any mapping in `sys` carry `value`?
+fn _has_value(sys, value) {
+    var ms = numerals_mappings(sys);
+    var n = vec_len(ms);
+    var i = 0;
+    while (i < n) {
+        if (load64(vec_get(ms, i) + 8) == value) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+fn main() {
+    alloc_init();
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    var i = 0;
+    var j = 0;
+    var k = 0;
+
+    # ---------------------------------------------------------------
+    test_group("registry_phoneme_alignment");
+
+    # every_registered_language_has_phonemes
+    var no_inv = 0;
+    i = 0;
+    while (i < n) {
+        if (registry_phonemes(vec_get(codes, i)) == 0) { no_inv = no_inv + 1; }
+        i = i + 1;
+    }
+    assert_eq(no_inv, 0, "every registered language has a phoneme inventory");
+
+    # all_codes_matches_registered_count
+    assert_eq(vec_len(codes), vec_len(registry_languages()), "all_codes length == registered length");
+
+    # all_codes_are_unique
+    assert_eq(_dup_pairs(codes), 0, "no duplicate language codes");
+
+    # registered_codes_match_all_codes
+    var langs = registry_languages();
+    var missing = 0;
+    i = 0;
+    while (i < vec_len(langs)) {
+        if (_contains_code(codes, registry_info_code(vec_get(langs, i))) == 0) { missing = missing + 1; }
+        i = i + 1;
+    }
+    assert_eq(missing, 0, "every registered entry appears in all_codes");
+
+    # ---------------------------------------------------------------
+    test_group("phoneme_inventory_invariants");
+
+    var split_bad = 0;
+    var dup_ipa = 0;
+    var no_c = 0;
+    var no_v = 0;
+    var code_mismatch = 0;
+    var empty_ipa = 0;
+    var tone_bad = 0;
+    i = 0;
+    while (i < n) {
+        var code = vec_get(codes, i);
+        var inv = registry_phonemes(code);
+        var ph = phoneme_list(inv);
+        var m = vec_len(ph);
+        var c = phoneme_consonant_count(inv);
+        var v = phoneme_vowel_count(inv);
+
+        # consonant_plus_vowel_equals_total_for_all_languages
+        if (c + v != m) { split_bad = split_bad + 1; }
+        # every_inventory_has_at_least_one_consonant_and_vowel
+        if (c == 0) { no_c = no_c + 1; }
+        if (v == 0) { no_v = no_v + 1; }
+        # language_code_in_inventory_matches_registry
+        if (streq(phoneme_language_code(inv), code) == 0) { code_mismatch = code_mismatch + 1; }
+        # tonal_languages_have_tonal_stress_pattern — both directions
+        if (phoneme_tones(inv) != 0) {
+            if (phoneme_stress(inv) != StressPattern.Tonal) { tone_bad = tone_bad + 1; }
+        }
+        if (phoneme_stress(inv) == StressPattern.Tonal) {
+            if (phoneme_tones(inv) == 0) { tone_bad = tone_bad + 1; }
+        }
+
+        j = 0;
+        while (j < m) {
+            var ipa = phoneme_ipa(vec_get(ph, j));
+            # no_empty_ipa_symbols
+            if (strlen(ipa) == 0) { empty_ipa = empty_ipa + 1; }
+            # no_duplicate_ipa_symbols_in_any_inventory
+            k = j + 1;
+            while (k < m) {
+                if (streq(ipa, phoneme_ipa(vec_get(ph, k))) == 1) { dup_ipa = dup_ipa + 1; }
+                k = k + 1;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(split_bad, 0, "consonant + vowel == total for every language");
+    assert_eq(no_c, 0, "every inventory has at least one consonant");
+    assert_eq(no_v, 0, "every inventory has at least one vowel");
+    assert_eq(dup_ipa, 0, "no duplicate IPA symbols in any inventory");
+    assert_eq(code_mismatch, 0, "inventory language_code matches its registry key");
+    assert_eq(empty_ipa, 0, "no empty IPA symbols");
+    assert_eq(tone_bad, 0, "tones and Tonal stress imply each other");
+
+    # ---------------------------------------------------------------
+    test_group("script_invariants");
+
+    var scodes = script_all_codes();
+    var sn = vec_len(scodes);
+    # all_script_codes_are_unique
+    assert_eq(_dup_pairs(scodes), 0, "no duplicate script codes");
+
+    var unresolved = 0;
+    var scode_mismatch = 0;
+    var no_range = 0;
+    var inverted = 0;
+    i = 0;
+    while (i < sn) {
+        var sc_code = vec_get(scodes, i);
+        var sc = script_by_code(sc_code);
+        # every_script_code_resolves
+        if (sc == 0) { unresolved = unresolved + 1; }
+        if (sc != 0) {
+            if (streq(script_code(sc), sc_code) == 0) { scode_mismatch = scode_mismatch + 1; }
+            var rs = script_unicode_ranges(sc);
+            # every_script_has_at_least_one_unicode_range
+            if (vec_len(rs) == 0) { no_range = no_range + 1; }
+            # unicode_ranges_are_well_formed
+            j = 0;
+            while (j < vec_len(rs)) {
+                var r = vec_get(rs, j);
+                if (load64(r) > load64(r + 8)) { inverted = inverted + 1; }
+                j = j + 1;
+            }
+        }
+        i = i + 1;
+    }
+    assert_eq(unresolved, 0, "every script code resolves");
+    assert_eq(scode_mismatch, 0, "resolved script reports the code it was keyed by");
+    assert_eq(no_range, 0, "every script has at least one Unicode range");
+    assert_eq(inverted, 0, "no inverted Unicode ranges (lo <= hi)");
+
+    # registry_script_codes_resolve — deliberately tolerant, matching the Rust
+    # original: nine registered languages (Thai, Beng, Taml, Ethi, Hebr, Geor,
+    # Mymr, Khmr, Laoo) name a script that is not registered yet. The invariant
+    # is that the ones which DO resolve resolve correctly. Roadmap 2.1.6 adds the
+    # missing scripts, at which point this can be tightened to require all of them.
+    var rs_mismatch = 0;
+    var rs_unregistered = 0;
+    i = 0;
+    while (i < n) {
+        var lcode = vec_get(codes, i);
+        var scode = registry_primary_script_code(lcode);
+        var resolved = script_by_code(scode);
+        if (resolved == 0) { rs_unregistered = rs_unregistered + 1; }
+        if (resolved != 0) {
+            if (streq(script_code(resolved), scode) == 0) { rs_mismatch = rs_mismatch + 1; }
+        }
+        i = i + 1;
+    }
+    assert_eq(rs_mismatch, 0, "registry script codes that resolve, resolve correctly");
+    assert_eq(rs_unregistered, 9, "9 registry script codes are still unregistered (roadmap 2.1.6)");
+
+    # ---------------------------------------------------------------
+    test_group("grammar_invariants");
+
+    var gcodes = grammar_all_codes();
+    var gn = vec_len(gcodes);
+    assert_eq(_dup_pairs(gcodes), 0, "no duplicate grammar codes");
+
+    var g_unresolved = 0;
+    var g_mismatch = 0;
+    var gender_bad = 0;
+    var g_unregistered = 0;
+    i = 0;
+    while (i < gn) {
+        var gcode = vec_get(gcodes, i);
+        var g = grammar_by_code(gcode);
+        if (g == 0) { g_unresolved = g_unresolved + 1; }
+        if (g != 0) {
+            if (streq(grammar_language_code(g), gcode) == 0) { g_mismatch = g_mismatch + 1; }
+            # gender_consistency
+            if (grammar_has_gender(g) == 1) {
+                if (grammar_gender_count(g) == 0) { gender_bad = gender_bad + 1; }
+            }
+            if (grammar_has_gender(g) == 0) {
+                if (grammar_gender_count(g) != 0) { gender_bad = gender_bad + 1; }
+            }
+        }
+        # grammar_languages_are_registered
+        if (registry_info(gcode) == 0) { g_unregistered = g_unregistered + 1; }
+        i = i + 1;
+    }
+    assert_eq(g_unresolved, 0, "every grammar code resolves");
+    assert_eq(g_mismatch, 0, "grammar profile reports the code it was keyed by");
+    assert_eq(gender_bad, 0, "has_gender and gender_count agree");
+    assert_eq(g_unregistered, 0, "every grammar language is registered");
+
+    # ---------------------------------------------------------------
+    test_group("swadesh_invariants");
+
+    var wcodes = swadesh_all_codes();
+    var wn = vec_len(wcodes);
+    assert_eq(_dup_pairs(wcodes), 0, "no duplicate Swadesh codes");
+
+    var w_not_25 = 0;
+    var w_missing_index = 0;
+    var w_empty = 0;
+    var w_unregistered = 0;
+    i = 0;
+    while (i < wn) {
+        var wcode = vec_get(wcodes, i);
+        var lex = swadesh_by_code(wcode);
+        if (registry_info(wcode) == 0) { w_unregistered = w_unregistered + 1; }
+        if (lex == 0) { w_not_25 = w_not_25 + 1; }
+        if (lex != 0) {
+            var ents = lexicon_entries(lex);
+            # every_swadesh_list_has_25_entries
+            if (vec_len(ents) != 25) { w_not_25 = w_not_25 + 1; }
+            # swadesh_all_entries_have_non_empty_fields
+            j = 0;
+            while (j < vec_len(ents)) {
+                var e = vec_get(ents, j);
+                if (strlen(lex_word(e)) == 0) { w_empty = w_empty + 1; }
+                if (strlen(lex_ipa(e)) == 0) { w_empty = w_empty + 1; }
+                if (strlen(lex_gloss(e)) == 0) { w_empty = w_empty + 1; }
+                j = j + 1;
+            }
+            # swadesh_indices_are_1_through_25 — every index in 1..25 present
+            var want = 1;
+            while (want <= 25) {
+                var found = 0;
+                k = 0;
+                while (k < vec_len(ents)) {
+                    if (lex_swadesh_index(vec_get(ents, k)) == want) { found = 1; }
+                    k = k + 1;
+                }
+                if (found == 0) { w_missing_index = w_missing_index + 1; }
+                want = want + 1;
+            }
+        }
+        i = i + 1;
+    }
+    assert_eq(w_not_25, 0, "every Swadesh list has exactly 25 entries");
+    assert_eq(w_missing_index, 0, "Swadesh indices cover 1 through 25");
+    assert_eq(w_empty, 0, "no empty word/ipa/gloss in any Swadesh entry");
+    assert_eq(w_unregistered, 0, "every Swadesh language is registered");
+
+    # ---------------------------------------------------------------
+    test_group("transliteration_invariants");
+
+    var tables = vec_new();
+    vec_push(tables, translit_devanagari_iast());
+    vec_push(tables, translit_greek_beta_code());
+
+    var t_empty = 0;
+    var t_empty_src = 0;
+    i = 0;
+    while (i < vec_len(tables)) {
+        var fwd = translit_forward(vec_get(tables, i));
+        # transliteration_forward_map_not_empty
+        if (vec_len(fwd) == 0) { t_empty = t_empty + 1; }
+        # transliteration_every_mapping_has_source
+        j = 0;
+        while (j < vec_len(fwd)) {
+            if (strlen(load64(vec_get(fwd, j))) == 0) { t_empty_src = t_empty_src + 1; }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(t_empty, 0, "no transliteration table has an empty forward map");
+    assert_eq(t_empty_src, 0, "no transliteration mapping has an empty source");
+
+    # transliteration_roundtrip_individual_chars — every source maps to its target
+    var beta = translit_greek_beta_code();
+    var bfwd = translit_forward(beta);
+    var rt_bad = 0;
+    i = 0;
+    while (i < vec_len(bfwd)) {
+        var pair = vec_get(bfwd, i);
+        if (streq(translit_apply(beta, load64(pair)), load64(pair + 8)) == 0) { rt_bad = rt_bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(rt_bad, 0, "every Greek source char transliterates to its mapped target");
+
+    # ---------------------------------------------------------------
+    test_group("numeral_invariants");
+
+    var systems = _numeral_systems();
+    var nempty = 0;
+    var ndup = 0;
+    i = 0;
+    while (i < vec_len(systems)) {
+        var sys = vec_get(systems, i);
+        var ms = numerals_mappings(sys);
+        # numeral_mappings_not_empty
+        if (vec_len(ms) == 0) { nempty = nempty + 1; }
+        # numeral_no_duplicate_characters
+        j = 0;
+        while (j < vec_len(ms)) {
+            k = j + 1;
+            while (k < vec_len(ms)) {
+                if (streq(load64(vec_get(ms, j)), load64(vec_get(ms, k))) == 1) { ndup = ndup + 1; }
+                k = k + 1;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(nempty, 0, "no numeral system has empty mappings");
+    assert_eq(ndup, 0, "no duplicate characters within a numeral system");
+
+    # decimal_systems_have_digits_0_through_9 — Devanagari carries 0-9, Chinese
+    # rod numerals 1-9, so the lower bound follows whether 0 is present.
+    var deva = numerals_devanagari_digits();
+    var rod = numerals_chinese_rod_numerals();
+    var dec_missing = 0;
+    i = 0;
+    while (i < vec_len(systems)) {
+        var dsys = vec_get(systems, i);
+        if (numerals_kind(dsys) == NumeralSystemKind.Decimal) {
+            var lo = 1;
+            if (_has_value(dsys, 0) == 1) { lo = 0; }
+            var d = lo;
+            while (d <= 9) {
+                if (_has_value(dsys, d) == 0) { dec_missing = dec_missing + 1; }
+                d = d + 1;
+            }
+        }
+        i = i + 1;
+    }
+    assert_eq(dec_missing, 0, "decimal systems carry a contiguous digit run to 9");
+    assert_eq(_has_value(deva, 0), 1, "Devanagari digits start at 0");
+    assert_eq(_has_value(rod, 0), 0, "Chinese rod numerals start at 1");
+
+    # ---------------------------------------------------------------
+    test_group("cross_module_invariants");
+
+    # cognate_languages_are_registered
+    var cog = cognate_water();
+    var cents = cognate_entries(cog);
+    var c_unregistered = 0;
+    i = 0;
+    while (i < vec_len(cents)) {
+        if (registry_info(cognate_entry_language(vec_get(cents, i))) == 0) {
+            c_unregistered = c_unregistered + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(c_unregistered, 0, "every cognate language is registered");
+
+    # dialect_parent_is_registered
+    var rp = dialect_british_english();
+    assert(registry_info(dialect_parent(rp)) != 0, "dialect parent is registered");
+
+    # dialect_overlay_preserves_phoneme_count_direction
+    var en = phoneme_english();
+    var rp_inv = dialect_apply(rp, en);
+    var expected_delta = vec_len(dialect_added(rp)) - vec_len(dialect_removed(rp));
+    var actual_delta = vec_len(phoneme_list(rp_inv)) - vec_len(phoneme_list(en));
+    assert_eq(actual_delta, expected_delta, "dialect overlay phoneme delta matches added minus removed");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
