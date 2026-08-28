@@ -17,7 +17,9 @@ fn swadesh_find_gloss(lex, gloss) { return lexicon_find_gloss(lex, gloss); }
 
 # --- Pre-built Swadesh-25 lists ------------------------------------
 
+var _c_swadesh_arabic = 0;
 fn swadesh_arabic() {
+    if (_c_swadesh_arabic != 0) { return _c_swadesh_arabic; }
     var lex = _lexicon_new("ar");
     _sw_entry(lex, "أنا", "ʔana", "I", PartOfSpeech.Pronoun, 1);
     _sw_entry(lex, "أنتَ", "ʔanta", "you", PartOfSpeech.Pronoun, 2);
@@ -44,10 +46,13 @@ fn swadesh_arabic() {
     _sw_entry(lex, "ماء", "maːʔ", "water", PartOfSpeech.Noun, 23);
     _sw_entry(lex, "نار", "naːr", "fire", PartOfSpeech.Noun, 24);
     _sw_entry(lex, "شمس", "ʃams", "sun", PartOfSpeech.Noun, 25);
-    return lex;
+    _c_swadesh_arabic = lex;
+    return _c_swadesh_arabic;
 }
 
+var _c_swadesh_mandarin = 0;
 fn swadesh_mandarin() {
+    if (_c_swadesh_mandarin != 0) { return _c_swadesh_mandarin; }
     var lex = _lexicon_new("zh");
     _sw_entry(lex, "我", "wɔ˧˩˦", "I", PartOfSpeech.Pronoun, 1);
     _sw_entry(lex, "你", "ni˧˩˦", "you", PartOfSpeech.Pronoun, 2);
@@ -74,10 +79,13 @@ fn swadesh_mandarin() {
     _sw_entry(lex, "水", "ʂweɪ˧˩˦", "water", PartOfSpeech.Noun, 23);
     _sw_entry(lex, "火", "xwo˧˩˦", "fire", PartOfSpeech.Noun, 24);
     _sw_entry(lex, "太阳", "tʰaɪ˥˩.jɑŋ˧˥", "sun", PartOfSpeech.Noun, 25);
-    return lex;
+    _c_swadesh_mandarin = lex;
+    return _c_swadesh_mandarin;
 }
 
+var _c_swadesh_hindi = 0;
 fn swadesh_hindi() {
+    if (_c_swadesh_hindi != 0) { return _c_swadesh_hindi; }
     var lex = _lexicon_new("hi");
     _sw_entry(lex, "मैं", "mɛ̃ː", "I", PartOfSpeech.Pronoun, 1);
     _sw_entry(lex, "तू", "tuː", "you", PartOfSpeech.Pronoun, 2);
@@ -104,10 +112,13 @@ fn swadesh_hindi() {
     _sw_entry(lex, "पानी", "pɑːniː", "water", PartOfSpeech.Noun, 23);
     _sw_entry(lex, "आग", "ɑːɡ", "fire", PartOfSpeech.Noun, 24);
     _sw_entry(lex, "सूरज", "suːɾəd͡ʒ", "sun", PartOfSpeech.Noun, 25);
-    return lex;
+    _c_swadesh_hindi = lex;
+    return _c_swadesh_hindi;
 }
 
+var _c_swadesh_japanese = 0;
 fn swadesh_japanese() {
+    if (_c_swadesh_japanese != 0) { return _c_swadesh_japanese; }
     var lex = _lexicon_new("ja");
     _sw_entry(lex, "私", "ʋataɕi", "I", PartOfSpeech.Pronoun, 1);
     _sw_entry(lex, "あなた", "anata", "you", PartOfSpeech.Pronoun, 2);
@@ -134,10 +145,13 @@ fn swadesh_japanese() {
     _sw_entry(lex, "水", "mizɯ", "water", PartOfSpeech.Noun, 23);
     _sw_entry(lex, "火", "çi", "fire", PartOfSpeech.Noun, 24);
     _sw_entry(lex, "太陽", "taijoː", "sun", PartOfSpeech.Noun, 25);
-    return lex;
+    _c_swadesh_japanese = lex;
+    return _c_swadesh_japanese;
 }
 
+var _c_swadesh_spanish = 0;
 fn swadesh_spanish() {
+    if (_c_swadesh_spanish != 0) { return _c_swadesh_spanish; }
     var lex = _lexicon_new("es");
     _sw_entry(lex, "yo", "ɟ͡ʝo", "I", PartOfSpeech.Pronoun, 1);
     _sw_entry(lex, "tú", "tu", "you", PartOfSpeech.Pronoun, 2);
@@ -164,10 +178,13 @@ fn swadesh_spanish() {
     _sw_entry(lex, "agua", "aɣwa", "water", PartOfSpeech.Noun, 23);
     _sw_entry(lex, "fuego", "fweɣo", "fire", PartOfSpeech.Noun, 24);
     _sw_entry(lex, "sol", "sol", "sun", PartOfSpeech.Noun, 25);
-    return lex;
+    _c_swadesh_spanish = lex;
+    return _c_swadesh_spanish;
 }
 
+var _c_swadesh_french = 0;
 fn swadesh_french() {
+    if (_c_swadesh_french != 0) { return _c_swadesh_french; }
     var lex = _lexicon_new("fr");
     _sw_entry(lex, "je", "ʒə", "I", PartOfSpeech.Pronoun, 1);
     _sw_entry(lex, "tu", "ty", "you", PartOfSpeech.Pronoun, 2);
@@ -194,10 +211,13 @@ fn swadesh_french() {
     _sw_entry(lex, "eau", "o", "water", PartOfSpeech.Noun, 23);
     _sw_entry(lex, "feu", "fø", "fire", PartOfSpeech.Noun, 24);
     _sw_entry(lex, "soleil", "sɔlɛj", "sun", PartOfSpeech.Noun, 25);
-    return lex;
+    _c_swadesh_french = lex;
+    return _c_swadesh_french;
 }
 
+var _c_swadesh_german = 0;
 fn swadesh_german() {
+    if (_c_swadesh_german != 0) { return _c_swadesh_german; }
     var lex = _lexicon_new("de");
     _sw_entry(lex, "ich", "ɪç", "I", PartOfSpeech.Pronoun, 1);
     _sw_entry(lex, "du", "duː", "you", PartOfSpeech.Pronoun, 2);
@@ -224,10 +244,13 @@ fn swadesh_german() {
     _sw_entry(lex, "Wasser", "vasɐ", "water", PartOfSpeech.Noun, 23);
     _sw_entry(lex, "Feuer", "fɔʏ̯ɐ", "fire", PartOfSpeech.Noun, 24);
     _sw_entry(lex, "Sonne", "zɔnə", "sun", PartOfSpeech.Noun, 25);
-    return lex;
+    _c_swadesh_german = lex;
+    return _c_swadesh_german;
 }
 
+var _c_swadesh_russian = 0;
 fn swadesh_russian() {
+    if (_c_swadesh_russian != 0) { return _c_swadesh_russian; }
     var lex = _lexicon_new("ru");
     _sw_entry(lex, "я", "ja", "I", PartOfSpeech.Pronoun, 1);
     _sw_entry(lex, "ты", "tɨ", "you", PartOfSpeech.Pronoun, 2);
@@ -254,10 +277,13 @@ fn swadesh_russian() {
     _sw_entry(lex, "вода", "vɐˈda", "water", PartOfSpeech.Noun, 23);
     _sw_entry(lex, "огонь", "ɐˈɡonʲ", "fire", PartOfSpeech.Noun, 24);
     _sw_entry(lex, "солнце", "ˈsont͡sə", "sun", PartOfSpeech.Noun, 25);
-    return lex;
+    _c_swadesh_russian = lex;
+    return _c_swadesh_russian;
 }
 
+var _c_swadesh_korean = 0;
 fn swadesh_korean() {
+    if (_c_swadesh_korean != 0) { return _c_swadesh_korean; }
     var lex = _lexicon_new("ko");
     _sw_entry(lex, "나", "na", "I", PartOfSpeech.Pronoun, 1);
     _sw_entry(lex, "너", "nʌ", "you", PartOfSpeech.Pronoun, 2);
@@ -284,10 +310,13 @@ fn swadesh_korean() {
     _sw_entry(lex, "물", "mul", "water", PartOfSpeech.Noun, 23);
     _sw_entry(lex, "불", "pul", "fire", PartOfSpeech.Noun, 24);
     _sw_entry(lex, "해", "hɛ", "sun", PartOfSpeech.Noun, 25);
-    return lex;
+    _c_swadesh_korean = lex;
+    return _c_swadesh_korean;
 }
 
+var _c_swadesh_portuguese = 0;
 fn swadesh_portuguese() {
+    if (_c_swadesh_portuguese != 0) { return _c_swadesh_portuguese; }
     var lex = _lexicon_new("pt");
     _sw_entry(lex, "eu", "ew", "I", PartOfSpeech.Pronoun, 1);
     _sw_entry(lex, "tu", "tu", "you", PartOfSpeech.Pronoun, 2);
@@ -314,7 +343,8 @@ fn swadesh_portuguese() {
     _sw_entry(lex, "água", "aɡwɐ", "water", PartOfSpeech.Noun, 23);
     _sw_entry(lex, "fogo", "foɡu", "fire", PartOfSpeech.Noun, 24);
     _sw_entry(lex, "sol", "sɔl", "sun", PartOfSpeech.Noun, 25);
-    return lex;
+    _c_swadesh_portuguese = lex;
+    return _c_swadesh_portuguese;
 }
 
 # Swadesh lexicon for a language, or 0 if none.
@@ -332,8 +362,10 @@ fn swadesh_by_code(code) {
     return 0;
 }
 
+var _c_swadesh_all_codes = 0;
 # All language codes with Swadesh data — vec of cstrings.
 fn swadesh_all_codes() {
+    if (_c_swadesh_all_codes != 0) { return _c_swadesh_all_codes; }
     var c = vec_new();
     vec_push(c, "ar");
     vec_push(c, "zh");
@@ -345,5 +377,6 @@ fn swadesh_all_codes() {
     vec_push(c, "ru");
     vec_push(c, "ko");
     vec_push(c, "pt");
-    return c;
+    _c_swadesh_all_codes = c;
+    return _c_swadesh_all_codes;
 }

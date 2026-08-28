@@ -2,7 +2,9 @@
 # Ported from v1.x Rust src/phoneme/inventories.rs (transpiled, byte-exact IPA).
 # Uses the phoneme.cyr builder API + enums. 48 inventories.
 
+var _c_phoneme_yucatec_maya = 0;
 fn phoneme_yucatec_maya() {
+    if (_c_phoneme_yucatec_maya != 0) { return _c_phoneme_yucatec_maya; }
 
     var b = phoneme_builder_with_capacity("yua", "Yucatec Maya", 31);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -44,10 +46,13 @@ fn phoneme_yucatec_maya() {
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_yucatec_maya = phoneme_builder_build(b);
+    return _c_phoneme_yucatec_maya;
 }
 
+var _c_phoneme_swahili = 0;
 fn phoneme_swahili() {
+    if (_c_phoneme_swahili != 0) { return _c_phoneme_swahili; }
 
     var b = phoneme_builder_with_capacity("sw", "Swahili", 29);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -83,10 +88,13 @@ fn phoneme_swahili() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_swahili = phoneme_builder_build(b);
+    return _c_phoneme_swahili;
 }
 
+var _c_phoneme_yoruba = 0;
 fn phoneme_yoruba() {
+    if (_c_phoneme_yoruba != 0) { return _c_phoneme_yoruba; }
 
     var b = phoneme_builder_with_capacity("yo", "Yoruba", 25);
     phoneme_builder_stress(b, StressPattern.Tonal);
@@ -121,10 +129,13 @@ fn phoneme_yoruba() {
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_yoruba = phoneme_builder_build(b);
+    return _c_phoneme_yoruba;
 }
 
+var _c_phoneme_zulu = 0;
 fn phoneme_zulu() {
+    if (_c_phoneme_zulu != 0) { return _c_phoneme_zulu; }
 
     var b = phoneme_builder_with_capacity("zu", "Zulu", 52);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -183,10 +194,13 @@ fn phoneme_zulu() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_zulu = phoneme_builder_build(b);
+    return _c_phoneme_zulu;
 }
 
+var _c_phoneme_thai = 0;
 fn phoneme_thai() {
+    if (_c_phoneme_thai != 0) { return _c_phoneme_thai; }
 
     var b = phoneme_builder_with_capacity("th", "Thai", 30);
     phoneme_builder_stress(b, StressPattern.Tonal);
@@ -228,10 +242,13 @@ fn phoneme_thai() {
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "ɯ", Height.Close, Backness.Back, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_thai = phoneme_builder_build(b);
+    return _c_phoneme_thai;
 }
 
+var _c_phoneme_vietnamese = 0;
 fn phoneme_vietnamese() {
+    if (_c_phoneme_vietnamese != 0) { return _c_phoneme_vietnamese; }
 
     var b = phoneme_builder_with_capacity("vi", "Vietnamese", 33);
     phoneme_builder_stress(b, StressPattern.Tonal);
@@ -277,10 +294,13 @@ fn phoneme_vietnamese() {
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "ɤ̆", Height.CloseMid, Backness.Back, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_vietnamese = phoneme_builder_build(b);
+    return _c_phoneme_vietnamese;
 }
 
+var _c_phoneme_tagalog = 0;
 fn phoneme_tagalog() {
+    if (_c_phoneme_tagalog != 0) { return _c_phoneme_tagalog; }
 
     var b = phoneme_builder_with_capacity("tl", "Tagalog", 23);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -308,10 +328,13 @@ fn phoneme_tagalog() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_tagalog = phoneme_builder_build(b);
+    return _c_phoneme_tagalog;
 }
 
+var _c_phoneme_turkish = 0;
 fn phoneme_turkish() {
+    if (_c_phoneme_turkish != 0) { return _c_phoneme_turkish; }
 
     var b = phoneme_builder_with_capacity("tr", "Turkish", 29);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -344,10 +367,13 @@ fn phoneme_turkish() {
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Back, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_turkish = phoneme_builder_build(b);
+    return _c_phoneme_turkish;
 }
 
+var _c_phoneme_finnish = 0;
 fn phoneme_finnish() {
+    if (_c_phoneme_finnish != 0) { return _c_phoneme_finnish; }
 
     var b = phoneme_builder_with_capacity("fi", "Finnish", 33);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -386,10 +412,13 @@ fn phoneme_finnish() {
     phoneme_builder_vowel(b, "ɑː", Height.Open, Backness.Back, 0);
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_finnish = phoneme_builder_build(b);
+    return _c_phoneme_finnish;
 }
 
+var _c_phoneme_hawaiian = 0;
 fn phoneme_hawaiian() {
+    if (_c_phoneme_hawaiian != 0) { return _c_phoneme_hawaiian; }
 
     var b = phoneme_builder_with_capacity("haw", "Hawaiian", 18);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -413,10 +442,13 @@ fn phoneme_hawaiian() {
     phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_hawaiian = phoneme_builder_build(b);
+    return _c_phoneme_hawaiian;
 }
 
+var _c_phoneme_nahuatl = 0;
 fn phoneme_nahuatl() {
+    if (_c_phoneme_nahuatl != 0) { return _c_phoneme_nahuatl; }
 
     var b = phoneme_builder_with_capacity("nah", "Nahuatl", 23);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -446,10 +478,13 @@ fn phoneme_nahuatl() {
     phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_nahuatl = phoneme_builder_build(b);
+    return _c_phoneme_nahuatl;
 }
 
+var _c_phoneme_latin = 0;
 fn phoneme_latin() {
+    if (_c_phoneme_latin != 0) { return _c_phoneme_latin; }
 
     var b = phoneme_builder_with_capacity("la", "Latin", 28);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -483,10 +518,13 @@ fn phoneme_latin() {
     phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_latin = phoneme_builder_build(b);
+    return _c_phoneme_latin;
 }
 
+var _c_phoneme_classical_arabic = 0;
 fn phoneme_classical_arabic() {
+    if (_c_phoneme_classical_arabic != 0) { return _c_phoneme_classical_arabic; }
 
     var b = phoneme_builder_with_capacity("ar", "Arabic", 34);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -531,10 +569,13 @@ fn phoneme_classical_arabic() {
     phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_classical_arabic = phoneme_builder_build(b);
+    return _c_phoneme_classical_arabic;
 }
 
+var _c_phoneme_koine_greek = 0;
 fn phoneme_koine_greek() {
+    if (_c_phoneme_koine_greek != 0) { return _c_phoneme_koine_greek; }
 
     var b = phoneme_builder_with_capacity("grc", "Koine Greek", 22);
     phoneme_builder_stress(b, StressPattern.PitchAccent);
@@ -566,10 +607,13 @@ fn phoneme_koine_greek() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_koine_greek = phoneme_builder_build(b);
+    return _c_phoneme_koine_greek;
 }
 
+var _c_phoneme_literary_chinese = 0;
 fn phoneme_literary_chinese() {
+    if (_c_phoneme_literary_chinese != 0) { return _c_phoneme_literary_chinese; }
 
     var b = phoneme_builder_with_capacity("lzh", "Literary Chinese", 40);
     phoneme_builder_stress(b, StressPattern.Tonal);
@@ -624,10 +668,13 @@ fn phoneme_literary_chinese() {
     phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
     phoneme_builder_vowel(b, "æ", Height.NearOpen, Backness.Front, 0);
     phoneme_builder_vowel(b, "ɐ", Height.NearOpen, Backness.Central, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_literary_chinese = phoneme_builder_build(b);
+    return _c_phoneme_literary_chinese;
 }
 
+var _c_phoneme_mandarin = 0;
 fn phoneme_mandarin() {
+    if (_c_phoneme_mandarin != 0) { return _c_phoneme_mandarin; }
 
     var b = phoneme_builder_with_capacity("zh", "Mandarin Chinese", 28);
     phoneme_builder_stress(b, StressPattern.Tonal);
@@ -673,10 +720,13 @@ fn phoneme_mandarin() {
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "y", Height.Close, Backness.Front, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_mandarin = phoneme_builder_build(b);
+    return _c_phoneme_mandarin;
 }
 
+var _c_phoneme_hindi = 0;
 fn phoneme_hindi() {
+    if (_c_phoneme_hindi != 0) { return _c_phoneme_hindi; }
 
     var b = phoneme_builder_with_capacity("hi", "Hindi", 44);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -733,10 +783,13 @@ fn phoneme_hindi() {
     phoneme_builder_vowel(b, "ɛː", Height.OpenMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_hindi = phoneme_builder_build(b);
+    return _c_phoneme_hindi;
 }
 
+var _c_phoneme_japanese = 0;
 fn phoneme_japanese() {
+    if (_c_phoneme_japanese != 0) { return _c_phoneme_japanese; }
 
     var b = phoneme_builder_with_capacity("ja", "Japanese", 20);
     phoneme_builder_stress(b, StressPattern.PitchAccent);
@@ -771,10 +824,13 @@ fn phoneme_japanese() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_japanese = phoneme_builder_build(b);
+    return _c_phoneme_japanese;
 }
 
+var _c_phoneme_spanish = 0;
 fn phoneme_spanish() {
+    if (_c_phoneme_spanish != 0) { return _c_phoneme_spanish; }
 
     var b = phoneme_builder_with_capacity("es", "Spanish", 24);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -813,10 +869,13 @@ fn phoneme_spanish() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_spanish = phoneme_builder_build(b);
+    return _c_phoneme_spanish;
 }
 
+var _c_phoneme_french = 0;
 fn phoneme_french() {
+    if (_c_phoneme_french != 0) { return _c_phoneme_french; }
 
     var b = phoneme_builder_with_capacity("fr", "French", 36);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -864,10 +923,13 @@ fn phoneme_french() {
     phoneme_builder_vowel(b, "ɑ̃", Height.Open, Backness.Back, 0);
     phoneme_builder_vowel(b, "œ̃", Height.OpenMid, Backness.Front, 1);
     phoneme_builder_vowel(b, "ɔ̃", Height.OpenMid, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_french = phoneme_builder_build(b);
+    return _c_phoneme_french;
 }
 
+var _c_phoneme_german = 0;
 fn phoneme_german() {
+    if (_c_phoneme_german != 0) { return _c_phoneme_german; }
 
     var b = phoneme_builder_with_capacity("de", "German", 37);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -917,10 +979,13 @@ fn phoneme_german() {
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "yː", Height.Close, Backness.Front, 1);
     phoneme_builder_vowel(b, "øː", Height.CloseMid, Backness.Front, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_german = phoneme_builder_build(b);
+    return _c_phoneme_german;
 }
 
+var _c_phoneme_russian = 0;
 fn phoneme_russian() {
+    if (_c_phoneme_russian != 0) { return _c_phoneme_russian; }
 
     var b = phoneme_builder_with_capacity("ru", "Russian", 38);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -972,10 +1037,13 @@ fn phoneme_russian() {
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_russian = phoneme_builder_build(b);
+    return _c_phoneme_russian;
 }
 
+var _c_phoneme_korean = 0;
 fn phoneme_korean() {
+    if (_c_phoneme_korean != 0) { return _c_phoneme_korean; }
 
     var b = phoneme_builder_with_capacity("ko", "Korean", 26);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -1011,10 +1079,13 @@ fn phoneme_korean() {
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "ɯ", Height.Close, Backness.Back, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_korean = phoneme_builder_build(b);
+    return _c_phoneme_korean;
 }
 
+var _c_phoneme_portuguese = 0;
 fn phoneme_portuguese() {
+    if (_c_phoneme_portuguese != 0) { return _c_phoneme_portuguese; }
 
     var b = phoneme_builder_with_capacity("pt", "Portuguese", 33);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -1062,10 +1133,13 @@ fn phoneme_portuguese() {
     phoneme_builder_vowel(b, "õ", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "ĩ", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "ũ", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_portuguese = phoneme_builder_build(b);
+    return _c_phoneme_portuguese;
 }
 
+var _c_phoneme_italian = 0;
 fn phoneme_italian() {
+    if (_c_phoneme_italian != 0) { return _c_phoneme_italian; }
 
     var b = phoneme_builder_with_capacity("it", "Italian", 30);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -1106,10 +1180,13 @@ fn phoneme_italian() {
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_italian = phoneme_builder_build(b);
+    return _c_phoneme_italian;
 }
 
+var _c_phoneme_dutch = 0;
 fn phoneme_dutch() {
+    if (_c_phoneme_dutch != 0) { return _c_phoneme_dutch; }
 
     var b = phoneme_builder_with_capacity("nl", "Dutch", 32);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -1152,10 +1229,13 @@ fn phoneme_dutch() {
     phoneme_builder_vowel(b, "ɛi", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "œy", Height.CloseMid, Backness.Front, 1);
     phoneme_builder_vowel(b, "ɑu", Height.Open, Backness.Back, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_dutch = phoneme_builder_build(b);
+    return _c_phoneme_dutch;
 }
 
+var _c_phoneme_polish = 0;
 fn phoneme_polish() {
+    if (_c_phoneme_polish != 0) { return _c_phoneme_polish; }
 
     var b = phoneme_builder_with_capacity("pl", "Polish", 35);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -1204,10 +1284,13 @@ fn phoneme_polish() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_polish = phoneme_builder_build(b);
+    return _c_phoneme_polish;
 }
 
+var _c_phoneme_bengali = 0;
 fn phoneme_bengali() {
+    if (_c_phoneme_bengali != 0) { return _c_phoneme_bengali; }
 
     var b = phoneme_builder_with_capacity("bn", "Bengali", 37);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -1255,10 +1338,13 @@ fn phoneme_bengali() {
     phoneme_builder_vowel(b, "æ", Height.NearOpen, Backness.Front, 0);
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_bengali = phoneme_builder_build(b);
+    return _c_phoneme_bengali;
 }
 
+var _c_phoneme_tamil = 0;
 fn phoneme_tamil() {
+    if (_c_phoneme_tamil != 0) { return _c_phoneme_tamil; }
 
     var b = phoneme_builder_with_capacity("ta", "Tamil", 28);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -1296,10 +1382,13 @@ fn phoneme_tamil() {
     phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_tamil = phoneme_builder_build(b);
+    return _c_phoneme_tamil;
 }
 
+var _c_phoneme_urdu = 0;
 fn phoneme_urdu() {
+    if (_c_phoneme_urdu != 0) { return _c_phoneme_urdu; }
 
     var b = phoneme_builder_with_capacity("ur", "Urdu", 47);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -1359,10 +1448,13 @@ fn phoneme_urdu() {
     phoneme_builder_vowel(b, "ɛː", Height.OpenMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_urdu = phoneme_builder_build(b);
+    return _c_phoneme_urdu;
 }
 
+var _c_phoneme_amharic = 0;
 fn phoneme_amharic() {
+    if (_c_phoneme_amharic != 0) { return _c_phoneme_amharic; }
 
     var b = phoneme_builder_with_capacity("am", "Amharic", 34);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -1407,10 +1499,13 @@ fn phoneme_amharic() {
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_amharic = phoneme_builder_build(b);
+    return _c_phoneme_amharic;
 }
 
+var _c_phoneme_hausa = 0;
 fn phoneme_hausa() {
+    if (_c_phoneme_hausa != 0) { return _c_phoneme_hausa; }
 
     var b = phoneme_builder_with_capacity("ha", "Hausa", 35);
     phoneme_builder_stress(b, StressPattern.Tonal);
@@ -1461,10 +1556,13 @@ fn phoneme_hausa() {
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_hausa = phoneme_builder_build(b);
+    return _c_phoneme_hausa;
 }
 
+var _c_phoneme_indonesian = 0;
 fn phoneme_indonesian() {
+    if (_c_phoneme_indonesian != 0) { return _c_phoneme_indonesian; }
 
     var b = phoneme_builder_with_capacity("id", "Indonesian", 24);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -1498,10 +1596,13 @@ fn phoneme_indonesian() {
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_indonesian = phoneme_builder_build(b);
+    return _c_phoneme_indonesian;
 }
 
+var _c_phoneme_persian = 0;
 fn phoneme_persian() {
+    if (_c_phoneme_persian != 0) { return _c_phoneme_persian; }
 
     var b = phoneme_builder_with_capacity("fa", "Persian", 29);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -1540,10 +1641,13 @@ fn phoneme_persian() {
     phoneme_builder_vowel(b, "ɑ", Height.Open, Backness.Back, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_persian = phoneme_builder_build(b);
+    return _c_phoneme_persian;
 }
 
+var _c_phoneme_hebrew = 0;
 fn phoneme_hebrew() {
+    if (_c_phoneme_hebrew != 0) { return _c_phoneme_hebrew; }
 
     var b = phoneme_builder_with_capacity("he", "Hebrew", 28);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -1581,10 +1685,13 @@ fn phoneme_hebrew() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_hebrew = phoneme_builder_build(b);
+    return _c_phoneme_hebrew;
 }
 
+var _c_phoneme_georgian = 0;
 fn phoneme_georgian() {
+    if (_c_phoneme_georgian != 0) { return _c_phoneme_georgian; }
 
     var b = phoneme_builder_with_capacity("ka", "Georgian", 33);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -1632,10 +1739,13 @@ fn phoneme_georgian() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_georgian = phoneme_builder_build(b);
+    return _c_phoneme_georgian;
 }
 
+var _c_phoneme_czech = 0;
 fn phoneme_czech() {
+    if (_c_phoneme_czech != 0) { return _c_phoneme_czech; }
 
     var b = phoneme_builder_with_capacity("cs", "Czech", 35);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -1681,10 +1791,13 @@ fn phoneme_czech() {
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_czech = phoneme_builder_build(b);
+    return _c_phoneme_czech;
 }
 
+var _c_phoneme_hungarian = 0;
 fn phoneme_hungarian() {
+    if (_c_phoneme_hungarian != 0) { return _c_phoneme_hungarian; }
 
     var b = phoneme_builder_with_capacity("hu", "Hungarian", 39);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -1733,10 +1846,13 @@ fn phoneme_hungarian() {
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_hungarian = phoneme_builder_build(b);
+    return _c_phoneme_hungarian;
 }
 
+var _c_phoneme_romanian = 0;
 fn phoneme_romanian() {
+    if (_c_phoneme_romanian != 0) { return _c_phoneme_romanian; }
 
     var b = phoneme_builder_with_capacity("ro", "Romanian", 28);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -1774,10 +1890,13 @@ fn phoneme_romanian() {
     phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_romanian = phoneme_builder_build(b);
+    return _c_phoneme_romanian;
 }
 
+var _c_phoneme_burmese = 0;
 fn phoneme_burmese() {
+    if (_c_phoneme_burmese != 0) { return _c_phoneme_burmese; }
 
     var b = phoneme_builder_with_capacity("my", "Burmese", 37);
     phoneme_builder_stress(b, StressPattern.Tonal);
@@ -1834,10 +1953,13 @@ fn phoneme_burmese() {
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_burmese = phoneme_builder_build(b);
+    return _c_phoneme_burmese;
 }
 
+var _c_phoneme_khmer = 0;
 fn phoneme_khmer() {
+    if (_c_phoneme_khmer != 0) { return _c_phoneme_khmer; }
 
     var b = phoneme_builder_with_capacity("km", "Khmer", 42);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -1892,10 +2014,13 @@ fn phoneme_khmer() {
     phoneme_builder_vowel(b, "ɔː", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_khmer = phoneme_builder_build(b);
+    return _c_phoneme_khmer;
 }
 
+var _c_phoneme_somali = 0;
 fn phoneme_somali() {
+    if (_c_phoneme_somali != 0) { return _c_phoneme_somali; }
 
     var b = phoneme_builder_with_capacity("so", "Somali", 32);
     phoneme_builder_stress(b, StressPattern.Tonal);
@@ -1941,10 +2066,13 @@ fn phoneme_somali() {
     phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "oː", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_somali = phoneme_builder_build(b);
+    return _c_phoneme_somali;
 }
 
+var _c_phoneme_quechua = 0;
 fn phoneme_quechua() {
+    if (_c_phoneme_quechua != 0) { return _c_phoneme_quechua; }
 
     var b = phoneme_builder_with_capacity("qu", "Quechua", 27);
     phoneme_builder_stress(b, StressPattern.Fixed);
@@ -1982,10 +2110,13 @@ fn phoneme_quechua() {
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_quechua = phoneme_builder_build(b);
+    return _c_phoneme_quechua;
 }
 
+var _c_phoneme_guarani = 0;
 fn phoneme_guarani() {
+    if (_c_phoneme_guarani != 0) { return _c_phoneme_guarani; }
 
     var b = phoneme_builder_with_capacity("gn", "Guarani", 28);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -2025,10 +2156,13 @@ fn phoneme_guarani() {
     phoneme_builder_vowel(b, "õ", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "ũ", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "ɨ̃", Height.Close, Backness.Central, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_guarani = phoneme_builder_build(b);
+    return _c_phoneme_guarani;
 }
 
+var _c_phoneme_icelandic = 0;
 fn phoneme_icelandic() {
+    if (_c_phoneme_icelandic != 0) { return _c_phoneme_icelandic; }
 
     var b = phoneme_builder_with_capacity("is", "Icelandic", 30);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -2070,10 +2204,13 @@ fn phoneme_icelandic() {
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_icelandic = phoneme_builder_build(b);
+    return _c_phoneme_icelandic;
 }
 
+var _c_phoneme_wolof = 0;
 fn phoneme_wolof() {
+    if (_c_phoneme_wolof != 0) { return _c_phoneme_wolof; }
 
     var b = phoneme_builder_with_capacity("wo", "Wolof", 33);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -2116,10 +2253,13 @@ fn phoneme_wolof() {
     phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_wolof = phoneme_builder_build(b);
+    return _c_phoneme_wolof;
 }
 
+var _c_phoneme_lao = 0;
 fn phoneme_lao() {
+    if (_c_phoneme_lao != 0) { return _c_phoneme_lao; }
 
     var b = phoneme_builder_with_capacity("lo", "Lao", 29);
     phoneme_builder_stress(b, StressPattern.Tonal);
@@ -2167,10 +2307,13 @@ fn phoneme_lao() {
     phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
     # Diphthong
     phoneme_builder_vowel(b, "ia", Height.CloseMid, Backness.Front, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_lao = phoneme_builder_build(b);
+    return _c_phoneme_lao;
 }
 
+var _c_phoneme_mongolian = 0;
 fn phoneme_mongolian() {
+    if (_c_phoneme_mongolian != 0) { return _c_phoneme_mongolian; }
 
     var b = phoneme_builder_with_capacity("mn", "Mongolian", 35);
     phoneme_builder_stress(b, StressPattern.Free);
@@ -2218,6 +2361,7 @@ fn phoneme_mongolian() {
     phoneme_builder_vowel(b, "eː", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "øː", Height.CloseMid, Backness.Front, 1);
     phoneme_builder_vowel(b, "iː", Height.Close, Backness.Front, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_mongolian = phoneme_builder_build(b);
+    return _c_phoneme_mongolian;
 }
 

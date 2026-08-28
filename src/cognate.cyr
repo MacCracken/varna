@@ -75,13 +75,16 @@ fn etymology_period(e) { return load64(e + 24); }
 
 # --- Pre-built cognate sets ----------------------------------------
 
+var _c_cognate_water = 0;
 # Water cognates across Indo-European languages.
 fn cognate_water() {
+    if (_c_cognate_water != 0) { return _c_cognate_water; }
     var s = _cognate_set_new("*wódr̥", "Proto-Indo-European", "water");
     _cognate_set_add(s, "en", "water", "ˈwɔːtər");
     _cognate_set_add(s, "de", "Wasser", "ˈvasɐ");
     _cognate_set_add(s, "ru", "вода", "vɐˈda");
     _cognate_set_add(s, "sa", "उदन्", "udán");
     _cognate_set_add(s, "el", "ύδωρ", "ˈiðor");
-    return s;
+    _c_cognate_water = s;
+    return _c_cognate_water;
 }

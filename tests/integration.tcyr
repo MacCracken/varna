@@ -112,7 +112,7 @@ fn main() {
         i = i + 1;
     }
     assert_eq(mismatch, 0, "resolved primary script matches the registry's first script code");
-    assert_eq(resolved_count, 42, "42 of 51 languages resolve a primary script (roadmap 2.1.6)");
+    assert_eq(resolved_count, 51, "all 51 languages resolve a primary script (since 2.1.6)");
 
     # ---------------------------------------------------------------
     test_group("allophone_cross_module");

@@ -20,47 +20,10 @@ tracks only what is still open.
 
 ## 2.1.x — Carry-over
 
-Work identified but deliberately not taken in the release that surfaced it.
-2.1.3 (porting the Rust test suites) and 2.1.4 (removing `rust-old/`) have landed —
-see the CHANGELOG and [ADR 0002](../adr/0002-remove-the-rust-old-archive.md).
-
-### 2.1.5 — Deferred from the 2.1.2 hardening sweep
-
-- [ ] **Cache the pre-built data constructors.** Every `phoneme_*` / `script_*` /
-      `grammar_*` / `swadesh_*` / `translit_*` / `numerals_*` constructor rebuilds
-      its whole structure on each call — `phoneme_english()` allocates an
-      inventory, a vec and 36 phoneme records every time, and `registry_phonemes`
-      calls it fresh on every lookup. With a bump allocator that never frees, a
-      consumer polling the registry leaks steadily, and this is the single largest
-      remaining cost in the inventory benchmarks.
-
-      Held back deliberately: caching turns each constructor into a shared
-      singleton, so a consumer mutating a returned inventory through the
-      `phoneme_builder_*` functions would corrupt every other caller's copy. That
-      is a public-API semantic change wanting its own release and migration note —
-      `registry_all_codes` took exactly this change in 2.1.2 and is now documented
-      read-only. Options: cache and document read-only; or cache plus an explicit
-      `phoneme_clone` for callers needing a mutable copy.
-- [ ] **JSON escaping in `src/mcp.cyr`.** Tool payloads interpolate strings into
-      hand-built JSON with no escaping. Every value written today is either a
-      validated ISO code or internal data, so nothing malformed reaches the output
-      — but the invariant is unenforced and one new field could break it.
-- [ ] **`varna_translate_ipa` returns a bare string** where the other four MCP
-      tools return JSON objects. A consumer parsing every payload as JSON gets
-      malformed data from this one. Decide the contract and make it uniform.
-
-### 2.1.6 — Script registry completeness
-
-Nine registered languages name a primary script that `script_by_code` cannot
-resolve, so `registry_primary_script` silently returns 0 for them: **Thai**
-(Thai), **Bengali** (Beng), **Tamil** (Taml), **Amharic** (Ethi), **Hebrew**
-(Hebr), **Georgian** (Geor), **Burmese** (Mymr), **Khmer** (Khmr), **Lao**
-(Laoo). `src/script.cyr` defines 10 scripts; the registry names 17.
-
-Not a port regression — the Rust crate had the identical gap, and its
-`registry_script_codes_resolve` invariant explicitly tolerated it ("Some scripts
-may not be registered yet (Thai, Beng, etc.)"). Adding the nine closes the gap
-and lets 2.1.3 port that invariant in its strict form.
+**Empty.** Everything deferred out of the 2.1.x line has landed: 2.1.3 (the Rust test
+suites), 2.1.4 (removing `rust-old/`, [ADR 0002](../adr/0002-remove-the-rust-old-archive.md)),
+2.1.5 (the deferred hardening items) and 2.1.6 (script registry completeness). Next up
+is the `2.2.0+` tier below.
 
 ## 2.2.0+ — "World's Leading Authority"
 

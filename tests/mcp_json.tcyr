@@ -229,10 +229,10 @@ fn main() {
     assert(_contains(mcp_result_payload(dr), "\"name\":\"Devanagari\""), "script name present");
 
     # ---------------------------------------------------------------
-    test_group("error_payloads_are_not_json");
-    # Error payloads are plain diagnostic strings, not JSON objects — pinning that
-    # so a consumer is not led to parse them. (Roadmap 2.1.5 tracks making the
-    # success contract uniform; varna_translate_ipa likewise returns a bare string.)
+    test_group("payload_contract");
+    # Since 2.1.5 the contract is uniform: success payloads are JSON objects for
+    # all five tools, error payloads are plain diagnostic messages. The result is
+    # already tagged, so a caller never has to parse an error to find out it is one.
     var bp = map_new();
     map_set(bp, "language", "zzz");
     var br = mcp_invoke("varna_phonemes", bp);
@@ -244,7 +244,37 @@ fn main() {
     map_set(tp, "scheme", "greek_beta");
     var tr = mcp_invoke("varna_translate_ipa", tp);
     assert_eq(mcp_result_is_ok(tr), 1, "transliteration succeeds");
-    assert(streq(mcp_result_payload(tr), "logos"), "transliteration payload is a bare string, not JSON");
+    assert_eq(json_fault(mcp_result_payload(tr)), 0, "transliteration payload is well-formed JSON");
+    assert(_contains(mcp_result_payload(tr), "\"output\":\"logos\""), "output field carries the result");
+    assert(_contains(mcp_result_payload(tr), "\"input\":\"λογος\""), "input field echoes the request");
+
+    # ---------------------------------------------------------------
+    test_group("json_escaping");
+    # Values are escaped on the way into a string literal, so a value carrying a
+    # quote, a backslash or a control byte cannot break the document. Nothing in
+    # the current data needs an escape — this pins the rule, not an observation.
+    var esc = alloc(64);
+    var w = 0;
+    store8(esc + w, 97); w = w + 1;        # a
+    store8(esc + w, 34); w = w + 1;        # "
+    store8(esc + w, 92); w = w + 1;        # backslash
+    store8(esc + w, 10); w = w + 1;        # newline
+    store8(esc + w, 9); w = w + 1;         # tab
+    store8(esc + w, 1); w = w + 1;         # SOH — no short form, needs \u0001
+    store8(esc + w, 98); w = w + 1;        # b
+    store8(esc + w, 0);
+
+    var ep2 = map_new();
+    map_set(ep2, "text", esc);
+    map_set(ep2, "scheme", "greek_beta");
+    var er2 = mcp_invoke("varna_translate_ipa", ep2);
+    assert_eq(mcp_result_is_ok(er2), 1, "hostile text still transliterates");
+    var payload2 = mcp_result_payload(er2);
+    assert_eq(json_fault(payload2), 0, "payload with quote/backslash/controls is still valid JSON");
+    assert(_contains(payload2, "\\\""), "quote is escaped");
+    assert(_contains(payload2, "\\n"), "newline is escaped");
+    assert(_contains(payload2, "\\t"), "tab is escaped");
+    assert(_contains(payload2, "\\u0001"), "SOH becomes a \\u escape");
 
     return assert_summary();
 }

@@ -27,7 +27,7 @@ fn main() {
     assert(_vec_has(daimon_supported_languages(reg), "en"), "languages has en");
     assert(_vec_has(daimon_supported_scripts(reg), "Latn"), "scripts has Latn");
     assert_eq(vec_len(daimon_supported_languages(reg)), 51, "51 languages");
-    assert_eq(vec_len(daimon_supported_scripts(reg)), 10, "10 scripts");
+    assert_eq(vec_len(daimon_supported_scripts(reg)), 19, "19 scripts (9 added at 2.1.6)");
     # first capability shape
     var c1 = vec_get(daimon_capabilities(reg), 0);
     assert(streq(capability_name(c1), "phoneme_lookup"), "cap0 name");

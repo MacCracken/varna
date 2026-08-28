@@ -145,6 +145,32 @@ fn phoneme_builder_phoneme(inv, p) {
 
 fn phoneme_builder_build(inv) { return inv; }
 
+# Independent copy of `inv`, safe to mutate through the `phoneme_builder_*`
+# functions without touching the original.
+#
+# The pre-built inventories are shared singletons (see below), so this is the
+# supported way to derive a modified inventory from one. The copy is shallow in
+# the same sense `dialect_apply` has always been: the Phoneme records themselves
+# are shared, because nothing in the API mutates a Phoneme in place — only the
+# inventory's own vec, stress and tone slots, all of which are fresh here.
+fn phoneme_clone(inv) {
+    var out = alloc(40);
+    store64(out, load64(inv));
+    store64(out + 8, load64(inv + 8));
+    var dst = vec_new();
+    var src = load64(inv + 16);
+    var n = vec_len(src);
+    var i = 0;
+    while (i < n) {
+        vec_push(dst, vec_get(src, i));
+        i = i + 1;
+    }
+    store64(out + 16, dst);
+    store64(out + 24, load64(inv + 24));
+    store64(out + 32, load64(inv + 32));
+    return out;
+}
+
 # --- Inventory accessors + queries ---------------------------------
 
 fn phoneme_language_code(inv) { return load64(inv); }
@@ -196,9 +222,26 @@ fn phoneme_has(inv, ipa) {
 }
 
 # --- Pre-built inventories ------------------------------------------
+#
+# SHARED AND READ-ONLY since 2.1.5. Every constructor below (and every
+# `script_*` / `grammar_*` / `swadesh_*` / `translit_*` / `numerals_*` /
+# `allophone_*` / `phonotactics_*` / `dialect_*` / `cognate_*` constructor in the
+# other modules) builds its structure once and returns the same pointer to every
+# later caller.
+#
+# They used to rebuild on each call — `phoneme_english()` allocated an inventory,
+# a vec and 36 phoneme records every time, and `registry_phonemes` called it fresh
+# on every lookup. The bump allocator never frees, so a consumer polling the
+# registry leaked steadily.
+#
+# The consequence: do NOT mutate a returned inventory through the
+# `phoneme_builder_*` functions — you would be editing what every other caller
+# sees. Use `phoneme_clone` first if you need a mutable copy.
 
+var _c_phoneme_english = 0;
 # English (General American): 24 consonants + 12 vowels. Stress: free.
 fn phoneme_english() {
+    if (_c_phoneme_english != 0) { return _c_phoneme_english; }
     var b = phoneme_builder_with_capacity("en", "English", 36);
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives
@@ -243,11 +286,14 @@ fn phoneme_english() {
     phoneme_builder_vowel(b, "uː", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "ʌ", Height.OpenMid, Backness.Central, 0);
     phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
-    return phoneme_builder_build(b);
+    _c_phoneme_english = phoneme_builder_build(b);
+    return _c_phoneme_english;
 }
 
+var _c_phoneme_sanskrit = 0;
 # Sanskrit (Classical): 36 consonants + 14 vowels. Stress: pitch accent.
 fn phoneme_sanskrit() {
+    if (_c_phoneme_sanskrit != 0) { return _c_phoneme_sanskrit; }
     var b = phoneme_builder_with_capacity("sa", "Sanskrit", 50);
     phoneme_builder_stress(b, StressPattern.PitchAccent);
     # Kavarga (velar)
@@ -311,11 +357,14 @@ fn phoneme_sanskrit() {
     phoneme_builder_vowel(b, "ɐi", Height.NearOpen, Backness.Front, 0);
     phoneme_builder_vowel(b, "oː", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "ɐu", Height.NearOpen, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_sanskrit = phoneme_builder_build(b);
+    return _c_phoneme_sanskrit;
 }
 
+var _c_phoneme_greek = 0;
 # Greek (Modern Standard): 20 consonants + 5 vowels. Stress: free.
 fn phoneme_greek() {
+    if (_c_phoneme_greek != 0) { return _c_phoneme_greek; }
     var b = phoneme_builder_with_capacity("el", "Greek", 25);
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives
@@ -349,5 +398,6 @@ fn phoneme_greek() {
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    return phoneme_builder_build(b);
+    _c_phoneme_greek = phoneme_builder_build(b);
+    return _c_phoneme_greek;
 }

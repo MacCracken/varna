@@ -8,6 +8,13 @@
 #
 # ToolResult (16B): [0]=tag(0=Success,1=Error) [8]=payload(cstr)
 # ToolDef (24B):    [0]=name [8]=description [16]=schema_type
+#
+# Payload contract (uniform since 2.1.5):
+#   Success -> a JSON object. All five tools; every string value is escaped
+#              through `_mcp_append_json`, so the payload is always parseable.
+#   Error   -> a plain diagnostic message, NOT JSON. The result is already tagged
+#              as an error, so a caller never has to parse one to find out. Long
+#              caller-supplied values in these messages are truncated, not escaped.
 
 #ifdef MCP
 
@@ -47,7 +54,7 @@ fn mcp_tool_definitions() {
     vec_push(tools, _tool_def_new("varna_phonemes", "Get the phoneme inventory for a language. Returns consonants, vowels, stress pattern, and tone system."));  #skip-lint
     vec_push(tools, _tool_def_new("varna_script", "Get writing system metadata for a script. Returns type, direction, Unicode ranges, and status."));  #skip-lint
     vec_push(tools, _tool_def_new("varna_grammar", "Get the grammatical profile for a language. Returns morphology type, word order, case count, gender, and classifier usage."));  #skip-lint
-    vec_push(tools, _tool_def_new("varna_translate_ipa", "Transliterate text between scripts. Supports Devanagari and IAST and Greek and Beta Code."));  #skip-lint
+    vec_push(tools, _tool_def_new("varna_translate_ipa", "Transliterate text between scripts. Supports Devanagari and IAST and Greek and Beta Code. Returns scheme, input and output."));  #skip-lint
     vec_push(tools, _tool_def_new("varna_compare", "Compare two languages. Returns shared/unique phonemes, typological differences, and cognate information."));  #skip-lint
     return tools;
 }
@@ -77,6 +84,64 @@ fn _mcp_append_int(buf, off, cap, n) {
     return off + fmt_int_buf(n, buf + off);
 }
 
+# Lowercase hex digit for 0-15.
+fn _hex_digit(v) {
+    if (v < 10) { return 48 + v; }
+    return 87 + v;
+}
+
+# Append `src` escaped for use inside a JSON string literal, bounded like
+# `_mcp_append`. Returns the new offset.
+#
+# RFC 8259 requires `"`, `\` and every codepoint below U+0020 to be escaped
+# inside a string. Every value written today is a validated ISO code or internal
+# data, so nothing currently reaches this needing an escape — but that was an
+# unenforced invariant one new field away from emitting malformed JSON, and the
+# handlers echo caller-supplied text. Escaping at the append is where the rule
+# cannot be forgotten.
+#
+# A two-character escape is written only if both characters fit; a partial escape
+# would itself be malformed, so the append stops instead.
+fn _mcp_append_json(buf, off, cap, src) {
+    var n = strlen(src);
+    var i = 0;
+    while (i < n) {
+        var ch = load8(src + i) & 0xFF;
+        var esc = 0;
+        if (ch == 34) { esc = 34; }
+        if (ch == 92) { esc = 92; }
+        if (ch == 8) { esc = 98; }
+        if (ch == 12) { esc = 102; }
+        if (ch == 10) { esc = 110; }
+        if (ch == 13) { esc = 114; }
+        if (ch == 9) { esc = 116; }
+        if (esc != 0) {
+            if (off + 2 > cap - 1) { return off; }
+            store8(buf + off, 92);
+            store8(buf + off + 1, esc);
+            off = off + 2;
+        }
+        elif (ch < 0x20) {
+            # Remaining C0 controls have no short form: \u00XX.
+            if (off + 6 > cap - 1) { return off; }
+            store8(buf + off, 92);
+            store8(buf + off + 1, 117);
+            store8(buf + off + 2, 48);
+            store8(buf + off + 3, 48);
+            store8(buf + off + 4, _hex_digit(ch / 16));
+            store8(buf + off + 5, _hex_digit(ch & 15));
+            off = off + 6;
+        }
+        else {
+            if (off + 1 > cap - 1) { return off; }
+            store8(buf + off, ch);
+            off = off + 1;
+        }
+        i = i + 1;
+    }
+    return off;
+}
+
 # Build an Error result with an interpolated value: "<prefix><value>".
 fn _tool_err2(prefix, value) {
     var cap = 256;
@@ -99,7 +164,7 @@ fn _mcp_append_ipa_array(buf, off, cap, src_list, other, want_shared) {
         if (phoneme_has(other, ipa) == want_shared) {
             if (count > 0) { off = _mcp_append(buf, off, cap, ","); }
             off = _mcp_append(buf, off, cap, "\"");
-            off = _mcp_append(buf, off, cap, ipa);
+            off = _mcp_append_json(buf, off, cap, ipa);
             off = _mcp_append(buf, off, cap, "\"");
             count = count + 1;
         }
@@ -129,9 +194,9 @@ fn _mcp_handle_phonemes(params) {
     var buf = alloc(cap);
     var off = 0;
     off = _mcp_append(buf, off, cap, "{\"language_code\":\"");
-    off = _mcp_append(buf, off, cap, phoneme_language_code(inv));
+    off = _mcp_append_json(buf, off, cap, phoneme_language_code(inv));
     off = _mcp_append(buf, off, cap, "\",\"language_name\":\"");
-    off = _mcp_append(buf, off, cap, phoneme_language_name(inv));
+    off = _mcp_append_json(buf, off, cap, phoneme_language_name(inv));
     off = _mcp_append(buf, off, cap, "\",\"consonant_count\":");
     off = _mcp_append_int(buf, off, cap, phoneme_consonant_count(inv));
     off = _mcp_append(buf, off, cap, ",\"vowel_count\":");
@@ -150,9 +215,9 @@ fn _mcp_handle_script(params) {
     var buf = alloc(cap);
     var off = 0;
     off = _mcp_append(buf, off, cap, "{\"code\":\"");
-    off = _mcp_append(buf, off, cap, script_code(sc));
+    off = _mcp_append_json(buf, off, cap, script_code(sc));
     off = _mcp_append(buf, off, cap, "\",\"name\":\"");
-    off = _mcp_append(buf, off, cap, script_name(sc));
+    off = _mcp_append_json(buf, off, cap, script_name(sc));
     off = _mcp_append(buf, off, cap, "\",\"script_type\":");
     off = _mcp_append_int(buf, off, cap, script_type(sc));
     off = _mcp_append(buf, off, cap, "}");
@@ -169,7 +234,7 @@ fn _mcp_handle_grammar(params) {
     var buf = alloc(cap);
     var off = 0;
     off = _mcp_append(buf, off, cap, "{\"language_code\":\"");
-    off = _mcp_append(buf, off, cap, grammar_language_code(g));
+    off = _mcp_append_json(buf, off, cap, grammar_language_code(g));
     off = _mcp_append(buf, off, cap, "\",\"case_count\":");
     off = _mcp_append_int(buf, off, cap, grammar_case_count(g));
     off = _mcp_append(buf, off, cap, ",\"gender_count\":");
@@ -179,6 +244,16 @@ fn _mcp_handle_grammar(params) {
     return _tool_ok(buf);
 }
 
+# BREAKING at 2.1.5: this returned the transliterated text as a bare string while
+# the other four tools returned JSON objects, so a consumer parsing every success
+# payload as JSON got malformed data from exactly one tool. It now returns
+# {"scheme":...,"input":...,"output":...}. Callers that used the payload directly
+# should read the "output" field.
+#
+# The buffer is sized from the input rather than fixed: `text` is caller-supplied
+# and the output can be longer than the input (see translit_apply). 4x the input
+# plus the envelope covers both echoed copies and the JSON escapes; every append
+# is bounds-checked against `cap` regardless.
 fn _mcp_handle_transliterate(params) {
     var text = map_get(params, "text");
     if (text == 0) { return _tool_err("missing required parameter: text"); }
@@ -188,7 +263,20 @@ fn _mcp_handle_transliterate(params) {
     if (streq(scheme, "devanagari_iast") == 1) { table = translit_devanagari_iast(); }
     if (streq(scheme, "greek_beta") == 1) { table = translit_greek_beta_code(); }
     if (table == 0) { return _tool_err2("unknown scheme: ", scheme); }
-    return _tool_ok(translit_apply(table, text));
+
+    var output = translit_apply(table, text);
+    var cap = strlen(text) * 4 + strlen(output) * 2 + strlen(scheme) + 128;
+    var buf = alloc(cap);
+    var off = 0;
+    off = _mcp_append(buf, off, cap, "{\"scheme\":\"");
+    off = _mcp_append_json(buf, off, cap, scheme);
+    off = _mcp_append(buf, off, cap, "\",\"input\":\"");
+    off = _mcp_append_json(buf, off, cap, text);
+    off = _mcp_append(buf, off, cap, "\",\"output\":\"");
+    off = _mcp_append_json(buf, off, cap, output);
+    off = _mcp_append(buf, off, cap, "\"}");
+    store8(buf + off, 0);
+    return _tool_ok(buf);
 }
 
 fn _mcp_handle_compare(params) {
@@ -207,9 +295,9 @@ fn _mcp_handle_compare(params) {
     var buf = alloc(cap);
     var off = 0;
     off = _mcp_append(buf, off, cap, "{\"lang1\":\"");
-    off = _mcp_append(buf, off, cap, lang1);
+    off = _mcp_append_json(buf, off, cap, lang1);
     off = _mcp_append(buf, off, cap, "\",\"lang2\":\"");
-    off = _mcp_append(buf, off, cap, lang2);
+    off = _mcp_append_json(buf, off, cap, lang2);
     off = _mcp_append(buf, off, cap, "\",\"shared_phonemes\":");
     off = _mcp_append_ipa_array(buf, off, cap, ph1, inv2, 1);
     off = _mcp_append(buf, off, cap, ",\"unique_to_lang1\":");

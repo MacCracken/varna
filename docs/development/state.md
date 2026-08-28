@@ -5,6 +5,15 @@
 
 ## Version
 
+**2.1.6** — script registry completeness (2026-08-27): the nine ISO 15924 codes the
+registry named but never defined (Thai, Beng, Taml, Ethi, Hebr, Geor, Mymr, Khmr, Laoo)
+are now real Scripts, so `registry_primary_script` resolves for all 51 languages. The
+`registry_script_codes_resolve` invariant is strict again.
+**2.1.5** — deferred hardening items (2026-08-27): the 98 pre-built data constructors
+are now shared singletons (leak gone — `registry_phonemes` handed out 2,400 B per call,
+now 0), MCP JSON values are escaped, and `varna_translate_ipa` returns a JSON object
+like the other four tools (**breaking**). New `phoneme_clone` for callers needing a
+mutable inventory.
 **2.1.4** — `rust-old/` removed (2026-08-27): the frozen v1.x Rust crate (35 files,
 8,386 lines, 484K) deleted from the tree per [ADR 0002](../adr/0002-remove-the-rust-old-archive.md),
 with its 43 provenance comments rewritten and the doc references swept. Recoverable from
@@ -45,7 +54,7 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
   - ✅ `src/phoneme.cyr` — phoneme types, builder, `english`/`sanskrit`/`greek`
   - ✅ `src/inventories.cyr` — 48 extended language inventories (51 languages total)
   - ✅ `src/registry.cyr` — ISO 639 lookup: `info`/`phonemes`/`all_codes`/`primary_script[_code]`
-  - ✅ `src/script.cyr` — 10 writing systems (type/direction/status/Unicode ranges,
+  - ✅ `src/script.cyr` — 19 writing systems (type/direction/status/Unicode ranges,
     `by_code`/`contains_codepoint`); unblocked `registry_primary_script`
   - ✅ `src/numerals.cyr` — 5 numeral systems (Deva digits, Greek isopsephy, Babylonian,
     Egyptian, Chinese rod); UTF-8 `string_value`
@@ -59,7 +68,7 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
   - ✅ `src/cognate.cyr` — water cognates + CognateSet/Etymology/BorrowingType
   - ✅ `src/dialect.cyr` — variety overlays (British English RP); `adds`/`removes`/`apply`
   - **Core data engine complete — 15 modules.** `cyrius distlib` → `dist/varna.cyr` bundles + compiles.
-  - ✅ `src/daimon.cyr` (`-D DAIMON`) — agent registration (6 capabilities, 51 langs, 10 scripts)
+  - ✅ `src/daimon.cyr` (`-D DAIMON`) — agent registration (6 capabilities, 51 langs, 19 scripts)
   - ✅ `src/hoosh.cyr` (`-D HOOSH`) — `LanguageQuery` + `answer_from_data` (string-built content;
     confidence per-mille, structured_data deferred)
   - ✅ `src/logging.cyr` (`-D LOGGING`) — level-gated stderr logger (`io`); env-filter/`sakshi` deferred
@@ -82,15 +91,12 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.1.4):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.1.4]`); `cyrius.lock` regenerated at 6.5.35 and
+- **Release-ready (2.1.6):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.1.6]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
-- **Gaps not closed by 2.1.4:** `cyrius coverage` reports 94% reference coverage
-  (262/278 fns). The pre-built data constructors are still rebuilt per call — see
-  roadmap 2.1.5 for why caching them was held back — and `src/mcp.cyr` still emits
-  JSON without escaping, and `varna_translate_ipa` still returns a bare string where
-  the other four tools return objects (both also 2.1.5).
+- **Gaps not closed by 2.1.6:** `cyrius coverage` reports 94% reference coverage
+  (273/288 fns). The `2.1.x` carry-over list is empty; next up is the `2.2.0+` tier.
 
 ## Dependencies
 
@@ -114,13 +120,12 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal.
+The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion.
 
 See the [roadmap](roadmap.md) `2.1.x — Carry-over` section for the scheduled items
-(2.1.5 deferred hardening work, 2.1.6 script-registry completeness). In brief:
+(2.1.6 script-registry completeness). In brief:
 
 - **`rust-old/` was removed at 2.1.4** — see [ADR 0002](../adr/0002-remove-the-rust-old-archive.md).
   The tree is single-language again.
-- **Optimization** (unstarted, see `docs/benchmarks-rust-vs-cyrius.md`): cache the immutable
-  pre-built inventories/scripts/profiles (build-once); intern lookups. Parity-safe wins.
-  Held back from 2.1.2 because it changes public semantics — see roadmap 2.1.5.
+- **Optimization**: done at 2.1.5 — the pre-built inventories/scripts/profiles are
+  build-once singletons and the registry lookups no longer allocate.

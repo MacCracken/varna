@@ -7,6 +7,141 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.6] - 2026-08-27
+
+Roadmap item 2.1.6: define the nine scripts the registry had been naming without
+them. This empties the `2.1.x` carry-over list.
+
+### Added
+
+- **script** — nine ISO 15924 scripts that the registry referenced but `script.cyr`
+  never defined, so `registry_primary_script` silently returned 0 for nine of the 51
+  languages: **Thai** (`Thai`), **Bengali** (`Beng`), **Tamil** (`Taml`),
+  **Ethiopic** (`Ethi`), **Hebrew** (`Hebr`), **Georgian** (`Geor`), **Myanmar**
+  (`Mymr`), **Khmer** (`Khmr`) and **Lao** (`Laoo`). Each carries its type,
+  direction, status, Unicode blocks and languages, and is reachable through
+  `script_by_code` and `script_all_codes`. The registry now resolves a primary script
+  for all 51 languages; `script_all_codes()` returns 19, up from 10.
+
+  Blocks follow Unicode, main block first, including the supplementary ones a
+  single-range definition would have missed: Tamil Supplement (`11FC0`–`11FFF`),
+  Ethiopic Supplement / Extended / Extended-A, Hebrew presentation forms
+  (`FB1D`–`FB4F`), Georgian Extended and Supplement, Myanmar Extended-A and -B, and
+  Khmer Symbols. Hebrew is the only right-to-left addition; Georgian is the only
+  alphabet, the other seven are abugidas.
+
+- **tests/script.tcyr** — a `scripts_added_at_2_1_6` group (52 assertions) covering
+  each new script's metadata, dispatch reachability, and codepoint boundaries on both
+  sides of every block — including the adjacent-block confusions the ranges invite
+  (Thai vs Lao at `0E7F`/`0E80`, Bengali vs Devanagari at `097F`).
+
+### Changed
+
+- **tests/invariants.tcyr** — `registry_script_codes_resolve` is **strict** again.
+  The Rust original was deliberately tolerant ("Some scripts may not be registered yet
+  (Thai, Beng, etc.)") and the 2.1.3 port carried that allowance, pinning the gap at
+  exactly 9 unresolved codes. With the nine defined, the assertion now requires every
+  registered language to resolve a primary script — a new language whose script is
+  undefined fails here rather than returning 0 at runtime.
+- **tests/integration.tcyr** — `registry_script_consistency` now expects all 51
+  languages to resolve, up from 42.
+- **tests/daimon.tcyr** — the agent registration advertises 19 supported scripts.
+
+### Notes
+
+- No performance change: `script_by_code` grew nine `streq` branches on a path that
+  has been a cached singleton lookup since 2.1.5, and `script_by_code_lookup` is flat.
+- Suite totals: 1,066 → 1,120 assertions across 26 test files.
+
+
+## [2.1.5] - 2026-08-27
+
+Roadmap item 2.1.5: the three items deferred out of the 2.1.2 hardening sweep.
+Includes one **breaking** change to the `-D MCP` surface.
+
+### Breaking
+
+- **mcp** — `varna_translate_ipa` now returns a JSON object,
+  `{"scheme":...,"input":...,"output":...}`, where it previously returned the
+  transliterated text as a bare string. The other four tools already returned JSON
+  objects, so a consumer parsing every success payload got malformed data from
+  exactly one tool.
+
+  **Migration**: read the `"output"` field instead of using the payload directly.
+  `mcp_result_payload(r)` → parse → `output`.
+
+  The contract is now stated at the top of `src/mcp.cyr` and pinned by
+  `tests/mcp_json.tcyr`: **success payloads are JSON objects for all five tools;
+  error payloads are plain diagnostic messages, not JSON.** Errors stay unstructured
+  deliberately — the result is already tagged, so a caller never has to parse one to
+  discover it is an error.
+
+### Changed
+
+- **Pre-built data constructors are now shared singletons.** All 98 zero-argument
+  constructors — 51 `phoneme_*` inventories, 10 `script_*`, 11 `grammar_*`,
+  10 `swadesh_*`, 2 `translit_*`, 5 `numerals_*`, plus `allophone_english`,
+  the three `phonotactics_*`, `dialect_british_english`, `cognate_water` and the
+  four `*_all_codes` list builders — build once and return the same pointer to
+  every later caller.
+
+  **This is a public-API semantic change.** Do not mutate a returned inventory
+  through the `phoneme_builder_*` functions: you would be editing what every other
+  caller sees. Use the new `phoneme_clone` for a mutable copy. `registry_all_codes`
+  took this same change at 2.1.2; the contract is now uniform and documented at the
+  head of the pre-built section in `src/phoneme.cyr`.
+
+- **mcp** — every value written inside a JSON string literal now goes through
+  `_mcp_append_json`, which escapes `"`, `\`, the five short-form control escapes
+  and any other C0 byte as `\u00XX` (RFC 8259). Nothing in the current data needs
+  an escape, which was exactly the problem: the invariant was unenforced and one new
+  field away from emitting malformed JSON.
+
+### Added
+
+- **phoneme** — `phoneme_clone(inv)` returns an independent inventory that is safe
+  to mutate. The copy is shallow in the same sense `dialect_apply` has always been:
+  the vec, stress and tone slots are fresh, the immutable Phoneme records are shared.
+- **tests/caching.tcyr** (54 assertions) — pins the singleton contract: pointer
+  identity across repeat calls and through `registry_phonemes` / `script_by_code` /
+  `grammar_by_code` / `swadesh_by_code` / `registry_primary_script`, that distinct
+  constructors stay distinct objects, that the data is unchanged and does not
+  accumulate on re-read, that `phoneme_clone` isolates mutations from the shared
+  original, and that `dialect_apply` still leaves its parent untouched now that the
+  parent is shared.
+- **tests/mcp_json.tcyr** — a `json_escaping` group feeding a quote, a backslash, a
+  newline, a tab and a raw `0x01` through `varna_translate_ipa` and checking the
+  payload is still valid JSON with each byte escaped correctly.
+
+### Performance
+
+Interleaved A/B in one session (`cyrius bench`, min ns):
+
+- **english_phoneme_inventory** 1,252 → 0 ns, **sanskrit** 1,664 → 6 ns, **greek**
+  858 → 6 ns. The 0 is below the harness floor rather than literally free — the call
+  is now a load and a compare, which the optimizer can hoist out of the loop.
+- **registry_phonemes_lookup** 1,712 → 52 ns (**-97%**);
+  **swadesh_by_code_lookup** 1,688 → 110 ns (**-93%**);
+  **script_by_code_lookup** 287 → 102 ns (**-65%**).
+- **numeral_value_of_char** 302 → 198 ns. Not attributable — the benchmark pre-builds
+  its table, so nothing in this change should touch it; most likely allocation
+  locality. Reported, not claimed.
+- All other rows flat within noise.
+
+**The leak is gone.** Measured directly off the bump allocator's `_heap_used`
+counter over 1,000 warm calls, bytes handed out per call:
+
+| call | before | after |
+|---|---|---|
+| `registry_phonemes("en")` | 2,400 B | 0 B |
+| `phoneme_english()` | 2,400 B | 0 B |
+| `swadesh_by_code("es")` | 1,624 B | 0 B |
+| `script_by_code("Deva")` | 400 B | 0 B |
+
+The allocator never frees, so those were permanent: a consumer polling the registry
+once a second leaked ~200 MB a day.
+
+
 ## [2.1.4] - 2026-08-27
 
 Roadmap item 2.1.4: remove the frozen v1.x Rust crate. The tree is single-language

@@ -1,0 +1,133 @@
+# tests/caching.tcyr — the shared-singleton contract introduced at 2.1.5.
+#
+# The pre-built data constructors used to rebuild their whole structure on every
+# call; they now build once and hand the same pointer to every later caller. That
+# is a public-API semantic change, so it is pinned here rather than left implicit:
+# identity across calls, identity through the dispatch functions, and the
+# `phoneme_clone` escape hatch for callers that need to mutate.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+fn main() {
+    alloc_init();
+    var i = 0;
+
+    # ---------------------------------------------------------------
+    test_group("constructors_are_singletons");
+    # Pointer identity is the whole point: a second call must not allocate.
+    assert_eq(phoneme_english(), phoneme_english(), "phoneme_english is cached");
+    assert_eq(phoneme_sanskrit(), phoneme_sanskrit(), "phoneme_sanskrit is cached");
+    assert_eq(phoneme_greek(), phoneme_greek(), "phoneme_greek is cached");
+    assert_eq(phoneme_hindi(), phoneme_hindi(), "an inventories.cyr constructor is cached");
+    assert_eq(script_latin(), script_latin(), "script_latin is cached");
+    assert_eq(script_devanagari(), script_devanagari(), "script_devanagari is cached");
+    assert_eq(grammar_english(), grammar_english(), "grammar_english is cached");
+    assert_eq(swadesh_spanish(), swadesh_spanish(), "swadesh_spanish is cached");
+    assert_eq(translit_greek_beta_code(), translit_greek_beta_code(), "translit table is cached");
+    assert_eq(numerals_greek_isopsephy(), numerals_greek_isopsephy(), "numeral system is cached");
+    assert_eq(allophone_english(), allophone_english(), "allophone rules are cached");
+    assert_eq(phonotactics_english(), phonotactics_english(), "phonotactics profile is cached");
+    assert_eq(dialect_british_english(), dialect_british_english(), "dialect variety is cached");
+    assert_eq(cognate_water(), cognate_water(), "cognate set is cached");
+
+    # The list builders too — same change `registry_all_codes` took at 2.1.2.
+    assert_eq(script_all_codes(), script_all_codes(), "script_all_codes is cached");
+    assert_eq(grammar_all_codes(), grammar_all_codes(), "grammar_all_codes is cached");
+    assert_eq(swadesh_all_codes(), swadesh_all_codes(), "swadesh_all_codes is cached");
+    assert_eq(registry_all_codes(), registry_all_codes(), "registry_all_codes is cached");
+
+    # Distinct constructors must still be distinct — a shared cache slot would be
+    # a far worse bug than no cache at all.
+    assert(phoneme_english() != phoneme_greek(), "different inventories are different objects");
+    assert(script_latin() != script_greek(), "different scripts are different objects");
+
+    # ---------------------------------------------------------------
+    test_group("dispatch_returns_the_singleton");
+    # The lookup functions were the leak: each call rebuilt the whole inventory.
+    assert_eq(registry_phonemes("en"), phoneme_english(), "registry_phonemes returns the singleton");
+    assert_eq(registry_phonemes("sa"), phoneme_sanskrit(), "registry_phonemes sa");
+    assert_eq(registry_phonemes("en"), registry_phonemes("en"), "repeat lookup is identical");
+    assert_eq(script_by_code("Latn"), script_latin(), "script_by_code returns the singleton");
+    assert_eq(grammar_by_code("en"), grammar_english(), "grammar_by_code returns the singleton");
+    assert_eq(swadesh_by_code("es"), swadesh_spanish(), "swadesh_by_code returns the singleton");
+    assert_eq(registry_primary_script("en"), script_latin(), "primary_script returns the singleton");
+
+    # ---------------------------------------------------------------
+    test_group("data_is_intact_after_caching");
+    # Caching must not have changed what the constructors produce.
+    var en = phoneme_english();
+    assert_eq(phoneme_consonant_count(en), 24, "English still has 24 consonants");
+    assert_eq(phoneme_vowel_count(en), 12, "English still has 12 vowels");
+    assert_eq(phoneme_has(en, "θ"), 1, "English still has /θ/");
+    assert(streq(phoneme_language_code(en), "en"), "English still reports its code");
+    assert_eq(vec_len(registry_all_codes()), 51, "still 51 registered languages");
+    assert_eq(vec_len(lexicon_entries(swadesh_by_code("es"))), 25, "Swadesh list still has 25 entries");
+    # Reading twice must not accumulate: a constructor that rebuilt would grow the
+    # phoneme vec if the cache were populated after a partial build.
+    assert_eq(vec_len(phoneme_list(phoneme_english())), 36, "inventory length is stable on re-read");
+    assert_eq(vec_len(phoneme_list(phoneme_english())), 36, "inventory length is stable on third read");
+
+    # ---------------------------------------------------------------
+    test_group("phoneme_clone");
+    var clone = phoneme_clone(en);
+    assert(clone != en, "clone is a distinct object");
+    assert(phoneme_list(clone) != phoneme_list(en), "clone has its own phoneme vec");
+    assert(streq(phoneme_language_code(clone), phoneme_language_code(en)), "clone keeps the code");
+    assert(streq(phoneme_language_name(clone), phoneme_language_name(en)), "clone keeps the name");
+    assert_eq(phoneme_stress(clone), phoneme_stress(en), "clone keeps the stress pattern");
+    assert_eq(phoneme_tones(clone), phoneme_tones(en), "clone keeps the tone list");
+    assert_eq(vec_len(phoneme_list(clone)), vec_len(phoneme_list(en)), "clone has the same phoneme count");
+    # Same Phoneme records, by design — nothing in the API mutates one in place.
+    var same_records = 1;
+    i = 0;
+    while (i < vec_len(phoneme_list(en))) {
+        if (vec_get(phoneme_list(clone), i) != vec_get(phoneme_list(en), i)) { same_records = 0; }
+        i = i + 1;
+    }
+    assert_eq(same_records, 1, "clone shares the immutable Phoneme records");
+
+    # Mutating the clone must not reach the shared original — this is the whole
+    # reason phoneme_clone exists.
+    var before = phoneme_consonant_count(en);
+    phoneme_builder_consonant(clone, "ʘ", Manner.Plosive, Place.Bilabial, 0);
+    assert_eq(phoneme_consonant_count(clone), before + 1, "clone took the new consonant");
+    assert_eq(phoneme_consonant_count(en), before, "original is untouched");
+    assert_eq(phoneme_has(en, "ʘ"), 0, "original never sees the added phoneme");
+    assert_eq(phoneme_has(clone, "ʘ"), 1, "clone does");
+    # And the singleton the registry hands out is still the unmodified one.
+    assert_eq(phoneme_consonant_count(registry_phonemes("en")), before, "registry copy is untouched");
+
+    # ---------------------------------------------------------------
+    test_group("dialect_apply_still_independent");
+    # dialect_apply builds a fresh inventory rather than mutating its parent; with
+    # the parent now shared, that property is load-bearing.
+    var rp = dialect_british_english();
+    var rp_inv = dialect_apply(rp, en);
+    assert(rp_inv != en, "overlay result is a distinct object");
+    assert_eq(phoneme_has(en, "ɹ"), 1, "parent keeps /ɹ/ after the overlay removes it");
+    assert_eq(phoneme_has(rp_inv, "ɹ"), 0, "overlay dropped /ɹ/");
+    assert_eq(phoneme_has(en, "ɒ"), 0, "parent did not gain the overlay's /ɒ/");
+    # Applying twice must still be stable now that the parent is shared.
+    var second = dialect_apply(rp, rp_inv);
+    assert_eq(phoneme_consonant_count(second), phoneme_consonant_count(rp_inv), "re-apply is stable");
+    assert_eq(phoneme_consonant_count(en), before, "parent survives a second overlay");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

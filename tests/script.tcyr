@@ -72,7 +72,7 @@ fn main() {
     assert(script_by_code("Grek") != 0, "by_code Grek");
     assert_eq(script_by_code("XXXX"), 0, "by_code unknown");
     var codes = script_all_codes();
-    assert_eq(vec_len(codes), 10, "10 script codes");
+    assert_eq(vec_len(codes), 19, "19 script codes (10 original + 9 added at 2.1.6)");
     var n = vec_len(codes);
     var i = 0;
     var missing = 0;
@@ -81,6 +81,82 @@ fn main() {
         i = i + 1;
     }
     assert_eq(missing, 0, "all codes resolve via by_code");
+
+    # ---------------------------------------------------------------
+    # 2.1.6 — the nine scripts the registry named but did not define.
+    test_group("scripts_added_at_2_1_6");
+
+    var th = script_thai();
+    assert(streq(script_code(th), "Thai"), "Thai code");
+    assert_eq(script_type(th), ScriptType.Abugida, "Thai is an abugida");
+    assert_eq(script_direction(th), Direction.LeftToRight, "Thai is LTR");
+    assert_eq(script_status(th), ScriptStatus.Living, "Thai is living");
+    assert_eq(script_contains_codepoint(th, 0x0E01), 1, "Thai ko kai in range");
+    assert_eq(script_contains_codepoint(th, 0x0DFF), 0, "just below Thai block");
+    assert_eq(script_contains_codepoint(th, 0x0E80), 0, "Lao block is not Thai");
+    assert_eq(_lang_has(script_languages(th), "th"), 1, "Thai lists th");
+
+    var bn = script_bengali();
+    assert(streq(script_code(bn), "Beng"), "Bengali code");
+    assert_eq(script_type(bn), ScriptType.Abugida, "Bengali is an abugida");
+    assert_eq(script_contains_codepoint(bn, 0x0985), 1, "Bengali a in range");
+    assert_eq(script_contains_codepoint(bn, 0x097F), 0, "Devanagari block is not Bengali");
+    assert_eq(_lang_has(script_languages(bn), "as"), 1, "Bengali lists Assamese");
+
+    var ta = script_tamil();
+    assert(streq(script_code(ta), "Taml"), "Tamil code");
+    assert_eq(script_contains_codepoint(ta, 0x0B85), 1, "Tamil a in main block");
+    assert_eq(script_contains_codepoint(ta, 0x11FC0), 1, "Tamil Supplement in range");
+    assert_eq(script_contains_codepoint(ta, 0x0B7F), 0, "just below Tamil block");
+
+    var am = script_ethiopic();
+    assert(streq(script_code(am), "Ethi"), "Ethiopic code");
+    assert_eq(script_contains_codepoint(am, 0x1200), 1, "Ethiopic ha in range");
+    assert_eq(script_contains_codepoint(am, 0x2D80), 1, "Ethiopic Extended in range");
+    assert_eq(script_contains_codepoint(am, 0xAB00), 1, "Ethiopic Extended-A in range");
+    assert_eq(_lang_has(script_languages(am), "ti"), 1, "Ethiopic lists Tigrinya");
+
+    var he = script_hebrew();
+    assert(streq(script_code(he), "Hebr"), "Hebrew code");
+    assert_eq(script_type(he), ScriptType.Abjad, "Hebrew is an abjad");
+    assert_eq(script_direction(he), Direction.RightToLeft, "Hebrew is RTL");
+    assert_eq(script_contains_codepoint(he, 0x05D0), 1, "aleph in range");
+    assert_eq(script_contains_codepoint(he, 0xFB2A), 1, "presentation forms in range");
+    assert_eq(_lang_has(script_languages(he), "yi"), 1, "Hebrew lists Yiddish");
+
+    var geo = script_georgian();
+    assert(streq(script_code(geo), "Geor"), "Georgian code");
+    assert_eq(script_type(geo), ScriptType.Alphabet, "Georgian is an alphabet");
+    assert_eq(script_contains_codepoint(geo, 0x10D0), 1, "Georgian an in range");
+    assert_eq(script_contains_codepoint(geo, 0x1C90), 1, "Georgian Extended in range");
+
+    var my = script_myanmar();
+    assert(streq(script_code(my), "Mymr"), "Myanmar code");
+    assert_eq(script_contains_codepoint(my, 0x1000), 1, "Myanmar ka in range");
+    assert_eq(script_contains_codepoint(my, 0xAA60), 1, "Myanmar Extended-A in range");
+    assert_eq(script_contains_codepoint(my, 0x0FFF), 0, "just below Myanmar block");
+
+    var km = script_khmer();
+    assert(streq(script_code(km), "Khmr"), "Khmer code");
+    assert_eq(script_contains_codepoint(km, 0x1780), 1, "Khmer ka in range");
+    assert_eq(script_contains_codepoint(km, 0x19E0), 1, "Khmer Symbols in range");
+
+    var lo = script_lao();
+    assert(streq(script_code(lo), "Laoo"), "Lao code");
+    assert_eq(script_contains_codepoint(lo, 0x0E81), 1, "Lao ko in range");
+    assert_eq(script_contains_codepoint(lo, 0x0E7F), 0, "Thai block is not Lao");
+
+    # All nine reachable through the dispatch, and counted in all_codes.
+    assert_eq(script_by_code("Thai"), th, "Thai via by_code");
+    assert_eq(script_by_code("Beng"), bn, "Bengali via by_code");
+    assert_eq(script_by_code("Taml"), ta, "Tamil via by_code");
+    assert_eq(script_by_code("Ethi"), am, "Ethiopic via by_code");
+    assert_eq(script_by_code("Hebr"), he, "Hebrew via by_code");
+    assert_eq(script_by_code("Geor"), geo, "Georgian via by_code");
+    assert_eq(script_by_code("Mymr"), my, "Myanmar via by_code");
+    assert_eq(script_by_code("Khmr"), km, "Khmer via by_code");
+    assert_eq(script_by_code("Laoo"), lo, "Lao via by_code");
+    assert_eq(vec_len(script_all_codes()), 19, "19 registered scripts (10 + the 9 added)");
 
     return assert_summary();
 }

@@ -80,7 +80,11 @@ fn main() {
     map_set(p4, "text", "αβγ");
     map_set(p4, "scheme", "greek_beta");
     var r4 = mcp_invoke("varna_translate_ipa", p4);
-    assert(streq(mcp_result_payload(r4), "abg"), "transliterate abg");
+    # 2.1.5 made the success contract uniform: this returns a JSON object rather
+    # than the bare transliterated string it used to.
+    assert(_contains(mcp_result_payload(r4), "\"output\":\"abg\""), "transliterate abg");
+    assert(_contains(mcp_result_payload(r4), "\"input\":\"αβγ\""), "transliterate echoes input");
+    assert(_contains(mcp_result_payload(r4), "\"scheme\":\"greek_beta\""), "transliterate echoes scheme");
 
     var p5 = map_new();
     map_set(p5, "lang1", "en");

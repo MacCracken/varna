@@ -94,7 +94,9 @@ fn numerals_string_value(sys, s) {
 
 # --- Pre-built numeral systems -------------------------------------
 
+var _c_numerals_devanagari_digits = 0;
 fn numerals_devanagari_digits() {
+    if (_c_numerals_devanagari_digits != 0) { return _c_numerals_devanagari_digits; }
     var sys = _nsys_new("Deva", "Devanagari Digits", NumeralSystemKind.Decimal);
     _nsys_add(sys, "०", 0);
     _nsys_add(sys, "१", 1);
@@ -106,10 +108,13 @@ fn numerals_devanagari_digits() {
     _nsys_add(sys, "७", 7);
     _nsys_add(sys, "८", 8);
     _nsys_add(sys, "९", 9);
-    return sys;
+    _c_numerals_devanagari_digits = sys;
+    return _c_numerals_devanagari_digits;
 }
 
+var _c_numerals_greek_isopsephy = 0;
 fn numerals_greek_isopsephy() {
+    if (_c_numerals_greek_isopsephy != 0) { return _c_numerals_greek_isopsephy; }
     var sys = _nsys_new("Grek", "Greek Isopsephy", NumeralSystemKind.Alphabetic);
     _nsys_add(sys, "α", 1);
     _nsys_add(sys, "β", 2);
@@ -136,10 +141,13 @@ fn numerals_greek_isopsephy() {
     _nsys_add(sys, "χ", 600);
     _nsys_add(sys, "ψ", 700);
     _nsys_add(sys, "ω", 800);
-    return sys;
+    _c_numerals_greek_isopsephy = sys;
+    return _c_numerals_greek_isopsephy;
 }
 
+var _c_numerals_babylonian_sexagesimal = 0;
 fn numerals_babylonian_sexagesimal() {
+    if (_c_numerals_babylonian_sexagesimal != 0) { return _c_numerals_babylonian_sexagesimal; }
     var sys = _nsys_new("Xsux", "Babylonian Sexagesimal", NumeralSystemKind.Other);
     _nsys_add(sys, "𒐕", 1);
     _nsys_add(sys, "𒐖", 2);
@@ -153,10 +161,13 @@ fn numerals_babylonian_sexagesimal() {
     _nsys_add(sys, "𒌋", 10);
     _nsys_add(sys, "𒌋𒌋", 20);
     _nsys_add(sys, "𒌍", 30);
-    return sys;
+    _c_numerals_babylonian_sexagesimal = sys;
+    return _c_numerals_babylonian_sexagesimal;
 }
 
+var _c_numerals_egyptian_hieroglyphic = 0;
 fn numerals_egyptian_hieroglyphic() {
+    if (_c_numerals_egyptian_hieroglyphic != 0) { return _c_numerals_egyptian_hieroglyphic; }
     var sys = _nsys_new("Egyp", "Egyptian Hieroglyphic Numerals", NumeralSystemKind.Other);
     _nsys_add(sys, "𓏺", 1);
     _nsys_add(sys, "𓎆", 10);
@@ -165,10 +176,13 @@ fn numerals_egyptian_hieroglyphic() {
     _nsys_add(sys, "𓂭", 10000);
     _nsys_add(sys, "𓆐", 100000);
     _nsys_add(sys, "𓁨", 1000000);
-    return sys;
+    _c_numerals_egyptian_hieroglyphic = sys;
+    return _c_numerals_egyptian_hieroglyphic;
 }
 
+var _c_numerals_chinese_rod_numerals = 0;
 fn numerals_chinese_rod_numerals() {
+    if (_c_numerals_chinese_rod_numerals != 0) { return _c_numerals_chinese_rod_numerals; }
     var sys = _nsys_new("Hani", "Chinese Rod Numerals", NumeralSystemKind.Decimal);
     _nsys_add(sys, "𝍠", 1);
     _nsys_add(sys, "𝍡", 2);
@@ -179,6 +193,7 @@ fn numerals_chinese_rod_numerals() {
     _nsys_add(sys, "𝍦", 7);
     _nsys_add(sys, "𝍧", 8);
     _nsys_add(sys, "𝍨", 9);
-    return sys;
+    _c_numerals_chinese_rod_numerals = sys;
+    return _c_numerals_chinese_rod_numerals;
 }
 

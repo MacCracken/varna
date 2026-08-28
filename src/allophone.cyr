@@ -81,8 +81,10 @@ fn allophone_realize(s, phoneme, env) {
 
 # --- Pre-built rule sets -------------------------------------------
 
+var _c_allophone_english = 0;
 # English (General American) allophone rules.
 fn allophone_english() {
+    if (_c_allophone_english != 0) { return _c_allophone_english; }
     var s = _aset_new("en");
     _aset_add(s, "t", "ɾ", Environment.Intervocalic, 0);
     _aset_add(s, "t", "tʰ", Environment.WordInitial, 1);
@@ -90,5 +92,6 @@ fn allophone_english() {
     _aset_add(s, "k", "kʰ", Environment.WordInitial, 1);
     _aset_add(s, "l", "ɫ", Environment.SyllableFinal, 1);
     _aset_add(s, "ə", "ɨ", Environment.Unstressed, 0);
-    return s;
+    _c_allophone_english = s;
+    return _c_allophone_english;
 }

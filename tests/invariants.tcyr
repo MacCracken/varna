@@ -205,11 +205,13 @@ fn main() {
     assert_eq(no_range, 0, "every script has at least one Unicode range");
     assert_eq(inverted, 0, "no inverted Unicode ranges (lo <= hi)");
 
-    # registry_script_codes_resolve — deliberately tolerant, matching the Rust
-    # original: nine registered languages (Thai, Beng, Taml, Ethi, Hebr, Geor,
-    # Mymr, Khmr, Laoo) name a script that is not registered yet. The invariant
-    # is that the ones which DO resolve resolve correctly. Roadmap 2.1.6 adds the
-    # missing scripts, at which point this can be tightened to require all of them.
+    # registry_script_codes_resolve — STRICT since 2.1.6.
+    #
+    # The Rust original was deliberately tolerant ("Some scripts may not be
+    # registered yet (Thai, Beng, etc.)"), and the port carried that allowance,
+    # pinning the gap at exactly 9 unresolved codes. 2.1.6 added the nine missing
+    # scripts, so every registered language now resolves a primary Script and the
+    # assertion requires it. A new language whose script is undefined fails here.
     var rs_mismatch = 0;
     var rs_unregistered = 0;
     i = 0;
@@ -223,8 +225,8 @@ fn main() {
         }
         i = i + 1;
     }
-    assert_eq(rs_mismatch, 0, "registry script codes that resolve, resolve correctly");
-    assert_eq(rs_unregistered, 9, "9 registry script codes are still unregistered (roadmap 2.1.6)");
+    assert_eq(rs_mismatch, 0, "resolved registry script codes resolve correctly");
+    assert_eq(rs_unregistered, 0, "every registered language resolves a primary script");
 
     # ---------------------------------------------------------------
     test_group("grammar_invariants");

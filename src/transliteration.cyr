@@ -154,7 +154,9 @@ fn translit_apply(tt, input) {
 
 # --- Pre-built tables ----------------------------------------------
 
+var _c_translit_devanagari_iast = 0;
 fn translit_devanagari_iast() {
+    if (_c_translit_devanagari_iast != 0) { return _c_translit_devanagari_iast; }
     var tt = _tt_new("IAST", "Deva", "Latn");
     _tt_add(tt, "अ", "a");
     _tt_add(tt, "आ", "ā");
@@ -217,10 +219,13 @@ fn translit_devanagari_iast() {
     _tt_add(tt, "ः", "ḥ");
     _tt_add(tt, "्", "");
     _tt_add(tt, "ॐ", "oṃ");
-    return tt;
+    _c_translit_devanagari_iast = tt;
+    return _c_translit_devanagari_iast;
 }
 
+var _c_translit_greek_beta_code = 0;
 fn translit_greek_beta_code() {
+    if (_c_translit_greek_beta_code != 0) { return _c_translit_greek_beta_code; }
     var tt = _tt_new("Beta Code", "Grek", "Latn");
     _tt_add(tt, "α", "a");
     _tt_add(tt, "β", "b");
@@ -271,6 +276,7 @@ fn translit_greek_beta_code() {
     _tt_add(tt, "Χ", "*x");
     _tt_add(tt, "Ψ", "*y");
     _tt_add(tt, "Ω", "*w");
-    return tt;
+    _c_translit_greek_beta_code = tt;
+    return _c_translit_greek_beta_code;
 }
 

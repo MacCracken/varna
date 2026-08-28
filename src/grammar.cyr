@@ -44,48 +44,81 @@ fn grammar_gender_count(g) { return load64(g + 40); }
 fn grammar_has_dual(g) { return load64(g + 48); }
 fn grammar_has_classifiers(g) { return load64(g + 56); }
 
+var _c_grammar_english = 0;
 fn grammar_english() {
-    return _gp_new("en", Morphology.Fusional, WordOrder.SVO, 2, 0, 0, 0, 0);
+    if (_c_grammar_english != 0) { return _c_grammar_english; }
+    _c_grammar_english = _gp_new("en", Morphology.Fusional, WordOrder.SVO, 2, 0, 0, 0, 0);
+    return _c_grammar_english;
 }
 
+var _c_grammar_arabic = 0;
 fn grammar_arabic() {
-    return _gp_new("ar", Morphology.Fusional, WordOrder.VSO, 3, 1, 2, 1, 0);
+    if (_c_grammar_arabic != 0) { return _c_grammar_arabic; }
+    _c_grammar_arabic = _gp_new("ar", Morphology.Fusional, WordOrder.VSO, 3, 1, 2, 1, 0);
+    return _c_grammar_arabic;
 }
 
+var _c_grammar_mandarin = 0;
 fn grammar_mandarin() {
-    return _gp_new("zh", Morphology.Isolating, WordOrder.SVO, 0, 0, 0, 0, 1);
+    if (_c_grammar_mandarin != 0) { return _c_grammar_mandarin; }
+    _c_grammar_mandarin = _gp_new("zh", Morphology.Isolating, WordOrder.SVO, 0, 0, 0, 0, 1);
+    return _c_grammar_mandarin;
 }
 
+var _c_grammar_hindi = 0;
 fn grammar_hindi() {
-    return _gp_new("hi", Morphology.Fusional, WordOrder.SOV, 3, 1, 2, 0, 0);
+    if (_c_grammar_hindi != 0) { return _c_grammar_hindi; }
+    _c_grammar_hindi = _gp_new("hi", Morphology.Fusional, WordOrder.SOV, 3, 1, 2, 0, 0);
+    return _c_grammar_hindi;
 }
 
+var _c_grammar_japanese = 0;
 fn grammar_japanese() {
-    return _gp_new("ja", Morphology.Agglutinative, WordOrder.SOV, 0, 0, 0, 0, 1);
+    if (_c_grammar_japanese != 0) { return _c_grammar_japanese; }
+    _c_grammar_japanese = _gp_new("ja", Morphology.Agglutinative, WordOrder.SOV, 0, 0, 0, 0, 1);
+    return _c_grammar_japanese;
 }
 
+var _c_grammar_spanish = 0;
 fn grammar_spanish() {
-    return _gp_new("es", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+    if (_c_grammar_spanish != 0) { return _c_grammar_spanish; }
+    _c_grammar_spanish = _gp_new("es", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+    return _c_grammar_spanish;
 }
 
+var _c_grammar_french = 0;
 fn grammar_french() {
-    return _gp_new("fr", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+    if (_c_grammar_french != 0) { return _c_grammar_french; }
+    _c_grammar_french = _gp_new("fr", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+    return _c_grammar_french;
 }
 
+var _c_grammar_german = 0;
 fn grammar_german() {
-    return _gp_new("de", Morphology.Fusional, WordOrder.SVO, 4, 1, 3, 0, 0);
+    if (_c_grammar_german != 0) { return _c_grammar_german; }
+    _c_grammar_german = _gp_new("de", Morphology.Fusional, WordOrder.SVO, 4, 1, 3, 0, 0);
+    return _c_grammar_german;
 }
 
+var _c_grammar_russian = 0;
 fn grammar_russian() {
-    return _gp_new("ru", Morphology.Fusional, WordOrder.SVO, 6, 1, 3, 0, 0);
+    if (_c_grammar_russian != 0) { return _c_grammar_russian; }
+    _c_grammar_russian = _gp_new("ru", Morphology.Fusional, WordOrder.SVO, 6, 1, 3, 0, 0);
+    return _c_grammar_russian;
 }
 
+var _c_grammar_korean = 0;
 fn grammar_korean() {
-    return _gp_new("ko", Morphology.Agglutinative, WordOrder.SOV, 0, 0, 0, 0, 1);
+    if (_c_grammar_korean != 0) { return _c_grammar_korean; }
+    _c_grammar_korean = _gp_new("ko", Morphology.Agglutinative, WordOrder.SOV, 0, 0, 0, 0, 1);
+    return _c_grammar_korean;
 }
 
+var _c_grammar_portuguese = 0;
 fn grammar_portuguese() {
-    return _gp_new("pt", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+    if (_c_grammar_portuguese != 0) { return _c_grammar_portuguese; }
+    _c_grammar_portuguese = _gp_new("pt", Morphology.Fusional, WordOrder.SVO, 0, 1, 2, 0, 0);
+    return _c_grammar_portuguese;
 }
 
 # Grammar profile for a language, or 0 if none.
@@ -104,8 +137,10 @@ fn grammar_by_code(code) {
     return 0;
 }
 
+var _c_grammar_all_codes = 0;
 # All language codes with grammar profiles — vec of cstrings.
 fn grammar_all_codes() {
+    if (_c_grammar_all_codes != 0) { return _c_grammar_all_codes; }
     var c = vec_new();
     vec_push(c, "en");
     vec_push(c, "ar");
@@ -118,5 +153,6 @@ fn grammar_all_codes() {
     vec_push(c, "ru");
     vec_push(c, "ko");
     vec_push(c, "pt");
-    return c;
+    _c_grammar_all_codes = c;
+    return _c_grammar_all_codes;
 }

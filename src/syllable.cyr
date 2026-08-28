@@ -139,7 +139,9 @@ fn phonotactics_is_permitted(p, sequence, position) {
 
 # --- Pre-built phonotactic profiles --------------------------------
 
+var _c_phonotactics_english = 0;
 fn phonotactics_english() {
+    if (_c_phonotactics_english != 0) { return _c_phonotactics_english; }
     var p = _phonotactics_new("en", _syllable_new(3, 4, 1, "(C)(C)(C)V(C)(C)(C)(C)"));
     var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset, "English /s/+stop onset clusters");
     _constraint_add_seq(ok, "st");
@@ -160,10 +162,13 @@ fn phonotactics_english() {
     _constraint_add_seq(no, "dl");
     _constraint_add_seq(no, "ŋ");
     _phonotactics_add(p, no);
-    return p;
+    _c_phonotactics_english = p;
+    return _c_phonotactics_english;
 }
 
+var _c_phonotactics_sanskrit = 0;
 fn phonotactics_sanskrit() {
+    if (_c_phonotactics_sanskrit != 0) { return _c_phonotactics_sanskrit; }
     var p = _phonotactics_new("sa", _syllable_new(2, 2, 1, "(C)(C)V(C)(C)"));
     var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset, "Sanskrit stop+liquid onset clusters");
     _constraint_add_seq(ok, "pr");
@@ -173,14 +178,18 @@ fn phonotactics_sanskrit() {
     _constraint_add_seq(ok, "pl");
     _constraint_add_seq(ok, "kl");
     _phonotactics_add(p, ok);
-    return p;
+    _c_phonotactics_sanskrit = p;
+    return _c_phonotactics_sanskrit;
 }
 
+var _c_phonotactics_japanese = 0;
 fn phonotactics_japanese() {
+    if (_c_phonotactics_japanese != 0) { return _c_phonotactics_japanese; }
     var p = _phonotactics_new("ja", _syllable_new(1, 1, 1, "(C)V(N)"));
     var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda, "Only moraic nasal permitted in Japanese coda");  #skip-lint
     _constraint_add_seq(ok, "n");
     _constraint_add_seq(ok, "ɴ");
     _phonotactics_add(p, ok);
-    return p;
+    _c_phonotactics_japanese = p;
+    return _c_phonotactics_japanese;
 }

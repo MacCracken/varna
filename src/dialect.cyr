@@ -94,11 +94,14 @@ fn dialect_apply(v, parent) {
 
 # --- Pre-built varieties -------------------------------------------
 
+var _c_dialect_british_english = 0;
 # British English (Received Pronunciation).
 fn dialect_british_english() {
+    if (_c_dialect_british_english != 0) { return _c_dialect_british_english; }
     var v = _variety_new("en-GB", "British English (RP)", "en", VarietyKind.NationalStandard);
     _variety_add_added(v, "ɒ");
     _variety_add_removed(v, "ɹ");
     _variety_add_override(v, _arule_new("t", "t", Environment.Intervocalic, 1));
-    return v;
+    _c_dialect_british_english = v;
+    return _c_dialect_british_english;
 }
