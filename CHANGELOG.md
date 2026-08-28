@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.3] - 2026-08-27
+
+Fourth slice of the 2.2.x Phonological Depth line: the SPE/Hayes distinctive-feature
+system, **derived** from the axes 2.2.0-2.2.2 put in place rather than stored. No
+struct growth, no breaking changes.
+
+### Added
+
+- **src/features.cyr** — a new module (wired into `src/main.cyr` and both
+  `cyrius.cyml` bundle profiles) providing `DistinctiveFeature`, 25 features across
+  major class, manner, laryngeal, place and vowel quality:
+
+  ```
+  phoneme_df(p, f)        -> 1 (+), 0 (-), (0-1) unspecified
+  phoneme_df_present(p)   -> bitmask of features valued +
+  phoneme_df_defined(p)   -> bitmask of features specified at all
+  df_name(f)              -> "sonorant", "spread glottis", …
+  phoneme_minimal_contrast(a, b) -> the single feature two phonemes differ on, or 0
+  ```
+
+- **tests/distinctive.tcyr** (195 assertions). The expectations are taken from the
+  phonetics literature for segments whose values are not in dispute — /p/ is
+  [−sonorant, −continuant, +labial], /s/ is [+strident, +anterior], /θ/ is
+  [−strident, +distributed] — rather than re-derived from the same inputs, which
+  would have proved nothing. Plus corpus-wide structural checks over all 1,649
+  phonemes: `present` is always a subset of `defined`, no obstruent is [+sonorant],
+  every nasal is, every consonant is [−syllabic].
+
+### Notes
+
+- **Derived, not stored.** Almost every distinctive feature is a function of manner,
+  place, voicing, height, backness, airstream and the secondary-articulation mask.
+  Storing them again would double the per-phoneme cost and let the two
+  representations drift — an inventory edited to change a manner would keep a stale
+  [±sonorant]. Derivation makes that impossible. This is why the roadmap sequenced
+  2.2.3 after 2.2.1 and 2.2.2.
+
+- **Three values, not two.** A feature can be +, −, or genuinely unspecified:
+  [±anterior] is coronal-only, [±delayed release] applies to stops and affricates,
+  and [±ATR] is untranscribed corpus-wide. Collapsing unspecified into − would
+  assert things the data does not support. Two cases are left unspecified because
+  the literature genuinely splits, not because the data is missing: **trills and
+  taps** for [±continuant] (intermittent closure), and **central vowels** for
+  [±back] (a two-valued feature cannot carry a three-way contrast, and the
+  `Backness` axis already records it exactly).
+
+- **Secondary articulation feeds place.** Palatalized consonants come out [+dorsal,
+  +high], labialized ones [+labial, +round], and the Arabic emphatics [+low, +back]
+  without being pharyngeal by place — all falling out of 2.2.1's mask rather than
+  needing their own data.
+
+- **The derivation allocated, and now does not.** The first implementation used a
+  16-byte accumulator per call, which the bump allocator would never reclaim —
+  measured at 16,000 bytes per 1,000 reads. That is exactly the defect 2.1.5 swept
+  out of the rest of the tree, so it was replaced with a single reused scratch
+  record before release. `tests/distinctive.tcyr` asserts that 1,500 consecutive
+  feature reads allocate zero bytes.
+
+### Performance
+
+- **Flat**, and **memory unchanged** at 139,152 bytes for all 51 inventories — the
+  features are computed on demand and the Phoneme record stays 56 bytes.
+
+
 ## [2.2.2] - 2026-08-27
 
 Third slice of the 2.2.x Phonological Depth line: vowel length, nasalization and

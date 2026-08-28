@@ -37,9 +37,8 @@ is the `2.2.0+` tier below.
 
 ### 2.2.x — Phonological Depth (P1)
 
-Split out of the original single 2.2.0 item. **2.2.0 (airstream), 2.2.1 (consonant secondary features) and 2.2.2 (vowel
-features) have landed**; the rest follow one per release, each verifiable on
-its own.
+Split out of the original single 2.2.0 item. **2.2.0 (airstream), 2.2.1 (consonant secondary features), 2.2.2 (vowel
+features) and 2.2.3 (distinctive features) have landed**; 2.2.4 is the last.
 
 The original bullet proposed adding `Click`/`Implosive`/`Ejective` to the `Manner`
 enum. That was rejected during 2.2.0: they are airstream mechanisms, not manners, and
@@ -69,14 +68,6 @@ have incomplete vowel systems — so it is a data item, not a feature bit.
       2.2.1 derives `Aspirated` for one and `Breathy` for the other. Phonetically
       they are breathy in all four. Decide one transcription and apply it; the
       assertion in `tests/features.tcyr` that pins the current state documents it.
-
-#### 2.2.3 — Distinctive feature system
-
-- [ ] `DistinctiveFeatures` bundle, 20+ binary features per phoneme (sonorant,
-      continuant, strident, anterior, distributed, ATR/RTR, spread/constricted
-      glottis, syllabic, …) — PHOIBLE parity. Best done after 2.2.1 and 2.2.2, since
-      several features are derivable from manner + place + airstream + the secondary
-      features rather than needing separate storage.
 
 #### 2.2.4 — Tone as structured data
 

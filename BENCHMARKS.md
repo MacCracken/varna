@@ -5,9 +5,9 @@ History in `bench-history.csv`. `min` is the most representative
 per-op figure (the bump allocator never frees, so `avg` carries
 accumulating alloc overhead).
 
-Latest: **2026-08-28T05:44:34Z** commit `4012a76` on cyrius `6.5.35`
+Latest: **2026-08-28T05:57:30Z** commit `b9e6879` on cyrius `6.5.35`
 
-Timer floor: **1.350us** per clock read (measured on this host,
+Timer floor: **1.345us** per clock read (measured on this host,
 subtracted from every sample). Cyrius >=6.5.19 calibrates this at
 runtime; the value is a property of the host clocksource and
 moves between reboots, so rows recorded under different floors are
@@ -23,21 +23,21 @@ not directly comparable.
 
 | Benchmark | min | avg |
 |-----------|-----|-----|
-| `english_phoneme_inventory` | 5ns | 5ns |
-| `sanskrit_phoneme_inventory` | 6ns | 6ns |
+| `english_phoneme_inventory` | 5ns | 7ns |
+| `sanskrit_phoneme_inventory` | 5ns | 6ns |
 | `greek_phoneme_inventory` | 6ns | 7ns |
-| `phoneme_lookup_ipa` | 360ns | 379ns |
+| `phoneme_lookup_ipa` | 357ns | 378ns |
 | `registry_phonemes_lookup` | 51ns | 53ns |
-| `registry_all_codes_iter` | 3.233us | 3.399us |
-| `script_by_code_lookup` | 102ns | 106ns |
+| `registry_all_codes_iter` | 3.203us | 3.369us |
+| `script_by_code_lookup` | 100ns | 106ns |
 | `script_contains_codepoint` | 13ns | 14ns |
-| `transliterate_devanagari_char` | 575ns | 605ns |
-| `transliterate_greek_word` | 18.993us | 19.974us |
-| `numeral_value_of_char` | 296ns | 309ns |
-| `numeral_string_value_word` | 944ns | 988ns |
-| `grammar_by_code_lookup` | 221ns | 231ns |
-| `swadesh_by_code_lookup` | 110ns | 113ns |
-| `lexicon_find_word` | 828ns | 863ns |
+| `transliterate_devanagari_char` | 570ns | 602ns |
+| `transliterate_greek_word` | 18.772us | 19.819us |
+| `numeral_value_of_char` | 294ns | 307ns |
+| `numeral_string_value_word` | 934ns | 987ns |
+| `grammar_by_code_lookup` | 219ns | 230ns |
+| `swadesh_by_code_lookup` | 109ns | 113ns |
+| `lexicon_find_word` | 823ns | 861ns |
 | `allophone_realize` | 33ns | 34ns |
-| `phonotactics_is_permitted` | 137ns | 144ns |
-| `dialect_apply_overlay` | 2.834us | 3.029us |
+| `phonotactics_is_permitted` | 136ns | 143ns |
+| `dialect_apply_overlay` | 2.810us | 3.016us |

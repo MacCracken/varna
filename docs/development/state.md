@@ -5,6 +5,9 @@
 
 ## Version
 
+**2.2.3** — distinctive features (2026-08-27): new `src/features.cyr` deriving 25
+SPE/Hayes features from the existing axes rather than storing them, with a tri-state
+reader (+/−/unspecified). No struct growth, memory unchanged.
 **2.2.2** — vowel features (2026-08-27): `Nasalized`, `Syllabic` and `ExtraShort`
 added to the feature mask (`Long` shared with the consonant side), 118 vowels marked.
 No struct growth — the bits reuse the word 2.2.1 allocated. ATR deliberately deferred
@@ -66,6 +69,7 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
 - Cyrius port (complete; each module was written against the v1.x Rust oracle):
   - ✅ `src/error.cyr` — VarnaError codes
   - ✅ `src/phoneme.cyr` — phoneme types, builder, `english`/`sanskrit`/`greek`
+  - ✅ `src/features.cyr` — 25 derived SPE/Hayes distinctive features (tri-state)
   - ✅ `src/inventories.cyr` — 48 extended language inventories (51 languages total)
   - ✅ `src/registry.cyr` — ISO 639 lookup: `info`/`phonemes`/`all_codes`/`primary_script[_code]`
   - ✅ `src/script.cyr` — 19 writing systems (type/direction/status/Unicode ranges,
@@ -105,15 +109,13 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.2.2):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.2.2]`); `cyrius.lock` regenerated at 6.5.35 and
+- **Release-ready (2.2.3):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.2.3]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
-- **Gaps not closed by 2.2.2:** `cyrius coverage` reports 93% reference coverage
-  (279/297 fns). Two data items are filed in the roadmap: ATR is untranscribed
-  across the corpus and two of the three languages that need it have incomplete
-  vowel systems, and the Sanskrit voiced-aspirate transcription is inconsistent
-  with the other Indic inventories.
+- **Gaps not closed by 2.2.3:** `cyrius coverage` reports 94% reference coverage
+  (286/304 fns). The two data items stand (ATR vowel systems, Sanskrit
+  voiced-aspirate transcription), and 2.2.4 (structured tone) closes the 2.2.x line.
 
 ## Dependencies
 
@@ -137,7 +139,7 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis, 2.2.1 consonant secondary features, 2.2.2 vowel features.
+The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis, 2.2.1 consonant secondary features, 2.2.2 vowel features, 2.2.3 distinctive features.
 
 See the [roadmap](roadmap.md) `2.1.x — Carry-over` section for the scheduled items
 (2.1.6 script-registry completeness). In brief:

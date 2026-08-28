@@ -1,0 +1,290 @@
+# tests/distinctive.tcyr — the derived distinctive-feature system, added at 2.2.3.
+#
+# The features are computed from manner/place/voicing/height/backness/airstream and
+# the 2.2.1-2.2.2 mask, so a test that re-derived them the same way would prove
+# nothing. Instead the expectations here are taken from the phonetics literature for
+# segments whose feature values are not in dispute — /p/ is [−sonorant, −continuant,
+# +labial], /m/ is [+sonorant, +nasal], /s/ is [+strident, +anterior] — and checked
+# against what varna computes.
+#
+# The tri-state matters throughout: several assertions check that a feature is
+# *unspecified*, which a two-valued system could not express and which is the whole
+# reason `phoneme_df` returns three values.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/features.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+# Assert one feature's tri-state value on a named phoneme.
+fn _df_is(inv, ipa, feature, expected, label) {
+    var p = phoneme_find(inv, ipa);
+    assert(p != 0, label);
+    if (p == 0) { return 0; }
+    assert_eq(phoneme_df(p, feature), expected, label);
+    return 0;
+}
+
+fn main() {
+    alloc_init();
+    var i = 0;
+    var en = phoneme_english();
+
+    # ---------------------------------------------------------------
+    test_group("tri_state_api");
+    var p = phoneme_find(en, "p");
+    assert_eq(phoneme_df(p, DistinctiveFeature.DF_VOICE), 0, "/p/ is [-voice]");
+    assert_eq(phoneme_df(phoneme_find(en, "b"), DistinctiveFeature.DF_VOICE), 1, "/b/ is [+voice]");
+    # A feature that is not defined for this segment reads as the unspecified
+    # sentinel, distinct from [-].
+    assert_eq(phoneme_df(p, DistinctiveFeature.DF_STRIDENT), 0 - 1, "[strident] is undefined for a stop");
+    assert_eq(phoneme_df(p, DistinctiveFeature.DF_TENSE_ATR), 0 - 1, "[ATR] is undefined corpus-wide");
+    # The two masks agree with the tri-state reader.
+    assert((phoneme_df_defined(p) & DistinctiveFeature.DF_VOICE) != 0, "voice is defined for /p/");
+    assert_eq(phoneme_df_present(p) & DistinctiveFeature.DF_VOICE, 0, "voice is not present for /p/");
+    assert_eq(phoneme_df_defined(p) & DistinctiveFeature.DF_STRIDENT, 0, "strident is not defined for /p/");
+    assert_eq(df_count(), 25, "25 features defined");
+    assert(streq(df_name(DistinctiveFeature.DF_SONORANT), "sonorant"), "feature names render");
+    assert(streq(df_name(0), "unknown feature"), "unknown feature renders a fallback");
+
+    # ---------------------------------------------------------------
+    test_group("major_class");
+    # /p/ — voiceless bilabial stop.
+    _df_is(en, "p", DistinctiveFeature.DF_SYLLABIC, 0, "/p/ [-syllabic]");
+    _df_is(en, "p", DistinctiveFeature.DF_CONSONANTAL, 1, "/p/ [+consonantal]");
+    _df_is(en, "p", DistinctiveFeature.DF_SONORANT, 0, "/p/ [-sonorant]");
+    _df_is(en, "p", DistinctiveFeature.DF_CONTINUANT, 0, "/p/ [-continuant]");
+    # /m/ — nasals are sonorants but not continuants.
+    _df_is(en, "m", DistinctiveFeature.DF_SONORANT, 1, "/m/ [+sonorant]");
+    _df_is(en, "m", DistinctiveFeature.DF_NASAL, 1, "/m/ [+nasal]");
+    _df_is(en, "m", DistinctiveFeature.DF_CONTINUANT, 0, "/m/ [-continuant]");
+    _df_is(en, "m", DistinctiveFeature.DF_CONSONANTAL, 1, "/m/ [+consonantal]");
+    # /s/ — fricatives are continuant obstruents.
+    _df_is(en, "s", DistinctiveFeature.DF_SONORANT, 0, "/s/ [-sonorant]");
+    _df_is(en, "s", DistinctiveFeature.DF_CONTINUANT, 1, "/s/ [+continuant]");
+    # /l/ — lateral approximant.
+    _df_is(en, "l", DistinctiveFeature.DF_SONORANT, 1, "/l/ [+sonorant]");
+    _df_is(en, "l", DistinctiveFeature.DF_LATERAL, 1, "/l/ [+lateral]");
+    _df_is(en, "l", DistinctiveFeature.DF_APPROXIMANT, 1, "/l/ [+approximant]");
+    # Glides and /h/ are [-consonantal] — they have no oral constriction.
+    _df_is(en, "j", DistinctiveFeature.DF_CONSONANTAL, 0, "/j/ [-consonantal]");
+    _df_is(en, "w", DistinctiveFeature.DF_CONSONANTAL, 0, "/w/ [-consonantal]");
+    _df_is(en, "h", DistinctiveFeature.DF_CONSONANTAL, 0, "/h/ [-consonantal]");
+    _df_is(en, "ɹ", DistinctiveFeature.DF_CONSONANTAL, 1, "/ɹ/ [+consonantal]");
+
+    # ---------------------------------------------------------------
+    test_group("stridency_and_coronal_place");
+    # The classic minimal set: labiodental and sibilant fricatives are strident,
+    # dental and velar ones are not.
+    _df_is(en, "f", DistinctiveFeature.DF_STRIDENT, 1, "/f/ [+strident]");
+    _df_is(en, "v", DistinctiveFeature.DF_STRIDENT, 1, "/v/ [+strident]");
+    _df_is(en, "s", DistinctiveFeature.DF_STRIDENT, 1, "/s/ [+strident]");
+    _df_is(en, "ʃ", DistinctiveFeature.DF_STRIDENT, 1, "/ʃ/ [+strident]");
+    _df_is(en, "θ", DistinctiveFeature.DF_STRIDENT, 0, "/θ/ [-strident]");
+    _df_is(en, "ð", DistinctiveFeature.DF_STRIDENT, 0, "/ð/ [-strident]");
+    var el = phoneme_greek();
+    _df_is(el, "x", DistinctiveFeature.DF_STRIDENT, 0, "/x/ [-strident]");
+    # Lateral fricatives are alveolar but not strident.
+    _df_is(phoneme_zulu(), "ɬ", DistinctiveFeature.DF_STRIDENT, 0, "/ɬ/ [-strident] despite being alveolar");
+
+    # [anterior] and [distributed] are coronal-only.
+    _df_is(en, "s", DistinctiveFeature.DF_CORONAL, 1, "/s/ [+coronal]");
+    _df_is(en, "s", DistinctiveFeature.DF_ANTERIOR, 1, "/s/ [+anterior]");
+    _df_is(en, "ʃ", DistinctiveFeature.DF_ANTERIOR, 0, "/ʃ/ [-anterior]");
+    _df_is(en, "θ", DistinctiveFeature.DF_DISTRIBUTED, 1, "/θ/ is laminal [+distributed]");
+    _df_is(en, "s", DistinctiveFeature.DF_DISTRIBUTED, 0, "/s/ is apical [-distributed]");
+    _df_is(en, "p", DistinctiveFeature.DF_CORONAL, 0, "/p/ [-coronal]");
+    _df_is(en, "p", DistinctiveFeature.DF_ANTERIOR, 0 - 1, "[anterior] undefined for non-coronals");
+    _df_is(en, "p", DistinctiveFeature.DF_DISTRIBUTED, 0 - 1, "[distributed] undefined for non-coronals");
+    var sa = phoneme_sanskrit();
+    _df_is(sa, "ʈ", DistinctiveFeature.DF_ANTERIOR, 0, "retroflex /ʈ/ [-anterior]");
+    _df_is(sa, "ʈ", DistinctiveFeature.DF_DISTRIBUTED, 0, "retroflex /ʈ/ is apical [-distributed]");
+
+    # ---------------------------------------------------------------
+    test_group("laryngeal");
+    # Aspiration and breathy voice both spread the glottis; they differ in voicing.
+    _df_is(sa, "kʰ", DistinctiveFeature.DF_SPREAD_GLOTTIS, 1, "/kʰ/ [+spread glottis]");
+    _df_is(sa, "k", DistinctiveFeature.DF_SPREAD_GLOTTIS, 0, "/k/ [-spread glottis]");
+    var hi = phoneme_hindi();
+    _df_is(hi, "ɡʱ", DistinctiveFeature.DF_SPREAD_GLOTTIS, 1, "breathy /ɡʱ/ [+spread glottis]");
+    _df_is(hi, "ɡʱ", DistinctiveFeature.DF_VOICE, 1, "breathy /ɡʱ/ [+voice]");
+    # Ejectives and implosives constrict it; so does the glottal stop.
+    var ka = phoneme_georgian();
+    _df_is(ka, "kʼ", DistinctiveFeature.DF_CONSTRICTED_GLOTTIS, 1, "ejective /kʼ/ [+constricted glottis]");
+    _df_is(ka, "kʰ", DistinctiveFeature.DF_CONSTRICTED_GLOTTIS, 0, "aspirated /kʰ/ [-constricted glottis]");
+    var ha = phoneme_hausa();
+    _df_is(ha, "ɓ", DistinctiveFeature.DF_CONSTRICTED_GLOTTIS, 1, "implosive /ɓ/ [+constricted glottis]");
+    _df_is(ha, "ʔ", DistinctiveFeature.DF_CONSTRICTED_GLOTTIS, 1, "/ʔ/ [+constricted glottis]");
+    # Clicks use the tongue, not the glottis.
+    _df_is(phoneme_zulu(), "ǀ", DistinctiveFeature.DF_CONSTRICTED_GLOTTIS, 0, "click /ǀ/ [-constricted glottis]");
+
+    # ---------------------------------------------------------------
+    test_group("place_and_tongue_body");
+    _df_is(en, "p", DistinctiveFeature.DF_LABIAL, 1, "/p/ [+labial]");
+    _df_is(en, "f", DistinctiveFeature.DF_LABIAL, 1, "/f/ [+labial]");
+    _df_is(en, "k", DistinctiveFeature.DF_DORSAL, 1, "/k/ [+dorsal]");
+    _df_is(en, "k", DistinctiveFeature.DF_HIGH, 1, "/k/ [+high]");
+    _df_is(en, "k", DistinctiveFeature.DF_BACK, 1, "/k/ [+back]");
+    _df_is(en, "j", DistinctiveFeature.DF_DORSAL, 1, "/j/ [+dorsal]");
+    _df_is(en, "j", DistinctiveFeature.DF_BACK, 0, "palatal /j/ [-back]");
+    _df_is(en, "t", DistinctiveFeature.DF_DORSAL, 0, "/t/ [-dorsal]");
+    _df_is(en, "t", DistinctiveFeature.DF_HIGH, 0 - 1, "[high] undefined for a coronal");
+    # Secondary articulation feeds place: palatalized consonants become dorsal,
+    # labialized ones labial and round.
+    var ru = phoneme_russian();
+    _df_is(ru, "pʲ", DistinctiveFeature.DF_DORSAL, 1, "palatalized /pʲ/ [+dorsal]");
+    _df_is(ru, "pʲ", DistinctiveFeature.DF_HIGH, 1, "palatalized /pʲ/ [+high]");
+    _df_is(ru, "p", DistinctiveFeature.DF_DORSAL, 0, "plain /p/ [-dorsal]");
+    var la = phoneme_latin();
+    _df_is(la, "kʷ", DistinctiveFeature.DF_ROUND, 1, "labialized /kʷ/ [+round]");
+    _df_is(la, "k", DistinctiveFeature.DF_ROUND, 0, "plain /k/ [-round]");
+    # Arabic emphatics retract the tongue root without being pharyngeal by place.
+    var ar = phoneme_classical_arabic();
+    _df_is(ar, "tˤ", DistinctiveFeature.DF_LOW, 1, "emphatic /tˤ/ [+low]");
+    _df_is(ar, "tˤ", DistinctiveFeature.DF_BACK, 1, "emphatic /tˤ/ [+back]");
+    _df_is(ar, "t", DistinctiveFeature.DF_LOW, 0 - 1, "plain /t/ has no tongue-body spec");
+
+    # ---------------------------------------------------------------
+    test_group("vowels");
+    _df_is(en, "iː", DistinctiveFeature.DF_SYLLABIC, 1, "/iː/ [+syllabic]");
+    _df_is(en, "iː", DistinctiveFeature.DF_CONSONANTAL, 0, "/iː/ [-consonantal]");
+    _df_is(en, "iː", DistinctiveFeature.DF_SONORANT, 1, "/iː/ [+sonorant]");
+    _df_is(en, "iː", DistinctiveFeature.DF_HIGH, 1, "/iː/ [+high]");
+    _df_is(en, "iː", DistinctiveFeature.DF_LOW, 0, "/iː/ [-low]");
+    _df_is(en, "iː", DistinctiveFeature.DF_BACK, 0, "/iː/ [-back]");
+    _df_is(en, "iː", DistinctiveFeature.DF_ROUND, 0, "/iː/ [-round]");
+    _df_is(en, "iː", DistinctiveFeature.DF_LONG, 1, "/iː/ [+long]");
+    _df_is(en, "ɪ", DistinctiveFeature.DF_LONG, 0, "/ɪ/ [-long]");
+    _df_is(en, "uː", DistinctiveFeature.DF_HIGH, 1, "/uː/ [+high]");
+    _df_is(en, "uː", DistinctiveFeature.DF_BACK, 1, "/uː/ [+back]");
+    _df_is(en, "uː", DistinctiveFeature.DF_ROUND, 1, "/uː/ [+round]");
+    _df_is(en, "ɑː", DistinctiveFeature.DF_LOW, 1, "/ɑː/ [+low]");
+    _df_is(en, "ɑː", DistinctiveFeature.DF_HIGH, 0, "/ɑː/ [-high]");
+    # Central vowels are unspecified for [back] — a two-valued feature cannot carry
+    # a three-way contrast, and the Backness axis already records it exactly.
+    _df_is(en, "ə", DistinctiveFeature.DF_BACK, 0 - 1, "schwa is unspecified for [back]");
+    _df_is(en, "ʌ", DistinctiveFeature.DF_BACK, 0 - 1, "/ʌ/ is central, unspecified for [back]");
+    # Nasal vowels.
+    _df_is(phoneme_french(), "ɛ̃", DistinctiveFeature.DF_NASAL, 1, "French /ɛ̃/ [+nasal]");
+    _df_is(phoneme_french(), "ɛ", DistinctiveFeature.DF_NASAL, 0, "French /ɛ/ [-nasal]");
+    # Sanskrit's syllabic liquids are filed as vowels but stay [+consonantal].
+    _df_is(sa, "r̩", DistinctiveFeature.DF_SYLLABIC, 1, "/r̩/ [+syllabic]");
+    _df_is(sa, "r̩", DistinctiveFeature.DF_CONSONANTAL, 1, "/r̩/ is a syllabic consonant [+consonantal]");
+    _df_is(sa, "i", DistinctiveFeature.DF_CONSONANTAL, 0, "a true vowel is [-consonantal]");
+
+    # ---------------------------------------------------------------
+    test_group("unspecified_is_not_negative");
+    # The point of the tri-state: an undefined feature must not read as [-].
+    var t = phoneme_find(en, "t");
+    assert_eq(phoneme_df(t, DistinctiveFeature.DF_HIGH), 0 - 1, "[high] undefined for /t/");
+    assert((phoneme_df_defined(t) & DistinctiveFeature.DF_HIGH) == 0, "and absent from the defined mask");
+    assert_eq(phoneme_df(t, DistinctiveFeature.DF_VOICE), 0, "[voice] is genuinely negative for /t/");
+    assert((phoneme_df_defined(t) & DistinctiveFeature.DF_VOICE) != 0, "and present in the defined mask");
+    # Trills and taps are left unspecified for continuancy on purpose.
+    _df_is(el, "r", DistinctiveFeature.DF_CONTINUANT, 0 - 1, "trill continuancy is left unspecified");
+    _df_is(el, "r", DistinctiveFeature.DF_TRILL, 1, "but the trill itself is recorded");
+
+    # ---------------------------------------------------------------
+    test_group("minimal_contrast");
+    # What a feature system is for: naming the single dimension two segments differ on.
+    assert_eq(phoneme_minimal_contrast(phoneme_find(en, "p"), phoneme_find(en, "b")),
+        DistinctiveFeature.DF_VOICE, "/p/ vs /b/ differ only in voice");
+    assert_eq(phoneme_minimal_contrast(phoneme_find(en, "s"), phoneme_find(en, "z")),
+        DistinctiveFeature.DF_VOICE, "/s/ vs /z/ differ only in voice");
+    assert_eq(phoneme_minimal_contrast(phoneme_find(en, "f"), phoneme_find(en, "v")),
+        DistinctiveFeature.DF_VOICE, "/f/ vs /v/ differ only in voice");
+    assert_eq(phoneme_minimal_contrast(phoneme_find(sa, "k"), phoneme_find(sa, "kʰ")),
+        DistinctiveFeature.DF_SPREAD_GLOTTIS, "/k/ vs /kʰ/ differ only in spread glottis");
+    assert_eq(phoneme_minimal_contrast(phoneme_find(en, "iː"), phoneme_find(en, "uː")), 0,
+        "/iː/ vs /uː/ differ in more than one feature");
+    assert_eq(phoneme_minimal_contrast(phoneme_find(en, "p"), phoneme_find(en, "p")), 0,
+        "a phoneme has no contrast with itself");
+    # /m/ vs /n/ differ in place, which is several features at once.
+    assert_eq(phoneme_minimal_contrast(phoneme_find(en, "m"), phoneme_find(en, "n")), 0,
+        "/m/ vs /n/ differ in more than one feature");
+
+    # ---------------------------------------------------------------
+    test_group("corpus_wide_sanity");
+    # Structural properties that must hold for every one of the 1,649 phonemes.
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    var bad_mask = 0;
+    var son_obstruent = 0;
+    var nasal_not_sonorant = 0;
+    var atr_specified = 0;
+    var syllabic_consonant = 0;
+    i = 0;
+    while (i < n) {
+        var inv = registry_phonemes(vec_get(codes, i));
+        var ph = phoneme_list(inv);
+        var j = 0;
+        while (j < vec_len(ph)) {
+            var q = vec_get(ph, j);
+            var pres = phoneme_df_present(q);
+            var defd = phoneme_df_defined(q);
+            # A feature can never be present without being defined.
+            if ((pres & defd) != pres) { bad_mask = bad_mask + 1; }
+            # Nor can either mask stray outside the enum.
+            if ((defd & df_all_mask()) != defd) { bad_mask = bad_mask + 1; }
+            # No obstruent manner is [+sonorant].
+            if (phoneme_kind(q) == PhonemeKind.Consonant) {
+                var m = phoneme_manner(q);
+                if (m == Manner.Plosive || m == Manner.Fricative || m == Manner.Affricate) {
+                    if (phoneme_df(q, DistinctiveFeature.DF_SONORANT) == 1) { son_obstruent = son_obstruent + 1; }
+                }
+                if (m == Manner.Nasal) {
+                    if (phoneme_df(q, DistinctiveFeature.DF_SONORANT) != 1) {
+                        nasal_not_sonorant = nasal_not_sonorant + 1;
+                    }
+                }
+                # Every consonant is [-syllabic].
+                if (phoneme_df(q, DistinctiveFeature.DF_SYLLABIC) != 0) {
+                    syllabic_consonant = syllabic_consonant + 1;
+                }
+            }
+            # ATR is never specified anywhere (roadmap data item).
+            if ((defd & DistinctiveFeature.DF_TENSE_ATR) != 0) { atr_specified = atr_specified + 1; }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad_mask, 0, "present is always a subset of defined, and both stay inside the enum");
+    assert_eq(son_obstruent, 0, "no obstruent is [+sonorant]");
+    assert_eq(nasal_not_sonorant, 0, "every nasal is [+sonorant]");
+    assert_eq(syllabic_consonant, 0, "every consonant is [-syllabic]");
+    assert_eq(atr_specified, 0, "[ATR] is unspecified for every phoneme in the corpus");
+
+    # ---------------------------------------------------------------
+    test_group("derivation_does_not_allocate");
+    # The derivation reuses one scratch record rather than allocating per call.
+    # The bump allocator never frees, so a per-call alloc would leak 16 bytes every
+    # read — the defect 2.1.5 swept out of the rest of the tree.
+    var probe = phoneme_find(en, "p");
+    phoneme_df(probe, DistinctiveFeature.DF_VOICE);
+    var before = _heap_used;
+    var w = 0;
+    while (w < 500) {
+        phoneme_df(probe, DistinctiveFeature.DF_VOICE);
+        phoneme_df_present(probe);
+        phoneme_df_defined(probe);
+        w = w + 1;
+    }
+    assert_eq(_heap_used - before, 0, "1500 feature reads allocate nothing");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

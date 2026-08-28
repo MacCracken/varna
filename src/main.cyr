@@ -6,6 +6,7 @@
 include "src/error.cyr"
 include "src/util.cyr"
 include "src/phoneme.cyr"
+include "src/features.cyr"
 include "src/inventories.cyr"
 include "src/allophone.cyr"
 include "src/syllable.cyr"

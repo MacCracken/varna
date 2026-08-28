@@ -3,4 +3,5 @@
 string
 alloc
 vec
+assert
 hashmap
