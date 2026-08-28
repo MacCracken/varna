@@ -5,7 +5,8 @@
 # cstring literals compared with streq. Sentinel 0 = "not found" (was Option).
 #
 # Memory layout
-#   Phoneme   (48B): [0]=ipa  [8]=kind  [16]=f0  [24]=f1  [32]=f2  [40]=airstream
+#   Phoneme   (56B): [0]=ipa  [8]=kind  [16]=f0  [24]=f1  [32]=f2  [40]=airstream
+#                    [48]=features (PhonemeFeature bitmask)
 #                    consonant → f0=manner f1=place    f2=voiced(0/1)
 #                    vowel     → f0=height f1=backness f2=rounded(0/1)
 #   Inventory (40B): [0]=code  [8]=name  [16]=phonemes(vec)  [24]=stress  [32]=tones(vec|0)
@@ -26,6 +27,37 @@ enum Airstream {
     Ejective = 1;
     Implosive = 2;
     Click = 3;
+}
+
+# Secondary articulation and phonation features, as a bitmask.
+#
+# Added at 2.2.1. These were previously recoverable only by inspecting the IPA
+# string: /pʰ/ and /p/ differ by a character, and nothing could answer "which
+# consonants in this inventory are aspirated?".
+#
+# A bitmask rather than a field per feature: they combine freely (Hindi /d̪ʱ/ is
+# breathy *and* dental, Korean /t͡ɕ͈/ is tense *and* an affricate), several are
+# rare enough that a slot each would be mostly zeroes, and 2.2.3's distinctive
+# feature bundle can extend the same word.
+#
+# The roadmap named five (aspirated, labialized, palatalized, prenasalized, long).
+# A scan of all 1,193 corpus consonants found four more that are real and
+# unrepresentable without them — breathy voice carries the entire Indic voiced-
+# aspirate series, and pharyngealization is the Arabic emphatic contrast — plus
+# `Raised` and `Lateral`. `Velarized` is deliberately absent: no corpus segment
+# needs it yet, and bits are additive.
+enum PhonemeFeature {
+    Aspirated = 1;        # ʰ  — voiceless aspiration
+    Breathy = 2;          # ʱ  — breathy/murmured voice (Indic voiced aspirates)
+    Palatalized = 4;      # ʲ
+    Labialized = 8;       # ʷ
+    Pharyngealized = 16;  # ˤ  — Arabic emphatics
+    Tense = 32;           # ͈  — Korean fortis
+    Devoiced = 64;        # ̥ / ̊ — voiceless sonorant
+    Prenasalized = 128;   # homorganic nasal onset (Wolof mb, nd, ŋɡ, ɲɟ)
+    Long = 256;           # ː  — geminate/long
+    Raised = 512;         # ̝  — raised articulation (Czech /r̝/)
+    Lateral = 1024;       # lateral airflow, including the lateral clicks
 }
 
 enum Manner {
@@ -93,25 +125,33 @@ fn phoneme_consonant(ipa, manner, place, voiced) {
 # Consonant with an explicit airstream mechanism (ejective, implosive, click).
 # Manner stays the manner: /ŋǀ/ is Nasal + Click, /t͡sʼ/ is Affricate + Ejective.
 fn phoneme_consonant_airstream(ipa, manner, place, voiced, airstream) {
-    var p = alloc(48);
+    return phoneme_consonant_full(ipa, manner, place, voiced, airstream, 0);
+}
+
+# Consonant with airstream and a PhonemeFeature bitmask — the full form the other
+# consonant constructors delegate to.
+fn phoneme_consonant_full(ipa, manner, place, voiced, airstream, features) {
+    var p = alloc(56);
     store64(p, ipa);
     store64(p + 8, PhonemeKind.Consonant);
     store64(p + 16, manner);
     store64(p + 24, place);
     store64(p + 32, voiced);
     store64(p + 40, airstream);
+    store64(p + 48, features);
     return p;
 }
 
 # Vowels are pulmonic egressive without exception in the corpus.
 fn phoneme_vowel(ipa, height, backness, rounded) {
-    var p = alloc(48);
+    var p = alloc(56);
     store64(p, ipa);
     store64(p + 8, PhonemeKind.Vowel);
     store64(p + 16, height);
     store64(p + 24, backness);
     store64(p + 32, rounded);
     store64(p + 40, Airstream.Pulmonic);
+    store64(p + 48, 0);
     return p;
 }
 
@@ -124,6 +164,13 @@ fn phoneme_height(p) { return load64(p + 16); }
 fn phoneme_backness(p) { return load64(p + 24); }
 fn phoneme_rounded(p) { return load64(p + 32); }
 fn phoneme_airstream(p) { return load64(p + 40); }
+fn phoneme_features(p) { return load64(p + 48); }
+
+# Is `feature` (a PhonemeFeature constant) set on this phoneme?
+fn phoneme_has_feature(p, feature) {
+    if ((load64(p + 48) & feature) != 0) { return 1; }
+    return 0;
+}
 
 # --- Inventory builder ---------------------------------------------
 # The builder and the inventory share one 40-byte layout; build() is identity.
@@ -165,6 +212,12 @@ fn phoneme_builder_consonant(inv, ipa, manner, place, voiced) {
 # Push a consonant with a non-pulmonic airstream.
 fn phoneme_builder_consonant_airstream(inv, ipa, manner, place, voiced, airstream) {
     vec_push(load64(inv + 16), phoneme_consonant_airstream(ipa, manner, place, voiced, airstream));
+    return inv;
+}
+
+# Push a consonant carrying secondary features (and optionally an airstream).
+fn phoneme_builder_consonant_full(inv, ipa, manner, place, voiced, airstream, features) {
+    vec_push(load64(inv + 16), phoneme_consonant_full(ipa, manner, place, voiced, airstream, features));
     return inv;
 }
 
@@ -302,7 +355,8 @@ fn phoneme_english() {
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Approximants
     phoneme_builder_consonant(b, "ɹ", Manner.Approximant, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Affricates
@@ -333,38 +387,49 @@ fn phoneme_sanskrit() {
     phoneme_builder_stress(b, StressPattern.PitchAccent);
     # Kavarga (velar)
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
-    phoneme_builder_consonant(b, "ɡʰ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant_full(b, "ɡʰ", Manner.Plosive, Place.Velar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Chavarga (palatal)
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
-    phoneme_builder_consonant(b, "d͡ʑʰ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant_full(b, "d͡ʑʰ", Manner.Affricate, Place.Palatal, 1,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Tavarga (retroflex)
     phoneme_builder_consonant(b, "ʈ", Manner.Plosive, Place.Retroflex, 0);
-    phoneme_builder_consonant(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant_full(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɖ", Manner.Plosive, Place.Retroflex, 1);
-    phoneme_builder_consonant(b, "ɖʰ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant_full(b, "ɖʰ", Manner.Plosive, Place.Retroflex, 1,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɳ", Manner.Nasal, Place.Retroflex, 1);
     # Tavarga (dental)
     phoneme_builder_consonant(b, "t̪", Manner.Plosive, Place.Dental, 0);
-    phoneme_builder_consonant(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant_full(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d̪", Manner.Plosive, Place.Dental, 1);
-    phoneme_builder_consonant(b, "d̪ʰ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant_full(b, "d̪ʰ", Manner.Plosive, Place.Dental, 1,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "n̪", Manner.Nasal, Place.Dental, 1);
     # Pavarga (bilabial)
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "bʰ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant_full(b, "bʰ", Manner.Plosive, Place.Bilabial, 1,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     # Antastha (semivowels/approximants)
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "ʋ", Manner.Approximant, Place.Labiodental, 1);
     # Ushman (sibilants/fricatives)
     phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
@@ -372,7 +437,8 @@ fn phoneme_sanskrit() {
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "ɦ", Manner.Fricative, Place.Glottal, 1);
     # Additional
-    phoneme_builder_consonant(b, "ɭ", Manner.LateralApproximant, Place.Retroflex, 1);
+    phoneme_builder_consonant_full(b, "ɭ", Manner.LateralApproximant, Place.Retroflex, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "kʂ", Manner.Affricate, Place.Velar, 0);
     phoneme_builder_consonant(b, "d͡ʑɲ", Manner.Affricate, Place.Palatal, 1);
     # Vowels (svara) — short
@@ -422,7 +488,8 @@ fn phoneme_greek() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     # Affricates
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);

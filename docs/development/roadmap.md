@@ -37,8 +37,8 @@ is the `2.2.0+` tier below.
 
 ### 2.2.x — Phonological Depth (P1)
 
-Split out of the original single 2.2.0 item. **2.2.0 (airstream) has landed**; the
-rest follow one per release, each verifiable on its own.
+Split out of the original single 2.2.0 item. **2.2.0 (airstream) and 2.2.1 (consonant secondary features) have landed**;
+the rest follow one per release, each verifiable on its own.
 
 The original bullet proposed adding `Click`/`Implosive`/`Ejective` to the `Manner`
 enum. That was rejected during 2.2.0: they are airstream mechanisms, not manners, and
@@ -47,16 +47,13 @@ folding them in would have destroyed the manner of 19 of the 38 affected phoneme
 `Airstream` is a separate axis, which is also how PHOIBLE models it. See the 2.2.0
 CHANGELOG entry.
 
-#### 2.2.1 — Consonant secondary features
+#### Data: Sanskrit voiced-aspirate transcription
 
-- [ ] `aspirated`, `labialized`, `palatalized`, `prenasalized`, `long` on consonants.
-      Currently these live only in the IPA string: /pʰ/ vs /p/, /ǀʰ/ vs /ǀ/, /ʔʲ/,
-      /t̪/ are distinguishable by symbol but not queryable.
-- [ ] Revisit the lateral clicks while here. /ǁ ǁʰ ɡǁ/ carry `Manner.LateralFricative`,
-      inherited from before 2.2.0 and left untouched by it — a click is a stop, not a
-      fricative, so the manner is wrong. It was kept because "lateral" is the only
-      part of it worth preserving and there was nowhere else to put it; a `lateral`
-      feature is that somewhere.
+- [ ] Sanskrit spells its voiced aspirates /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/ with U+02B0 while
+      Hindi, Bengali and Urdu spell the same historical series with U+02B1, so
+      2.2.1 derives `Aspirated` for one and `Breathy` for the other. Phonetically
+      they are breathy in all four. Decide one transcription and apply it; the
+      assertion in `tests/features.tcyr` that pins the current state documents it.
 
 #### 2.2.2 — Vowel features
 

@@ -5,6 +5,11 @@
 
 ## Version
 
+**2.2.1** — consonant secondary features (2026-08-27): `PhonemeFeature`, an 11-bit
+mask (aspirated, breathy, palatalized, labialized, pharyngealized, tense, devoiced,
+prenasalized, long, raised, lateral) with 190 consonants marked. Lateral clicks moved
+from `Manner.LateralFricative` to `Manner.Plosive` + the `Lateral` bit. Phoneme record
+48 B → 56 B.
 **2.2.0** — phonological depth, airstream axis (2026-08-27): `Airstream`
 (Pulmonic/Ejective/Implosive/Click) added to the Phoneme record as an axis orthogonal
 to manner, and 38 consonants across 7 languages reclassified. The roadmap's proposal to
@@ -96,14 +101,14 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.2.0):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.2.0]`); `cyrius.lock` regenerated at 6.5.35 and
+- **Release-ready (2.2.1):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.2.1]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
-- **Gaps not closed by 2.2.0:** `cyrius coverage` reports 94% reference coverage
-  (275/291 fns). Aspiration, labialization, length and nasalization are still
-  symbol-only distinctions (roadmap 2.2.1/2.2.2), and the lateral clicks still carry
-  `Manner.LateralFricative` (2.2.1).
+- **Gaps not closed by 2.2.1:** `cyrius coverage` reports 94% reference coverage
+  (278/295 fns). Vowel length, nasalization and ATR are still symbol-only (roadmap
+  2.2.2), and the Sanskrit voiced-aspirate transcription is inconsistent with the
+  other Indic inventories (filed in the roadmap).
 
 ## Dependencies
 
@@ -127,7 +132,7 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis.
+The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis, 2.2.1 consonant secondary features.
 
 See the [roadmap](roadmap.md) `2.1.x — Carry-over` section for the scheduled items
 (2.1.6 script-registry completeness). In brief:

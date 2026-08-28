@@ -7,6 +7,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-08-27
+
+Second slice of the 2.2.x Phonological Depth line: secondary articulation and
+phonation as a queryable bitmask, and the lateral-click manner fix 2.2.0 deferred.
+No breaking changes — the existing constructors keep their arity.
+
+### Added
+
+- **phoneme** — `PhonemeFeature`, an 11-bit mask on the phoneme record:
+  `Aspirated`, `Breathy`, `Palatalized`, `Labialized`, `Pharyngealized`, `Tense`,
+  `Devoiced`, `Prenasalized`, `Long`, `Raised`, `Lateral`. Read with
+  `phoneme_features(p)` / `phoneme_has_feature(p, f)`; construct with
+  `phoneme_consonant_full(...)` or `phoneme_builder_consonant_full(...)`.
+
+  A bitmask rather than a field per feature because they combine freely (Hindi
+  /d̪ʱ/ is breathy *and* dental, Zulu /ǁʰ/ aspirated *and* lateral *and* a click),
+  several are rare enough that a slot each would be mostly zeroes, and 2.2.3's
+  distinctive-feature bundle can extend the same word.
+
+- **inventories** — **190 consonants marked** across the corpus: 76 aspirated,
+  16 palatalized, 15 breathy, 6 devoiced, 5 tense, 4 pharyngealized, 4
+  prenasalized, 3 labialized, 1 long, 1 raised, plus the laterals.
+
+- **tests/features.tcyr** (104 assertions) — per-language cases written out by
+  hand, a `lateral_consistency` check that the `Lateral` bit and the lateral
+  manners agree in both directions, corpus totals per feature, and
+  `symbol_feature_agreement`, which requires every secondary-articulation
+  diacritic in all 1,649 phonemes to match its bit and no vowel to carry a
+  consonant feature yet.
+
+### Changed
+
+- **Lateral clicks** — /ǁ ǁʰ ɡǁ/ move from `Manner.LateralFricative` to
+  `Manner.Plosive`, with laterality now carried by `PhonemeFeature.Lateral`. A
+  click is a stop, not a fricative; the wrong manner was inherited from before
+  2.2.0 and left in place because "lateral" had nowhere else to live. It does now.
+  /ŋǁ/ keeps `Manner.Nasal` — a nasal click is still nasal — and gains the bit.
+- **Phoneme record** is 56 bytes, up from 48.
+
+### Notes
+
+- **The roadmap named five features; the corpus needs nine.** A scan of all 1,193
+  consonants found four more that are real and were unrepresentable: **breathy
+  voice** (15 segments — the entire Hindi/Bengali/Urdu voiced-aspirate series),
+  **pharyngealization** (4 — the Arabic emphatic contrast), **tense/fortis** (5 —
+  Korean), and **devoiced sonorants** (6 — Burmese, Icelandic), plus `Raised`
+  (Czech /r̝/) and `Lateral`. `Velarized` is deliberately absent: nothing in the
+  corpus needs it, and bits are additive.
+- **A transcription inconsistency surfaced and was left alone.** Sanskrit spells
+  its voiced aspirates /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/ with U+02B0, so they derive as
+  `Aspirated`; Hindi, Bengali and Urdu spell the same historical series with
+  U+02B1 and derive as `Breathy`. Phonetically they are breathy in all four.
+  Retranscribing Sanskrit is a data change beyond this release, so the corpus is
+  marked as written and the discrepancy is documented at the assertion that pins
+  it. Filed for a later data pass.
+- **The marks were derived mechanically from the IPA symbols**, so
+  `symbol_feature_agreement` cannot independently confirm the conversion — it
+  would be checking the derivation against itself. Its value is forward-looking:
+  an inventory added later with /pʰ/ and no `Aspirated` bit fails. The
+  per-language groups are the ones that pin today's data, and those are hand-written.
+
+### Performance
+
+- **Flat.** Interleaved A/B; the only row moving more than 10% is
+  `english_phoneme_inventory` at 3 → 5 ns, which is a 2 ns delta on a row already
+  at the harness floor — noise, not a regression. The constructors have been cached
+  singletons since 2.1.5, so the wider record is paid once at build.
+- **Memory**: +8 bytes per phoneme. Building all 51 inventories moves 125,960 →
+  139,152 bytes — exactly 1,649 × 8 — and being cached, that is the whole cost for
+  a process.
+
+
 ## [2.2.0] - 2026-08-27
 
 First slice of the 2.2.x Phonological Depth line: an **airstream** axis on the

@@ -32,7 +32,8 @@ fn phoneme_yucatec_maya() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Approximants
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels (5 short + 5 long)
@@ -78,7 +79,8 @@ fn phoneme_swahili() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
@@ -116,7 +118,8 @@ fn phoneme_yoruba() {
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -141,19 +144,23 @@ fn phoneme_zulu() {
     phoneme_builder_stress(b, StressPattern.Fixed);
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     # Implosives
     phoneme_builder_consonant_airstream(b, "ɓ", Manner.Plosive, Place.Bilabial, 1, Airstream.Implosive);
     # Affricates
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
@@ -164,30 +171,37 @@ fn phoneme_zulu() {
     phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "ɦ", Manner.Fricative, Place.Glottal, 1);
-    phoneme_builder_consonant(b, "ɬ", Manner.LateralFricative, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "ɮ", Manner.LateralFricative, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "ɬ", Manner.LateralFricative, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "ɮ", Manner.LateralFricative, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     # Nasals
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Approximants
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Clicks (dental, alveolar, lateral)
     phoneme_builder_consonant_airstream(b, "ǀ", Manner.Plosive, Place.Dental, 0, Airstream.Click);
-    phoneme_builder_consonant_airstream(b, "ǀʰ", Manner.Plosive, Place.Dental, 0, Airstream.Click);
+    phoneme_builder_consonant_full(b, "ǀʰ", Manner.Plosive, Place.Dental, 0,
+        Airstream.Click, PhonemeFeature.Aspirated);
     phoneme_builder_consonant_airstream(b, "ɡǀ", Manner.Plosive, Place.Dental, 1, Airstream.Click);
     phoneme_builder_consonant_airstream(b, "ŋǀ", Manner.Nasal, Place.Dental, 1, Airstream.Click);
     phoneme_builder_consonant_airstream(b, "ǃ", Manner.Plosive, Place.Alveolar, 0, Airstream.Click);
-    phoneme_builder_consonant_airstream(b, "ǃʰ", Manner.Plosive, Place.Alveolar, 0, Airstream.Click);
+    phoneme_builder_consonant_full(b, "ǃʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Click, PhonemeFeature.Aspirated);
     phoneme_builder_consonant_airstream(b, "ɡǃ", Manner.Plosive, Place.Alveolar, 1, Airstream.Click);
     phoneme_builder_consonant_airstream(b, "ŋǃ", Manner.Nasal, Place.Alveolar, 1, Airstream.Click);
-    phoneme_builder_consonant_airstream(b, "ǁ", Manner.LateralFricative, Place.Alveolar, 0, Airstream.Click);
-    phoneme_builder_consonant_airstream(b, "ǁʰ", Manner.LateralFricative, Place.Alveolar, 0, Airstream.Click);
-    phoneme_builder_consonant_airstream(b, "ɡǁ", Manner.LateralFricative, Place.Alveolar, 1, Airstream.Click);
-    phoneme_builder_consonant_airstream(b, "ŋǁ", Manner.Nasal, Place.Alveolar, 1, Airstream.Click);
+    phoneme_builder_consonant_full(b, "ǁ", Manner.Plosive, Place.Alveolar, 0, Airstream.Click, PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "ǁʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Click, PhonemeFeature.Aspirated | PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "ɡǁ", Manner.Plosive, Place.Alveolar, 1,
+        Airstream.Click, PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "ŋǁ", Manner.Nasal, Place.Alveolar, 1, Airstream.Click, PhonemeFeature.Lateral);
     # Vowels
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
@@ -212,23 +226,28 @@ fn phoneme_thai() {
     vec_push(t, "˩˧˥");
     phoneme_builder_tones(b, t);
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -278,7 +297,8 @@ fn phoneme_vietnamese() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -318,7 +338,8 @@ fn phoneme_tagalog() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -355,7 +376,8 @@ fn phoneme_turkish() {
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels (8-vowel harmony system: front/back × rounded/unrounded × high/low)
@@ -387,7 +409,8 @@ fn phoneme_finnish() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
@@ -428,7 +451,8 @@ fn phoneme_hawaiian() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     # Short vowels
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
@@ -455,17 +479,20 @@ fn phoneme_nahuatl() {
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʷ", Manner.Plosive, Place.LabialVelar, 0);
+    phoneme_builder_consonant_full(b, "kʷ", Manner.Plosive, Place.LabialVelar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Labialized);
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "t͡ɬ", Manner.Affricate, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
-    phoneme_builder_consonant(b, "ɬ", Manner.LateralFricative, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "ɬ", Manner.LateralFricative, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels (short)
@@ -494,15 +521,18 @@ fn phoneme_latin() {
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
-    phoneme_builder_consonant(b, "kʷ", Manner.Plosive, Place.LabialVelar, 0);
-    phoneme_builder_consonant(b, "ɡʷ", Manner.Plosive, Place.LabialVelar, 1);
+    phoneme_builder_consonant_full(b, "kʷ", Manner.Plosive, Place.LabialVelar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Labialized);
+    phoneme_builder_consonant_full(b, "ɡʷ", Manner.Plosive, Place.LabialVelar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Labialized);
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -532,8 +562,10 @@ fn phoneme_classical_arabic() {
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "tˤ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "dˤ", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "tˤ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Pharyngealized);
+    phoneme_builder_consonant_full(b, "dˤ", Manner.Plosive, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Pharyngealized);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
@@ -541,10 +573,12 @@ fn phoneme_classical_arabic() {
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
     phoneme_builder_consonant(b, "ð", Manner.Fricative, Place.Dental, 1);
-    phoneme_builder_consonant(b, "ðˤ", Manner.Fricative, Place.Dental, 1);
+    phoneme_builder_consonant_full(b, "ðˤ", Manner.Fricative, Place.Dental, 1,
+        Airstream.Pulmonic, PhonemeFeature.Pharyngealized);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "sˤ", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "sˤ", Manner.Fricative, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Pharyngealized);
     phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
     phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
@@ -557,7 +591,8 @@ fn phoneme_classical_arabic() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     # Approximants
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
@@ -597,7 +632,8 @@ fn phoneme_koine_greek() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     # Approximant
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -625,20 +661,25 @@ fn phoneme_literary_chinese() {
     phoneme_builder_tones(b, t);
     # Plosives (voiceless, aspirated, voiced triads)
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     # Affricates
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
     # Fricatives
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
@@ -654,7 +695,8 @@ fn phoneme_literary_chinese() {
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     # Vowels
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
@@ -687,30 +729,37 @@ fn phoneme_mandarin() {
     phoneme_builder_tones(b, t);
     # Bilabials
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     # Alveolars
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     # Alveolar sibilants
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     # Retroflex sibilants
     phoneme_builder_consonant(b, "ʈ͡ʂ", Manner.Affricate, Place.Retroflex, 0);
-    phoneme_builder_consonant(b, "ʈ͡ʂʰ", Manner.Affricate, Place.Retroflex, 0);
+    phoneme_builder_consonant_full(b, "ʈ͡ʂʰ", Manner.Affricate, Place.Retroflex, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ʂ", Manner.Fricative, Place.Retroflex, 0);
     phoneme_builder_consonant(b, "ɻ", Manner.Approximant, Place.Retroflex, 1);
     # Palatals (from velar/alveolar before front vowels)
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
     # Velars
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
     # Vowels (nuclear vowels of the syllable finals)
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
@@ -732,38 +781,49 @@ fn phoneme_hindi() {
     phoneme_builder_stress(b, StressPattern.Free);
     # Velars
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
-    phoneme_builder_consonant(b, "ɡʱ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant_full(b, "ɡʱ", Manner.Plosive, Place.Velar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Palatals
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
-    phoneme_builder_consonant(b, "d͡ʑʱ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant_full(b, "d͡ʑʱ", Manner.Affricate, Place.Palatal, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Retroflexes
     phoneme_builder_consonant(b, "ʈ", Manner.Plosive, Place.Retroflex, 0);
-    phoneme_builder_consonant(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant_full(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɖ", Manner.Plosive, Place.Retroflex, 1);
-    phoneme_builder_consonant(b, "ɖʱ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant_full(b, "ɖʱ", Manner.Plosive, Place.Retroflex, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "ɳ", Manner.Nasal, Place.Retroflex, 1);
     # Dentals
     phoneme_builder_consonant(b, "t̪", Manner.Plosive, Place.Dental, 0);
-    phoneme_builder_consonant(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant_full(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d̪", Manner.Plosive, Place.Dental, 1);
-    phoneme_builder_consonant(b, "d̪ʱ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant_full(b, "d̪ʱ", Manner.Plosive, Place.Dental, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Bilabials
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "bʱ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant_full(b, "bʱ", Manner.Plosive, Place.Bilabial, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     # Approximants & liquids
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "ʋ", Manner.Approximant, Place.Labiodental, 1);
     # Fricatives
     phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
@@ -856,8 +916,10 @@ fn phoneme_spanish() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "rr", Manner.Trill, Place.Alveolar, 1);
     # Approximants
@@ -899,7 +961,8 @@ fn phoneme_french() {
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "ʁ", Manner.Fricative, Place.Uvular, 1);
     # Approximants (semi-vowels)
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -959,7 +1022,8 @@ fn phoneme_german() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Liquids & approximants
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Short vowels
     phoneme_builder_vowel(b, "ɪ", Height.NearClose, Backness.Front, 0);
@@ -991,44 +1055,61 @@ fn phoneme_russian() {
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives (plain / palatalized pairs)
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʲ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʲ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "bʲ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant_full(b, "bʲ", Manner.Plosive, Place.Bilabial, 1,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Dental, 0);
-    phoneme_builder_consonant(b, "tʲ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant_full(b, "tʲ", Manner.Plosive, Place.Dental, 0,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Dental, 1);
-    phoneme_builder_consonant(b, "dʲ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant_full(b, "dʲ", Manner.Plosive, Place.Dental, 1,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʲ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʲ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
-    phoneme_builder_consonant(b, "ɡʲ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant_full(b, "ɡʲ", Manner.Plosive, Place.Velar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     # Affricates
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
     # Fricatives (plain / palatalized pairs)
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
-    phoneme_builder_consonant(b, "fʲ", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant_full(b, "fʲ", Manner.Fricative, Place.Labiodental, 0,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
-    phoneme_builder_consonant(b, "vʲ", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant_full(b, "vʲ", Manner.Fricative, Place.Labiodental, 1,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "sʲ", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "sʲ", Manner.Fricative, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "zʲ", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "zʲ", Manner.Fricative, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
-    phoneme_builder_consonant(b, "ɕː", Manner.Fricative, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "ɕː", Manner.Fricative, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Long);
     phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
-    phoneme_builder_consonant(b, "xʲ", Manner.Fricative, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "xʲ", Manner.Fricative, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     # Nasals
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "mʲ", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant_full(b, "mʲ", Manner.Nasal, Place.Bilabial, 1,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "nʲ", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "nʲ", Manner.Nasal, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     # Liquids & approximants
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "lʲ", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "lʲ", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized | PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "rʲ", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "rʲ", Manner.Trill, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels (6-vowel system: stressed realisations)
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
@@ -1049,21 +1130,29 @@ fn phoneme_korean() {
     phoneme_builder_stress(b, StressPattern.Fixed);
     # Plosives: lax / aspirated / tense triads
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "p͈", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "p͈", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Tense);
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͈", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "t͈", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Tense);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "k͈", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "k͈", Manner.Plosive, Place.Velar, 0, Airstream.Pulmonic, PhonemeFeature.Tense);
     # Affricate: lax / aspirated / tense
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕ͈", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "t͡ɕ͈", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Tense);
     # Fricatives: lax / tense
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "s͈", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "s͈", Manner.Fricative, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Tense);
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
     # Nasals
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
@@ -1111,8 +1200,10 @@ fn phoneme_portuguese() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Liquids & approximants
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ʁ", Manner.Fricative, Place.Uvular, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -1166,8 +1257,10 @@ fn phoneme_italian() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     # Approximants
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
@@ -1209,7 +1302,8 @@ fn phoneme_dutch() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "ʀ", Manner.Trill, Place.Uvular, 1);
     # Approximants
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
@@ -1272,7 +1366,8 @@ fn phoneme_polish() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     # Approximants
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
@@ -1296,31 +1391,41 @@ fn phoneme_bengali() {
     phoneme_builder_stress(b, StressPattern.Free);
     # Velars
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
-    phoneme_builder_consonant(b, "ɡʱ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant_full(b, "ɡʱ", Manner.Plosive, Place.Velar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Palatals (affricate series)
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
-    phoneme_builder_consonant(b, "d͡ʑʱ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant_full(b, "d͡ʑʱ", Manner.Affricate, Place.Palatal, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     # Retroflexes
     phoneme_builder_consonant(b, "ʈ", Manner.Plosive, Place.Retroflex, 0);
-    phoneme_builder_consonant(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant_full(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɖ", Manner.Plosive, Place.Retroflex, 1);
-    phoneme_builder_consonant(b, "ɖʱ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant_full(b, "ɖʱ", Manner.Plosive, Place.Retroflex, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     # Dentals
     phoneme_builder_consonant(b, "t̪", Manner.Plosive, Place.Dental, 0);
-    phoneme_builder_consonant(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant_full(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d̪", Manner.Plosive, Place.Dental, 1);
-    phoneme_builder_consonant(b, "d̪ʱ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant_full(b, "d̪ʱ", Manner.Plosive, Place.Dental, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Bilabials
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "bʱ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant_full(b, "bʱ", Manner.Plosive, Place.Bilabial, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     # Fricatives
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
@@ -1329,7 +1434,8 @@ fn phoneme_bengali() {
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɽ", Manner.TapFlap, Place.Retroflex, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     # Vowels
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
@@ -1369,8 +1475,10 @@ fn phoneme_tamil() {
     phoneme_builder_consonant(b, "ʋ", Manner.Approximant, Place.Labiodental, 1);
     phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɻ", Manner.Approximant, Place.Retroflex, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ɭ", Manner.LateralApproximant, Place.Retroflex, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "ɭ", Manner.LateralApproximant, Place.Retroflex, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     # Vowels (5 short + 5 long)
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
     phoneme_builder_vowel(b, "aː", Height.Open, Backness.Central, 0);
@@ -1394,40 +1502,51 @@ fn phoneme_urdu() {
     phoneme_builder_stress(b, StressPattern.Free);
     # Velars
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
-    phoneme_builder_consonant(b, "ɡʱ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant_full(b, "ɡʱ", Manner.Plosive, Place.Velar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Uvular (Persian/Arabic)
     phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
     # Palatals
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
-    phoneme_builder_consonant(b, "d͡ʑʱ", Manner.Affricate, Place.Palatal, 1);
+    phoneme_builder_consonant_full(b, "d͡ʑʱ", Manner.Affricate, Place.Palatal, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Retroflexes
     phoneme_builder_consonant(b, "ʈ", Manner.Plosive, Place.Retroflex, 0);
-    phoneme_builder_consonant(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0);
+    phoneme_builder_consonant_full(b, "ʈʰ", Manner.Plosive, Place.Retroflex, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɖ", Manner.Plosive, Place.Retroflex, 1);
-    phoneme_builder_consonant(b, "ɖʱ", Manner.Plosive, Place.Retroflex, 1);
+    phoneme_builder_consonant_full(b, "ɖʱ", Manner.Plosive, Place.Retroflex, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "ɳ", Manner.Nasal, Place.Retroflex, 1);
     # Dentals
     phoneme_builder_consonant(b, "t̪", Manner.Plosive, Place.Dental, 0);
-    phoneme_builder_consonant(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant_full(b, "t̪ʰ", Manner.Plosive, Place.Dental, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d̪", Manner.Plosive, Place.Dental, 1);
-    phoneme_builder_consonant(b, "d̪ʱ", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant_full(b, "d̪ʱ", Manner.Plosive, Place.Dental, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Bilabials
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "bʱ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant_full(b, "bʱ", Manner.Plosive, Place.Bilabial, 1,
+        Airstream.Pulmonic, PhonemeFeature.Breathy);
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     # Approximants & liquids
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "ʋ", Manner.Approximant, Place.Labiodental, 1);
     # Fricatives
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
@@ -1487,7 +1606,8 @@ fn phoneme_amharic() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Approximants / liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
@@ -1521,7 +1641,8 @@ fn phoneme_hausa() {
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
-    phoneme_builder_consonant(b, "ʔʲ", Manner.Plosive, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "ʔʲ", Manner.Plosive, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Palatalized);
     # Implosives (bilabial + alveolar)
     phoneme_builder_consonant_airstream(b, "ɓ", Manner.Plosive, Place.Bilabial, 1, Airstream.Implosive);
     phoneme_builder_consonant_airstream(b, "ɗ", Manner.Plosive, Place.Alveolar, 1, Airstream.Implosive);
@@ -1541,7 +1662,8 @@ fn phoneme_hausa() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Approximants / liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
@@ -1585,7 +1707,8 @@ fn phoneme_indonesian() {
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Approximant / liquid
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
@@ -1632,7 +1755,8 @@ fn phoneme_persian() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Approximants / liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     # Vowels (6-vowel system)
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
@@ -1677,7 +1801,8 @@ fn phoneme_hebrew() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Approximants / liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels (5-vowel system)
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
@@ -1700,9 +1825,12 @@ fn phoneme_georgian() {
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     # Plosives — voiceless aspirated
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     # Plosives — ejective
     phoneme_builder_consonant_airstream(b, "pʼ", Manner.Plosive, Place.Bilabial, 0, Airstream.Ejective);
     phoneme_builder_consonant_airstream(b, "tʼ", Manner.Plosive, Place.Alveolar, 0, Airstream.Ejective);
@@ -1713,8 +1841,10 @@ fn phoneme_georgian() {
     phoneme_builder_consonant(b, "d͡z", Manner.Affricate, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
     # Affricates — voiceless aspirated
-    phoneme_builder_consonant(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͡ʃʰ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant_full(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "t͡ʃʰ", Manner.Affricate, Place.Postalveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     # Affricates — ejective
     phoneme_builder_consonant_airstream(b, "t͡sʼ", Manner.Affricate, Place.Alveolar, 0, Airstream.Ejective);
     phoneme_builder_consonant_airstream(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0, Airstream.Ejective);
@@ -1731,7 +1861,8 @@ fn phoneme_georgian() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Approximants / liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     # Vowels (5-vowel system)
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
@@ -1775,9 +1906,11 @@ fn phoneme_czech() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Liquids — r̝ (ř) is a raised alveolar trill unique to Czech
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "r̝", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "r̝", Manner.Trill, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Raised);
     # Approximant
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels — 5 short + 5 long
@@ -1828,7 +1961,8 @@ fn phoneme_hungarian() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Liquids / approximants
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels — 7 short + 7 long (front rounded y/ø included)
@@ -1879,7 +2013,8 @@ fn phoneme_romanian() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Liquids / approximants
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels — 7 (ɨ is unique among Romance languages)
@@ -1908,21 +2043,25 @@ fn phoneme_burmese() {
     phoneme_builder_tones(b, t);
     # Bilabial plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
     # Alveolar plosives
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
     # Velar plosives
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     # Glottal stop
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
     # Affricates
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
     # Fricatives
     phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
@@ -1937,11 +2076,15 @@ fn phoneme_burmese() {
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Voiceless nasals (modal voiceless)
-    phoneme_builder_consonant(b, "m̥", Manner.Nasal, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "n̥", Manner.Nasal, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "ŋ̊", Manner.Nasal, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "m̥", Manner.Nasal, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Devoiced);
+    phoneme_builder_consonant_full(b, "n̥", Manner.Nasal, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Devoiced);
+    phoneme_builder_consonant_full(b, "ŋ̊", Manner.Nasal, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Devoiced);
     # Approximants & liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -1972,15 +2115,19 @@ fn phoneme_khmer() {
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
     # Aspirated plosives
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     # Implosives
     phoneme_builder_consonant_airstream(b, "ɓ", Manner.Plosive, Place.Bilabial, 1, Airstream.Implosive);
     phoneme_builder_consonant_airstream(b, "ɗ", Manner.Plosive, Place.Alveolar, 1, Airstream.Implosive);
     # Affricates
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     # Fricatives
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
@@ -1990,7 +2137,8 @@ fn phoneme_khmer() {
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Approximants & liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -2050,7 +2198,8 @@ fn phoneme_somali() {
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     # Approximants & liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -2083,11 +2232,16 @@ fn phoneme_quechua() {
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
     # Aspirated stops
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͡ʃʰ", Manner.Affricate, Place.Postalveolar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "qʰ", Manner.Plosive, Place.Uvular, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "t͡ʃʰ", Manner.Affricate, Place.Postalveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "qʰ", Manner.Plosive, Place.Uvular, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     # Ejectives
     phoneme_builder_consonant_airstream(b, "pʼ", Manner.Plosive, Place.Bilabial, 0, Airstream.Ejective);
     phoneme_builder_consonant_airstream(b, "tʼ", Manner.Plosive, Place.Alveolar, 0, Airstream.Ejective);
@@ -2102,7 +2256,8 @@ fn phoneme_quechua() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Approximants & liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -2167,9 +2322,12 @@ fn phoneme_icelandic() {
     var b = phoneme_builder_with_capacity("is", "Icelandic", 30);
     phoneme_builder_stress(b, StressPattern.Free);
     # Aspirated voiceless stops (phonemically distinctive)
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     # Plain (unaspirated) voiceless stops
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
@@ -2187,11 +2345,15 @@ fn phoneme_icelandic() {
     phoneme_builder_consonant(b, "ç", Manner.Fricative, Place.Palatal, 0);
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
     # Voiceless lateral fricative (unique feature)
-    phoneme_builder_consonant(b, "ɬ", Manner.LateralFricative, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "ɬ", Manner.LateralFricative, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     # Voiceless nasals (pre-aspiration related)
-    phoneme_builder_consonant(b, "m̥", Manner.Nasal, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "n̥", Manner.Nasal, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "ŋ̊", Manner.Nasal, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "m̥", Manner.Nasal, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Devoiced);
+    phoneme_builder_consonant_full(b, "n̥", Manner.Nasal, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Devoiced);
+    phoneme_builder_consonant_full(b, "ŋ̊", Manner.Nasal, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Devoiced);
     # Voiced nasal + trill + approximant
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -2223,10 +2385,14 @@ fn phoneme_wolof() {
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
     # Prenasalized stops (phonemic units, not sequences)
-    phoneme_builder_consonant(b, "mb", Manner.Plosive, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "nd", Manner.Plosive, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ŋɡ", Manner.Plosive, Place.Velar, 1);
-    phoneme_builder_consonant(b, "ɲɟ", Manner.Plosive, Place.Palatal, 1);
+    phoneme_builder_consonant_full(b, "mb", Manner.Plosive, Place.Bilabial, 1,
+        Airstream.Pulmonic, PhonemeFeature.Prenasalized);
+    phoneme_builder_consonant_full(b, "nd", Manner.Plosive, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Prenasalized);
+    phoneme_builder_consonant_full(b, "ŋɡ", Manner.Plosive, Place.Velar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Prenasalized);
+    phoneme_builder_consonant_full(b, "ɲɟ", Manner.Plosive, Place.Palatal, 1,
+        Airstream.Pulmonic, PhonemeFeature.Prenasalized);
     # Fricatives
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
@@ -2239,7 +2405,8 @@ fn phoneme_wolof() {
     phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Approximants / liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -2273,17 +2440,21 @@ fn phoneme_lao() {
     phoneme_builder_tones(b, t);
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "pʰ", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
+    phoneme_builder_consonant_full(b, "tʰ", Manner.Plosive, Place.Alveolar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
     # Affricates
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
+    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
+        Airstream.Pulmonic, PhonemeFeature.Aspirated);
     # Fricatives
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
@@ -2293,7 +2464,8 @@ fn phoneme_lao() {
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Approximants / liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Vowels — short/long pairs
@@ -2336,13 +2508,15 @@ fn phoneme_mongolian() {
     phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
     phoneme_builder_consonant(b, "χ", Manner.Fricative, Place.Uvular, 0);
     # Lateral fricative
-    phoneme_builder_consonant(b, "ɮ", Manner.LateralFricative, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "ɮ", Manner.LateralFricative, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     # Nasals
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
     # Approximants / liquids
-    phoneme_builder_consonant(b, "l", Manner.LateralApproximant, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+        Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     # Vowels — back harmony set (short)
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Back, 0);

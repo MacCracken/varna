@@ -1,0 +1,355 @@
+# tests/features.tcyr — consonant secondary features, added at 2.2.1.
+#
+# Before 2.2.1 these were recoverable only by inspecting the IPA string: /pʰ/ and
+# /p/ differ by a character, and nothing could answer "which consonants here are
+# aspirated?". `PhonemeFeature` is a bitmask on the phoneme record.
+#
+# The corpus marks were derived mechanically from the IPA symbols, so a test that
+# re-derived them from the same symbols would be circular. The value of
+# `symbol_feature_agreement` below is therefore forward-looking: it guards the
+# inventory that gets *added* next, not the ones converted here. The per-language
+# groups are the ones that pin today's data, and they are written out by hand.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+fn _has_sub(s, needle) {
+    var hl = strlen(s);
+    var nl = strlen(needle);
+    if (nl == 0) { return 1; }
+    if (nl > hl) { return 0; }
+    var i = 0;
+    while (i <= hl - nl) {
+        var j = 0;
+        var matched = 1;
+        while (j < nl) {
+            if (load8(s + i + j) != load8(needle + j)) { matched = 0; }
+            j = j + 1;
+        }
+        if (matched == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Assert a phoneme carries exactly `feats` (the whole mask, not just a subset).
+fn _feats(inv, ipa, feats, label) {
+    var p = phoneme_find(inv, ipa);
+    assert(p != 0, label);
+    if (p == 0) { return 0; }
+    assert_eq(phoneme_features(p), feats, label);
+    return 0;
+}
+
+fn _count_feature(inv, feature) {
+    var ph = phoneme_list(inv);
+    var n = vec_len(ph);
+    var c = 0;
+    var i = 0;
+    while (i < n) {
+        if (phoneme_has_feature(vec_get(ph, i), feature) == 1) { c = c + 1; }
+        i = i + 1;
+    }
+    return c;
+}
+
+fn main() {
+    alloc_init();
+    var i = 0;
+
+    # ---------------------------------------------------------------
+    test_group("feature_api");
+    var en = phoneme_english();
+    var p = phoneme_find(en, "p");
+    assert_eq(phoneme_features(p), 0, "plain /p/ has no features");
+    assert_eq(phoneme_has_feature(p, PhonemeFeature.Aspirated), 0, "plain /p/ is not aspirated");
+    # The bits are distinct powers of two, so they compose without collision.
+    assert_eq(PhonemeFeature.Aspirated, 1, "Aspirated is bit 0");
+    assert_eq(PhonemeFeature.Breathy, 2, "Breathy is bit 1");
+    assert_eq(PhonemeFeature.Lateral, 1024, "Lateral is bit 10");
+    var both = PhonemeFeature.Aspirated | PhonemeFeature.Lateral;
+    var made = phoneme_consonant_full("xʰ", Manner.Plosive, Place.Velar, 0, Airstream.Click, both);
+    assert_eq(phoneme_has_feature(made, PhonemeFeature.Aspirated), 1, "composed mask reads back aspirated");
+    assert_eq(phoneme_has_feature(made, PhonemeFeature.Lateral), 1, "composed mask reads back lateral");
+    assert_eq(phoneme_has_feature(made, PhonemeFeature.Breathy), 0, "composed mask is not breathy");
+    assert_eq(phoneme_airstream(made), Airstream.Click, "features do not disturb the airstream");
+    assert_eq(phoneme_manner(made), Manner.Plosive, "features do not disturb the manner");
+    # The shorter constructors still work and still default to no features.
+    assert_eq(phoneme_features(phoneme_consonant("t", Manner.Plosive, Place.Alveolar, 0)), 0,
+        "phoneme_consonant defaults to no features");
+    assert_eq(phoneme_features(phoneme_vowel("a", Height.Open, Backness.Central, 0)), 0,
+        "phoneme_vowel defaults to no features");
+
+    # ---------------------------------------------------------------
+    test_group("aspiration");
+    # English has no aspirated phonemes — aspiration is allophonic there, which is
+    # exactly the distinction this axis is meant to keep straight.
+    assert_eq(_count_feature(en, PhonemeFeature.Aspirated), 0, "English aspiration is allophonic, not phonemic");
+    var sa = phoneme_sanskrit();
+    _feats(sa, "kʰ", PhonemeFeature.Aspirated, "Sanskrit /kʰ/");
+    _feats(sa, "k", 0, "Sanskrit /k/ is plain");
+    assert_eq(_count_feature(sa, PhonemeFeature.Aspirated), 10, "Sanskrit has 10 aspirates");
+    # DATA NOTE: five of those ten are the *voiced* aspirates /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/,
+    # which are phonetically breathy-voiced — the same series Hindi, Bengali and
+    # Urdu transcribe with /ʱ/ and which this release therefore marks Breathy in
+    # those three languages. Sanskrit spells them with /ʰ/, so they come out
+    # Aspirated here. The transcription is inconsistent across the corpus, not the
+    # feature derivation; retranscribing Sanskrit is a data change beyond 2.2.1 and
+    # is filed for a later pass rather than made silently here.
+    assert_eq(phoneme_find(sa, "ɡʱ"), 0,
+        "Sanskrit has no /ɡʱ/ spelling — it uses /ɡʰ/ (see the note above)");
+    assert(phoneme_find(sa, "ɡʰ") != 0, "Sanskrit spells the voiced aspirate /ɡʰ/");
+    assert_eq(_count_feature(sa, PhonemeFeature.Breathy), 0, "Sanskrit marks no breathy voice today");
+    var zu = phoneme_zulu();
+    _feats(zu, "pʰ", PhonemeFeature.Aspirated, "Zulu /pʰ/");
+    # An aspirated click is both, on two different axes.
+    var click_asp = phoneme_find(zu, "ǀʰ");
+    assert_eq(phoneme_has_feature(click_asp, PhonemeFeature.Aspirated), 1, "/ǀʰ/ is aspirated");
+    assert_eq(phoneme_airstream(click_asp), Airstream.Click, "/ǀʰ/ is still a click");
+
+    # ---------------------------------------------------------------
+    test_group("breathy_voice");
+    # The Indic voiced-aspirate series. The roadmap did not name this feature; the
+    # corpus scan found 15 segments across three languages that need it.
+    var hi = phoneme_hindi();
+    _feats(hi, "ɡʱ", PhonemeFeature.Breathy, "Hindi /ɡʱ/ is breathy, not aspirated");
+    _feats(hi, "bʱ", PhonemeFeature.Breathy, "Hindi /bʱ/");
+    assert_eq(phoneme_has_feature(phoneme_find(hi, "ɡʱ"), PhonemeFeature.Aspirated), 0,
+        "breathy voice is a distinct feature from aspiration");
+    assert_eq(_count_feature(hi, PhonemeFeature.Breathy), 5, "Hindi has 5 breathy consonants");
+    assert_eq(_count_feature(phoneme_bengali(), PhonemeFeature.Breathy), 5, "Bengali has 5");
+    assert_eq(_count_feature(phoneme_urdu(), PhonemeFeature.Breathy), 5, "Urdu has 5");
+    # /d̪ʱ/ is breathy AND dental — the dental part is place, not a feature.
+    var dh = phoneme_find(hi, "d̪ʱ");
+    assert(dh != 0, "Hindi /d̪ʱ/ exists");
+    assert_eq(phoneme_place(dh), Place.Dental, "/d̪ʱ/ is dental by place");
+    assert_eq(phoneme_features(dh), PhonemeFeature.Breathy, "/d̪ʱ/ carries only Breathy");
+
+    # ---------------------------------------------------------------
+    test_group("palatalized_and_labialized");
+    var ru = phoneme_russian();
+    _feats(ru, "pʲ", PhonemeFeature.Palatalized, "Russian /pʲ/");
+    _feats(ru, "p", 0, "Russian /p/ is plain");
+    assert_eq(_count_feature(ru, PhonemeFeature.Palatalized), 15, "Russian has 15 palatalized consonants");
+    _feats(ru, "ɕː", PhonemeFeature.Long, "Russian /ɕː/ is long");
+    assert_eq(_count_feature(ru, PhonemeFeature.Long), 1, "Russian has 1 long consonant");
+    var la = phoneme_latin();
+    _feats(la, "kʷ", PhonemeFeature.Labialized, "Latin /kʷ/");
+    _feats(la, "ɡʷ", PhonemeFeature.Labialized, "Latin /ɡʷ/");
+    assert_eq(_count_feature(phoneme_nahuatl(), PhonemeFeature.Labialized), 1, "Nahuatl has 1 labialized");
+
+    # ---------------------------------------------------------------
+    test_group("pharyngealized_tense_devoiced");
+    # Three more the roadmap did not name.
+    var ar = phoneme_classical_arabic();
+    _feats(ar, "tˤ", PhonemeFeature.Pharyngealized, "Arabic emphatic /tˤ/");
+    _feats(ar, "sˤ", PhonemeFeature.Pharyngealized, "Arabic emphatic /sˤ/");
+    _feats(ar, "t", 0, "Arabic plain /t/");
+    assert_eq(_count_feature(ar, PhonemeFeature.Pharyngealized), 4, "Arabic has 4 emphatics");
+
+    var ko = phoneme_korean();
+    _feats(ko, "p͈", PhonemeFeature.Tense, "Korean fortis /p͈/");
+    assert_eq(_count_feature(ko, PhonemeFeature.Tense), 5, "Korean has 5 tense consonants");
+
+    var my = phoneme_burmese();
+    _feats(my, "m̥", PhonemeFeature.Devoiced, "Burmese voiceless nasal /m̥/");
+    assert_eq(phoneme_manner(phoneme_find(my, "m̥")), Manner.Nasal, "/m̥/ is still a nasal");
+    assert_eq(_count_feature(my, PhonemeFeature.Devoiced), 3, "Burmese has 3 voiceless sonorants");
+    assert_eq(_count_feature(phoneme_icelandic(), PhonemeFeature.Devoiced), 3, "Icelandic has 3");
+
+    _feats(phoneme_czech(), "r̝", PhonemeFeature.Raised, "Czech /r̝/ is raised");
+
+    # ---------------------------------------------------------------
+    test_group("prenasalized");
+    # Wolof's prenasalized stops are digraphs, not diacritics — they cannot be
+    # derived from a modifier letter, so they are marked explicitly.
+    var wo = phoneme_wolof();
+    _feats(wo, "mb", PhonemeFeature.Prenasalized, "Wolof /mb/");
+    _feats(wo, "nd", PhonemeFeature.Prenasalized, "Wolof /nd/");
+    _feats(wo, "ŋɡ", PhonemeFeature.Prenasalized, "Wolof /ŋɡ/");
+    _feats(wo, "ɲɟ", PhonemeFeature.Prenasalized, "Wolof /ɲɟ/");
+    assert_eq(phoneme_manner(phoneme_find(wo, "mb")), Manner.Plosive, "/mb/ is a stop");
+    assert_eq(_count_feature(wo, PhonemeFeature.Prenasalized), 4, "Wolof has 4 prenasalized stops");
+
+    # ---------------------------------------------------------------
+    test_group("lateral_click_manner_fix");
+    # The roadmap item: /ǁ ǁʰ ɡǁ/ carried Manner.LateralFricative, inherited from
+    # before 2.2.0. A click is a stop, not a fricative. Manner is now Plosive and
+    # the laterality lives in the feature bit.
+    _feats(zu, "ǁ", PhonemeFeature.Lateral, "/ǁ/ is lateral");
+    assert_eq(phoneme_manner(phoneme_find(zu, "ǁ")), Manner.Plosive, "/ǁ/ is a stop, not a fricative");
+    assert_eq(phoneme_airstream(phoneme_find(zu, "ǁ")), Airstream.Click, "/ǁ/ is still a click");
+    _feats(zu, "ǁʰ", PhonemeFeature.Aspirated | PhonemeFeature.Lateral, "/ǁʰ/ is lateral and aspirated");
+    assert_eq(phoneme_manner(phoneme_find(zu, "ɡǁ")), Manner.Plosive, "/ɡǁ/ is a stop");
+    # The nasal lateral click keeps its nasal manner but is still lateral.
+    _feats(zu, "ŋǁ", PhonemeFeature.Lateral, "/ŋǁ/ is lateral");
+    assert_eq(phoneme_manner(phoneme_find(zu, "ŋǁ")), Manner.Nasal, "/ŋǁ/ is a nasal click");
+    # The non-lateral click series is not lateral.
+    assert_eq(phoneme_has_feature(phoneme_find(zu, "ǀ"), PhonemeFeature.Lateral), 0, "/ǀ/ is not lateral");
+    assert_eq(phoneme_has_feature(phoneme_find(zu, "ǃ"), PhonemeFeature.Lateral), 0, "/ǃ/ is not lateral");
+    # No LateralFricative click survives anywhere.
+    var stray = 0;
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    i = 0;
+    while (i < n) {
+        var inv = registry_phonemes(vec_get(codes, i));
+        var ph = phoneme_list(inv);
+        var j = 0;
+        while (j < vec_len(ph)) {
+            var q = vec_get(ph, j);
+            if (phoneme_airstream(q) == Airstream.Click) {
+                if (phoneme_manner(q) == Manner.LateralFricative) { stray = stray + 1; }
+                if (phoneme_manner(q) == Manner.Fricative) { stray = stray + 1; }
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(stray, 0, "no click is classified as a fricative");
+
+    # ---------------------------------------------------------------
+    test_group("lateral_consistency");
+    # Every phoneme with a dedicated lateral manner carries the Lateral bit, and
+    # nothing else does except the lateral clicks.
+    var manner_no_bit = 0;
+    var bit_no_reason = 0;
+    i = 0;
+    while (i < n) {
+        var inv2 = registry_phonemes(vec_get(codes, i));
+        var ph2 = phoneme_list(inv2);
+        var k = 0;
+        while (k < vec_len(ph2)) {
+            var r = vec_get(ph2, k);
+            var m = phoneme_manner(r);
+            var lat = phoneme_has_feature(r, PhonemeFeature.Lateral);
+            var lateral_manner = 0;
+            if (phoneme_kind(r) == PhonemeKind.Consonant) {
+                if (m == Manner.LateralFricative) { lateral_manner = 1; }
+                if (m == Manner.LateralApproximant) { lateral_manner = 1; }
+            }
+            if (lateral_manner == 1) {
+                if (lat == 0) { manner_no_bit = manner_no_bit + 1; }
+            }
+            if (lat == 1) {
+                if (lateral_manner == 0) {
+                    # Only the click series may be lateral without a lateral manner.
+                    if (phoneme_airstream(r) != Airstream.Click) { bit_no_reason = bit_no_reason + 1; }
+                }
+            }
+            k = k + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(manner_no_bit, 0, "every lateral manner carries the Lateral bit");
+    assert_eq(bit_no_reason, 0, "only lateral manners and lateral clicks carry the Lateral bit");
+
+    # ---------------------------------------------------------------
+    test_group("symbol_feature_agreement");
+    # Forward-looking guard: an inventory added later with /pʰ/ and no Aspirated
+    # bit fails here. Vowels are excluded — their features land at 2.2.2.
+    var mismatched = 0;
+    var vowel_marked = 0;
+    i = 0;
+    while (i < n) {
+        var inv3 = registry_phonemes(vec_get(codes, i));
+        var ph3 = phoneme_list(inv3);
+        var q2 = 0;
+        while (q2 < vec_len(ph3)) {
+            var pp = vec_get(ph3, q2);
+            var ipa = phoneme_ipa(pp);
+            if (phoneme_kind(pp) == PhonemeKind.Vowel) {
+                if (phoneme_features(pp) != 0) { vowel_marked = vowel_marked + 1; }
+            }
+            else {
+                if (_has_sub(ipa, "ʰ") != phoneme_has_feature(pp, PhonemeFeature.Aspirated)) {
+                    mismatched = mismatched + 1;
+                }
+                if (_has_sub(ipa, "ʱ") != phoneme_has_feature(pp, PhonemeFeature.Breathy)) {
+                    mismatched = mismatched + 1;
+                }
+                if (_has_sub(ipa, "ʲ") != phoneme_has_feature(pp, PhonemeFeature.Palatalized)) {
+                    mismatched = mismatched + 1;
+                }
+                if (_has_sub(ipa, "ʷ") != phoneme_has_feature(pp, PhonemeFeature.Labialized)) {
+                    mismatched = mismatched + 1;
+                }
+                if (_has_sub(ipa, "ˤ") != phoneme_has_feature(pp, PhonemeFeature.Pharyngealized)) {
+                    mismatched = mismatched + 1;
+                }
+                if (_has_sub(ipa, "͈") != phoneme_has_feature(pp, PhonemeFeature.Tense)) {
+                    mismatched = mismatched + 1;
+                }
+                if (_has_sub(ipa, "ː") != phoneme_has_feature(pp, PhonemeFeature.Long)) {
+                    mismatched = mismatched + 1;
+                }
+                if (_has_sub(ipa, "̝") != phoneme_has_feature(pp, PhonemeFeature.Raised)) {
+                    mismatched = mismatched + 1;
+                }
+            }
+            q2 = q2 + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(mismatched, 0, "every secondary-articulation diacritic matches its feature bit");
+    assert_eq(vowel_marked, 0, "no vowel carries a consonant feature yet (2.2.2)");
+
+    # ---------------------------------------------------------------
+    test_group("corpus_totals");
+    var asp = 0;
+    var bre = 0;
+    var pal = 0;
+    var lab = 0;
+    var pha = 0;
+    var ten = 0;
+    var dev = 0;
+    var pre = 0;
+    var lng = 0;
+    var rai = 0;
+    var lat2 = 0;
+    i = 0;
+    while (i < n) {
+        var inv4 = registry_phonemes(vec_get(codes, i));
+        asp = asp + _count_feature(inv4, PhonemeFeature.Aspirated);
+        bre = bre + _count_feature(inv4, PhonemeFeature.Breathy);
+        pal = pal + _count_feature(inv4, PhonemeFeature.Palatalized);
+        lab = lab + _count_feature(inv4, PhonemeFeature.Labialized);
+        pha = pha + _count_feature(inv4, PhonemeFeature.Pharyngealized);
+        ten = ten + _count_feature(inv4, PhonemeFeature.Tense);
+        dev = dev + _count_feature(inv4, PhonemeFeature.Devoiced);
+        pre = pre + _count_feature(inv4, PhonemeFeature.Prenasalized);
+        lng = lng + _count_feature(inv4, PhonemeFeature.Long);
+        rai = rai + _count_feature(inv4, PhonemeFeature.Raised);
+        lat2 = lat2 + _count_feature(inv4, PhonemeFeature.Lateral);
+        i = i + 1;
+    }
+    assert_eq(asp, 76, "76 aspirated consonants in the corpus");
+    assert_eq(bre, 15, "15 breathy consonants");
+    assert_eq(pal, 16, "16 palatalized consonants");
+    assert_eq(lab, 3, "3 labialized consonants");
+    assert_eq(pha, 4, "4 pharyngealized consonants");
+    assert_eq(ten, 5, "5 tense consonants");
+    assert_eq(dev, 6, "6 devoiced sonorants");
+    assert_eq(pre, 4, "4 prenasalized stops");
+    assert_eq(lng, 1, "1 long consonant");
+    assert_eq(rai, 1, "1 raised consonant");
+    assert(lat2 > 0, "the corpus has laterals");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

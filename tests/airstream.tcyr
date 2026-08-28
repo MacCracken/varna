@@ -96,7 +96,9 @@ fn main() {
     _check(zu, "ŋǀ", Manner.Nasal, Airstream.Click, "nasal dental click is BOTH nasal and click");
     _check(zu, "ǃ", Manner.Plosive, Airstream.Click, "alveolar click");
     _check(zu, "ŋǃ", Manner.Nasal, Airstream.Click, "nasal alveolar click keeps its nasality");
-    _check(zu, "ǁ", Manner.LateralFricative, Airstream.Click, "lateral click keeps its laterality");
+    # 2.2.1: a click is a stop, so /ǁ/ is Plosive; its laterality moved to the
+    # PhonemeFeature.Lateral bit that release introduced.
+    _check(zu, "ǁ", Manner.Plosive, Airstream.Click, "lateral click is a click stop");
     _check(zu, "ŋǁ", Manner.Nasal, Airstream.Click, "nasal lateral click");
     assert_eq(_count_airstream(zu, Airstream.Click), 12, "Zulu has 12 clicks");
     # Zulu's implosive is not a click, and its plain stops are pulmonic.
