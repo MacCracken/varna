@@ -5,9 +5,9 @@ History in `bench-history.csv`. `min` is the most representative
 per-op figure (the bump allocator never frees, so `avg` carries
 accumulating alloc overhead).
 
-Latest: **2026-08-28T07:20:54Z** commit `f0da2a5` on cyrius `6.5.35`
+Latest: **2026-08-28T18:41:15Z** commit `61385e8` on cyrius `6.5.36`
 
-Timer floor: **1.335us** per clock read (measured on this host,
+Timer floor: **1.340us** per clock read (measured on this host,
 subtracted from every sample). Cyrius >=6.5.19 calibrates this at
 runtime; the value is a property of the host clocksource and
 moves between reboots, so rows recorded under different floors are
@@ -26,18 +26,18 @@ not directly comparable.
 | `english_phoneme_inventory` | 5ns | 5ns |
 | `sanskrit_phoneme_inventory` | 6ns | 6ns |
 | `greek_phoneme_inventory` | 6ns | 6ns |
-| `phoneme_lookup_ipa` | 332ns | 349ns |
-| `registry_phonemes_lookup` | 53ns | 56ns |
-| `registry_all_codes_iter` | 3.196us | 3.361us |
-| `script_by_code_lookup` | 106ns | 113ns |
-| `script_contains_codepoint` | 13ns | 14ns |
-| `transliterate_devanagari_char` | 579ns | 625ns |
-| `transliterate_greek_word` | 18.995us | 20.197us |
-| `numeral_value_of_char` | 305ns | 322ns |
-| `numeral_string_value_word` | 957ns | 1.013us |
-| `grammar_by_code_lookup` | 209ns | 221ns |
-| `swadesh_by_code_lookup` | 96ns | 101ns |
-| `lexicon_find_word` | 789ns | 836ns |
-| `allophone_realize` | 33ns | 35ns |
-| `phonotactics_is_permitted` | 130ns | 137ns |
-| `dialect_apply_overlay` | 2.949us | 3.189us |
+| `phoneme_lookup_ipa` | 314ns | 344ns |
+| `registry_phonemes_lookup` | 51ns | 54ns |
+| `registry_all_codes_iter` | 3.001us | 3.245us |
+| `script_by_code_lookup` | 96ns | 104ns |
+| `script_contains_codepoint` | 13ns | 13ns |
+| `transliterate_devanagari_char` | 537ns | 579ns |
+| `transliterate_greek_word` | 18.037us | 19.623us |
+| `numeral_value_of_char` | 283ns | 304ns |
+| `numeral_string_value_word` | 907ns | 984ns |
+| `grammar_by_code_lookup` | 202ns | 211ns |
+| `swadesh_by_code_lookup` | 94ns | 97ns |
+| `lexicon_find_word` | 728ns | 788ns |
+| `allophone_realize` | 31ns | 33ns |
+| `phonotactics_is_permitted` | 122ns | 131ns |
+| `dialect_apply_overlay` | 2.743us | 3.022us |

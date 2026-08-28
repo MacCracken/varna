@@ -5,6 +5,10 @@
 
 ## Version
 
+**2.3.2** — vitality and geography (2026-08-28): `EndangermentLevel` (with an added
+`END_HISTORICAL` for classical languages), `MacroArea` and coordinates on all 51 entries.
+Four vitality values corrected by audit (haw, qu, nah, plus ko sourced separately).
+Cyrius pin `6.5.35` → `6.5.36`. `LanguageInfo` 48 B → 80 B. Completes the 2.3.x line.
 **2.3.1** — genealogical classification (2026-08-28): `family`/`subfamily`/`genus` on
 all 51 registry entries, with `registry_by_family` for grouping. Contested nodes carry
 the conventional label with the objection in a comment. `LanguageInfo` 24 B → 48 B.
@@ -65,7 +69,7 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
 
 ## Toolchain
 
-- **Cyrius pin**: `6.5.35` (in `cyrius.cyml [package].cyrius`)
+- **Cyrius pin**: `6.5.36` (in `cyrius.cyml [package].cyrius`)
 - **Lock authority**: `cyrius deps` — it walks the include graph. 6.5.35's `cyrius lib sync`
   name-matches `[deps].stdlib` instead and yields a different 29-module set (adds the
   unreferenced `hashmap_fast.cyr`, drops `atomic.cyr` which `lib/alloc.cyr` includes), so
@@ -122,16 +126,15 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.3.1):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.3.1]`); `cyrius.lock` regenerated at 6.5.35 and
+- **Release-ready (2.3.2):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.3.2]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
-- **Gaps not closed by 2.3.1:** `cyrius coverage` reports 94% reference coverage
-  (311/329 fns). Four data items are filed in the roadmap — ATR vowel systems, the
-  Sanskrit voiced-aspirate transcription, the Thai/Vietnamese tone values, and
-  Glottocodes (which need an authoritative source, not generation). 2.3.2 is the last
-  slice: its data is verified and waiting in [typology-data.md](typology-data.md),
-  **with Korean still to be sourced** — the gathering pass silently returned 50 of 51.
+- **Gaps not closed by 2.3.2:** `cyrius coverage` reports 94% reference coverage
+  (317/335 fns). The 2.3.x line is complete. Four data items remain in the roadmap —
+  ATR vowel systems, the Sanskrit voiced-aspirate transcription, the Thai/Vietnamese
+  tone values, and Glottocodes (which need an authoritative source, not generation).
+  Next feature tier is 2.4.0.
 
 ## Dependencies
 
@@ -155,7 +158,7 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis, 2.2.1 consonant secondary features, 2.2.2 vowel features, 2.2.3 distinctive features, 2.2.4 structured tone, 2.3.0 grammar expansion, 2.3.1 classification.
+The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis, 2.2.1 consonant secondary features, 2.2.2 vowel features, 2.2.3 distinctive features, 2.2.4 structured tone, 2.3.0 grammar expansion, 2.3.1 classification, 2.3.2 vitality and geography.
 
 See the [roadmap](roadmap.md) `2.1.x — Carry-over` section for the scheduled items
 (2.1.6 script-registry completeness). In brief:

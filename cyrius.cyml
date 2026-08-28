@@ -5,7 +5,7 @@ description = "Varna — multilingual language engine: phoneme inventories, writ
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/varna"
 language = "cyrius"
-cyrius = "6.5.35"
+cyrius = "6.5.36"
 
 [build]
 entry = "src/main.cyr"
@@ -117,8 +117,8 @@ stdlib = [
 #
 # Kept commented on purpose: src/mcp.cyr hand-builds its JSON today and
 # links nothing from bote, so the recipe is documentation of how to wire
-# it, not an active dependency. bote 3.3.7 pins Cyrius 6.5.35, matching
-# [package].cyrius above.
+# it, not an active dependency. bote 3.3.7 pins Cyrius 6.5.35; varna moved to
+# 6.5.36 at 2.3.2, so the two are one patch apart until bote follows.
 #
 # NOTE: the v1.x `daimon` and `hoosh` Cargo features did NOT link those
 # crates — they only flipped on serde_json. Their Cyrius equivalents are

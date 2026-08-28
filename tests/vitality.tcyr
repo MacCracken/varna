@@ -1,0 +1,280 @@
+# tests/vitality.tcyr — endangerment level and geography, added at 2.3.2.
+#
+# Three things this file guards that a per-row review would not:
+#
+#   1. Coordinates are checked against their own macro-area's bounding box, so a
+#      row in the wrong hemisphere fails here rather than in a consumer's map.
+#   2. The stored precision cannot outrun the real precision: the source is rounded
+#      to one decimal degree, so every value must be a multiple of 100 milli-degrees.
+#   3. `ko` is asserted present. The gathering pass that produced this data silently
+#      returned 50 of 51 rows and the reviewer could not see the omission, because a
+#      reviewer only ever sees the claims it is given.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/features.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+fn _vit(code, level, area, label) {
+    var li = registry_info(code);
+    assert(li != 0, label);
+    if (li == 0) { return 0; }
+    assert_eq(registry_info_endangerment(li), level, label);
+    assert_eq(registry_info_macroarea(li), area, label);
+    return 0;
+}
+
+fn _count_level(level) {
+    var codes = registry_all_codes();
+    var c = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        if (registry_info_endangerment(registry_info(vec_get(codes, i))) == level) { c = c + 1; }
+        i = i + 1;
+    }
+    return c;
+}
+
+fn main() {
+    alloc_init();
+    var i = 0;
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+
+    # ---------------------------------------------------------------
+    test_group("vitality_api");
+    var en = registry_info("en");
+    assert_eq(registry_info_endangerment(en), EndangermentLevel.END_SAFE, "English is safe");
+    assert_eq(registry_info_macroarea(en), MacroArea.AREA_EURASIA, "English is Eurasia");
+    # Milli-degrees. Cyrius does have f64; integers are chosen because the source is
+    # rounded to one decimal degree and integers compare exactly. See src/registry.cyr.
+    assert_eq(registry_info_latitude_mdeg(en), 52500, "English latitude in milli-degrees");
+    assert_eq(registry_info_longitude_mdeg(en), 0 - 1500, "English longitude, negative west");
+    # An entry built without geography carries the documented defaults.
+    var bare = _li_new("xx", "Test", "Latn");
+    assert_eq(registry_info_endangerment(bare), EndangermentLevel.END_SAFE, "default level");
+    assert_eq(registry_info_latitude_mdeg(bare), 0, "default latitude");
+
+    # ---------------------------------------------------------------
+    test_group("korean_is_present");
+    # The row the gathering pass dropped. Pinned by name so the gap cannot reopen.
+    var ko = registry_info("ko");
+    assert(ko != 0, "Korean is registered");
+    assert_eq(registry_info_endangerment(ko), EndangermentLevel.END_SAFE,
+        "Korean is safe — ~80M speakers, official in both Koreas");
+    assert_eq(registry_info_macroarea(ko), MacroArea.AREA_EURASIA, "Korean is Eurasia");
+    assert(registry_info_latitude_mdeg(ko) > 30000, "Korean latitude is on the peninsula");
+    assert(registry_info_latitude_mdeg(ko) < 45000, "Korean latitude is on the peninsula");
+    assert(registry_info_longitude_mdeg(ko) > 120000, "Korean longitude is on the peninsula");
+    assert(registry_info_longitude_mdeg(ko) < 135000, "Korean longitude is on the peninsula");
+    # Every language has a coordinate; none was left at the 0,0 default.
+    var at_origin = 0;
+    i = 0;
+    while (i < n) {
+        var li = registry_info(vec_get(codes, i));
+        if (registry_info_latitude_mdeg(li) == 0) {
+            if (registry_info_longitude_mdeg(li) == 0) { at_origin = at_origin + 1; }
+        }
+        i = i + 1;
+    }
+    assert_eq(at_origin, 0, "no language was left at the 0,0 default");
+
+    # ---------------------------------------------------------------
+    test_group("historical_is_not_extinct");
+    # The added eighth value. Latin, Ancient Greek, Literary Chinese and Sanskrit
+    # have no native-speaker community but remain in scholarly, liturgical or
+    # literary use. Collapsing them into END_EXTINCT would conflate that with a
+    # minority language whose last speakers died.
+    _vit("la", EndangermentLevel.END_HISTORICAL, MacroArea.AREA_EURASIA, "Latin");
+    _vit("grc", EndangermentLevel.END_HISTORICAL, MacroArea.AREA_EURASIA, "Ancient Greek");
+    _vit("lzh", EndangermentLevel.END_HISTORICAL, MacroArea.AREA_EURASIA, "Literary Chinese");
+    _vit("sa", EndangermentLevel.END_HISTORICAL, MacroArea.AREA_EURASIA, "Sanskrit");
+    # Classical Nahuatl joins them: the inventory has no voiced stops, the four-vowel
+    # system with contrastive length, /t͡ɬ/, /kʷ/ and the saltillo — the 16th-century
+    # literary language, not any modern variety. It carried END_SHIFTING until 2.3.2,
+    # a level that described modern Nahuatl while the entry described the classical
+    # one; the name was right and the level was inherited from a different language.
+    _vit("nah", EndangermentLevel.END_HISTORICAL, MacroArea.AREA_NORTH_AMERICA, "Classical Nahuatl");
+    assert_eq(_count_level(EndangermentLevel.END_HISTORICAL), 5, "5 historical languages");
+    assert_eq(_count_level(EndangermentLevel.END_EXTINCT), 0,
+        "no corpus language is END_EXTINCT — the four candidates are all still in use");
+    # And the living descendants are not historical.
+    assert_eq(registry_info_endangerment(registry_info("el")), EndangermentLevel.END_SAFE,
+        "Modern Greek is safe, unlike grc");
+    assert_eq(registry_info_endangerment(registry_info("zh")), EndangermentLevel.END_SAFE,
+        "Mandarin is safe, unlike lzh");
+    assert_eq(registry_info_endangerment(registry_info("hi")), EndangermentLevel.END_SAFE,
+        "Hindi is safe, unlike sa");
+
+    # ---------------------------------------------------------------
+    test_group("threshold_query");
+    # END_HISTORICAL sorts last numerically but is not "worse than extinct", so a
+    # threshold query must exclude it rather than sweep it in.
+    var endangered = registry_at_least_endangered(EndangermentLevel.END_VULNERABLE);
+    var has_historical = 0;
+    i = 0;
+    while (i < vec_len(endangered)) {
+        if (registry_info_endangerment(registry_info(vec_get(endangered, i)))
+            == EndangermentLevel.END_HISTORICAL) { has_historical = has_historical + 1; }
+        i = i + 1;
+    }
+    assert_eq(has_historical, 0, "a threshold query never returns the historical languages");
+    var all_safe = registry_at_least_endangered(EndangermentLevel.END_SAFE);
+    assert_eq(vec_len(all_safe), n - 5, "every non-historical language is at least END_SAFE");
+
+    # ---------------------------------------------------------------
+    test_group("macroarea_grouping");
+    assert_eq(vec_len(registry_by_macroarea(MacroArea.AREA_AUSTRALIA)), 0,
+        "no Australian language in the corpus yet");
+    assert(vec_len(registry_by_macroarea(MacroArea.AREA_EURASIA)) > 30, "Eurasia dominates the corpus");
+    # The areas partition the corpus exactly.
+    var total = 0;
+    total = total + vec_len(registry_by_macroarea(MacroArea.AREA_AFRICA));
+    total = total + vec_len(registry_by_macroarea(MacroArea.AREA_EURASIA));
+    total = total + vec_len(registry_by_macroarea(MacroArea.AREA_PAPUNESIA));
+    total = total + vec_len(registry_by_macroarea(MacroArea.AREA_NORTH_AMERICA));
+    total = total + vec_len(registry_by_macroarea(MacroArea.AREA_SOUTH_AMERICA));
+    total = total + vec_len(registry_by_macroarea(MacroArea.AREA_AUSTRALIA));
+    assert_eq(total, n, "the six macro-areas partition the corpus exactly");
+    # WALS puts Hawaii in Papunesia, not North America.
+    assert_eq(registry_info_macroarea(registry_info("haw")), MacroArea.AREA_PAPUNESIA,
+        "Hawaii is Papunesia under WALS, not North America");
+    # And Mesoamerica is North America — WALS has only six areas.
+    _vit("nah", EndangermentLevel.END_HISTORICAL, MacroArea.AREA_NORTH_AMERICA, "Classical Nahuatl");
+    _vit("yua", EndangermentLevel.END_VULNERABLE, MacroArea.AREA_NORTH_AMERICA, "Yucatec Maya");
+
+    # ---------------------------------------------------------------
+    test_group("coordinates_match_their_macroarea");
+    # The check a row-by-row review cannot do: every coordinate must fall inside a
+    # generous bounding box for the area it claims. Catches a wrong hemisphere or a
+    # transposed lat/lon, which is what actually goes wrong with coordinate data.
+    var outside = 0;
+    i = 0;
+    while (i < n) {
+        var li2 = registry_info(vec_get(codes, i));
+        var area = registry_info_macroarea(li2);
+        var lat = registry_info_latitude_mdeg(li2);
+        var lon = registry_info_longitude_mdeg(li2);
+        var ok = 1;
+        if (area == MacroArea.AREA_AFRICA) {
+            if (lat < 0 - 36000 || lat > 38000) { ok = 0; }
+            if (lon < 0 - 20000 || lon > 52000) { ok = 0; }
+        }
+        elif (area == MacroArea.AREA_EURASIA) {
+            if (lat < 0 || lat > 75000) { ok = 0; }
+            if (lon < 0 - 25000 || lon > 150000) { ok = 0; }
+        }
+        elif (area == MacroArea.AREA_NORTH_AMERICA) {
+            if (lat < 5000 || lat > 75000) { ok = 0; }
+            if (lon < 0 - 170000 || lon > 0 - 50000) { ok = 0; }
+        }
+        elif (area == MacroArea.AREA_SOUTH_AMERICA) {
+            if (lat < 0 - 56000 || lat > 13000) { ok = 0; }
+            if (lon < 0 - 82000 || lon > 0 - 34000) { ok = 0; }
+        }
+        elif (area == MacroArea.AREA_PAPUNESIA) {
+            if (lat < 0 - 30000 || lat > 30000) { ok = 0; }
+            # Papunesia straddles the antimeridian; Hawaii is far east of it.
+            if (lon > 0 - 140000 && lon < 90000) { ok = 0; }
+        }
+        if (ok == 0) { outside = outside + 1; }
+        i = i + 1;
+    }
+    assert_eq(outside, 0, "every coordinate falls inside its macro-area's bounding box");
+
+    # ---------------------------------------------------------------
+    test_group("stored_precision_matches_real_precision");
+    # The source is rounded to one decimal degree, so the low two milli-degree
+    # digits carry no information. Storing a value that is not a multiple of 100
+    # would claim precision the data does not have.
+    var over_precise = 0;
+    var out_of_range = 0;
+    i = 0;
+    while (i < n) {
+        var li3 = registry_info(vec_get(codes, i));
+        var la = registry_info_latitude_mdeg(li3);
+        var lo = registry_info_longitude_mdeg(li3);
+        if (la - (la / 100) * 100 != 0) { over_precise = over_precise + 1; }
+        if (lo - (lo / 100) * 100 != 0) { over_precise = over_precise + 1; }
+        if (la < 0 - 90000 || la > 90000) { out_of_range = out_of_range + 1; }
+        if (lo < 0 - 180000 || lo > 180000) { out_of_range = out_of_range + 1; }
+        i = i + 1;
+    }
+    assert_eq(over_precise, 0, "every coordinate is a multiple of 100 mdeg, matching the source precision");
+    assert_eq(out_of_range, 0, "every coordinate is a valid latitude/longitude");
+
+    # ---------------------------------------------------------------
+    test_group("vitality_is_in_range");
+    var bad = 0;
+    i = 0;
+    while (i < n) {
+        var li4 = registry_info(vec_get(codes, i));
+        var e = registry_info_endangerment(li4);
+        var a = registry_info_macroarea(li4);
+        if (e < EndangermentLevel.END_SAFE) { bad = bad + 1; }
+        if (e > EndangermentLevel.END_HISTORICAL) { bad = bad + 1; }
+        if (a < MacroArea.AREA_AFRICA) { bad = bad + 1; }
+        if (a > MacroArea.AREA_AUSTRALIA) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "every vitality and area value is inside its enum");
+    # Most of the corpus is major world languages; endangerment must not be inflated.
+    assert(_count_level(EndangermentLevel.END_SAFE) > 40, "most of the corpus is safe");
+
+    # ---------------------------------------------------------------
+    test_group("earlier_fields_unchanged");
+    assert_eq(n, 51, "still 51 registered languages");
+    assert(streq(registry_info_family(registry_info("en")), "Indo-European"), "2.3.1 family survives");
+    assert(streq(registry_info_genus(registry_info("sa")), "Indo-Aryan"), "2.3.1 genus fix survives");
+    assert(streq(registry_info_name(registry_info("qu")), "Southern Quechua"), "2.3.1 rename survives");
+    assert_eq(vec_len(registry_by_family("Indo-European")), 20, "family grouping still works");
+    assert(registry_phonemes("ko") != 0, "the phoneme lookup is unaffected");
+    assert(registry_primary_script("ka") != 0, "script resolution is unaffected");
+
+    # ---------------------------------------------------------------
+    test_group("scope_matches_vitality");
+    # The failure pattern behind three of the four corrections at 2.3.2: a level
+    # assigned to a different language than the entry actually names. A macrolanguage
+    # or collection ISO code paired with one vitality value is structurally risky, so
+    # the rows where the entry is narrower than its code are pinned by name.
+    #
+    # qu is scoped to Southern Quechua (~5-7M, intact rural transmission,
+    # co-official) — not the endangered Central and northern branches.
+    assert(streq(registry_info_name(registry_info("qu")), "Southern Quechua"),
+        "qu names the variety its level describes");
+    assert_eq(registry_info_endangerment(registry_info("qu")), EndangermentLevel.END_VULNERABLE,
+        "Southern Quechua is Vulnerable, not Shifting — that is the Central/northern branches");
+    # nah is scoped to Classical Nahuatl, hence historical rather than shifting.
+    assert(streq(registry_info_name(registry_info("nah")), "Classical Nahuatl"),
+        "nah names the variety its level describes");
+    # haw: Threatened, not Moribund. Ni'ihau transmission is unbroken and the
+    # immersion system has run since 1983.
+    assert_eq(registry_info_endangerment(registry_info("haw")), EndangermentLevel.END_THREATENED,
+        "Hawaiian is Threatened; Moribund would mean only grandparents speak it");
+    assert(registry_info_endangerment(registry_info("haw")) < EndangermentLevel.END_MORIBUND,
+        "and strictly less endangered than Moribund on the scale");
+    # gn was corrected up to Safe during gathering: ~6.5M speakers, co-official.
+    assert_eq(registry_info_endangerment(registry_info("gn")), EndangermentLevel.END_SAFE,
+        "Guarani is Safe — co-official in Paraguay with full transmission");
+    # yua stays Vulnerable: ~775k speakers, children still acquiring it rurally.
+    assert_eq(registry_info_endangerment(registry_info("yua")), EndangermentLevel.END_VULNERABLE,
+        "Yucatec Maya is Vulnerable");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

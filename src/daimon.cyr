@@ -37,7 +37,7 @@ fn daimon_supported_scripts(r) { return load64(r + 40); }
 fn daimon_registration() {
     var r = alloc(48);
     store64(r, "varna");
-    store64(r + 8, "2.3.1");
+    store64(r + 8, "2.3.2");
     store64(r + 16, "Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access");  #skip-lint
 
     var caps = vec_new();

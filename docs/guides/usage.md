@@ -14,7 +14,7 @@ Depend on varna from another Cyrius project via `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.3.1"
+tag = "2.3.2"
 modules = ["dist/varna.cyr"]
 ```
 

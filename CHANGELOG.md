@@ -7,6 +7,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-08-28
+
+Final slice of the 2.3.x Typological Depth line: vitality and geography on every
+registry entry. Also bumps the Cyrius pin to 6.5.36. Additive.
+
+### Added
+
+- **registry** — `EndangermentLevel`, `MacroArea`, and latitude/longitude on all 51
+  languages, with `registry_info_endangerment` / `_macroarea` /
+  `_latitude_mdeg` / `_longitude_mdeg`, plus `registry_by_macroarea(area)` and
+  `registry_at_least_endangered(level)`.
+
+- **`END_HISTORICAL`**, an eighth vitality value: no native-speaker community, but
+  the language remains in active scholarly, liturgical or literary use. Latin,
+  Ancient Greek, Literary Chinese, Sanskrit and Classical Nahuatl take it.
+  Collapsing those into `END_EXTINCT` would conflate them with a minority language
+  whose last speakers died. **No corpus language is `END_EXTINCT`**, which a test
+  pins so the distinction stays visible. A threshold query deliberately excludes
+  the historical languages rather than sweeping them in, since `END_HISTORICAL`
+  sorts last numerically but is not "worse than extinct".
+
+- **tests/vitality.tcyr** (65 assertions), including three checks a per-row review
+  cannot do: every coordinate is validated against its own macro-area's bounding
+  box, every coordinate must be a multiple of 100 mdeg so the storage cannot
+  outrun the one-decimal source, and `ko` is pinned present by name.
+
+### Fixed
+
+Four vitality values, from an audit aimed at the low-confidence and
+indigenous-language rows:
+
+- **`haw`** Moribund → **Threatened**. Moribund means only the grandparent
+  generation speaks it, which is false: Ni'ihau transmission has never broken and
+  the Pūnana Leo / Kula Kaiapuni immersion system has run since 1983. The old value
+  traces to UNESCO's Atlas, **frozen in 2010, before the revitalization**.
+- **`qu`** Shifting → **Vulnerable**. Downstream of varna's own 2.3.1 rename: the
+  entry was scoped to *Southern Quechua* (~5–7M speakers, intact rural
+  transmission, co-official) while the level still described the whole
+  macrolanguage. Shifting is right for Central and northern Quechua, which the
+  entry excludes by name.
+- **`nah`** Shifting → **`END_HISTORICAL`**. Same cause. The 2.3.1 rename to
+  *Classical Nahuatl* was correct — the inventory has no voiced stops, the
+  four-vowel system with contrastive length, /t͡ɬ/, /kʷ/ and the saltillo — so it
+  was the level that described a different language.
+- **`ko`** was missing entirely from the gathered data (50 of 51 rows) and is
+  sourced here: Safe, Eurasia, ~80M speakers, official in both Koreas.
+
+- **docs/development/typology-data.md** synced to the code; it had drifted on all
+  four historical languages and omitted `ko`.
+
+### Changed
+
+- **Toolchain** — Cyrius pin `6.5.35` → **`6.5.36`**. The 6.5.35 stdlib snapshot had
+  been rewritten in place locally (`io.cyr` plus four `syscalls_*` files in varna's
+  closure), which `cyrius deps --verify` caught in the gate — the check added at
+  2.1.1 for exactly this. The lock now matches a version that actually changed:
+  29 verified, 0 failed. The five files in the re-lock are precisely those five.
+- **LanguageInfo** is 80 bytes, up from 48.
+- Every row whose ISO code is broader than the entry (`ar`, `zh`, `gn`, `nah`, `qu`)
+  now carries an explicit SCOPE comment naming the variety its values describe.
+
+### Notes
+
+- **Correction to the 2.3.2 working notes: Cyrius does have f64.** An earlier
+  comment in this work claimed it did not, and justified the integer coordinate
+  encoding on that basis. That was wrong — `lib/math.cyr` and `lib/ganita.cyr`
+  carry a full float surface (`f64_pow`, `f64_hypot`, trig, `f64v2`/`f64v4` SIMD)
+  and bayan parses JSON floats. The claim came from misreading a design note in
+  `hoosh.cyr` ("per-mille … to avoid f64") as a statement about the language.
+
+  Milli-degrees are **kept**, on the real reasons: the source is rounded to one
+  decimal degree so a float would advertise precision the data lacks, and integers
+  compare exactly so the bounding-box and precision tests need no epsilon. The
+  comments now say that instead.
+
+- **The failure pattern behind three of the four fixes** is one thing: a level
+  assigned to a different language than the entry names. A macrolanguage or
+  collection ISO code paired with a single vitality value is structurally risky,
+  which is why the SCOPE comments and their tests exist.
+
+### Performance
+
+- **Flat.** `registry_all_codes_iter` -0.3%, `registry_phonemes_lookup` 0.0%. Two
+  rows tripped a 10% threshold and both are min-of-N artifacts at the harness floor
+  (`english_phoneme_inventory` 5→3 ns on a new spread of 3-5; `greek` 5→6 on 5-6).
+
+
 ## [2.3.1] - 2026-08-28
 
 Second slice of the 2.3.x Typological Depth line: genealogical classification on

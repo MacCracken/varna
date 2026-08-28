@@ -91,9 +91,9 @@ decimal place. They are not citations of WALS, Glottolog or any other database.*
 | `fi` | Safe | Eurasia | 62 | 25 | high |
 | `fr` | Safe | Eurasia | 48 | 2.5 | high |
 | `gn` | Safe | SouthAmerica | -25.5 | -57 | low |
-| `grc` | Extinct | Eurasia | 38 | 23.5 | high |
+| `grc` | Historical | Eurasia | 38 | 23.5 | high |
 | `ha` | Safe | Africa | 12 | 8.5 | high |
-| `haw` | Moribund | Papunesia | 20.5 | -157 | low |
+| `haw` | Threatened | Papunesia | 20.5 | -157 | low |
 | `he` | Safe | Eurasia | 31.9 | 35.1 | high |
 | `hi` | Safe | Eurasia | 26.5 | 80.5 | high |
 | `hu` | Safe | Eurasia | 47.2 | 19.5 | high |
@@ -103,19 +103,20 @@ decimal place. They are not citations of WALS, Glottolog or any other database.*
 | `ja` | Safe | Eurasia | 36 | 138 | high |
 | `ka` | Safe | Eurasia | 42 | 44 | high |
 | `km` | Safe | Eurasia | 12.5 | 105 | high |
-| `la` | Extinct | Eurasia | 41.9 | 12.5 | high |
+| `ko` | Safe | Eurasia | 37.5 | 127.5 | high |
+| `la` | Historical | Eurasia | 41.9 | 12.5 | high |
 | `lo` | Safe | Eurasia | 18 | 102.8 | high |
-| `lzh` | Extinct | Eurasia | 34.5 | 112.5 | medium |
+| `lzh` | Historical | Eurasia | 34.5 | 112.5 | medium |
 | `mn` | Safe | Eurasia | 47 | 106.5 | medium |
 | `my` | Safe | Eurasia | 21 | 96 | high |
-| `nah` | Shifting | NorthAmerica | 19.5 | -98 | low |
+| `nah` | Historical | NorthAmerica | 19.5 | -98 | low |
 | `nl` | Safe | Eurasia | 52 | 5.3 | high |
 | `pl` | Safe | Eurasia | 52 | 19.5 | high |
 | `pt` | Safe | Eurasia | 39.5 | -8 | high |
-| `qu` | Shifting | SouthAmerica | -13.5 | -72 | low |
+| `qu` | Vulnerable | SouthAmerica | -13.5 | -72 | low |
 | `ro` | Safe | Eurasia | 45.9 | 25 | high |
 | `ru` | Safe | Eurasia | 55.8 | 37.6 | high |
-| `sa` | NearlyExtinct | Eurasia | 27 | 78 | low |
+| `sa` | Historical | Eurasia | 27 | 78 | low |
 | `so` | Safe | Africa | 5 | 45.5 | high |
 | `sw` | Safe | Africa | -6.2 | 39.2 | high |
 | `ta` | Safe | Eurasia | 11 | 78.5 | high |
@@ -152,6 +153,28 @@ Nahuatl*. Both ISO codes cover more than the entry describes.
 prescribed opposite fixes for the same depth variance (flatten to the WALS tier vs
 deepen), so there is no single right depth to reach for. The rank rule is written
 into the `src/registry.cyr` header instead.
+
+## Corrections applied at 2.3.2
+
+A second audit, aimed at the low-confidence and indigenous-language rows, produced
+four changes — all now reflected in the table above and in `src/registry.cyr`:
+
+| code | was | now | why |
+|---|---|---|---|
+| `haw` | Moribund | **Threatened** | Ni'ihau transmission is unbroken and the Pūnana Leo / Kula Kaiapuni immersion system has run since 1983. "Moribund" means only the grandparent generation speaks it, which is false. The old value traces to UNESCO's 2010 Atlas, frozen before the revitalization. |
+| `qu` | Shifting | **Vulnerable** | The 2.3.1 rename scoped this entry to *Southern Quechua* (~5–7M speakers, intact rural transmission, co-official in Peru and Bolivia) but the level still described the whole macrolanguage. Shifting is right for Central (QI) and northern varieties, which the entry excludes by name. |
+| `nah` | Shifting | **Historical** | Same cause. The 2.3.1 rename to *Classical Nahuatl* was correct — the inventory has no voiced stops, the four-vowel system with contrastive length, /t͡ɬ/, /kʷ/ and the saltillo — so it was the level that described a different language. |
+| `sa` | NearlyExtinct | **Historical** | Applied when 2.3.2 was encoded; this table had not been synced. |
+
+`ko` has also been added. The original gathering pass returned 50 of 51 rows and
+dropped it silently; the reviewer could not see the omission, because a reviewer only
+ever sees the claims it is given.
+
+**The pattern worth remembering**: three of the four corrections were *a level assigned
+to a different language than the entry names*. A macrolanguage or collection ISO code
+paired with a single vitality value is structurally risky, so every such row (`ar`,
+`zh`, `gn`, `nah`, `qu`) now carries an explicit SCOPE comment in `src/registry.cyr`
+saying which variety the value describes, and `tests/vitality.tcyr` pins them.
 
 ## Caveats — read before encoding any of this
 

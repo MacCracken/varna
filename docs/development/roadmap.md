@@ -81,27 +81,15 @@ languages points at a copy-paste from the Mandarin entry.
       they are breathy in all four. Decide one transcription and apply it; the
       assertion in `tests/features.tcyr` that pins the current state documents it.
 
-### 2.3.x — Typological Depth (P2)
+### 2.3.x — Typological Depth (P2) — COMPLETE
 
-**2.3.0 (grammar expansion) and 2.3.1 (classification) have landed.** The verified
-data for the remaining slice is in [typology-data.md](typology-data.md) — gathered and adversarially
+**The 2.3.x line is complete** — 2.3.0 (grammar expansion), 2.3.1 (classification)
+and 2.3.2 (vitality and geography). The verified working data is in [typology-data.md](typology-data.md) — gathered and adversarially
 verified, so 2.3.1 and 2.3.2 are encoding work rather than research work. Read that
 file's caveats first.
 
 The "Missing script entries" sub-item was listed here in error: all nine scripts
 shipped at **2.1.6**.
-
-#### 2.3.2 — Endangerment and geography
-
-- [ ] `EndangermentLevel` enum (Safe/Vulnerable/Threatened/Shifting/Moribund/
-      NearlyExtinct/Extinct), macro-area, and approximate lat/long per language.
-- [ ] **Source Korean separately.** The gathering pass returned 50 of 51 rows and
-      silently dropped `ko`; the verifier did not catch it, because a reviewer sees
-      only the claims it is given, never the ones that are missing.
-- [ ] Decide the semantics for `la`, `grc`, `sa` and `lzh` before encoding — whether
-      a liturgical or scholarly language with no native speakers is `Extinct`.
-- [ ] Treat the coordinates as approximate centroids, and say so in the API docs.
-      They were generated, not looked up.
 
 #### Data: Glottocode support
 
