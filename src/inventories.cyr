@@ -15,11 +15,11 @@ fn phoneme_yucatec_maya() {
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
     # Ejectives
-    phoneme_builder_consonant(b, "pʼ", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "tʼ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "kʼ", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "t͡sʼ", Manner.Affricate, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant_airstream(b, "pʼ", Manner.Plosive, Place.Bilabial, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "tʼ", Manner.Plosive, Place.Alveolar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "kʼ", Manner.Plosive, Place.Velar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "t͡sʼ", Manner.Affricate, Place.Alveolar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0, Airstream.Ejective);
     # Affricates
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
@@ -150,7 +150,7 @@ fn phoneme_zulu() {
     phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     # Implosives
-    phoneme_builder_consonant(b, "ɓ", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant_airstream(b, "ɓ", Manner.Plosive, Place.Bilabial, 1, Airstream.Implosive);
     # Affricates
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0);
@@ -176,18 +176,18 @@ fn phoneme_zulu() {
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     # Clicks (dental, alveolar, lateral)
-    phoneme_builder_consonant(b, "ǀ", Manner.Plosive, Place.Dental, 0);
-    phoneme_builder_consonant(b, "ǀʰ", Manner.Plosive, Place.Dental, 0);
-    phoneme_builder_consonant(b, "ɡǀ", Manner.Plosive, Place.Dental, 1);
-    phoneme_builder_consonant(b, "ŋǀ", Manner.Nasal, Place.Dental, 1);
-    phoneme_builder_consonant(b, "ǃ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "ǃʰ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "ɡǃ", Manner.Plosive, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ŋǃ", Manner.Nasal, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ǁ", Manner.LateralFricative, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "ǁʰ", Manner.LateralFricative, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "ɡǁ", Manner.LateralFricative, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ŋǁ", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant_airstream(b, "ǀ", Manner.Plosive, Place.Dental, 0, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ǀʰ", Manner.Plosive, Place.Dental, 0, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ɡǀ", Manner.Plosive, Place.Dental, 1, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ŋǀ", Manner.Nasal, Place.Dental, 1, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ǃ", Manner.Plosive, Place.Alveolar, 0, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ǃʰ", Manner.Plosive, Place.Alveolar, 0, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ɡǃ", Manner.Plosive, Place.Alveolar, 1, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ŋǃ", Manner.Nasal, Place.Alveolar, 1, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ǁ", Manner.LateralFricative, Place.Alveolar, 0, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ǁʰ", Manner.LateralFricative, Place.Alveolar, 0, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ɡǁ", Manner.LateralFricative, Place.Alveolar, 1, Airstream.Click);
+    phoneme_builder_consonant_airstream(b, "ŋǁ", Manner.Nasal, Place.Alveolar, 1, Airstream.Click);
     # Vowels
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
@@ -1467,11 +1467,11 @@ fn phoneme_amharic() {
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
     # Ejectives
-    phoneme_builder_consonant(b, "pʼ", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "tʼ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "kʼ", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0);
-    phoneme_builder_consonant(b, "t͡sʼ", Manner.Affricate, Place.Alveolar, 0);
+    phoneme_builder_consonant_airstream(b, "pʼ", Manner.Plosive, Place.Bilabial, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "tʼ", Manner.Plosive, Place.Alveolar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "kʼ", Manner.Plosive, Place.Velar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "t͡sʼ", Manner.Affricate, Place.Alveolar, 0, Airstream.Ejective);
     # Affricates
     phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
@@ -1523,10 +1523,10 @@ fn phoneme_hausa() {
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
     phoneme_builder_consonant(b, "ʔʲ", Manner.Plosive, Place.Palatal, 0);
     # Implosives (bilabial + alveolar)
-    phoneme_builder_consonant(b, "ɓ", Manner.Plosive, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "ɗ", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant_airstream(b, "ɓ", Manner.Plosive, Place.Bilabial, 1, Airstream.Implosive);
+    phoneme_builder_consonant_airstream(b, "ɗ", Manner.Plosive, Place.Alveolar, 1, Airstream.Implosive);
     # Ejective
-    phoneme_builder_consonant(b, "kʼ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_airstream(b, "kʼ", Manner.Plosive, Place.Velar, 0, Airstream.Ejective);
     # Affricates
     phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
@@ -1704,9 +1704,9 @@ fn phoneme_georgian() {
     phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
     # Plosives — ejective
-    phoneme_builder_consonant(b, "pʼ", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "tʼ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "kʼ", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant_airstream(b, "pʼ", Manner.Plosive, Place.Bilabial, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "tʼ", Manner.Plosive, Place.Alveolar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "kʼ", Manner.Plosive, Place.Velar, 0, Airstream.Ejective);
     # Glottal stop
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
     # Affricates — voiced
@@ -1716,8 +1716,8 @@ fn phoneme_georgian() {
     phoneme_builder_consonant(b, "t͡sʰ", Manner.Affricate, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "t͡ʃʰ", Manner.Affricate, Place.Postalveolar, 0);
     # Affricates — ejective
-    phoneme_builder_consonant(b, "t͡sʼ", Manner.Affricate, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant_airstream(b, "t͡sʼ", Manner.Affricate, Place.Alveolar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0, Airstream.Ejective);
     # Fricatives
     phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
@@ -1976,8 +1976,8 @@ fn phoneme_khmer() {
     phoneme_builder_consonant(b, "tʰ", Manner.Plosive, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
     # Implosives
-    phoneme_builder_consonant(b, "ɓ", Manner.Plosive, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "ɗ", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant_airstream(b, "ɓ", Manner.Plosive, Place.Bilabial, 1, Airstream.Implosive);
+    phoneme_builder_consonant_airstream(b, "ɗ", Manner.Plosive, Place.Alveolar, 1, Airstream.Implosive);
     # Affricates
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
     phoneme_builder_consonant(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0);
@@ -2089,11 +2089,11 @@ fn phoneme_quechua() {
     phoneme_builder_consonant(b, "kʰ", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "qʰ", Manner.Plosive, Place.Uvular, 0);
     # Ejectives
-    phoneme_builder_consonant(b, "pʼ", Manner.Plosive, Place.Bilabial, 0);
-    phoneme_builder_consonant(b, "tʼ", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0);
-    phoneme_builder_consonant(b, "kʼ", Manner.Plosive, Place.Velar, 0);
-    phoneme_builder_consonant(b, "qʼ", Manner.Plosive, Place.Uvular, 0);
+    phoneme_builder_consonant_airstream(b, "pʼ", Manner.Plosive, Place.Bilabial, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "tʼ", Manner.Plosive, Place.Alveolar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "t͡ʃʼ", Manner.Affricate, Place.Postalveolar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "kʼ", Manner.Plosive, Place.Velar, 0, Airstream.Ejective);
+    phoneme_builder_consonant_airstream(b, "qʼ", Manner.Plosive, Place.Uvular, 0, Airstream.Ejective);
     # Fricatives
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);

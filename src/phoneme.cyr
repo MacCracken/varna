@@ -5,10 +5,28 @@
 # cstring literals compared with streq. Sentinel 0 = "not found" (was Option).
 #
 # Memory layout
-#   Phoneme   (40B): [0]=ipa  [8]=kind  [16]=f0  [24]=f1  [32]=f2
+#   Phoneme   (48B): [0]=ipa  [8]=kind  [16]=f0  [24]=f1  [32]=f2  [40]=airstream
 #                    consonant → f0=manner f1=place    f2=voiced(0/1)
 #                    vowel     → f0=height f1=backness f2=rounded(0/1)
 #   Inventory (40B): [0]=code  [8]=name  [16]=phonemes(vec)  [24]=stress  [32]=tones(vec|0)
+
+# Airstream mechanism — orthogonal to manner of articulation.
+#
+# Added at 2.2.0. The roadmap originally proposed folding Click/Implosive/Ejective
+# into `Manner`, but they are airstream mechanisms, not manners, and the data shows
+# the collision directly: /ŋǀ/ is a *nasal* click, /t͡sʼ/ an *ejective affricate*,
+# /ǁ/ a *lateral* click. A single enum can only record one of the two, so that
+# change would have destroyed the manner information on 19 of the 38 affected
+# phonemes. PHOIBLE models the two axes separately; so do we.
+#
+# `Pulmonic` is the default and covers every vowel and all but 38 consonants in
+# the corpus, so `phoneme_consonant` keeps its arity and sets it implicitly.
+enum Airstream {
+    Pulmonic = 0;
+    Ejective = 1;
+    Implosive = 2;
+    Click = 3;
+}
 
 enum Manner {
     Plosive = 0;
@@ -67,23 +85,33 @@ enum PhonemeKind {
 
 # --- Phoneme constructors + accessors ------------------------------
 
+# Pulmonic consonant — the common case.
 fn phoneme_consonant(ipa, manner, place, voiced) {
-    var p = alloc(40);
+    return phoneme_consonant_airstream(ipa, manner, place, voiced, Airstream.Pulmonic);
+}
+
+# Consonant with an explicit airstream mechanism (ejective, implosive, click).
+# Manner stays the manner: /ŋǀ/ is Nasal + Click, /t͡sʼ/ is Affricate + Ejective.
+fn phoneme_consonant_airstream(ipa, manner, place, voiced, airstream) {
+    var p = alloc(48);
     store64(p, ipa);
     store64(p + 8, PhonemeKind.Consonant);
     store64(p + 16, manner);
     store64(p + 24, place);
     store64(p + 32, voiced);
+    store64(p + 40, airstream);
     return p;
 }
 
+# Vowels are pulmonic egressive without exception in the corpus.
 fn phoneme_vowel(ipa, height, backness, rounded) {
-    var p = alloc(40);
+    var p = alloc(48);
     store64(p, ipa);
     store64(p + 8, PhonemeKind.Vowel);
     store64(p + 16, height);
     store64(p + 24, backness);
     store64(p + 32, rounded);
+    store64(p + 40, Airstream.Pulmonic);
     return p;
 }
 
@@ -95,6 +123,7 @@ fn phoneme_voiced(p) { return load64(p + 32); }
 fn phoneme_height(p) { return load64(p + 16); }
 fn phoneme_backness(p) { return load64(p + 24); }
 fn phoneme_rounded(p) { return load64(p + 32); }
+fn phoneme_airstream(p) { return load64(p + 40); }
 
 # --- Inventory builder ---------------------------------------------
 # The builder and the inventory share one 40-byte layout; build() is identity.
@@ -130,6 +159,12 @@ fn phoneme_builder_tones(inv, tones) {
 
 fn phoneme_builder_consonant(inv, ipa, manner, place, voiced) {
     vec_push(load64(inv + 16), phoneme_consonant(ipa, manner, place, voiced));
+    return inv;
+}
+
+# Push a consonant with a non-pulmonic airstream.
+fn phoneme_builder_consonant_airstream(inv, ipa, manner, place, voiced, airstream) {
+    vec_push(load64(inv + 16), phoneme_consonant_airstream(ipa, manner, place, voiced, airstream));
     return inv;
 }
 

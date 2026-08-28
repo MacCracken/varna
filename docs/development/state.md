@@ -5,6 +5,11 @@
 
 ## Version
 
+**2.2.0** — phonological depth, airstream axis (2026-08-27): `Airstream`
+(Pulmonic/Ejective/Implosive/Click) added to the Phoneme record as an axis orthogonal
+to manner, and 38 consonants across 7 languages reclassified. The roadmap's proposal to
+fold these into `Manner` was rejected — it would have erased the manner of 19 of them.
+Phoneme record 40 B → 48 B.
 **2.1.6** — script registry completeness (2026-08-27): the nine ISO 15924 codes the
 registry named but never defined (Thai, Beng, Taml, Ethi, Hebr, Geor, Mymr, Khmr, Laoo)
 are now real Scripts, so `registry_primary_script` resolves for all 51 languages. The
@@ -91,12 +96,14 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
   + build (default + `-D` full) + `cyrius tests`. Also `cyrius vet`/`deny`/`doc --check` pass.
 - `cyrius bench tests/varna.bcyr` / `./scripts/bench-history.sh` — 18 benchmarks baselined
   (`bench-history.csv` + `BENCHMARKS.md`); covers every domain.
-- **Release-ready (2.1.6):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
-  daimon string / `CHANGELOG [2.1.6]`); `cyrius.lock` regenerated at 6.5.35 and
+- **Release-ready (2.2.0):** version synced (`VERSION` / `cyrius.cyml` `${file:VERSION}` /
+  daimon string / `CHANGELOG [2.2.0]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
-- **Gaps not closed by 2.1.6:** `cyrius coverage` reports 94% reference coverage
-  (273/288 fns). The `2.1.x` carry-over list is empty; next up is the `2.2.0+` tier.
+- **Gaps not closed by 2.2.0:** `cyrius coverage` reports 94% reference coverage
+  (275/291 fns). Aspiration, labialization, length and nasalization are still
+  symbol-only distinctions (roadmap 2.2.1/2.2.2), and the lateral clicks still carry
+  `Manner.LateralFricative` (2.2.1).
 
 ## Dependencies
 
@@ -120,7 +127,7 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion.
+The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis.
 
 See the [roadmap](roadmap.md) `2.1.x — Carry-over` section for the scheduled items
 (2.1.6 script-registry completeness). In brief:

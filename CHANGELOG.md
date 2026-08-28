@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-08-27
+
+First slice of the 2.2.x Phonological Depth line: an **airstream** axis on the
+phoneme record, and the corpus reclassified against it. No breaking changes — the
+existing constructors keep their arity and default to pulmonic.
+
+### Added
+
+- **phoneme** — `Airstream` enum (`Pulmonic`, `Ejective`, `Implosive`, `Click`) as a
+  field on the Phoneme record, with `phoneme_airstream(p)` to read it,
+  `phoneme_consonant_airstream(...)` to construct one, and
+  `phoneme_builder_consonant_airstream(...)` on the builder. `phoneme_consonant` and
+  `phoneme_vowel` are unchanged and set `Pulmonic` implicitly.
+
+- **inventories** — **38 consonants across 7 languages** reclassified with their
+  airstream, manner intact:
+
+  | | count | languages |
+  |---|---|---|
+  | Click | 12 | Zulu |
+  | Implosive | 5 | Zulu, Hausa, **Khmer** |
+  | Ejective | 21 | Georgian, **Yucatec Maya**, **Amharic**, **Quechua**, Hausa |
+
+  The roadmap named three languages; a scan of all 51 inventories found seven. Khmer,
+  Yucatec Maya, Amharic and Quechua were carrying unmarked implosives and ejectives.
+
+- **tests/airstream.tcyr** (119 assertions). Every check asserts manner *and*
+  airstream together — a test that only checked the airstream would pass equally
+  under the single-enum model this release rejected. Beyond the per-language cases it
+  pins corpus totals (12/5/21 across 7 languages), that no vowel is non-pulmonic,
+  that every value is inside the enum, and that `phoneme_clone` carries the axis.
+
+  The load-bearing one is `symbol_airstream_agreement`: it walks all 1,649 phonemes
+  and requires that any IPA symbol containing a click letter, the ejective apostrophe
+  or an implosive hook is marked accordingly — **and that nothing else claims a
+  non-pulmonic airstream**. The totals pin today's corpus; this pins the rule, so a
+  future inventory added with an unmarked /ɓ/ fails.
+
+### Changed
+
+- **Phoneme record** is 48 bytes, up from 40.
+
+### Notes
+
+- **The roadmap's `Manner` proposal was rejected, deliberately.** It read "Add
+  `Click`, `Implosive`, `Ejective` to `Manner`", but those are airstream mechanisms,
+  not manners of articulation, and the corpus shows the collision directly: /ŋǀ/ is a
+  nasal click, /t͡sʼ/ an ejective affricate, /ǁ/ a lateral click. A single enum records
+  one or the other, so the literal change would have erased the manner of 19 of the 38
+  phonemes. A separate axis loses nothing and matches how PHOIBLE models it — which
+  was the bullet's own stated goal. Roadmap amended.
+- **Lateral clicks keep `Manner.LateralFricative`**, which is wrong — a click is a
+  stop, not a fricative. It is pre-existing, and correcting it means moving "lateral"
+  somewhere else, which is 2.2.1's job. Left alone rather than silently re-adjudicated
+  here, and written into the roadmap so it is not forgotten.
+- Aspiration is *not* an airstream: /pʰ/, /ǀʰ/ and /t͡sʰ/ are pulmonic, and the tests
+  assert that explicitly. Aspiration becomes queryable at 2.2.1.
+
+### Performance
+
+- **Flat.** Interleaved A/B, every row within run-to-run noise. The inventory
+  constructors have been cached singletons since 2.1.5, so the wider record is paid
+  once at build rather than per call; the near-zero construction rows move by a few ns
+  in both directions, which is noise at that magnitude, not a win.
+- **Memory**: +8 bytes per phoneme. Building all 51 inventories moves 112,768 →
+  125,960 bytes — exactly 1,649 phonemes × 8 — and, being cached, that is the total
+  cost for a process, not a per-call one.
+
+
 ## [2.1.6] - 2026-08-27
 
 Roadmap item 2.1.6: define the nine scripts the registry had been naming without

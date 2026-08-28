@@ -35,13 +35,47 @@ is the `2.2.0+` tier below.
 > Renumbered from the pre-port `1.1.0`-`1.5.0` plan (2026-08-27) — the old numbers
 > predated the 2.0.0 Cyrius port and no longer tracked the shipping version.
 
-### 2.2.0 — Phonological Depth (P1)
+### 2.2.x — Phonological Depth (P1)
 
-- [ ] **Distinctive feature system**: Add `DistinctiveFeatures` bundle with 20+ binary features per phoneme (sonorant, continuant, strident, anterior, distributed, ATR/RTR, spread/constricted glottis, syllabic, etc.) — PHOIBLE parity
-- [ ] **Manner expansion**: Add `Click`, `Implosive`, `Ejective` to `Manner` enum — reclassify Zulu clicks, Georgian ejectives, Hausa implosives
-- [ ] **Consonant secondary features**: `aspirated`, `labialized`, `palatalized`, `prenasalized`, `long` fields on the `PhonemeKind.Consonant` variant
-- [ ] **Vowel features**: `long`, `nasalized`, `atr` (Advanced Tongue Root) fields on the `PhonemeKind.Vowel` variant
-- [ ] **Tone as structured data**: Replace string tone labels with `Tone` structs (contour, register, features)
+Split out of the original single 2.2.0 item. **2.2.0 (airstream) has landed**; the
+rest follow one per release, each verifiable on its own.
+
+The original bullet proposed adding `Click`/`Implosive`/`Ejective` to the `Manner`
+enum. That was rejected during 2.2.0: they are airstream mechanisms, not manners, and
+folding them in would have destroyed the manner of 19 of the 38 affected phonemes
+(/ŋǀ/ is a *nasal* click, /t͡sʼ/ an *ejective affricate*, /ǁ/ a *lateral* click).
+`Airstream` is a separate axis, which is also how PHOIBLE models it. See the 2.2.0
+CHANGELOG entry.
+
+#### 2.2.1 — Consonant secondary features
+
+- [ ] `aspirated`, `labialized`, `palatalized`, `prenasalized`, `long` on consonants.
+      Currently these live only in the IPA string: /pʰ/ vs /p/, /ǀʰ/ vs /ǀ/, /ʔʲ/,
+      /t̪/ are distinguishable by symbol but not queryable.
+- [ ] Revisit the lateral clicks while here. /ǁ ǁʰ ɡǁ/ carry `Manner.LateralFricative`,
+      inherited from before 2.2.0 and left untouched by it — a click is a stop, not a
+      fricative, so the manner is wrong. It was kept because "lateral" is the only
+      part of it worth preserving and there was nowhere else to put it; a `lateral`
+      feature is that somewhere.
+
+#### 2.2.2 — Vowel features
+
+- [ ] `long`, `nasalized`, `atr` (Advanced Tongue Root) on vowels. Same situation:
+      /iː/ vs /i/ and /ɐː/ vs /ɐ/ are symbol-only distinctions today.
+
+#### 2.2.3 — Distinctive feature system
+
+- [ ] `DistinctiveFeatures` bundle, 20+ binary features per phoneme (sonorant,
+      continuant, strident, anterior, distributed, ATR/RTR, spread/constricted
+      glottis, syllabic, …) — PHOIBLE parity. Best done after 2.2.1 and 2.2.2, since
+      several features are derivable from manner + place + airstream + the secondary
+      features rather than needing separate storage.
+
+#### 2.2.4 — Tone as structured data
+
+- [ ] Replace the string tone labels with `Tone` records (contour, register,
+      features). Five languages carry tone lists today (`zh`, `yo`, `th`, `vi`,
+      `lzh`), pinned by the tonal/non-tonal invariants in `tests/integration.tcyr`.
 
 ### 2.3.0 — Typological Depth (P2)
 

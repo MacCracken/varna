@@ -1,0 +1,293 @@
+# tests/airstream.tcyr — the airstream axis added at 2.2.0.
+#
+# Airstream is orthogonal to manner: /ŋǀ/ is a nasal click, /t͡sʼ/ an ejective
+# affricate, /ɓ/ an implosive stop. The point of a separate axis is that both
+# facts survive, so every assertion here checks the pair — a test that only
+# checked the airstream would pass just as well under the single-enum model this
+# release rejected.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+# Does the cstring `s` contain the cstring `needle`?
+fn _has_sub(s, needle) {
+    var hl = strlen(s);
+    var nl = strlen(needle);
+    if (nl == 0) { return 1; }
+    if (nl > hl) { return 0; }
+    var i = 0;
+    while (i <= hl - nl) {
+        var j = 0;
+        var matched = 1;
+        while (j < nl) {
+            if (load8(s + i + j) != load8(needle + j)) { matched = 0; }
+            j = j + 1;
+        }
+        if (matched == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# Assert a phoneme's manner and airstream together.
+fn _check(inv, ipa, manner, airstream, label) {
+    var p = phoneme_find(inv, ipa);
+    assert(p != 0, label);
+    if (p == 0) { return 0; }
+    assert_eq(phoneme_manner(p), manner, label);
+    assert_eq(phoneme_airstream(p), airstream, label);
+    return 0;
+}
+
+# Count phonemes in `inv` with the given airstream.
+fn _count_airstream(inv, airstream) {
+    var ph = phoneme_list(inv);
+    var n = vec_len(ph);
+    var c = 0;
+    var i = 0;
+    while (i < n) {
+        if (phoneme_airstream(vec_get(ph, i)) == airstream) { c = c + 1; }
+        i = i + 1;
+    }
+    return c;
+}
+
+fn main() {
+    alloc_init();
+    var i = 0;
+
+    # ---------------------------------------------------------------
+    test_group("airstream_defaults");
+    var en = phoneme_english();
+    assert_eq(phoneme_airstream(phoneme_find(en, "p")), Airstream.Pulmonic, "/p/ is pulmonic");
+    assert_eq(phoneme_airstream(phoneme_find(en, "iː")), Airstream.Pulmonic, "vowels are pulmonic");
+    assert_eq(Airstream.Pulmonic, 0, "Pulmonic is the zero default");
+    # The four-argument constructor still exists and still defaults.
+    var plain = phoneme_consonant("t", Manner.Plosive, Place.Alveolar, 0);
+    assert_eq(phoneme_airstream(plain), Airstream.Pulmonic, "phoneme_consonant defaults to pulmonic");
+    assert_eq(phoneme_manner(plain), Manner.Plosive, "and keeps its manner");
+    var v = phoneme_vowel("a", Height.Open, Backness.Central, 0);
+    assert_eq(phoneme_airstream(v), Airstream.Pulmonic, "phoneme_vowel is pulmonic");
+    var ej = phoneme_consonant_airstream("kʼ", Manner.Plosive, Place.Velar, 0, Airstream.Ejective);
+    assert_eq(phoneme_airstream(ej), Airstream.Ejective, "explicit airstream is stored");
+    assert_eq(phoneme_manner(ej), Manner.Plosive, "explicit airstream leaves manner alone");
+
+    # ---------------------------------------------------------------
+    test_group("zulu_clicks");
+    # Twelve clicks in three series. The whole reason for a separate axis: the
+    # nasal series stays Nasal and the lateral series stays lateral.
+    var zu = phoneme_zulu();
+    _check(zu, "ǀ", Manner.Plosive, Airstream.Click, "dental click is a click stop");
+    _check(zu, "ǀʰ", Manner.Plosive, Airstream.Click, "aspirated dental click");
+    _check(zu, "ɡǀ", Manner.Plosive, Airstream.Click, "voiced dental click");
+    _check(zu, "ŋǀ", Manner.Nasal, Airstream.Click, "nasal dental click is BOTH nasal and click");
+    _check(zu, "ǃ", Manner.Plosive, Airstream.Click, "alveolar click");
+    _check(zu, "ŋǃ", Manner.Nasal, Airstream.Click, "nasal alveolar click keeps its nasality");
+    _check(zu, "ǁ", Manner.LateralFricative, Airstream.Click, "lateral click keeps its laterality");
+    _check(zu, "ŋǁ", Manner.Nasal, Airstream.Click, "nasal lateral click");
+    assert_eq(_count_airstream(zu, Airstream.Click), 12, "Zulu has 12 clicks");
+    # Zulu's implosive is not a click, and its plain stops are pulmonic.
+    _check(zu, "ɓ", Manner.Plosive, Airstream.Implosive, "Zulu /ɓ/ is implosive");
+    _check(zu, "b", Manner.Plosive, Airstream.Pulmonic, "Zulu /b/ is an ordinary pulmonic stop");
+    assert_eq(_count_airstream(zu, Airstream.Implosive), 1, "Zulu has 1 implosive");
+    assert_eq(_count_airstream(zu, Airstream.Ejective), 0, "Zulu has no ejectives");
+
+    # ---------------------------------------------------------------
+    test_group("implosives");
+    var ha = phoneme_hausa();
+    _check(ha, "ɓ", Manner.Plosive, Airstream.Implosive, "Hausa /ɓ/");
+    _check(ha, "ɗ", Manner.Plosive, Airstream.Implosive, "Hausa /ɗ/");
+    _check(ha, "b", Manner.Plosive, Airstream.Pulmonic, "Hausa /b/ is pulmonic");
+    assert_eq(_count_airstream(ha, Airstream.Implosive), 2, "Hausa has 2 implosives");
+    # Khmer was not named in the roadmap; the corpus scan found it.
+    var km = phoneme_khmer();
+    _check(km, "ɓ", Manner.Plosive, Airstream.Implosive, "Khmer /ɓ/");
+    _check(km, "ɗ", Manner.Plosive, Airstream.Implosive, "Khmer /ɗ/");
+    assert_eq(_count_airstream(km, Airstream.Implosive), 2, "Khmer has 2 implosives");
+
+    # ---------------------------------------------------------------
+    test_group("ejectives");
+    # Ejective stops stay stops; ejective affricates stay affricates.
+    var ka = phoneme_georgian();
+    _check(ka, "pʼ", Manner.Plosive, Airstream.Ejective, "Georgian /pʼ/");
+    _check(ka, "tʼ", Manner.Plosive, Airstream.Ejective, "Georgian /tʼ/");
+    _check(ka, "kʼ", Manner.Plosive, Airstream.Ejective, "Georgian /kʼ/");
+    _check(ka, "t͡sʼ", Manner.Affricate, Airstream.Ejective, "Georgian /t͡sʼ/ stays an affricate");
+    _check(ka, "t͡ʃʼ", Manner.Affricate, Airstream.Ejective, "Georgian /t͡ʃʼ/ stays an affricate");
+    # The aspirated series is pulmonic — aspiration is not an airstream.
+    _check(ka, "pʰ", Manner.Plosive, Airstream.Pulmonic, "Georgian /pʰ/ is pulmonic, not ejective");
+    _check(ka, "t͡sʰ", Manner.Affricate, Airstream.Pulmonic, "Georgian /t͡sʰ/ is pulmonic");
+    assert_eq(_count_airstream(ka, Airstream.Ejective), 5, "Georgian has 5 ejectives");
+
+    # Four more languages the roadmap did not name.
+    var yua = phoneme_yucatec_maya();
+    _check(yua, "kʼ", Manner.Plosive, Airstream.Ejective, "Yucatec Maya /kʼ/");
+    _check(yua, "t͡sʼ", Manner.Affricate, Airstream.Ejective, "Yucatec Maya /t͡sʼ/");
+    assert_eq(_count_airstream(yua, Airstream.Ejective), 5, "Yucatec Maya has 5 ejectives");
+
+    var am = phoneme_amharic();
+    _check(am, "tʼ", Manner.Plosive, Airstream.Ejective, "Amharic /tʼ/");
+    _check(am, "t͡sʼ", Manner.Affricate, Airstream.Ejective, "Amharic /t͡sʼ/");
+    assert_eq(_count_airstream(am, Airstream.Ejective), 5, "Amharic has 5 ejectives");
+
+    var qu = phoneme_quechua();
+    _check(qu, "qʼ", Manner.Plosive, Airstream.Ejective, "Quechua uvular ejective /qʼ/");
+    _check(qu, "t͡ʃʼ", Manner.Affricate, Airstream.Ejective, "Quechua /t͡ʃʼ/");
+    assert_eq(_count_airstream(qu, Airstream.Ejective), 5, "Quechua has 5 ejectives");
+
+    _check(ha, "kʼ", Manner.Plosive, Airstream.Ejective, "Hausa /kʼ/");
+    assert_eq(_count_airstream(ha, Airstream.Ejective), 1, "Hausa has 1 ejective");
+
+    # ---------------------------------------------------------------
+    test_group("corpus_totals");
+    # 38 non-pulmonic consonants across 7 of the 51 languages. Pinning the totals
+    # means a new inventory with an unmarked click or ejective fails here.
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    var clicks = 0;
+    var implosives = 0;
+    var eject = 0;
+    var marked_langs = 0;
+    var bad_vowel = 0;
+    i = 0;
+    while (i < n) {
+        var inv = registry_phonemes(vec_get(codes, i));
+        var c = _count_airstream(inv, Airstream.Click);
+        var m = _count_airstream(inv, Airstream.Implosive);
+        var e = _count_airstream(inv, Airstream.Ejective);
+        if (c + m + e > 0) { marked_langs = marked_langs + 1; }
+        clicks = clicks + c;
+        implosives = implosives + m;
+        eject = eject + e;
+        # No vowel anywhere is non-pulmonic.
+        var ph = phoneme_list(inv);
+        var j = 0;
+        while (j < vec_len(ph)) {
+            var p = vec_get(ph, j);
+            if (phoneme_kind(p) == PhonemeKind.Vowel) {
+                if (phoneme_airstream(p) != Airstream.Pulmonic) { bad_vowel = bad_vowel + 1; }
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(clicks, 12, "12 clicks in the corpus");
+    assert_eq(implosives, 5, "5 implosives in the corpus");
+    assert_eq(eject, 21, "21 ejectives in the corpus");
+    assert_eq(clicks + implosives + eject, 38, "38 non-pulmonic consonants in total");
+    assert_eq(marked_langs, 7, "7 languages carry a non-pulmonic consonant");
+    assert_eq(bad_vowel, 0, "no vowel is marked non-pulmonic");
+
+    # ---------------------------------------------------------------
+    test_group("airstream_is_exhaustive");
+    # Every phoneme in the corpus carries one of the four defined values — a
+    # missed slot would read as an uninitialised 0 and hide here otherwise.
+    var out_of_range = 0;
+    i = 0;
+    while (i < n) {
+        var inv2 = registry_phonemes(vec_get(codes, i));
+        var ph2 = phoneme_list(inv2);
+        var k = 0;
+        while (k < vec_len(ph2)) {
+            var a = phoneme_airstream(vec_get(ph2, k));
+            if (a < Airstream.Pulmonic) { out_of_range = out_of_range + 1; }
+            if (a > Airstream.Click) { out_of_range = out_of_range + 1; }
+            k = k + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(out_of_range, 0, "every airstream value is within the enum");
+    assert_eq(Airstream.Ejective, 1, "Ejective is 1");
+    assert_eq(Airstream.Implosive, 2, "Implosive is 2");
+    assert_eq(Airstream.Click, 3, "Click is 3");
+
+    # ---------------------------------------------------------------
+    test_group("symbol_airstream_agreement");
+    # The totals above pin today's corpus; this pins the *rule*, which is what a
+    # future inventory addition will actually trip over. Any IPA symbol carrying a
+    # click letter, the ejective apostrophe or an implosive hook must be marked
+    # accordingly — and nothing else may claim to be non-pulmonic.
+    var clicks_v = vec_new();
+    vec_push(clicks_v, "ǀ");
+    vec_push(clicks_v, "ǃ");
+    vec_push(clicks_v, "ǁ");
+    vec_push(clicks_v, "ǂ");
+    vec_push(clicks_v, "ʘ");
+    var impl_v = vec_new();
+    vec_push(impl_v, "ɓ");
+    vec_push(impl_v, "ɗ");
+    vec_push(impl_v, "ʄ");
+    vec_push(impl_v, "ɠ");
+    vec_push(impl_v, "ʛ");
+
+    var unmarked = 0;
+    var overmarked = 0;
+    i = 0;
+    while (i < n) {
+        var inv3 = registry_phonemes(vec_get(codes, i));
+        var ph3 = phoneme_list(inv3);
+        var q = 0;
+        while (q < vec_len(ph3)) {
+            var pp = vec_get(ph3, q);
+            var ipa = phoneme_ipa(pp);
+            var air = phoneme_airstream(pp);
+
+            var is_click = 0;
+            var z = 0;
+            while (z < vec_len(clicks_v)) {
+                if (_has_sub(ipa, vec_get(clicks_v, z)) == 1) { is_click = 1; }
+                z = z + 1;
+            }
+            var is_impl = 0;
+            z = 0;
+            while (z < vec_len(impl_v)) {
+                if (_has_sub(ipa, vec_get(impl_v, z)) == 1) { is_impl = 1; }
+                z = z + 1;
+            }
+            var is_eject = _has_sub(ipa, "ʼ");
+
+            if (is_click == 1) {
+                if (air != Airstream.Click) { unmarked = unmarked + 1; }
+            }
+            elif (is_impl == 1) {
+                if (air != Airstream.Implosive) { unmarked = unmarked + 1; }
+            }
+            elif (is_eject == 1) {
+                if (air != Airstream.Ejective) { unmarked = unmarked + 1; }
+            }
+            else {
+                # No diacritic in the symbol, so it must be pulmonic.
+                if (air != Airstream.Pulmonic) { overmarked = overmarked + 1; }
+            }
+            q = q + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(unmarked, 0, "every click/ejective/implosive symbol carries its airstream");
+    assert_eq(overmarked, 0, "nothing without such a symbol claims a non-pulmonic airstream");
+
+    # ---------------------------------------------------------------
+    test_group("clone_carries_airstream");
+    # phoneme_clone shares the Phoneme records, so the airstream rides along.
+    var zu_clone = phoneme_clone(zu);
+    assert_eq(phoneme_airstream(phoneme_find(zu_clone, "ŋǀ")), Airstream.Click, "clone keeps the click");
+    assert_eq(phoneme_manner(phoneme_find(zu_clone, "ŋǀ")), Manner.Nasal, "clone keeps the manner");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);
