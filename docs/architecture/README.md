@@ -6,4 +6,6 @@ Not decisions (those live in [`../adr/`](../adr/)) and not guides (those live in
 
 ## Items
 
-_Empty. Add a numbered entry (`001-kebab-case-title.md`) the first time the code has a non-obvious invariant a reader can't derive. Do not write entries for decisions — those are ADRs._
+- [001 — A numeral system's mappings vec *is* its alphabet ordering](001-numeral-mappings-are-the-ordinal-source.md) — why the order of `_nsys_add` calls is data, and why variant glyphs must stay out of the canonical tables
+
+_Add a numbered entry (`NNN-kebab-case-title.md`) when the code has a non-obvious invariant a reader can't derive. Do not write entries for decisions — those are ADRs._

@@ -2,7 +2,7 @@
 
 ## Project Identity
 
-**Varna** (Sanskrit: वर्ण — letter, character, sound) — Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access for 50+ languages
+**Varna** (Sanskrit: वर्ण — letter, character, sound) — Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access for 51 languages
 
 - **Type**: Flat Cyrius library (`dist/varna.cyr` bundle) + thin demo entry — no longer a Rust crate; migrated at v2.0 (see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md))
 - **License**: GPL-3.0
@@ -125,7 +125,7 @@ docs/ (required):
 
 docs/ (when earned — not scaffolded empty):
   adr/
-    NNN-title.md     — architectural decision records (0001 = the Rust→Cyrius port)
+    NNNN-title.md    — architectural decision records, four digits (0001 = the Rust→Cyrius port)
   guides/
     usage.md         — patterns, philosophy, code examples
 ```

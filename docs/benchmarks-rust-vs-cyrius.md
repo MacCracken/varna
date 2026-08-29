@@ -8,12 +8,18 @@ the Rust `benches/benchmarks.rs`).
 > **Read this section first.** The two numbers are **not** measured the same way,
 > so the ratios are indicative, not precise. See [Methodology](#methodology).
 >
-> **The Cyrius side is an unoptimized parity port** — a faithful 1:1 translation
-> with **no optimization passes yet**: naive O(n) linear-scan lookups, one
-> `alloc()` per record, and pure constructors rebuilt on every call (no caching).
-> These are an early-port baseline, not a tuned result. The low-hanging fruit
-> (cache the immutable pre-built inventories/scripts/profiles; intern lookups)
-> is untouched.
+> **This is a historical document, frozen at v2.0.0.** It compares the last Rust
+> commit against the first Cyrius one and is not re-run; for current numbers see
+> [`../BENCHMARKS.md`](../BENCHMARKS.md).
+>
+> **The Cyrius side here is an unoptimized parity port** — a faithful 1:1
+> translation with no optimization passes at the time it was measured: naive O(n)
+> linear-scan lookups, one `alloc()` per record, and pure constructors rebuilt on
+> every call. That low-hanging fruit has since been picked, so these numbers
+> understate current performance considerably. 2.1.2 de-allocated the
+> transliteration and numeral hot paths and indexed `registry_info`; 2.1.5 made the
+> 98 pre-built constructors shared singletons (removing a 2,400 B-per-call leak);
+> 2.4.0 cached each mapping's byte length, cutting numeral lookup ~40%.
 
 - **Rust** — `criterion` statistical **median**, final pre-port commit `aadcd67`
   (2026-04-01). Source: the v1.x crate's `bench-history.csv`.
@@ -37,7 +43,7 @@ benchmarks were added to `benchmarks.rs` but never baselined under criterion.
 | `phoneme_lookup_ipa`         |  14.5 ns | 419 ns | ~29× |
 | `script_by_code_lookup`      |  19.6 ns | 838 ns | ~43× |
 
-## Full current Cyrius suite (18 benchmarks)
+## Full Cyrius suite as of v2.0.0 (18 benchmarks)
 
 `min` is the most representative per-op figure; `avg` carries the bump
 allocator's accumulating overhead (see below). Rust column shown where a
@@ -107,11 +113,12 @@ That trade is sound for what varna is:
 - **The slow outliers are honest, not surprising.** `registry_all_codes_iter`
   (40 µs) walks all 51 languages, and `transliterate_greek_word` (41 µs) builds a
   result string codepoint-by-codepoint with per-append allocation — both are
-  allocation-bound and would shrink with an arena/pool allocator (future work; no
-  roadmap entry yet).
-- **Correctness held at parity.** 526 assertions reproduce the Rust oracle's
-  behavior exactly (see `docs/development/state.md`); the numbers above measure
-  the same work, not a reduced surface.
+  allocation-bound and would shrink with an arena/pool allocator. Both were
+  substantially improved after this snapshot by the 2.1.2 and 2.1.5 work.
+- **Correctness held at parity.** 526 assertions reproduced the Rust oracle's
+  behaviour exactly at the time of the port; the numbers above measure the same
+  work, not a reduced surface. (The suite has since grown well past that — see
+  [`development/state.md`](development/state.md) for the current figure.)
 
 Where Cyrius would *win* — simpler algorithms over small data, no FFI marshalling
 for downstream Cyrius consumers folding `dist/varna.cyr` directly — is not

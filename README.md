@@ -3,7 +3,7 @@
 > **Varna** (Sanskrit: वर्ण — letter, character, sound) — multilingual language engine for AGNOS
 
 Structured, queryable corpus of human language data. Phoneme inventories, writing
-system metadata, grammar profiles, and lexicon access for 50+ languages — written in
+system metadata, grammar profiles, and lexicon access for 51 languages — written in
 [Cyrius](https://github.com/MacCracken/cyrius). (Migrated from a Rust crate at v2.0;
 the v1.x Rust source was removed at 2.1.4 and remains in git tags `1.0.0`–`2.1.3` — see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md) and [ADR 0002](docs/adr/0002-remove-the-rust-old-archive.md).)
 
@@ -18,11 +18,20 @@ Used by [shabda](https://github.com/MacCracken/shabda) (G2P conversion),
 
 | Module | Description |
 |--------|-------------|
-| `phoneme` | IPA phoneme inventories per language, articulatory features (manner, place, voicing), stress/tone patterns |
+| `phoneme` | IPA phoneme inventories per language: articulatory features (manner, place, voicing), airstream, secondary features, stress |
+| `features` | 25 SPE/Hayes distinctive features, derived from the articulatory description rather than tabulated |
+| `tone` | Structured tone parsed from Chao tone-letter notation — contour, register, pitch levels, creak and checked |
+| `inventories` | The per-language inventory data the `phoneme` API is built over |
+| `allophone` | Context-conditioned realisation rules |
+| `syllable` | Phonotactic profiles and syllable-template validation |
 | `script` | Writing system metadata: alphabet, syllabary, logographic, abjad, abugida. Unicode ranges, directionality |
-| `grammar` | Morphological typology (isolating, agglutinative, fusional, polysynthetic), word order, case systems |
-| `lexicon` | Core vocabulary per language (Swadesh lists, frequency-ranked word lists), cognate detection |
-| `registry` | Central ISO 639 lookup across phoneme/script/grammar/lexicon |
+| `numerals` | Nine numeral systems, five of them letter-value (gematria): standard, ordinal and reduced lookups across scripts |
+| `transliteration` | Script-to-script tables (Devanagari↔IAST, Greek↔Beta Code) |
+| `grammar` | Morphological typology (isolating, agglutinative, fusional, polysynthetic), word order, case, eight WALS-style dimensions |
+| `lexicon` | Core vocabulary per language, frequency-ranked word lists |
+| `swadesh` | Swadesh lists with IPA transcriptions |
+| `cognate` | Cognate detection across related languages |
+| `registry` | Central ISO 639 lookup across every module, plus family classification, endangerment and geography |
 | `dialect` | Language-variety overlays (regional dialects, national standards) |
 
 ## Build Defines
@@ -55,8 +64,8 @@ modules = ["dist/varna.cyr"]
 `cyrius deps` clones varna at the tag and copies the bundle into `lib/varna.cyr`,
 reading `dist/varna.deps` to pull the stdlib leaves the bundle needs. For the
 linguistic data engine without the `-D`-gated AI surfaces, use
-`modules = ["dist/varna-core.cyr"]` — its sidecar declares only four leaves
-(`string`, `alloc`, `vec`, `hashmap`):
+`modules = ["dist/varna-core.cyr"]` — its sidecar declares five leaves
+(`string`, `alloc`, `vec`, `assert`, `hashmap`) against the full bundle's sixteen:
 
 ```cyrius
 include "lib/varna.cyr"
@@ -141,7 +150,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full toolchain reference.
 
 ## Benchmarks
 
-Latest numbers in [BENCHMARKS.md](BENCHMARKS.md) (18 benchmarks, every domain). A
+Latest numbers in [BENCHMARKS.md](BENCHMARKS.md) (23 benchmarks, every domain). A
 before/after analysis of the Rust → Cyrius port — with the methodology caveats that
 make a fair comparison — is in
 [docs/benchmarks-rust-vs-cyrius.md](docs/benchmarks-rust-vs-cyrius.md).

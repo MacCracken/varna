@@ -9,8 +9,11 @@ varna/
 ├── src/
 │   ├── main.cyr           — demo entry + include aggregator (alloc_init, dispatch)
 │   ├── error.cyr          — VarnaError enum (tagged variants)
-│   ├── phoneme.cyr        — IPA inventories, articulatory features, stress/tone,
-│   │                        the inventory builder, english/sanskrit/greek
+│   ├── util.cyr           — shared UTF-8 codepoint helpers
+│   ├── phoneme.cyr        — IPA inventories, articulatory features, airstream,
+│   │                        the feature mask, the builder, english/sanskrit/greek
+│   ├── features.cyr       — 25 derived SPE/Hayes distinctive features (tri-state)
+│   ├── tone.cyr           — Chao tone-letter parsing (contour/register/features)
 │   ├── inventories.cyr    — extended language inventories
 │   ├── allophone.cyr      — allophone rules, conditioned variants
 │   ├── syllable.cyr       — syllable structure, phonotactic constraints
@@ -25,14 +28,14 @@ varna/
 │   ├── registry.cyr       — central ISO 639 lookup across all domains
 │   ├── logging.cyr        — VARNA_LOG env init (log + sakshi)        [-D LOGGING]
 │   ├── mcp.cyr            — 5 MCP tools, bote-core surface           [-D MCP]
-│   ├── daimon.cyr        — agent registration payload                [-D DAIMON]
-│   └── hoosh.cyr         — LLM query interface                       [-D HOOSH]
+│   ├── daimon.cyr         — agent registration payload               [-D DAIMON]
+│   └── hoosh.cyr          — LLM query interface                      [-D HOOSH]
 ├── lib/                   — vendored Cyrius stdlib snapshot (cyrius deps; gitignored)
 ├── dist/                  — consumer bundles (cyrius distlib --all)
 │   ├── varna.cyr          — full data engine, single file
 │   ├── varna.deps         — stdlib leaves varna.cyr needs (16; read by cyrius deps)
 │   ├── varna-core.cyr     — [lib.core] profile (same modules today, see note)
-│   └── varna-core.deps    — its tighter leaf set (4: string, alloc, vec, hashmap)
+│   └── varna-core.deps    — its tighter leaf set (5: string, alloc, vec, assert, hashmap)
 └── tests/
     ├── *.tcyr             — cross-module integration tests (cyrius tests)
     └── *.bcyr             — cyrius bench harness (lib/bench.cyr)
@@ -46,6 +49,8 @@ Language selection (ISO 639 code)
   ├─→ registry  — central lookup: phonemes(), primary_script(), info()
   │     │
   │     ├─→ phoneme — IPA inventory, consonant/vowel counts, stress/tone pattern
+  │     │     ├─→ features  — derived distinctive features, per segment
+  │     │     ├─→ tone      — parsed Chao tone letters, per tone
   │     │     ├─→ allophone — conditioned variant rules
   │     │     └─→ syllable  — syllable structure, phonotactics
   │     └─→ script  — writing system type, direction, Unicode ranges
@@ -114,7 +119,7 @@ Language selection (ISO 639 code)
 | Hebr   | Hebrew Gematria                                 | Alphabetic | yes           |
 | Arab   | Arabic Abjad (Mashriqi)                         | Alphabetic | yes           |
 | Latn   | Latin Simple Gematria                           | Alphabetic | yes           |
-| Cyrl   | Church Slavonic Numerals (standardised)         | Alphabetic | yes           |
+| Cyrl   | Church Slavonic Numerals (standardised recension) | Alphabetic | yes         |
 | Grek   | Greek Isopsephy                                 | Alphabetic | yes           |
 | Deva   | Devanagari Digits                               | Decimal    | —             |
 | Hani   | Chinese Rod Numerals                            | Decimal    | —             |
