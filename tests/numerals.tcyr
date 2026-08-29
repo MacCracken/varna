@@ -60,7 +60,7 @@ fn main() {
     assert(streq(numerals_script_code(gk), "Grek"), "greek script Grek");
     assert(streq(numerals_name(gk), "Greek Isopsephy"), "greek name");
     assert_eq(numerals_kind(gk), NumeralSystemKind.Alphabetic, "greek alphabetic");
-    assert_eq(vec_len(numerals_mappings(gk)), 25, "greek 25 mappings");
+    assert_eq(vec_len(numerals_mappings(gk)), 28, "greek 24 letters + final sigma + 3 numeral signs");
     assert(streq(numerals_script_code(bb), "Xsux"), "bab script Xsux");
     assert(streq(numerals_name(bb), "Babylonian Sexagesimal"), "bab name");
     assert_eq(numerals_kind(bb), NumeralSystemKind.Other, "bab other");

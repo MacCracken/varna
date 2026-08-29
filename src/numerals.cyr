@@ -2,7 +2,11 @@
 # Ported from v1.x Rust src/script/numerals.rs (data transpiled byte-exact).
 #
 # NumeralSystem (32B): [0]=script_code [8]=name [16]=kind [24]=mappings(vec)
-# NumeralMapping (16B): [0]=character(cstr) [8]=value
+# NumeralMapping (40B): [0]=character(cstr) [8]=len [16]=value [24]=role [32]=base(cstr)
+#   `len` is the character's byte length, cached at construction. Every lookup is
+#   a linear scan comparing the probe against each entry, and recomputing
+#   strlen() on a stored constant once per entry per lookup was measurably the
+#   dominant cost of that scan.
 # Sentinels: value_of -> (0-1) when unmapped (value 0 is valid, e.g. Deva 0);
 #            char_for / string_value -> 0 / (0-1) when not found.
 
@@ -21,13 +25,50 @@ fn _nsys_new(script_code, name, kind) {
     return sys;
 }
 
+# What a mapping's character IS within its writing system. The ordinal method
+# needs this: it asks "which letter of the alphabet is this?", and only a letter
+# has an answer. Deriving the ordinal from a mapping's raw index instead assumes
+# every entry occupies an alphabet position, which silently shifts every letter
+# after any entry that does not — see the Greek final sigma note below.
+enum LetterRole {
+    ROLE_LETTER = 0;         # a letter of the alphabet; occupies one position
+    ROLE_ALLOGRAPH = 1;      # positional variant of another letter (Greek ς, Hebrew finals)
+    ROLE_NUMERAL_SIGN = 2;   # numeral-only sign, never a letter (Greek ϛ, ϟ, ϡ)
+}
+
 fn _nsys_add(sys, character, value) {
-    var m = alloc(16);
+    return _nsys_add_full(sys, character, value, LetterRole.ROLE_LETTER, 0);
+}
+
+# A positional variant of `base`: same standard value, and it borrows `base`'s
+# ordinal rather than claiming one of its own.
+fn _nsys_add_variant(sys, character, value, base) {
+    return _nsys_add_full(sys, character, value, LetterRole.ROLE_ALLOGRAPH, base);
+}
+
+# A numeral-only sign. It carries a standard value but has no alphabet position,
+# so the ordinal method reports it unmapped rather than inventing one.
+fn _nsys_add_sign(sys, character, value) {
+    return _nsys_add_full(sys, character, value, LetterRole.ROLE_NUMERAL_SIGN, 0);
+}
+
+fn _nsys_add_full(sys, character, value, role, base) {
+    var m = alloc(40);
     store64(m, character);
-    store64(m + 8, value);
+    store64(m + 8, strlen(character));
+    store64(m + 16, value);
+    store64(m + 24, role);
+    store64(m + 32, base);
     vec_push(load64(sys + 24), m);
     return sys;
 }
+
+fn numerals_mapping_char(m) { return load64(m); }
+fn numerals_mapping_len(m) { return load64(m + 8); }
+fn numerals_mapping_value(m) { return load64(m + 16); }
+fn numerals_mapping_role(m) { return load64(m + 24); }
+# The letter an allograph varies; 0 for anything else.
+fn numerals_mapping_base(m) { return load64(m + 32); }
 
 fn numerals_script_code(sys) { return load64(sys); }
 fn numerals_name(sys) { return load64(sys + 8); }
@@ -50,9 +91,8 @@ fn _numerals_value_of_bytes(sys, ch, len) {
     var i = 0;
     while (i < n) {
         var m = vec_get(ms, i);
-        var c = load64(m);
-        if (strlen(c) == len) {
-            if (memeq(c, ch, len) == 1) { return load64(m + 8); }
+        if (load64(m + 8) == len) {
+            if (memeq(load64(m), ch, len) == 1) { return load64(m + 16); }
         }
         i = i + 1;
     }
@@ -66,7 +106,7 @@ fn numerals_char_for(sys, value) {
     var i = 0;
     while (i < n) {
         var m = vec_get(ms, i);
-        if (load64(m + 8) == value) { return load64(m); }
+        if (load64(m + 16) == value) { return load64(m); }
         i = i + 1;
     }
     return 0;
@@ -113,6 +153,13 @@ fn numerals_devanagari_digits() {
 }
 
 var _c_numerals_greek_isopsephy = 0;
+# Greek isopsephy. The letter run skips 6, 90 and 900 because those values belong
+# to three numeral-only signs — stigma ϛ, koppa ϟ and sampi ϡ — which are not
+# letters of the alphabet and were dropped from it while staying in the numeral
+# sequence. They are included here as ROLE_NUMERAL_SIGN, so the run is complete
+# 1..900 and χξϛ sums to 666; without them the most-cited isopsephic value in
+# existence could not be computed. Final sigma ς is a positional allograph of σ,
+# not a 25th letter, so it borrows sigma's ordinal rather than taking its own.
 fn numerals_greek_isopsephy() {
     if (_c_numerals_greek_isopsephy != 0) { return _c_numerals_greek_isopsephy; }
     var sys = _nsys_new("Grek", "Greek Isopsephy", NumeralSystemKind.Alphabetic);
@@ -121,6 +168,7 @@ fn numerals_greek_isopsephy() {
     _nsys_add(sys, "γ", 3);
     _nsys_add(sys, "δ", 4);
     _nsys_add(sys, "ε", 5);
+    _nsys_add_sign(sys, "ϛ", 6);
     _nsys_add(sys, "ζ", 7);
     _nsys_add(sys, "η", 8);
     _nsys_add(sys, "θ", 9);
@@ -132,15 +180,17 @@ fn numerals_greek_isopsephy() {
     _nsys_add(sys, "ξ", 60);
     _nsys_add(sys, "ο", 70);
     _nsys_add(sys, "π", 80);
+    _nsys_add_sign(sys, "ϟ", 90);
     _nsys_add(sys, "ρ", 100);
     _nsys_add(sys, "σ", 200);
-    _nsys_add(sys, "ς", 200);
+    _nsys_add_variant(sys, "ς", 200, "σ");
     _nsys_add(sys, "τ", 300);
     _nsys_add(sys, "υ", 400);
     _nsys_add(sys, "φ", 500);
     _nsys_add(sys, "χ", 600);
     _nsys_add(sys, "ψ", 700);
     _nsys_add(sys, "ω", 800);
+    _nsys_add_sign(sys, "ϡ", 900);
     _c_numerals_greek_isopsephy = sys;
     return _c_numerals_greek_isopsephy;
 }
@@ -197,3 +247,401 @@ fn numerals_chinese_rod_numerals() {
     return _c_numerals_chinese_rod_numerals;
 }
 
+# --- Gematria and letter-value systems (2.4.0) ---------------------
+#
+# The alphabets below are `NumeralSystem` records like the numeral systems above,
+# holding each letter's STANDARD value in alphabet order. The other methods are
+# derived rather than stored, for the reason src/features.cyr gives: two
+# hand-maintained encodings of one fact drift apart.
+#
+#   Standard  the stored value (Hebrew qof = 100)
+#   Ordinal   position in the alphabet, 1-based — the index, not a second table
+#   Reduced   digital root of the standard value (mispar katan): 100 -> 1, 300 -> 3
+#
+# The roadmap listed a fourth, "Additive". That is not a per-character method: it
+# describes how a system COMBINES values across a string, which is already
+# `NumeralSystemKind` (Decimal / Alphabetic / Other) on each record, and is what
+# `numerals_string_value` implements. Adding it here would have been a fourth enum
+# value that no lookup could answer differently from Standard.
+enum NumericSystem {
+    NUM_STANDARD = 0;   # the letter's own numeral value (Hebrew ת = 400)
+    NUM_ORDINAL = 1;    # its position in the alphabet (Hebrew ת = 22)
+    NUM_REDUCED = 2;    # the standard value's digital root (Hebrew ת = 4)
+}
+
+# Digital root: repeatedly sum decimal digits until a single digit remains. For the
+# 1/10/100 series every gematria alphabet uses, this is just the leading digit.
+fn _digital_root(v) {
+    if (v <= 0) { return v; }
+    var n = v;
+    while (n > 9) {
+        var sum = 0;
+        while (n > 0) {
+            sum = sum + n - (n / 10) * 10;
+            n = n / 10;
+        }
+        n = sum;
+    }
+    return n;
+}
+
+# Letter-value alphabet for an ISO 15924 script code, or 0 if none is defined.
+fn gematria_by_script(code) {
+    if (streq(code, "Hebr") == 1) { return gematria_hebrew(); }
+    if (streq(code, "Arab") == 1) { return gematria_arabic_abjad(); }
+    if (streq(code, "Latn") == 1) { return gematria_latin(); }
+    if (streq(code, "Cyrl") == 1) { return gematria_cyrillic(); }
+    if (streq(code, "Grek") == 1) { return numerals_greek_isopsephy(); }
+    return 0;
+}
+
+# All script codes with a letter-value alphabet — vec of cstrings.
+var _c_gematria_all_scripts = 0;
+fn gematria_all_scripts() {
+    if (_c_gematria_all_scripts != 0) { return _c_gematria_all_scripts; }
+    var c = vec_new();
+    vec_push(c, "Hebr");
+    vec_push(c, "Arab");
+    vec_push(c, "Latn");
+    vec_push(c, "Cyrl");
+    vec_push(c, "Grek");
+    _c_gematria_all_scripts = c;
+    return _c_gematria_all_scripts;
+}
+
+# Value of one character under one method, or (0-1) when the character is not in
+# the alphabet or the script has no letter-value system.
+#
+# Ordinal is the character's position in the alphabet, so a letter that shares a
+# standard value with another (the Hebrew final forms) still gets its own ordinal.
+# Alphabet position of the mapping at index `i`, or (0-1) if it has none.
+#
+# Counts only ROLE_LETTER entries, so an allograph or a numeral sign sitting in
+# the middle of the table does not push every letter after it up by one. An
+# allograph folds to its base letter's position: Hebrew final mem scores 13 like
+# mem, which is what classical mispar siduri does, and Greek final sigma scores
+# 18 like sigma. A numeral sign has no position at all and reports unmapped.
+fn _ordinal_at(ms, i) {
+    var m = vec_get(ms, i);
+    var role = load64(m + 24);
+    if (role == LetterRole.ROLE_NUMERAL_SIGN) { return 0 - 1; }
+
+    var target = load64(m);
+    var tlen = load64(m + 8);
+    if (role == LetterRole.ROLE_ALLOGRAPH) {
+        target = load64(m + 32);
+        # No constructor makes an allograph without a base, but 0 is the
+        # not-found sentinel in that slot and strlen would dereference it.
+        if (target == 0) { return 0 - 1; }
+        tlen = strlen(target);
+    }
+    var pos = 0;
+    var k = 0;
+    var n = vec_len(ms);
+    while (k < n) {
+        var e = vec_get(ms, k);
+        if (load64(e + 24) == LetterRole.ROLE_LETTER) {
+            pos = pos + 1;
+            if (load64(e + 8) == tlen) {
+                if (memeq(load64(e), target, tlen) == 1) { return pos; }
+            }
+        }
+        k = k + 1;
+    }
+    return 0 - 1;
+}
+
+# Value of the `len` bytes at `ch` under one method, or (0-1) if unmapped.
+#
+# Compares in place, so `string_value_in` can walk a string without copying each
+# codepoint into a NUL-terminated buffer first — that allocated once per
+# character, and the bump allocator never frees. `_numerals_value_of_bytes`
+# exists for the same reason on the older API; keep the two in step.
+fn _char_value_bytes(ms, system, ch, len) {
+    var n = vec_len(ms);
+    var i = 0;
+    while (i < n) {
+        var m = vec_get(ms, i);
+        if (load64(m + 8) == len) {
+            if (memeq(load64(m), ch, len) == 1) {
+                if (system == NumericSystem.NUM_ORDINAL) { return _ordinal_at(ms, i); }
+                if (system == NumericSystem.NUM_REDUCED) { return _digital_root(load64(m + 16)); }
+                return load64(m + 16);
+            }
+        }
+        i = i + 1;
+    }
+    return 0 - 1;
+}
+
+fn char_value(script_code, system, ch) {
+    var sys = gematria_by_script(script_code);
+    if (sys == 0) { return 0 - 1; }
+    return _char_value_bytes(numerals_mappings(sys), system, ch, strlen(ch));
+}
+
+# Sum of a string's character values under one method. (0-1) if any character is
+# unmapped, matching `numerals_string_value`.
+fn string_value_in(script_code, system, s) {
+    var sys = gematria_by_script(script_code);
+    if (sys == 0) { return 0 - 1; }
+    var ms = numerals_mappings(sys);
+    var total = 0;
+    var p = 0;
+    var n = strlen(s);
+    while (p < n) {
+        var len = _utf8_step(s, p, n);
+        var v = _char_value_bytes(ms, system, s + p, len);
+        if (v < 0) { return 0 - 1; }
+        total = total + v;
+        p = p + len;
+    }
+    return total;
+}
+
+# Full (character, value) table for a script under one method — a vec of 16-byte
+# pairs [0]=char [8]=value, in table order. Returns an empty vec for a script with
+# no letter-value system.
+#
+# Under NUM_ORDINAL a numeral sign's slot holds the unmapped sentinel (0-1), since
+# it carries a value but no alphabet position; the pairs are not all positive.
+#
+# This BUILDS the table on every call and the bump allocator never frees, so hoist
+# it out of a loop rather than calling it per lookup. Caching it is roadmapped for
+# 2.4.x — it would make callers share the pair records, which is a semantic change
+# this release does not want to bundle.
+fn script_alphabet_values(script_code, system) {
+    var sys = gematria_by_script(script_code);
+    # Resolve before allocating: the bump allocator never frees, so a vec built
+    # on the not-found path would be a permanent leak per bad call.
+    if (sys == 0) { return vec_new(); }
+    var out = vec_new();
+    var ms = numerals_mappings(sys);
+    var n = vec_len(ms);
+    var pos = 0;
+    var i = 0;
+    while (i < n) {
+        var m = vec_get(ms, i);
+        var pair = alloc(16);
+        store64(pair, load64(m));
+        if (load64(m + 24) == LetterRole.ROLE_LETTER) { pos = pos + 1; }
+        # A letter's position is just the running count; only an allograph or a
+        # sign needs _ordinal_at's rescan, and there are at most a handful.
+        if (system == NumericSystem.NUM_ORDINAL) {
+            if (load64(m + 24) == LetterRole.ROLE_LETTER) { store64(pair + 8, pos); }
+            else { store64(pair + 8, _ordinal_at(ms, i)); }
+        }
+        elif (system == NumericSystem.NUM_REDUCED) { store64(pair + 8, _digital_root(load64(m + 16))); }
+        else { store64(pair + 8, load64(m + 16)); }
+        vec_push(out, pair);
+        i = i + 1;
+    }
+    return out;
+}
+
+var _c_gematria_hebrew = 0;
+# Standard mispar hechrachi: alef=1..tet=9, yod=10..tsadi=90, qof=100..tav=400.
+# The five final forms are appended after the 22 base letters and take the SAME
+# standard value as their base, which is ordinary gematria practice. (Mispar
+# gadol instead gives them 500-900; that is a different method, not encoded.)
+# They are allographs, not letters: the alphabet has 22 positions, and a final
+# form is where a letter stands in a word rather than a 23rd letter. So under
+# NUM_ORDINAL each folds to its base — final mem is 13, like mem — which is what
+# classical mispar siduri does.
+fn gematria_hebrew() {
+    if (_c_gematria_hebrew != 0) { return _c_gematria_hebrew; }
+    var sys = _nsys_new("Hebr", "Hebrew Gematria", NumeralSystemKind.Alphabetic);
+    _nsys_add(sys, "א", 1);
+    _nsys_add(sys, "ב", 2);
+    _nsys_add(sys, "ג", 3);
+    _nsys_add(sys, "ד", 4);
+    _nsys_add(sys, "ה", 5);
+    _nsys_add(sys, "ו", 6);
+    _nsys_add(sys, "ז", 7);
+    _nsys_add(sys, "ח", 8);
+    _nsys_add(sys, "ט", 9);
+    _nsys_add(sys, "י", 10);
+    _nsys_add(sys, "כ", 20);
+    _nsys_add(sys, "ל", 30);
+    _nsys_add(sys, "מ", 40);
+    _nsys_add(sys, "נ", 50);
+    _nsys_add(sys, "ס", 60);
+    _nsys_add(sys, "ע", 70);
+    _nsys_add(sys, "פ", 80);
+    _nsys_add(sys, "צ", 90);
+    _nsys_add(sys, "ק", 100);
+    _nsys_add(sys, "ר", 200);
+    _nsys_add(sys, "ש", 300);
+    _nsys_add(sys, "ת", 400);
+    # Final forms — same standard value as the base letter.
+    _nsys_add_variant(sys, "ך", 20, "כ");
+    _nsys_add_variant(sys, "ם", 40, "מ");
+    _nsys_add_variant(sys, "ן", 50, "נ");
+    _nsys_add_variant(sys, "ף", 80, "פ");
+    _nsys_add_variant(sys, "ץ", 90, "צ");
+    _c_gematria_hebrew = sys;
+    return _c_gematria_hebrew;
+}
+
+var _c_gematria_arabic_abjad = 0;
+# Abjadi order (abjad hawwaz hutti kalaman saafas qarashat thakhadh dazagh),
+# which is the old Semitic order, NOT the modern hija'i dictionary order. The
+# distinction matters: hija'i would give completely different values.
+#
+# This is the MASHRIQI (eastern) reckoning, the conventional default. The
+# Maghrebi/Andalusi tradition orders the last four groups sa'fad qarasat
+# thakhadh zaghash instead, which moves exactly six letters — sin 60<->shin 300,
+# sad 90<->60, dad 800<->90, zah 900<->800, ghayn 1000<->900 — and leaves the
+# other 22 identical. "Abjadi" alone does not say which, hence the name here.
+# Maghrebi sources need their own table; scoring them against this one is
+# silently wrong on those six letters and only those.
+#
+# Only the 28 letters are mapped. The orthographic forms — hamza ء, alif madda
+# آ, ta marbuta ة, alif maqsura ى — have no independent abjad value (hamza
+# counts with alif, ta marbuta as ha or ta by tradition, alif maqsura as ya), so
+# callers normalise first. Unnormalised input fails loudly: char_value returns
+# the unmapped sentinel and string_value_in propagates it for the whole string.
+fn gematria_arabic_abjad() {
+    if (_c_gematria_arabic_abjad != 0) { return _c_gematria_arabic_abjad; }
+    var sys = _nsys_new("Arab", "Arabic Abjad (Mashriqi)", NumeralSystemKind.Alphabetic);
+    _nsys_add(sys, "ا", 1);
+    _nsys_add(sys, "ب", 2);
+    _nsys_add(sys, "ج", 3);
+    _nsys_add(sys, "د", 4);
+    _nsys_add(sys, "ه", 5);
+    _nsys_add(sys, "و", 6);
+    _nsys_add(sys, "ز", 7);
+    _nsys_add(sys, "ح", 8);
+    _nsys_add(sys, "ط", 9);
+    _nsys_add(sys, "ي", 10);
+    _nsys_add(sys, "ك", 20);
+    _nsys_add(sys, "ل", 30);
+    _nsys_add(sys, "م", 40);
+    _nsys_add(sys, "ن", 50);
+    _nsys_add(sys, "س", 60);
+    _nsys_add(sys, "ع", 70);
+    _nsys_add(sys, "ف", 80);
+    _nsys_add(sys, "ص", 90);
+    _nsys_add(sys, "ق", 100);
+    _nsys_add(sys, "ر", 200);
+    _nsys_add(sys, "ش", 300);
+    _nsys_add(sys, "ت", 400);
+    _nsys_add(sys, "ث", 500);
+    _nsys_add(sys, "خ", 600);
+    _nsys_add(sys, "ذ", 700);
+    _nsys_add(sys, "ض", 800);
+    _nsys_add(sys, "ظ", 900);
+    _nsys_add(sys, "غ", 1000);
+    _c_gematria_arabic_abjad = sys;
+    return _c_gematria_arabic_abjad;
+}
+
+var _c_gematria_latin = 0;
+# a=1..z=26. Simple/ordinal gematria. Here the standard and ordinal methods
+# coincide by construction, which the tests assert — a property of this
+# alphabet, not of the API.
+#
+# Two things a cipher consumer must know. This numbering is ONE-based, whereas
+# the mod-26 arithmetic of Caesar, shift and affine ciphers is zero-based
+# (a=0..z=25); subtract one before doing that arithmetic or every result is off
+# by a letter. And the alphabet is the full 26 with i and j distinct, which
+# simple gematria requires and mod-26 invertibility depends on — the 25-letter
+# i/j merge belongs to Polybius-square ciphers (Playfair, Bifid, ADFGX), where
+# a letter's number is a row/column pair and not a value in this table at all.
+# Lookup is case-sensitive: uppercase input returns the unmapped sentinel.
+fn gematria_latin() {
+    if (_c_gematria_latin != 0) { return _c_gematria_latin; }
+    var sys = _nsys_new("Latn", "Latin Simple Gematria", NumeralSystemKind.Alphabetic);
+    _nsys_add(sys, "a", 1);
+    _nsys_add(sys, "b", 2);
+    _nsys_add(sys, "c", 3);
+    _nsys_add(sys, "d", 4);
+    _nsys_add(sys, "e", 5);
+    _nsys_add(sys, "f", 6);
+    _nsys_add(sys, "g", 7);
+    _nsys_add(sys, "h", 8);
+    _nsys_add(sys, "i", 9);
+    _nsys_add(sys, "j", 10);
+    _nsys_add(sys, "k", 11);
+    _nsys_add(sys, "l", 12);
+    _nsys_add(sys, "m", 13);
+    _nsys_add(sys, "n", 14);
+    _nsys_add(sys, "o", 15);
+    _nsys_add(sys, "p", 16);
+    _nsys_add(sys, "q", 17);
+    _nsys_add(sys, "r", 18);
+    _nsys_add(sys, "s", 19);
+    _nsys_add(sys, "t", 20);
+    _nsys_add(sys, "u", 21);
+    _nsys_add(sys, "v", 22);
+    _nsys_add(sys, "w", 23);
+    _nsys_add(sys, "x", 24);
+    _nsys_add(sys, "y", 25);
+    _nsys_add(sys, "z", 26);
+    _c_gematria_latin = sys;
+    return _c_gematria_latin;
+}
+
+var _c_gematria_cyrillic = 0;
+# Church Slavonic letter-numerals, inherited from Greek.
+#
+# The rule is POSITIONAL, not genealogical: values follow the Greek numeral
+# SEQUENCE slot by slot, including the three slots held by numeral-only signs
+# rather than letters (stigma 6, koppa 90, sampi 900). Slavic letters were
+# dropped into some of those slots and the rest of the Slavic-only letters were
+# skipped. It is tempting to state this as "only letters with a Greek ancestor
+# carry a value", and that is false — its own table refutes it: ц descends from
+# Hebrew tsade via Glagolitic, not from any Greek letter, and carries 900 in the
+# sampi slot, while ч is Slavic and carries 90 in the koppa slot. Extending this
+# table by the genealogical rule will get the extension wrong.
+#
+# Absent, and deliberately so — char_value returns the unmapped sentinel: б, ж,
+# ш, щ, ъ, ь, ы, ѣ (yat), and the big and iotated yuses ѫ ѭ ѩ. Note the
+# asymmetry that makes the yuses worth naming: little yus ѧ carries 900 in Early
+# Cyrillic while big yus carries nothing. я is absent as the modern ia-ligature;
+# for early material the glyph written for /ja/ is ѧ, which is 900.
+#
+# Scope. This is the standardised (post-1300) recension. Before roughly 1300, 90
+# is koppa ҁ and ч has no value; some Western Cyrillic varieties instead give
+# ч=60 and ҁ=90. Variant glyphs exist for two slots — 400 is у, ѹ, ѵ (izhitsa)
+# or ꙋ, and 800 is ѡ or ѿ (ot) — and only the conventional carrier is mapped
+# here. Glagolitic is a different system entirely, numbering in its own
+# alphabetical order, where buky=2 and zhivete=7 rather than nothing; it would
+# be a separate "Glag" table, not an edit to this one.
+#
+# Variant glyphs and period alternatives stay OUT of this table on purpose. It
+# is a canonical alphabet, and a decoder that must accept them wants an alias
+# map that normalises a glyph to its canonical letter before lookup.
+fn gematria_cyrillic() {
+    if (_c_gematria_cyrillic != 0) { return _c_gematria_cyrillic; }
+    var sys = _nsys_new("Cyrl", "Church Slavonic Numerals (standardised recension)", NumeralSystemKind.Alphabetic);
+    _nsys_add(sys, "а", 1);
+    _nsys_add(sys, "в", 2);
+    _nsys_add(sys, "г", 3);
+    _nsys_add(sys, "д", 4);
+    _nsys_add(sys, "є", 5);
+    _nsys_add(sys, "ѕ", 6);
+    _nsys_add(sys, "з", 7);
+    _nsys_add(sys, "и", 8);
+    _nsys_add(sys, "ѳ", 9);
+    _nsys_add(sys, "і", 10);
+    _nsys_add(sys, "к", 20);
+    _nsys_add(sys, "л", 30);
+    _nsys_add(sys, "м", 40);
+    _nsys_add(sys, "н", 50);
+    _nsys_add(sys, "ѯ", 60);
+    _nsys_add(sys, "о", 70);
+    _nsys_add(sys, "п", 80);
+    _nsys_add(sys, "ч", 90);
+    _nsys_add(sys, "р", 100);
+    _nsys_add(sys, "с", 200);
+    _nsys_add(sys, "т", 300);
+    _nsys_add(sys, "у", 400);
+    _nsys_add(sys, "ф", 500);
+    _nsys_add(sys, "х", 600);
+    _nsys_add(sys, "ѱ", 700);
+    _nsys_add(sys, "ѡ", 800);
+    _nsys_add(sys, "ц", 900);
+    _c_gematria_cyrillic = sys;
+    return _c_gematria_cyrillic;
+}

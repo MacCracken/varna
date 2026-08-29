@@ -130,11 +130,14 @@ lines of Rust removed from the tree at 2.1.4 (recoverable from git tags). See
   daimon string / `CHANGELOG [2.3.2]`); `cyrius.lock` regenerated at 6.5.35 and
   `cyrius deps --verify` clean (29 verified, 0 failed); CI runs `check.sh` + bench + distlib;
   release.yml bundles `dist/varna.cyr`.
-- **Gaps not closed by 2.3.2:** `cyrius coverage` reports 94% reference coverage
-  (317/335 fns). The 2.3.x line is complete. Four data items remain in the roadmap —
-  ATR vowel systems, the Sanskrit voiced-aspirate transcription, the Thai/Vietnamese
-  tone values, and Glottocodes (which need an authoritative source, not generation).
-  Next feature tier is 2.4.0.
+- **Gaps not closed by 2.4.0:** the four data items still stand in the roadmap's
+  `Data corrections — open` section — ATR vowel systems, the Sanskrit voiced-aspirate
+  transcription, the Thai/Vietnamese tone values, and Glottocodes (which need an
+  authoritative source, not generation). 2.4.0 added a `2.4.x` follow-on tier from its
+  own verification pass: a variant-glyph alias map (the prerequisite for early-period
+  Cyrillic), the Maghrebi abjad, Glagolitic numerals, and mispar gadol. None are
+  corrections — every shipped value was independently confirmed. Next feature tier
+  is 2.5.0.
 
 ## Dependencies
 
@@ -158,7 +161,7 @@ shabda, shabdakosh, svara, sankhya, jnana, vidya (planned: vansh, sahifa).
 
 ## Next
 
-The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis, 2.2.1 consonant secondary features, 2.2.2 vowel features, 2.2.3 distinctive features, 2.2.4 structured tone, 2.3.0 grammar expansion, 2.3.1 classification, 2.3.2 vitality and geography.
+The port shipped as 2.0.0; 2.1.1 was toolchain maintenance (Cyrius 6.5.35), 2.1.2 a hardening sweep, 2.1.3 the test-suite port, 2.1.4 the `rust-old/` removal, 2.1.5 the deferred hardening items, 2.1.6 the script registry completion, 2.2.0 the airstream axis, 2.2.1 consonant secondary features, 2.2.2 vowel features, 2.2.3 distinctive features, 2.2.4 structured tone, 2.3.0 grammar expansion, 2.3.1 classification, 2.3.2 vitality and geography, 2.4.0 gematria and numeric letter values.
 
 See the [roadmap](roadmap.md) `2.1.x — Carry-over` section for the scheduled items
 (2.1.6 script-registry completeness). In brief:

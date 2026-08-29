@@ -1,0 +1,545 @@
+# tests/gematria.tcyr — letter-value systems, added at 2.4.0.
+#
+# Four alphabets (Hebrew, Arabic abjad, Latin, Church Slavonic) plus the existing
+# Greek isopsephy, with three methods over them. Ordinal and Reduced are derived
+# from the stored Standard values rather than tabulated a second time, so the tests
+# below check the derivations against arithmetic that is independent of them:
+# a digital root computed by hand, and an ordinal counted from the alphabet's own
+# length.
+#
+# The word checks are the load-bearing ones. Gematria values are the sort of data
+# that is silently wrong forever if mistyped, so the totals for חי, אמת, بسم and
+# the Greek θεος are asserted against their well-known published values rather than
+# against anything this file computes.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/features.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+
+fn _std(script, ch) { return char_value(script, NumericSystem.NUM_STANDARD, ch); }
+fn _ord(script, ch) { return char_value(script, NumericSystem.NUM_ORDINAL, ch); }
+fn _red(script, ch) { return char_value(script, NumericSystem.NUM_REDUCED, ch); }
+
+fn main() {
+    alloc_init();
+    var i = 0;
+
+    # ---------------------------------------------------------------
+    test_group("hebrew_standard");
+    # The three ranks: units, tens, hundreds.
+    assert_eq(_std("Hebr", "א"), 1, "alef = 1");
+    assert_eq(_std("Hebr", "ט"), 9, "tet = 9");
+    assert_eq(_std("Hebr", "י"), 10, "yod = 10");
+    assert_eq(_std("Hebr", "צ"), 90, "tsadi = 90");
+    assert_eq(_std("Hebr", "ק"), 100, "qof = 100");
+    assert_eq(_std("Hebr", "ת"), 400, "tav = 400");
+    assert_eq(_std("Hebr", "ש"), 300, "shin = 300");
+    # Final forms carry the same standard value as their base letter.
+    assert_eq(_std("Hebr", "ך"), _std("Hebr", "כ"), "final kaf matches kaf");
+    assert_eq(_std("Hebr", "ם"), 40, "final mem = 40");
+    assert_eq(_std("Hebr", "ץ"), 90, "final tsadi = 90");
+    assert_eq(_std("Hebr", "Q"), 0 - 1, "a non-Hebrew character is unmapped");
+
+    # ---------------------------------------------------------------
+    test_group("hebrew_words");
+    # חי = het(8) + yod(10) = 18, the best-known gematria value there is.
+    assert_eq(string_value_in("Hebr", NumericSystem.NUM_STANDARD, "חי"), 18, "chai = 18");
+    # אמת (truth) = 1 + 40 + 400 = 441.
+    assert_eq(string_value_in("Hebr", NumericSystem.NUM_STANDARD, "אמת"), 441, "emet = 441");
+    # שלום (peace) = 300 + 30 + 6 + 40 = 376.
+    assert_eq(string_value_in("Hebr", NumericSystem.NUM_STANDARD, "שלום"), 376, "shalom = 376");
+    # An unmapped character poisons the sum, as for numerals_string_value.
+    assert_eq(string_value_in("Hebr", NumericSystem.NUM_STANDARD, "חיX"), 0 - 1, "unmapped char yields the sentinel");
+    assert_eq(string_value_in("Hebr", NumericSystem.NUM_STANDARD, ""), 0, "sum of nothing is 0");
+
+    # ---------------------------------------------------------------
+    test_group("ordinal_is_position_not_value");
+    # The whole point of deriving ordinal from position: it diverges from standard
+    # above the ninth letter.
+    assert_eq(_ord("Hebr", "א"), 1, "alef is 1st");
+    assert_eq(_ord("Hebr", "ט"), 9, "tet is 9th");
+    assert_eq(_ord("Hebr", "י"), 10, "yod is 10th");
+    assert_eq(_ord("Hebr", "כ"), 11, "kaf is 11th though its standard value is 20");
+    assert_eq(_ord("Hebr", "ק"), 19, "qof is 19th though its standard value is 100");
+    assert_eq(_ord("Hebr", "ת"), 22, "tav is 22nd, the last base letter");
+    # A final form is an allograph, not a 23rd letter, so it folds to its base
+    # letter's position - classical mispar siduri. Regression guard: deriving the
+    # ordinal from the raw table index instead gave the finals 23-27 and, in the
+    # Greek table, shifted every letter after final sigma up by one.
+    # even though they share standard values with letters earlier in the alphabet.
+    assert_eq(_ord("Hebr", "ך"), 11, "final kaf folds to the kaf position");
+    assert_eq(_ord("Hebr", "ץ"), 18, "final tsadi folds to the tsadi position");
+    assert_eq(_ord("Hebr", "ך"), _ord("Hebr", "כ"), "a final shares its base letter ordinal");
+    assert_eq(_std("Hebr", "ך"), _std("Hebr", "כ"), "even though they share a standard value");
+
+    # ---------------------------------------------------------------
+    test_group("reduced_is_digital_root");
+    # Mispar katan. For the 1/10/100 series this is the leading digit.
+    assert_eq(_red("Hebr", "א"), 1, "alef reduces to 1");
+    assert_eq(_red("Hebr", "י"), 1, "yod (10) reduces to 1");
+    assert_eq(_red("Hebr", "ק"), 1, "qof (100) reduces to 1");
+    assert_eq(_red("Hebr", "ל"), 3, "lamed (30) reduces to 3");
+    assert_eq(_red("Hebr", "ש"), 3, "shin (300) reduces to 3");
+    assert_eq(_red("Hebr", "ת"), 4, "tav (400) reduces to 4");
+    assert_eq(_red("Hebr", "צ"), 9, "tsadi (90) reduces to 9");
+    # Cross-checked against a hand-computed digital root for a non-round value:
+    # Latin z = 26 -> 2+6 = 8.
+    assert_eq(_red("Latn", "z"), 8, "z (26) reduces to 8");
+    assert_eq(_red("Latn", "s"), 1, "s (19) reduces to 1 via 1+9=10 -> 1");
+    assert_eq(_red("Latn", "r"), 9, "r (18) reduces to 9");
+
+    # ---------------------------------------------------------------
+    test_group("arabic_abjad");
+    # Abjadi order, not the modern hija'i dictionary order — the values differ
+    # completely between the two, so this is the error worth guarding.
+    assert_eq(_std("Arab", "ا"), 1, "alif = 1");
+    assert_eq(_std("Arab", "ب"), 2, "ba = 2");
+    assert_eq(_std("Arab", "ج"), 3, "jim = 3 in abjadi (it is 5th in hija'i)");
+    assert_eq(_std("Arab", "د"), 4, "dal = 4");
+    assert_eq(_std("Arab", "ي"), 10, "ya = 10");
+    assert_eq(_std("Arab", "ق"), 100, "qaf = 100");
+    assert_eq(_std("Arab", "ت"), 400, "ta = 400");
+    assert_eq(_std("Arab", "غ"), 1000, "ghayn = 1000, the highest single-letter value");
+    # بسم = ba(2) + sin(60) + mim(40) = 102.
+    assert_eq(string_value_in("Arab", NumericSystem.NUM_STANDARD, "بسم"), 102, "bism = 102");
+    assert_eq(_ord("Arab", "غ"), 28, "ghayn is the 28th and last");
+
+    # ---------------------------------------------------------------
+    test_group("latin_simple");
+    assert_eq(_std("Latn", "a"), 1, "a = 1");
+    assert_eq(_std("Latn", "z"), 26, "z = 26");
+    assert_eq(_std("Latn", "m"), 13, "m = 13");
+    # For this alphabet standard and ordinal coincide by construction — a property
+    # of a=1..z=26, not of the API. Asserted across the whole alphabet.
+    var mismatched = 0;
+    var table = script_alphabet_values("Latn", NumericSystem.NUM_STANDARD);
+    assert_eq(vec_len(table), 26, "26 Latin letters");
+    i = 0;
+    while (i < vec_len(table)) {
+        var ch = load64(vec_get(table, i));
+        if (_std("Latn", ch) != _ord("Latn", ch)) { mismatched = mismatched + 1; }
+        i = i + 1;
+    }
+    assert_eq(mismatched, 0, "standard and ordinal coincide for a=1..z=26");
+    # And they do NOT coincide for Hebrew, which is the contrast that matters.
+    assert(_std("Hebr", "ת") != _ord("Hebr", "ת"), "standard and ordinal differ for Hebrew");
+
+    # ---------------------------------------------------------------
+    test_group("church_slavonic");
+    assert_eq(_std("Cyrl", "а"), 1, "az = 1");
+    assert_eq(_std("Cyrl", "і"), 10, "i = 10");
+    assert_eq(_std("Cyrl", "р"), 100, "rtsy = 100");
+    assert_eq(_std("Cyrl", "ц"), 900, "tsy = 900");
+    # The archaic letters carry values - they hold Greek numeral-sequence slots.
+    assert_eq(_std("Cyrl", "ѕ"), 6, "dzelo = 6");
+    assert_eq(_std("Cyrl", "ѳ"), 9, "fita = 9");
+    assert_eq(_std("Cyrl", "ѯ"), 60, "ksi = 60");
+    assert_eq(_std("Cyrl", "ѱ"), 700, "psi = 700");
+    assert_eq(_std("Cyrl", "ѡ"), 800, "omega = 800");
+    # The rule is positional, not genealogical: values follow the Greek numeral
+    # SEQUENCE slots, so a letter with no Greek ancestor can still hold one.
+    assert_eq(_std("Cyrl", "ч"), 90, "chervl is Slavic yet holds the koppa slot");
+    # (tsy = 900 above is the same point: it descends from Hebrew tsade.)
+    #
+    # The Slavic-only letters that fall in no slot carry NO value and must stay
+    # unmapped rather than defaulting to something — the assertion most likely to
+    # catch a careless "fill in the whole alphabet" edit later.
+    assert_eq(_std("Cyrl", "б"), 0 - 1, "buky has no numeric value");
+    assert_eq(_std("Cyrl", "ж"), 0 - 1, "zhivete has no numeric value");
+    assert_eq(_std("Cyrl", "ш"), 0 - 1, "sha has no numeric value");
+    assert_eq(_std("Cyrl", "ю"), 0 - 1, "yu has no numeric value");
+    assert_eq(_std("Cyrl", "я"), 0 - 1, "the ya ligature has no numeric value");
+
+    # ---------------------------------------------------------------
+    test_group("greek_reuse");
+    # The existing isopsephy table serves as the Grek alphabet rather than being
+    # duplicated. θεος = 9 + 5 + 70 + 200 = 284, as tests/integration.tcyr also pins.
+    assert_eq(_std("Grek", "α"), 1, "alpha = 1");
+    assert_eq(_std("Grek", "ω"), 800, "omega = 800");
+    assert_eq(string_value_in("Grek", NumericSystem.NUM_STANDARD, "θεος"), 284, "theos = 284");
+    assert_eq(gematria_by_script("Grek"), numerals_greek_isopsephy(),
+      "the Greek alphabet is the existing isopsephy table, not a copy");
+
+    # ---------------------------------------------------------------
+    # --- 2.4.0 regressions, both found by running the code rather than reading it.
+    #
+    # Final sigma is a positional allograph of sigma, not a 25th letter. While the
+    # ordinal came from the raw table index, sitting inline at index 18 pushed
+    # every letter after it up by one: tau read 20 and omega 25.
+    assert_eq(_ord("Grek", "ς"), _ord("Grek", "σ"), "final sigma shares sigma's position");
+    assert_eq(_ord("Grek", "τ"), 19, "tau is the 19th letter");
+    assert_eq(_ord("Grek", "ω"), 24, "omega is the 24th and last letter");
+
+    # The letter run skips 6, 90 and 900; three numeral-only signs carry them.
+    # Without those the run has holes and 666 cannot be computed at all.
+    assert_eq(_std("Grek", "ϛ"), 6, "stigma = 6");
+    assert_eq(_std("Grek", "ϟ"), 90, "koppa = 90");
+    assert_eq(_std("Grek", "ϡ"), 900, "sampi = 900");
+    assert_eq(string_value_in("Grek", NumericSystem.NUM_STANDARD, "χξϛ"), 666, "chi-xi-stigma = 666");
+
+    # A numeral sign is not a letter, so it has no alphabet position and says so
+    # rather than inventing one.
+    assert_eq(_ord("Grek", "ϛ"), 0 - 1, "stigma has no ordinal");
+
+    test_group("alphabet_tables");
+    var heb = script_alphabet_values("Hebr", NumericSystem.NUM_STANDARD);
+    assert_eq(vec_len(heb), 27, "22 Hebrew letters plus 5 finals");
+    assert(streq(load64(vec_get(heb, 0)), "א"), "the table is in alphabet order");
+    assert_eq(load64(vec_get(heb, 0) + 8), 1, "and carries the standard value");
+    var heb_ord = script_alphabet_values("Hebr", NumericSystem.NUM_ORDINAL);
+    assert_eq(load64(vec_get(heb_ord, 21) + 8), 22, "the ordinal table counts positions");
+    # The two tables cover the same characters in the same order.
+    var order_mismatch = 0;
+    i = 0;
+    while (i < vec_len(heb)) {
+        if (streq(load64(vec_get(heb, i)), load64(vec_get(heb_ord, i))) == 0) {
+            order_mismatch = order_mismatch + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(order_mismatch, 0, "every method yields the same characters in the same order");
+    assert_eq(vec_len(script_alphabet_values("Zzzz", NumericSystem.NUM_STANDARD)), 0,
+      "a script with no letter-value system yields an empty table");
+    assert_eq(gematria_by_script("Zzzz"), 0, "and no alphabet");
+    assert_eq(char_value("Zzzz", NumericSystem.NUM_STANDARD, "a"), 0 - 1, "and no value");
+
+    # ---------------------------------------------------------------
+    # ---------------------------------------------------------------
+    # string_value_in takes a `system`, and until 2.4.0's review every call site
+    # in this file passed NUM_STANDARD — hardcoding the literal inside the
+    # function kept the whole suite green. These pin the other two modes.
+    test_group("string_value_in_honours_its_system");
+    assert_eq(string_value_in("Hebr", NumericSystem.NUM_ORDINAL, "אמת"), 36, "emet ordinal 1+13+22");
+    assert_eq(string_value_in("Hebr", NumericSystem.NUM_REDUCED, "אמת"), 9, "emet reduced 1+4+4");
+    # shalom ends in final mem, so this also pins the fold through the string API
+    assert_eq(string_value_in("Hebr", NumericSystem.NUM_ORDINAL, "שלום"), 52, "shalom ordinal, final mem folds to mem");
+    assert_eq(string_value_in("Grek", NumericSystem.NUM_ORDINAL, "θεος"), 46, "theos ordinal 8+5+15+18");
+    # The whole point of the role model, through the string API: a numeral sign
+    # carries a value but holds no alphabet position, so an ordinal sum is unmapped.
+    assert_eq(string_value_in("Grek", NumericSystem.NUM_ORDINAL, "χξϛ"), 0 - 1, "a numeral sign has no ordinal");
+    assert_eq(string_value_in("Grek", NumericSystem.NUM_STANDARD, "χξϛ"), 666, "but it does have a value");
+
+    # script_alphabet_values re-derives reduced independently of char_value, so
+    # its branch needs its own assertion or the two copies can drift.
+    var heb_red = script_alphabet_values("Hebr", NumericSystem.NUM_REDUCED);
+    assert_eq(load64(vec_get(heb_red, 21) + 8), 4, "tav 400 reduces to 4 in the table too");
+    var heb_ord2 = script_alphabet_values("Hebr", NumericSystem.NUM_ORDINAL);
+    assert_eq(load64(vec_get(heb_ord2, 22) + 8), 11, "final kaf folds in the table too");
+    var gk_ord = script_alphabet_values("Grek", NumericSystem.NUM_ORDINAL);
+    assert_eq(load64(vec_get(gk_ord, 5) + 8), 0 - 1, "stigma has no position in the table either");
+
+    # The accessors are the published way to read a mapping; decode one of each
+    # role so a wrong offset cannot ship unnoticed.
+    var gk_ms = numerals_mappings(numerals_greek_isopsephy());
+    var m_sigma = vec_get(gk_ms, 19);
+    var m_final = vec_get(gk_ms, 20);
+    var m_stigma = vec_get(gk_ms, 5);
+    assert(streq(numerals_mapping_char(m_sigma), "σ") == 1, "accessor reads the character");
+    assert_eq(numerals_mapping_len(m_sigma), 2, "accessor reads the cached byte length");
+    assert_eq(numerals_mapping_value(m_sigma), 200, "accessor reads the value");
+    assert_eq(numerals_mapping_role(m_sigma), LetterRole.ROLE_LETTER, "sigma is a letter");
+    assert_eq(numerals_mapping_base(m_sigma), 0, "a letter has no base");
+    assert_eq(numerals_mapping_role(m_final), LetterRole.ROLE_ALLOGRAPH, "final sigma is an allograph");
+    assert(streq(numerals_mapping_base(m_final), "σ") == 1, "and its base is sigma");
+    assert_eq(numerals_mapping_role(m_stigma), LetterRole.ROLE_NUMERAL_SIGN, "stigma is a numeral sign");
+
+    # ---------------------------------------------------------------
+    # Every one of the 136 values, pinned individually.
+    #
+    # The corpus sweep above checks structure — that positions run 1..N, that
+    # reduced lands in 1-9 — and a sweep cannot notice that two letters swapped
+    # values, because the multiset is unchanged and every rung still resolves.
+    # Only per-letter expected values catch a transposition, and a gematria table
+    # is exactly the kind of data that is silently wrong forever once mistyped.
+    # These expectations are written from the canonical sources, not read back
+    # from the tables they check.
+    # ---------------------------------------------------------------
+    # The bump allocator never frees, so a per-character alloc on a public path
+    # is a permanent leak, not a temporary. 2.4.0 shipped one here at first:
+    # string_value_in cut a NUL-terminated copy of every codepoint just to call
+    # char_value, burning 8 B per character per call — the exact pattern
+    # _numerals_value_of_bytes had already been written to remove. Assertions
+    # cannot see a leak, and no benchmark row covered this surface, so it took an
+    # allocation measurement to find. This is that measurement, kept.
+    test_group("string_walk_allocates_nothing");
+    var warm1 = string_value_in("Hebr", NumericSystem.NUM_STANDARD, "שלום");
+    var warm2 = string_value_in("Hebr", NumericSystem.NUM_STANDARD, "שלוםX");
+    var warm3 = char_value("Hebr", NumericSystem.NUM_ORDINAL, "ם");
+    var a0 = alloc_used();
+    i = 0;
+    while (i < 1000) {
+        var lv = string_value_in("Hebr", NumericSystem.NUM_STANDARD, "שלום");
+        i = i + 1;
+    }
+    assert_eq(alloc_used() - a0, 0, "string_value_in allocates nothing per call");
+    # The failure path allocated too, because the copies were cut before the
+    # unmapped character was reached.
+    var b0 = alloc_used();
+    i = 0;
+    while (i < 1000) {
+        var lf = string_value_in("Hebr", NumericSystem.NUM_STANDARD, "שלוםX");
+        i = i + 1;
+    }
+    assert_eq(alloc_used() - b0, 0, "nor on the unmapped-character path");
+    var c0 = alloc_used();
+    i = 0;
+    while (i < 1000) {
+        var lo = char_value("Hebr", NumericSystem.NUM_ORDINAL, "ם");
+        i = i + 1;
+    }
+    assert_eq(alloc_used() - c0, 0, "nor does the ordinal lookup, which rescans");
+
+    test_group("every_value_pinned");
+    # Hebrew mispar hechrachi — 27 values
+    assert_eq(_std("Hebr", "א"), 1, "Hebr א = 1");
+    assert_eq(_std("Hebr", "ב"), 2, "Hebr ב = 2");
+    assert_eq(_std("Hebr", "ג"), 3, "Hebr ג = 3");
+    assert_eq(_std("Hebr", "ד"), 4, "Hebr ד = 4");
+    assert_eq(_std("Hebr", "ה"), 5, "Hebr ה = 5");
+    assert_eq(_std("Hebr", "ו"), 6, "Hebr ו = 6");
+    assert_eq(_std("Hebr", "ז"), 7, "Hebr ז = 7");
+    assert_eq(_std("Hebr", "ח"), 8, "Hebr ח = 8");
+    assert_eq(_std("Hebr", "ט"), 9, "Hebr ט = 9");
+    assert_eq(_std("Hebr", "י"), 10, "Hebr י = 10");
+    assert_eq(_std("Hebr", "כ"), 20, "Hebr כ = 20");
+    assert_eq(_std("Hebr", "ל"), 30, "Hebr ל = 30");
+    assert_eq(_std("Hebr", "מ"), 40, "Hebr מ = 40");
+    assert_eq(_std("Hebr", "נ"), 50, "Hebr נ = 50");
+    assert_eq(_std("Hebr", "ס"), 60, "Hebr ס = 60");
+    assert_eq(_std("Hebr", "ע"), 70, "Hebr ע = 70");
+    assert_eq(_std("Hebr", "פ"), 80, "Hebr פ = 80");
+    assert_eq(_std("Hebr", "צ"), 90, "Hebr צ = 90");
+    assert_eq(_std("Hebr", "ק"), 100, "Hebr ק = 100");
+    assert_eq(_std("Hebr", "ר"), 200, "Hebr ר = 200");
+    assert_eq(_std("Hebr", "ש"), 300, "Hebr ש = 300");
+    assert_eq(_std("Hebr", "ת"), 400, "Hebr ת = 400");
+    assert_eq(_std("Hebr", "ך"), 20, "Hebr ך = 20");
+    assert_eq(_std("Hebr", "ם"), 40, "Hebr ם = 40");
+    assert_eq(_std("Hebr", "ן"), 50, "Hebr ן = 50");
+    assert_eq(_std("Hebr", "ף"), 80, "Hebr ף = 80");
+    assert_eq(_std("Hebr", "ץ"), 90, "Hebr ץ = 90");
+    # Arabic Mashriqi abjadi — 28 values
+    assert_eq(_std("Arab", "ا"), 1, "Arab ا = 1");
+    assert_eq(_std("Arab", "ب"), 2, "Arab ب = 2");
+    assert_eq(_std("Arab", "ج"), 3, "Arab ج = 3");
+    assert_eq(_std("Arab", "د"), 4, "Arab د = 4");
+    assert_eq(_std("Arab", "ه"), 5, "Arab ه = 5");
+    assert_eq(_std("Arab", "و"), 6, "Arab و = 6");
+    assert_eq(_std("Arab", "ز"), 7, "Arab ز = 7");
+    assert_eq(_std("Arab", "ح"), 8, "Arab ح = 8");
+    assert_eq(_std("Arab", "ط"), 9, "Arab ط = 9");
+    assert_eq(_std("Arab", "ي"), 10, "Arab ي = 10");
+    assert_eq(_std("Arab", "ك"), 20, "Arab ك = 20");
+    assert_eq(_std("Arab", "ل"), 30, "Arab ل = 30");
+    assert_eq(_std("Arab", "م"), 40, "Arab م = 40");
+    assert_eq(_std("Arab", "ن"), 50, "Arab ن = 50");
+    assert_eq(_std("Arab", "س"), 60, "Arab س = 60");
+    assert_eq(_std("Arab", "ع"), 70, "Arab ع = 70");
+    assert_eq(_std("Arab", "ف"), 80, "Arab ف = 80");
+    assert_eq(_std("Arab", "ص"), 90, "Arab ص = 90");
+    assert_eq(_std("Arab", "ق"), 100, "Arab ق = 100");
+    assert_eq(_std("Arab", "ر"), 200, "Arab ر = 200");
+    assert_eq(_std("Arab", "ش"), 300, "Arab ش = 300");
+    assert_eq(_std("Arab", "ت"), 400, "Arab ت = 400");
+    assert_eq(_std("Arab", "ث"), 500, "Arab ث = 500");
+    assert_eq(_std("Arab", "خ"), 600, "Arab خ = 600");
+    assert_eq(_std("Arab", "ذ"), 700, "Arab ذ = 700");
+    assert_eq(_std("Arab", "ض"), 800, "Arab ض = 800");
+    assert_eq(_std("Arab", "ظ"), 900, "Arab ظ = 900");
+    assert_eq(_std("Arab", "غ"), 1000, "Arab غ = 1000");
+    # Latin simple gematria — 26 values
+    assert_eq(_std("Latn", "a"), 1, "Latn a = 1");
+    assert_eq(_std("Latn", "b"), 2, "Latn b = 2");
+    assert_eq(_std("Latn", "c"), 3, "Latn c = 3");
+    assert_eq(_std("Latn", "d"), 4, "Latn d = 4");
+    assert_eq(_std("Latn", "e"), 5, "Latn e = 5");
+    assert_eq(_std("Latn", "f"), 6, "Latn f = 6");
+    assert_eq(_std("Latn", "g"), 7, "Latn g = 7");
+    assert_eq(_std("Latn", "h"), 8, "Latn h = 8");
+    assert_eq(_std("Latn", "i"), 9, "Latn i = 9");
+    assert_eq(_std("Latn", "j"), 10, "Latn j = 10");
+    assert_eq(_std("Latn", "k"), 11, "Latn k = 11");
+    assert_eq(_std("Latn", "l"), 12, "Latn l = 12");
+    assert_eq(_std("Latn", "m"), 13, "Latn m = 13");
+    assert_eq(_std("Latn", "n"), 14, "Latn n = 14");
+    assert_eq(_std("Latn", "o"), 15, "Latn o = 15");
+    assert_eq(_std("Latn", "p"), 16, "Latn p = 16");
+    assert_eq(_std("Latn", "q"), 17, "Latn q = 17");
+    assert_eq(_std("Latn", "r"), 18, "Latn r = 18");
+    assert_eq(_std("Latn", "s"), 19, "Latn s = 19");
+    assert_eq(_std("Latn", "t"), 20, "Latn t = 20");
+    assert_eq(_std("Latn", "u"), 21, "Latn u = 21");
+    assert_eq(_std("Latn", "v"), 22, "Latn v = 22");
+    assert_eq(_std("Latn", "w"), 23, "Latn w = 23");
+    assert_eq(_std("Latn", "x"), 24, "Latn x = 24");
+    assert_eq(_std("Latn", "y"), 25, "Latn y = 25");
+    assert_eq(_std("Latn", "z"), 26, "Latn z = 26");
+    # Church Slavonic — 27 values
+    assert_eq(_std("Cyrl", "а"), 1, "Cyrl а = 1");
+    assert_eq(_std("Cyrl", "в"), 2, "Cyrl в = 2");
+    assert_eq(_std("Cyrl", "г"), 3, "Cyrl г = 3");
+    assert_eq(_std("Cyrl", "д"), 4, "Cyrl д = 4");
+    assert_eq(_std("Cyrl", "є"), 5, "Cyrl є = 5");
+    assert_eq(_std("Cyrl", "ѕ"), 6, "Cyrl ѕ = 6");
+    assert_eq(_std("Cyrl", "з"), 7, "Cyrl з = 7");
+    assert_eq(_std("Cyrl", "и"), 8, "Cyrl и = 8");
+    assert_eq(_std("Cyrl", "ѳ"), 9, "Cyrl ѳ = 9");
+    assert_eq(_std("Cyrl", "і"), 10, "Cyrl і = 10");
+    assert_eq(_std("Cyrl", "к"), 20, "Cyrl к = 20");
+    assert_eq(_std("Cyrl", "л"), 30, "Cyrl л = 30");
+    assert_eq(_std("Cyrl", "м"), 40, "Cyrl м = 40");
+    assert_eq(_std("Cyrl", "н"), 50, "Cyrl н = 50");
+    assert_eq(_std("Cyrl", "ѯ"), 60, "Cyrl ѯ = 60");
+    assert_eq(_std("Cyrl", "о"), 70, "Cyrl о = 70");
+    assert_eq(_std("Cyrl", "п"), 80, "Cyrl п = 80");
+    assert_eq(_std("Cyrl", "ч"), 90, "Cyrl ч = 90");
+    assert_eq(_std("Cyrl", "р"), 100, "Cyrl р = 100");
+    assert_eq(_std("Cyrl", "с"), 200, "Cyrl с = 200");
+    assert_eq(_std("Cyrl", "т"), 300, "Cyrl т = 300");
+    assert_eq(_std("Cyrl", "у"), 400, "Cyrl у = 400");
+    assert_eq(_std("Cyrl", "ф"), 500, "Cyrl ф = 500");
+    assert_eq(_std("Cyrl", "х"), 600, "Cyrl х = 600");
+    assert_eq(_std("Cyrl", "ѱ"), 700, "Cyrl ѱ = 700");
+    assert_eq(_std("Cyrl", "ѡ"), 800, "Cyrl ѡ = 800");
+    assert_eq(_std("Cyrl", "ц"), 900, "Cyrl ц = 900");
+    # Greek isopsephy — 28 values
+    assert_eq(_std("Grek", "α"), 1, "Grek α = 1");
+    assert_eq(_std("Grek", "β"), 2, "Grek β = 2");
+    assert_eq(_std("Grek", "γ"), 3, "Grek γ = 3");
+    assert_eq(_std("Grek", "δ"), 4, "Grek δ = 4");
+    assert_eq(_std("Grek", "ε"), 5, "Grek ε = 5");
+    assert_eq(_std("Grek", "ϛ"), 6, "Grek ϛ = 6");
+    assert_eq(_std("Grek", "ζ"), 7, "Grek ζ = 7");
+    assert_eq(_std("Grek", "η"), 8, "Grek η = 8");
+    assert_eq(_std("Grek", "θ"), 9, "Grek θ = 9");
+    assert_eq(_std("Grek", "ι"), 10, "Grek ι = 10");
+    assert_eq(_std("Grek", "κ"), 20, "Grek κ = 20");
+    assert_eq(_std("Grek", "λ"), 30, "Grek λ = 30");
+    assert_eq(_std("Grek", "μ"), 40, "Grek μ = 40");
+    assert_eq(_std("Grek", "ν"), 50, "Grek ν = 50");
+    assert_eq(_std("Grek", "ξ"), 60, "Grek ξ = 60");
+    assert_eq(_std("Grek", "ο"), 70, "Grek ο = 70");
+    assert_eq(_std("Grek", "π"), 80, "Grek π = 80");
+    assert_eq(_std("Grek", "ϟ"), 90, "Grek ϟ = 90");
+    assert_eq(_std("Grek", "ρ"), 100, "Grek ρ = 100");
+    assert_eq(_std("Grek", "σ"), 200, "Grek σ = 200");
+    assert_eq(_std("Grek", "ς"), 200, "Grek ς = 200");
+    assert_eq(_std("Grek", "τ"), 300, "Grek τ = 300");
+    assert_eq(_std("Grek", "υ"), 400, "Grek υ = 400");
+    assert_eq(_std("Grek", "φ"), 500, "Grek φ = 500");
+    assert_eq(_std("Grek", "χ"), 600, "Grek χ = 600");
+    assert_eq(_std("Grek", "ψ"), 700, "Grek ψ = 700");
+    assert_eq(_std("Grek", "ω"), 800, "Grek ω = 800");
+    assert_eq(_std("Grek", "ϡ"), 900, "Grek ϡ = 900");
+
+    test_group("corpus_wide");
+    var scripts = gematria_all_scripts();
+    assert_eq(vec_len(scripts), 5, "5 scripts carry letter values");
+    # Every advertised script resolves, and every one of its letters has a value
+    # under all three methods.
+    var unresolved = 0;
+    var bad = 0;
+    var total_entries = 0;
+    var gaps = 0;
+    var sizes = vec_new();
+    i = 0;
+    while (i < vec_len(scripts)) {
+        var code = vec_get(scripts, i);
+        if (gematria_by_script(code) == 0) { unresolved = unresolved + 1; }
+        var tbl = script_alphabet_values(code, NumericSystem.NUM_STANDARD);
+        var n = vec_len(tbl);
+        var max_ord = 0;
+        var j = 0;
+        while (j < n) {
+            var c = load64(vec_get(tbl, j));
+            total_entries = total_entries + 1;
+            if (_std(code, c) < 1) { bad = bad + 1; }
+            if (_red(code, c) < 1) { bad = bad + 1; }
+            if (_red(code, c) > 9) { bad = bad + 1; }
+            # An ordinal is either a real alphabet position or the unmapped
+            # sentinel for a numeral-only sign. Nothing else, and never 0.
+            var o = _ord(code, c);
+            if (o == 0) { bad = bad + 1; }
+            if (o < 0 - 1) { bad = bad + 1; }
+            if (o > n) { bad = bad + 1; }
+            if (o > max_ord) { max_ord = o; }
+            j = j + 1;
+        }
+        # The positions must run 1..max with no holes. This is what actually
+        # catches an ordinal shift: the old index-based derivation passed a
+        # per-entry range check and still had tau at 20, but a hole or a
+        # duplicate shows up here immediately.
+        var v = 1;
+        while (v <= max_ord) {
+            var seen = 0;
+            var k = 0;
+            while (k < n) {
+                if (_ord(code, load64(vec_get(tbl, k))) == v) { seen = seen + 1; }
+                k = k + 1;
+            }
+            if (seen == 0) { gaps = gaps + 1; }
+            v = v + 1;
+        }
+        vec_push(sizes, max_ord);
+        i = i + 1;
+    }
+    assert_eq(unresolved, 0, "every advertised script resolves to an alphabet");
+    assert_eq(bad, 0, "every entry has a positive standard, a 1-9 reduced, and a valid ordinal");
+    assert_eq(gaps, 0, "alphabet positions run 1..N with no holes in any script");
+    assert_eq(total_entries, 136, "136 mapped characters across the five scripts");
+
+    # Alphabet sizes, counted as POSITIONS rather than table entries: allographs
+    # and numeral signs are mapped but hold no position of their own. These are
+    # the MAXIMUM position in each table, not the last letter's - a last-letter
+    # check passes even when an allograph is wrongly given a position of its own
+    # after it, which is exactly how the Hebrew finals could regress unnoticed.
+    assert_eq(vec_len(sizes), 5, "one size per script, in gematria_all_scripts order");
+    assert_eq(vec_get(sizes, 0), 22, "the Hebrew alphabet has 22 positions");
+    assert_eq(vec_get(sizes, 1), 28, "the Arabic abjad has 28 positions");
+    assert_eq(vec_get(sizes, 2), 26, "the Latin alphabet has 26 positions");
+    assert_eq(vec_get(sizes, 3), 27, "the Church Slavonic table has 27 positions");
+    assert_eq(vec_get(sizes, 4), 24, "the Greek alphabet has 24 positions");
+
+    # Every Hebrew final folds - all five, so no single one can regress alone.
+    assert_eq(_ord("Hebr", "ך"), _ord("Hebr", "כ"), "final kaf folds to kaf");
+    assert_eq(_ord("Hebr", "ם"), _ord("Hebr", "מ"), "final mem folds to mem");
+    assert_eq(_ord("Hebr", "ן"), _ord("Hebr", "נ"), "final nun folds to nun");
+    assert_eq(_ord("Hebr", "ף"), _ord("Hebr", "פ"), "final pe folds to pe");
+    assert_eq(_ord("Hebr", "ץ"), _ord("Hebr", "צ"), "final tsadi folds to tsadi");
+    # Every script referenced here is a real registered script.
+    var unregistered = 0;
+    i = 0;
+    while (i < vec_len(scripts)) {
+        if (script_by_code(vec_get(scripts, i)) == 0) { unregistered = unregistered + 1; }
+        i = i + 1;
+    }
+    assert_eq(unregistered, 0, "every gematria script is a registered ISO 15924 script");
+
+    # ---------------------------------------------------------------
+    test_group("existing_numerals_unchanged");
+    # The 2.4.0 additions must not disturb the five numeral systems already here.
+    assert_eq(numerals_value_of(numerals_devanagari_digits(), "०"), 0, "Devanagari zero");
+    assert_eq(numerals_value_of(numerals_greek_isopsephy(), "π"), 80, "Greek pi");
+    assert_eq(numerals_string_value(numerals_greek_isopsephy(), "θεος"), 284, "isopsephy still sums");
+    assert_eq(numerals_char_for(numerals_greek_isopsephy(), 0), 0, "Greek has no zero");
+    assert_eq(vec_len(numerals_mappings(numerals_babylonian_sexagesimal())), 12, "Babylonian intact");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

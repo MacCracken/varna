@@ -7,6 +7,147 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-08-28
+
+Gematria and numeric letter values: a unified character-to-number layer across five
+scripts, and the fix for two defects it uncovered in the Greek table that has been
+shipping since the port. Additive, plus a large speedup on numeral lookup.
+
+### Added
+
+- **numerals** — `NumericSystem` (`NUM_STANDARD` / `NUM_ORDINAL` / `NUM_REDUCED`)
+  and a unified lookup across scripts: `char_value(script, system, ch)`,
+  `string_value_in(script, system, s)`, `script_alphabet_values(script, system)`,
+  `gematria_by_script(code)` and `gematria_all_scripts()`. 136 mapped characters
+  over Hebrew, Arabic, Latin, Church Slavonic and Greek.
+
+- **Four alphabet tables** — Hebrew mispar hechrachi (22 letters + 5 finals),
+  Arabic abjad in **Mashriqi** reckoning (28, abjadi order, not hija'i), Latin
+  simple gematria (a=1..z=26), and Church Slavonic (27, standardised recension).
+  Greek **reuses** `numerals_greek_isopsephy` rather than copying it — a test
+  asserts the identity, so the two can never drift.
+
+- Only `NUM_STANDARD` is stored. Ordinal is derived from alphabet position and
+  reduced is the standard value's digital root, so neither can drift from the
+  values they describe. The roadmap also listed an "Additive" `NumericSystem`
+  value; it was **not added**, because it describes how a system combines values
+  across a string rather than a per-character method, and that axis already
+  exists as `NumeralSystemKind`.
+
+- **`LetterRole`** on every `NumeralMapping` — `ROLE_LETTER`, `ROLE_ALLOGRAPH`
+  (a positional variant such as Greek ς or the Hebrew finals) and
+  `ROLE_NUMERAL_SIGN` (a value-bearing sign that is not a letter). Accessors
+  `numerals_mapping_char` / `_len` / `_value` / `_role` / `_base`.
+
+- **tests/gematria.tcyr** — 265 assertions. Every one of the 136 values is pinned
+  individually against the canonical sources, because a structural sweep cannot
+  see two letters swapping values: the multiset is unchanged and every rung still
+  resolves. Plus the derivation rules, the absences, the Greek reuse identity,
+  the accessors at each role, and a corpus sweep that pins each alphabet's size
+  as its **maximum** position rather than its last letter's.
+
+- **An allocation assertion**, not just a benchmark — `string_value_in` and
+  `char_value` are measured with `alloc_used()` deltas over 1,000 calls and must
+  come back at exactly 0 bytes on the success path, the unmapped-character path,
+  and the rescanning ordinal path. Assertions cannot see a leak and this release
+  shipped one during development (below); a measurement is the only thing that
+  catches it.
+
+- **Four benchmark rows** for the new surface — `gematria_char_value`,
+  `gematria_char_value_ordinal`, `gematria_string_value_in` and
+  `gematria_alphabet_table`. None of 2.4.0's public API had a row, so the
+  benchmark gate could not have seen a regression in it.
+
+### Fixed
+
+- **Greek ordinals were shifted from tau to omega.** Final sigma sat inline in
+  the isopsephy table, and the ordinal was derived from a mapping's raw vec
+  index — so ς claimed a position of its own and every letter after it read one
+  too high (τ=20, ω=25). ς is a positional allograph of σ, not a 25th letter.
+  Now τ=19 and ω=24, and ς folds to σ's position.
+
+- **Greek could not compute 666.** The letter run skips 6, 90 and 900 because
+  those values belong to three numeral-only signs — stigma ϛ, koppa ϟ, sampi ϡ —
+  which were absent entirely, so `χξϛ` returned the unmapped sentinel. All three
+  are now mapped as `ROLE_NUMERAL_SIGN`, giving a complete 1..900 run.
+
+- **The root cause of both**, rather than the two symptoms: deriving an ordinal
+  from a raw table index assumes every entry occupies an alphabet position.
+  `_ordinal_at` now counts only `ROLE_LETTER` entries. A consequence is that the
+  Hebrew finals fold to their base letter's position (final mem is 13, like mem),
+  which is what classical mispar siduri does; they previously read 23-27.
+
+- **The architecture overview's numeral table listed systems that do not exist**,
+  predating this release: "Arabic-Indic Digits" and "Egyptian Fractions" were never
+  in the code (`Arab` is the abjad; `Egyp` is Hieroglyphic Numerals), and Chinese
+  rod numerals were missing entirely. Corrected against the constructors, and the
+  usage guide's new gematria examples are executed as assertions rather than
+  written by hand.
+
+- **A per-character allocation leak in `string_value_in`**, introduced earlier in
+  this release and caught before it shipped. It cut a NUL-terminated copy of every
+  codepoint purely to call `char_value`, burning 8 B per character per call — on
+  the failure path too, since the copies were made before the unmapped character
+  was reached. The bump allocator never frees, so that is permanent, unbounded in
+  string length, and the exact pattern `_numerals_value_of_bytes` already existed
+  to remove. `_char_value_bytes` now compares in place, and `string_value_in`
+  resolves the script once instead of once per character.
+
+- **`_ordinal_at` would have dereferenced a null base.** No constructor produces
+  an allograph without one, but 0 is the not-found sentinel in that slot and
+  `strlen` would have followed it. Guarded.
+
+- **`script_alphabet_values` allocated before checking its sentinel**, leaking a
+  vec on every not-found call.
+
+- **Church Slavonic rationale was wrong in a way that would propagate.** The
+  comment claimed only letters with a Greek ancestor carry a value. Its own table
+  refutes that: ц descends from Hebrew tsade and carries 900, and ч is Slavic and
+  carries 90. The rule is positional — values follow the Greek numeral *sequence*
+  slots, including those held by stigma, koppa and sampi. The wrong rule had been
+  mirrored into the tests, so it is corrected in both places and both
+  counterexamples are now asserted. No value changed.
+
+### Changed
+
+- `NumeralMapping` grew 16 B → 40 B: `[0]=char [8]=len [16]=value [24]=role
+  [32]=base`. All five fields have accessors; nothing outside `numerals.cyr`
+  decodes the record by offset any more.
+
+- The Arabic and Church Slavonic records now **name their recension**
+  ("Arabic Abjad (Mashriqi)", "Church Slavonic Numerals (standardised
+  recension)"). "Abjadi" alone is ambiguous: the Maghrebi tradition moves exactly
+  six letters, and scoring a Maghrebi source against a Mashriqi table is silently
+  wrong on those six and only those. Documented, not encoded — variant glyphs and
+  period alternatives (izhitsa, ot, koppa-for-90, Glagolitic) stay out of the
+  canonical tables, because the mappings vec is also the ordinal source and an
+  inline variant corrupts every position after it. That is not hypothetical: it
+  is exactly what final sigma did to Greek.
+
+### Performance
+
+- **Numeral lookup is ~40% faster.** The scan called `strlen()` on each stored
+  character once per entry per lookup — recomputing a constant. The byte length
+  is now cached at construction, so the scan compares an integer before touching
+  memory. Measured over 4 interleaved rounds, non-overlapping spreads:
+  - `numeral_value_of_char` 279ns → 168ns (**-39.8%**), spreads 279-295 / 168-179
+  - `numeral_string_value_word` 892ns → 555ns (**-37.8%**), spreads 892-939 / 555-588
+
+  This is a net win despite the Greek table growing by three entries, which adds
+  a comparison to every lookup that scans past stigma or koppa.
+
+- **The string walk is 25.8% faster** than the leaking version it replaced, since
+  removing the per-character copy also collapsed a per-character script lookup to
+  once per string. Interleaved, 3 rounds, non-overlapping spreads:
+  `gematria_string_value_in` 1012ns → 751ns, spreads 1012-1049 / 751-764.
+  `gematria_char_value` is unchanged at 262-266ns, as expected — its path did not
+  move.
+
+- **The ordinal table build is no longer quadratic.** `script_alphabet_values`
+  called `_ordinal_at`, itself a full rescan, once per entry. Letters now take a
+  running counter and only allographs and numeral signs — at most a handful per
+  table — still rescan.
+
 ## [2.3.2] - 2026-08-28
 
 Final slice of the 2.3.x Typological Depth line: vitality and geography on every

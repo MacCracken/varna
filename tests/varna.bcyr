@@ -61,6 +61,12 @@ fn b_script_contains_codepoint() { script_contains_codepoint(_b_deva, 0x0915); r
 fn b_translit_deva_char() { translit_char(_b_iast, "क"); return 0; }
 fn b_translit_greek_word() { translit_apply(_b_beta, "φιλοσοφια"); return 0; }
 fn b_numeral_value_of() { numerals_value_of(_b_iso, "π"); return 0; }
+# 2.4.0 shipped char_value/string_value_in/script_alphabet_values with no bench
+# row, so the gate never saw a per-character allocation leak in the string walk.
+fn b_char_value() { char_value("Hebr", NumericSystem.NUM_STANDARD, "ש"); return 0; }
+fn b_char_value_ordinal() { char_value("Hebr", NumericSystem.NUM_ORDINAL, "ם"); return 0; }
+fn b_string_value_in() { string_value_in("Hebr", NumericSystem.NUM_STANDARD, "שלום"); return 0; }
+fn b_script_alphabet_values() { script_alphabet_values("Grek", NumericSystem.NUM_ORDINAL); return 0; }
 fn b_numeral_string_value() { numerals_string_value(_b_iso, "θεος"); return 0; }
 fn b_grammar_lookup() { grammar_by_code("ru"); return 0; }
 fn b_swadesh_lookup() { swadesh_by_code("ja"); return 0; }
@@ -101,6 +107,10 @@ fn main() {
     _bench(benches, "transliterate_greek_word", &b_translit_greek_word, 100000);
     _bench(benches, "numeral_value_of_char", &b_numeral_value_of, 1000000);
     _bench(benches, "numeral_string_value_word", &b_numeral_string_value, 1000000);
+    _bench(benches, "gematria_char_value", &b_char_value, 1000000);
+    _bench(benches, "gematria_char_value_ordinal", &b_char_value_ordinal, 1000000);
+    _bench(benches, "gematria_string_value_in", &b_string_value_in, 1000000);
+    _bench(benches, "gematria_alphabet_table", &b_script_alphabet_values, 100000);
     _bench(benches, "grammar_by_code_lookup", &b_grammar_lookup, 1000000);
     _bench(benches, "swadesh_by_code_lookup", &b_swadesh_lookup, 100000);
     _bench(benches, "lexicon_find_word", &b_lexicon_find, 1000000);

@@ -14,7 +14,7 @@ Depend on varna from another Cyrius project via `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.3.2"
+tag = "2.4.0"
 modules = ["dist/varna.cyr"]
 ```
 
@@ -159,6 +159,49 @@ assert(streq(numerals_char_for(bab, 30), "𒌍"));
 ```
 
 Also available: `numerals_egyptian_hieroglyphic()`, `numerals_chinese_rod()`.
+
+### Gematria — letter values across scripts
+
+`char_value` is the unified lookup: pick a script and a method, get a number.
+
+```cyrius
+# Standard values — the letter's own numeral
+assert(char_value("Hebr", NumericSystem.NUM_STANDARD, "ת") == 400);
+assert(char_value("Arab", NumericSystem.NUM_STANDARD, "غ") == 1000);
+assert(char_value("Grek", NumericSystem.NUM_STANDARD, "ω") == 800);
+
+# Whole words
+assert(string_value_in("Hebr", NumericSystem.NUM_STANDARD, "חי") == 18);
+assert(string_value_in("Grek", NumericSystem.NUM_STANDARD, "χξϛ") == 666);
+
+# Ordinal is the letter's POSITION; reduced is the standard value's digital root
+assert(char_value("Hebr", NumericSystem.NUM_ORDINAL, "ת") == 22);
+assert(char_value("Hebr", NumericSystem.NUM_REDUCED, "ת") == 4);   # 400 -> 4
+
+# The full table for a script, in alphabet order: 16-byte [0]=char [8]=value pairs
+var tbl = script_alphabet_values("Latn", NumericSystem.NUM_STANDARD);
+assert(vec_len(tbl) == 26);
+```
+
+Five scripts carry letter values — `gematria_all_scripts()` lists them: `Hebr`,
+`Arab`, `Latn`, `Cyrl`, `Grek`. An unmapped character returns `(0 - 1)`, and
+`string_value_in` propagates that for the whole string rather than silently
+skipping it, so unnormalised input fails loudly.
+
+Three things to know before wiring this to a cipher:
+
+- **Ordinal is one-based**, while the mod-26 arithmetic of Caesar, shift and
+  affine ciphers is zero-based. Subtract one, or every result is off by a letter.
+- **Lookup is case-sensitive.** Uppercase returns the unmapped sentinel; lowercase
+  first.
+- **Not every mapped character is a letter.** Greek ϛ, ϟ and ϡ are numeral-only
+  signs with a standard value but no alphabet position, so `NUM_ORDINAL` returns
+  the sentinel for them; and an allograph such as Greek ς or the Hebrew finals
+  folds to its base letter's position. `numerals_mapping_role()` tells them apart.
+
+The tables encode one recension each — Arabic is Mashriqi, Cyrillic is the
+standardised post-1300 Church Slavonic — and variant glyphs are deliberately
+excluded. See the roadmap's `2.4.x` tier for the alias layer that will handle them.
 
 ---
 

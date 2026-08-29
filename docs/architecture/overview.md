@@ -16,7 +16,7 @@ varna/
 │   ├── syllable.cyr       — syllable structure, phonotactic constraints
 │   ├── script.cyr         — writing system metadata, scripts, by_code() lookup
 │   ├── transliteration.cyr — transliteration tables between scripts
-│   ├── numerals.cyr       — numeral system mappings (Greek/Deva/Babylonian/Egyptian/rod)
+│   ├── numerals.cyr       — numeral mappings + gematria (9 systems, 5 with letter values)
 │   ├── grammar.cyr        — grammar profiles, morphology, word order, case systems
 │   ├── lexicon.cyr        — vocabulary types, LexEntry, Lexicon, PartOfSpeech
 │   ├── swadesh.cyr        — Swadesh-25 lists per language
@@ -50,7 +50,7 @@ Language selection (ISO 639 code)
   │     │     └─→ syllable  — syllable structure, phonotactics
   │     └─→ script  — writing system type, direction, Unicode ranges
   │           ├─→ transliteration — inter-script romanization tables
-  │           └─→ numerals        — script-specific numeral mappings
+  │           └─→ numerals        — script-specific numeral mappings + gematria
   │
   ├─→ grammar — morphology, word order, case/gender/number systems
   ├─→ lexicon — word lookup, Swadesh list, cognate relations
@@ -109,13 +109,22 @@ Language selection (ISO 639 code)
 
 ## Numeral Systems
 
-| Script | System Name           | Kind        |
-|--------|-----------------------|-------------|
-| Grek   | Greek Isopsephy       | Alphabetic  |
-| Deva   | Devanagari Digits     | Decimal     |
-| Arab   | Arabic-Indic Digits   | Decimal     |
-| Xsux   | Babylonian Sexagesimal | Other      |
-| Egyp   | Egyptian Fractions    | Other       |
+| Script | System Name                                     | Kind       | Letter values |
+|--------|-------------------------------------------------|------------|---------------|
+| Hebr   | Hebrew Gematria                                 | Alphabetic | yes           |
+| Arab   | Arabic Abjad (Mashriqi)                         | Alphabetic | yes           |
+| Latn   | Latin Simple Gematria                           | Alphabetic | yes           |
+| Cyrl   | Church Slavonic Numerals (standardised)         | Alphabetic | yes           |
+| Grek   | Greek Isopsephy                                 | Alphabetic | yes           |
+| Deva   | Devanagari Digits                               | Decimal    | —             |
+| Hani   | Chinese Rod Numerals                            | Decimal    | —             |
+| Xsux   | Babylonian Sexagesimal                          | Other      | —             |
+| Egyp   | Egyptian Hieroglyphic Numerals                  | Other      | —             |
+
+The five alphabetic systems are what `gematria_all_scripts()` returns, and they
+are reachable through the unified `char_value(script, system, ch)` lookup with
+`NUM_STANDARD` / `NUM_ORDINAL` / `NUM_REDUCED`. The decimal and "other" systems
+are digit and notation tables, queried through `numerals_value_of` directly.
 
 ## Dependency Stack
 

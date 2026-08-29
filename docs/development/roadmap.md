@@ -25,6 +25,58 @@ suites), 2.1.4 (removing `rust-old/`, [ADR 0002](../adr/0002-remove-the-rust-old
 2.1.5 (the deferred hardening items) and 2.1.6 (script registry completeness). Next up
 is the `2.2.0+` tier below.
 
+## Data corrections — open
+
+Four data-accuracy items surfaced by the 2.2.x and 2.3.x work. None is a coding task:
+each needs a decision about linguistic data, and three were deliberately left alone
+rather than changed silently mid-release. Collected here because they were previously
+filed under section headings now marked COMPLETE, which read as though they were done.
+
+They are independent of each other and of the feature roadmap below, so any can be
+taken in isolation.
+
+### Data: ATR vowel systems
+
+Deferred out of 2.2.2. `atr` was named there, but no corpus segment is transcribed
+with an ATR/RTR diacritic, and two of the three languages that need the contrast
+have incomplete vowel systems — so it is a data item, not a feature bit.
+
+- [ ] **Yoruba** — /i e ɛ a ɔ o u/ is already the classic 7-vowel ATR set;
+      /e o/ are +ATR, /ɛ ɔ/ are −ATR. Markable as it stands.
+- [ ] **Wolof** — lists only /i e a o/ (+ long). Real Wolof has /i e ɛ a ɔ o u/
+      with ATR harmony; the missing vowels have to be added first.
+- [ ] **Somali** — lists /i e a o u/ (+ long). Real Somali has a 5-pair ATR system,
+      i.e. 10 qualities; likewise incomplete.
+- [ ] Then add the `AdvancedTongueRoot` bit, once something sets it.
+
+### Data: Thai and Vietnamese tone transcription
+
+Surfaced by 2.2.4's structured records. Both languages list a `˨˩˦` tone, which is
+the shape of *Mandarin's* third tone; the same wrong value in two unrelated
+languages points at a copy-paste from the Mandarin entry.
+
+- [ ] **Thai** — has `˧ ˨˩ ˨˩˦ ˦˥ ˩˧˥`. The falling tone `˥˩` is missing and `˨˩˦`
+      stands where it should be.
+- [ ] **Vietnamese** — huyền is listed as `˨˩˦`; it is a low falling tone, `˨˩`.
+- [ ] Re-check the other seven toned inventories against a reference while there.
+
+### Data: Sanskrit voiced-aspirate transcription
+
+- [ ] Sanskrit spells its voiced aspirates /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/ with U+02B0 while
+      Hindi, Bengali and Urdu spell the same historical series with U+02B1, so
+      2.2.1 derives `Aspirated` for one and `Breathy` for the other. Phonetically
+      they are breathy in all four. Decide one transcription and apply it; the
+      assertion in `tests/features.tcyr` that pins the current state documents it.
+
+### Data: Glottocode support
+
+Deferred out of 2.3.0 and **not** a coding task. Glottocodes are opaque identifiers
+(`stan1293`, `nucl1301`) that can only be looked up. Generating them from memory
+would produce plausible-looking fabrications indistinguishable from real ones, which
+is the worst failure mode for a reference corpus.
+
+- [ ] Obtain the 51 Glottocodes from Glottolog itself, then add the nullable field.
+
 ## 2.2.0+ — "World's Leading Authority"
 
 > Gaps identified by comparing varna against PHOIBLE, WALS, Glottolog, Unicode CLDR,
@@ -48,39 +100,6 @@ affected phonemes. `Airstream` is a separate axis, as in PHOIBLE.
 
 Three data items surfaced along the way and remain open:
 
-#### Data: ATR vowel systems
-
-Deferred out of 2.2.2. `atr` was named there, but no corpus segment is transcribed
-with an ATR/RTR diacritic, and two of the three languages that need the contrast
-have incomplete vowel systems — so it is a data item, not a feature bit.
-
-- [ ] **Yoruba** — /i e ɛ a ɔ o u/ is already the classic 7-vowel ATR set;
-      /e o/ are +ATR, /ɛ ɔ/ are −ATR. Markable as it stands.
-- [ ] **Wolof** — lists only /i e a o/ (+ long). Real Wolof has /i e ɛ a ɔ o u/
-      with ATR harmony; the missing vowels have to be added first.
-- [ ] **Somali** — lists /i e a o u/ (+ long). Real Somali has a 5-pair ATR system,
-      i.e. 10 qualities; likewise incomplete.
-- [ ] Then add the `AdvancedTongueRoot` bit, once something sets it.
-
-#### Data: Thai and Vietnamese tone transcription
-
-Surfaced by 2.2.4's structured records. Both languages list a `˨˩˦` tone, which is
-the shape of *Mandarin's* third tone; the same wrong value in two unrelated
-languages points at a copy-paste from the Mandarin entry.
-
-- [ ] **Thai** — has `˧ ˨˩ ˨˩˦ ˦˥ ˩˧˥`. The falling tone `˥˩` is missing and `˨˩˦`
-      stands where it should be.
-- [ ] **Vietnamese** — huyền is listed as `˨˩˦`; it is a low falling tone, `˨˩`.
-- [ ] Re-check the other seven toned inventories against a reference while there.
-
-#### Data: Sanskrit voiced-aspirate transcription
-
-- [ ] Sanskrit spells its voiced aspirates /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/ with U+02B0 while
-      Hindi, Bengali and Urdu spell the same historical series with U+02B1, so
-      2.2.1 derives `Aspirated` for one and `Breathy` for the other. Phonetically
-      they are breathy in all four. Decide one transcription and apply it; the
-      assertion in `tests/features.tcyr` that pins the current state documents it.
-
 ### 2.3.x — Typological Depth (P2) — COMPLETE
 
 **The 2.3.x line is complete** — 2.3.0 (grammar expansion), 2.3.1 (classification)
@@ -91,27 +110,65 @@ file's caveats first.
 The "Missing script entries" sub-item was listed here in error: all nine scripts
 shipped at **2.1.6**.
 
-#### Data: Glottocode support
+### 2.4.0 — Gematria & Numeric Letter Values — COMPLETE
 
-Deferred out of 2.3.0 and **not** a coding task. Glottocodes are opaque identifiers
-(`stan1293`, `nucl1301`) that can only be looked up. Generating them from memory
-would produce plausible-looking fabrications indistinguishable from real ones, which
-is the worst failure mode for a reference corpus.
+Shipped at 2.4.0. `NumericSystem` (standard / ordinal / reduced), `char_value`,
+`string_value_in`, `script_alphabet_values`, `gematria_by_script`,
+`gematria_all_scripts`, and 136 mapped characters over Hebrew, Arabic (Mashriqi),
+Latin, Church Slavonic and Greek — Greek by reuse of `numerals_greek_isopsephy`,
+not by copy. Ordinal and reduced are derived, never stored.
 
-- [ ] Obtain the 51 Glottocodes from Glottolog itself, then add the nullable field.
+"Additive" was deliberately not added as a fourth `NumericSystem` value: it
+describes how a system combines values across a string rather than a per-character
+method, and that axis already exists as `NumeralSystemKind`.
 
-### 2.4.0 — Gematria & Numeric Letter Values (P2)
+The release also fixed two defects it uncovered in the pre-existing Greek table —
+ordinals shifted from tau to omega by an inline final sigma, and the three missing
+numeral-only signs that made `χξϛ` (666) uncomputable — by root-causing both to an
+ordinal derived from a raw table index. See the CHANGELOG.
 
-Extend `script::numerals` into a full character→number mapping system across scripts. Foundation for classical cipher work and sankhya gematria computation.
+- [ ] **Cipher foundation** — character↔number round-trip for Caesar, Vigenère and
+      substitution ciphers. Carried to a downstream consumer (a crypto Cyrius
+      project, or sankhya); varna now supplies everything it needs. Note for
+      whoever builds it: this table is ONE-based, while mod-26 cipher arithmetic
+      is zero-based, and the 25-letter i/j merge belongs to Polybius-square
+      ciphers, where a letter's number is a row/column pair rather than a value
+      in this table at all.
 
-- [ ] **Hebrew gematria values**: Standard (א=1..ת=400), ordinal (א=1..ת=22), reduced (digital root)
-- [ ] **Arabic abjad numerals**: Standard abjad order (أ=1..غ=1000)
-- [ ] **Latin/English ordinal values**: a=1..z=26 (simple gematria, used by classical ciphers)
-- [ ] **Cyrillic numeric values**: Church Slavonic letter-number system
-- [ ] **`NumericSystem` enum**: Standard, Ordinal, Reduced, Additive — per-script system classification
-- [ ] **`char_value(script, system, ch)`**: Unified lookup API across all scripts (returns the value, or a sentinel when unmapped)
-- [ ] **`script_alphabet_values(script, system)`**: Full (char, value) mapping table per script
-- [ ] **Cipher foundation**: Character↔number round-trip enables Caesar, Vigenère, substitution cipher implementations downstream (a crypto Cyrius project or sankhya)
+### 2.4.x — Follow-on from the 2.4.0 verification (P3)
+
+Surfaced by the independent reviews of 2.4.0 — one over the four alphabet tables,
+one adversarial over the whole change. Every shipped value was confirmed correct
+against canonical sources and is now pinned per letter, so none of these are
+corrections.
+
+- [ ] **Cache `script_alphabet_values`** — it is the only table builder in
+      `numerals.cyr` without a `_c_` cache, and returns ~856 B of fresh bump
+      memory per call for one of only 15 possible (script, method) results. The
+      bytes are the function's product rather than a throwaway, so it is not the
+      same defect class as the string-walk leak fixed in 2.4.0 — but the
+      allocator never frees, so a caller in a loop still grows the heap without
+      bound. Caching means callers share the pair records, which is already true
+      of every other cached table here. Deferred deliberately: the aliasing change
+      wants its own release, not a footnote in the one that introduced the API.
+
+- [ ] **Variant-glyph alias map** — a decode-side layer that normalises a glyph to
+      its canonical letter before lookup, so Church Slavonic izhitsa ѵ (400), ot ѿ
+      (800), monograph uk ꙋ, and koppa ҁ (90, pre-1300) can be read without
+      polluting the canonical tables. These must NOT go inline: the mappings vec is
+      the ordinal source, so an inserted variant shifts every position after it —
+      precisely the Greek final-sigma bug. Prerequisite for any early-period
+      Cyrillic material.
+- [ ] **Maghrebi abjad as a second Arabic table** — differs from the shipped
+      Mashriqi reckoning on exactly six letters (sin, sad, shin, dad, zah, ghayn)
+      and agrees on the other 22. Only worth building if North African or Andalusi
+      sources enter the corpus.
+- [ ] **Glagolitic numerals (`Glag`)** — a genuinely different system, numbering in
+      its own alphabetical order (buky=2, zhivete=7, where Cyrillic gives both no
+      value). A separate table, not an edit to the Cyrillic one.
+- [ ] **Mispar gadol** — the Hebrew method giving the finals 500-900 instead of
+      their base values. A fourth `NumericSystem`, and the first one that would
+      need per-character data the standard table does not already carry.
 
 ### 2.5.0 — Coverage Scale (P3)
 
