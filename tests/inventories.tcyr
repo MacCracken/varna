@@ -193,7 +193,7 @@ fn main() {
     iv = phoneme_wolof();
     assert(streq(phoneme_language_code(iv), "wo"), "wo code");
     assert_eq(phoneme_consonant_count(iv), 24, "wo consonants");
-    assert_eq(phoneme_vowel_count(iv), 8, "wo vowels");
+    assert_eq(phoneme_vowel_count(iv), 15, "wo vowels");
     iv = phoneme_lao();
     assert(streq(phoneme_language_code(iv), "lo"), "lo code");
     assert_eq(phoneme_consonant_count(iv), 20, "lo consonants");

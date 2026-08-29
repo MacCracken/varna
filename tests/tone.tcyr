@@ -46,6 +46,8 @@ fn _tone_is(inv, idx, letters, contour, register, start, end, feats, label) {
     return 0;
 }
 
+fn _std_tone_letters(inv, idx) { return tone_letters(vec_get(phoneme_tones(inv), idx)); }
+
 fn _count_contour(inv, contour) {
     var ts = phoneme_tones(inv);
     if (ts == 0) { return 0; }
@@ -147,11 +149,17 @@ fn main() {
     var vi = phoneme_vietnamese();
     assert_eq(vec_len(phoneme_tones(vi)), 6, "Vietnamese has 6 tones");
     _tone_is(vi, 4, "˧ˀ˥", ToneContour.TONE_RISING, ToneRegister.TONE_HIGH, 3, 5,
-        ToneFeature.TONE_GLOTTALIZED, "ngã is a glottalized rise");
+      ToneFeature.TONE_GLOTTALIZED, "ngã is a glottalized rise");
     _tone_is(vi, 5, "˨˩ˀ", ToneContour.TONE_FALLING, ToneRegister.TONE_LOW, 2, 1,
-        ToneFeature.TONE_GLOTTALIZED, "nặng is a glottalized fall");
+      ToneFeature.TONE_GLOTTALIZED, "nặng is a glottalized fall");
     _tone_is(vi, 3, "˧˩˧", ToneContour.TONE_DIPPING, ToneRegister.TONE_LOW, 3, 3, 0,
-        "hỏi dips and returns to its starting pitch");
+      "hỏi dips and returns to its starting pitch");
+    # huyền was ˨˩˦ until 2.4.1 — Mandarin's third tone, and a dipping contour no
+    # description of Vietnamese gives it. It is a low fall. Unpinned, it survived.
+    _tone_is(vi, 1, "˨˩", ToneContour.TONE_FALLING, ToneRegister.TONE_LOW, 2, 1, 0,
+      "huyền is a low fall, not a dip");
+    _tone_is(vi, 0, "˧", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3, 0, "ngang is mid level");
+    _tone_is(vi, 2, "˧˥", ToneContour.TONE_RISING, ToneRegister.TONE_HIGH, 3, 5, 0, "sắc rises");
     var glot_count = 0;
     var ts = phoneme_tones(vi);
     i = 0;
@@ -164,17 +172,38 @@ fn main() {
     assert_eq(glot_count, 2, "exactly 2 Vietnamese tones are glottalized");
 
     # ---------------------------------------------------------------
+    # Thai had NO assertion anywhere in this file before 2.4.1, which is exactly why
+    # it shipped with no falling tone and with ˩˧˥ — a contour no description of Thai
+    # contains — in the rising slot. Pinning all five by index also pins the ordering
+    # convention สามัญ / เอก / โท / ตรี / จัตวา that the rest of the row depends on.
+    test_group("thai");
+    var th = phoneme_thai();
+    assert_eq(vec_len(phoneme_tones(th)), 5, "Thai has 5 tones");
+    _tone_is(th, 0, "˧", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3, 0, "samman is mid level");
+    _tone_is(th, 1, "˨˩", ToneContour.TONE_FALLING, ToneRegister.TONE_LOW, 2, 1, 0, "ek is low");
+    _tone_is(th, 2, "˦˩", ToneContour.TONE_FALLING, ToneRegister.TONE_MID, 4, 1, 0, "tho falls");
+    _tone_is(th, 3, "˦˥", ToneContour.TONE_RISING, ToneRegister.TONE_HIGH, 4, 5, 0, "tri is high");
+    _tone_is(th, 4, "˨˩˦", ToneContour.TONE_DIPPING, ToneRegister.TONE_LOW, 2, 4, 0, "chattawa dips then rises");
+    # Thai must have exactly one falling-to-the-floor contour and one rise. The old
+    # list had two rising shapes and no phonemic fall at all.
+    assert(_count_contour(th, ToneContour.TONE_DIPPING) == 1, "exactly one Thai rising tone");
+    # ˨˩˦ is genuinely shared with Mandarin's third tone — a real coincidence, and NOT
+    # the copy-paste the roadmap once diagnosed. Both languages have a concave low rise.
+    assert_eq(_std_tone_letters(th, 4), _std_tone_letters(phoneme_mandarin(), 2),
+      "Thai chattawa and Mandarin tone 3 share a value, correctly");
+
+    # ---------------------------------------------------------------
     test_group("checked_tones");
     # The entering tone of Literary Chinese and the creaky/checked pair in Burmese.
     var lzh = phoneme_literary_chinese();
     assert_eq(vec_len(phoneme_tones(lzh)), 4, "Literary Chinese has 4 tones");
     _tone_is(lzh, 3, "˩ʔ", ToneContour.TONE_LEVEL, ToneRegister.TONE_LOW, 1, 1,
-        ToneFeature.TONE_CHECKED, "the entering tone is checked");
+      ToneFeature.TONE_CHECKED, "the entering tone is checked");
     var my = phoneme_burmese();
     _tone_is(my, 1, "˧ˀ", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3,
-        ToneFeature.TONE_GLOTTALIZED, "the Burmese creaky tone is glottalized");
-    _tone_is(my, 3, "˩ʔ", ToneContour.TONE_LEVEL, ToneRegister.TONE_LOW, 1, 1,
-        ToneFeature.TONE_CHECKED, "the Burmese checked tone");
+      ToneFeature.TONE_GLOTTALIZED, "the Burmese creaky tone is glottalized");
+    _tone_is(my, 3, "˥˧ʔ", ToneContour.TONE_FALLING, ToneRegister.TONE_HIGH, 5, 3,
+      ToneFeature.TONE_CHECKED, "the Burmese checked tone falls from a high onset");
 
     # ---------------------------------------------------------------
     test_group("level_tone_languages");

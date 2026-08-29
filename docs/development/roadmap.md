@@ -25,48 +25,104 @@ suites), 2.1.4 (removing `rust-old/`, [ADR 0002](../adr/0002-remove-the-rust-old
 2.1.5 (the deferred hardening items) and 2.1.6 (script registry completeness). Next up
 is the `2.2.0+` tier below.
 
-## Data corrections — open
+## Data corrections
 
-Four data-accuracy items surfaced by the 2.2.x and 2.3.x work. None is a coding task:
-each needs a decision about linguistic data, and three were deliberately left alone
-rather than changed silently mid-release. Collected here because they were previously
-filed under section headings now marked COMPLETE, which read as though they were done.
+Data-accuracy items surfaced by the 2.2.x and 2.3.x work. **Three of the four were
+taken at 2.4.1**; Glottocodes remain open because they need a source, not a decision.
+The two tone rows still listed below are under-sourced rather than wrong.
 
-They are independent of each other and of the feature roadmap below, so any can be
-taken in isolation.
+Every value 2.4.1 touched was checked by independent research and then adversarially
+refuted, and most proposed changes did not survive that: of the corrections offered,
+only four were made. That ratio is the point of the section — a reference corpus is
+damaged as much by churn as by error, so a value that is defensible under any
+mainstream description stays, and the variety it commits to gets named in the source
+comment instead.
 
 ### Data: ATR vowel systems
 
-Deferred out of 2.2.2. `atr` was named there, but no corpus segment is transcribed
-with an ATR/RTR diacritic, and two of the three languages that need the contrast
-have incomplete vowel systems — so it is a data item, not a feature bit.
+Deferred out of 2.2.2, **partly closed at 2.4.1**. `atr` was named there, but no corpus
+segment is transcribed with an ATR/RTR diacritic, and the languages that need the
+contrast had incomplete vowel systems — so it is a data item, not a feature bit.
 
-- [ ] **Yoruba** — /i e ɛ a ɔ o u/ is already the classic 7-vowel ATR set;
-      /e o/ are +ATR, /ɛ ɔ/ are −ATR. Markable as it stands.
-- [ ] **Wolof** — lists only /i e a o/ (+ long). Real Wolof has /i e ɛ a ɔ o u/
-      with ATR harmony; the missing vowels have to be added first.
-- [ ] **Somali** — lists /i e a o u/ (+ long). Real Somali has a 5-pair ATR system,
-      i.e. 10 qualities; likewise incomplete.
-- [ ] Then add the `AdvancedTongueRoot` bit, once something sets it.
+- [x] **Wolof** — closed at 2.4.1. Was /i e a o/ (+ long), a four-quality system that
+      matches no analysis and was byte-identical to the Classical Nahuatl block. Now
+      the full 8 short + 7 long of Ka (1994) / Unseth (2009): /i u e o ɛ ɔ ə a/, with
+      the ATR pairing recorded in the source comment.
+- [x] **Yoruba** — /i e ɛ a ɔ o u/ was already the classic 7-vowel ATR set and needs
+      no segments added. /e o/ are +ATR, /ɛ ɔ/ −ATR, /a/ −ATR, /i u/ +ATR
+      non-contrastively (there are no −ATR high vowels in Standard Yoruba).
+- [ ] **Somali** — the one remaining gap, and it is a genuine choice rather than an
+      omission. The corpus has Orwin's (1994) five qualities /i e a o u/ + long, which
+      is a named analysis, not a truncation; Orwin's own wording is that "each of these
+      **five** vowels has a fronted (ATR) variant". A ten-quality listing needs a
+      decision on symbols that sources do not agree on (ʉ̞ vs ʉ vs ʊ̈, ɵ̞ vs ɞ, a vs ɑ),
+      and PHOIBLE marks `advancedTongueRoot` "−" on every Somali vowel in both its
+      inventories. Pick an analysis and name it, or leave the five and say so.
+- [ ] Then add the `AdvancedTongueRoot` bit. **Still gated, and the gate still holds**:
+      Yoruba and Wolof are now markable but Somali is not, and marking two of three
+      would leave ATR silently absent from a language that has it. Somali first.
 
 ### Data: Thai and Vietnamese tone transcription
 
-Surfaced by 2.2.4's structured records. Both languages list a `˨˩˦` tone, which is
-the shape of *Mandarin's* third tone; the same wrong value in two unrelated
-languages points at a copy-paste from the Mandarin entry.
+**Closed at 2.4.1** — but not as originally diagnosed, and the original diagnosis was
+actively misleading. It read: "Both languages list a `˨˩˦` tone, which is the shape of
+*Mandarin's* third tone; the same wrong value in two unrelated languages points at a
+copy-paste." That inference was wrong. `˨˩˦` [214] is independently correct for Thai's
+rising tone จัตวา *and* for Mandarin's third tone — both languages genuinely have a
+concave low rise — so its appearing in both is evidence of nothing. **Acting on the
+old text literally would have deleted Thai's one correct contour value.** Kept here
+as a record of how a plausible cross-language inference can be exactly backwards.
 
-- [ ] **Thai** — has `˧ ˨˩ ˨˩˦ ˦˥ ˩˧˥`. The falling tone `˥˩` is missing and `˨˩˦`
-      stands where it should be.
-- [ ] **Vietnamese** — huyền is listed as `˨˩˦`; it is a low falling tone, `˨˩`.
-- [ ] Re-check the other seven toned inventories against a reference while there.
+- [x] **Thai** — the real defect was narrower and worse: there was no falling tone at
+      all, `˨˩˦` sat in the falling slot, and slot 5 held `˩˧˥`, a contour no
+      description of Thai contains. Now `˧ ˨˩ ˦˩ ˦˥ ˨˩˦`, all Tingsabadh & Abramson
+      (1993). Falling is `˦˩` [41], theirs, not the `˥˩` [51] this roadmap used to
+      name — that is Gandour's, and mixing traditions inside one row is what produced
+      the defect.
+- [x] **Vietnamese** — huyền was `˨˩˦`. Here the copy-paste diagnosis *does* hold: it
+      is a low falling tone, `˨˩`, and no dialect gives it a dipping contour.
+- [x] **The other seven toned inventories re-checked.** One more real error: Burmese's
+      checked tone was `˩ʔ`, a low level, where every description gives a high onset —
+      it was the corpus's generic checked placeholder. Now `˥˧ʔ`. Everything else was
+      confirmed and deliberately left alone: Lao's six (including its `˩˧˥`, which is
+      its genuine low-onset rise), Mandarin's neutral `˧`, Literary Chinese's four,
+      Vietnamese nặng, Hausa and Somali as two-level systems, Burmese low `˨˩`.
+
+- [ ] **Burmese wants a single-source pass.** 2.4.1 fixed the one cell that was wrong
+      under every source, which leaves the row sourced in one cell and unsourced in
+      three — creaky `˧ˀ` now sits two levels from checked where the literature puts
+      them nearly level. Re-source the whole row to one description: Wheatley (1987),
+      `˥˥˦ / ˥˧ˀ / ˧˧˦ / ˥˧ʔ`, or Watkins (2001), `˦ / ˥˩ˀ / ˨ / ˥˩ʔ`.
+- [ ] **Lao wants the same.** Its values are the corpus's weakest: no source prints
+      [135] verbatim and `˥˩` [51] is inside but not on the attested envelope
+      (41/42/52/53). Both proposed replacements were checked and refuted — swapping
+      `˩˧˥` deletes the ຂາ tone — so the row is under-sourced, not wrong. Pass it
+      against Enfield (2007) or Osatananda.
 
 ### Data: Sanskrit voiced-aspirate transcription
 
-- [ ] Sanskrit spells its voiced aspirates /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/ with U+02B0 while
-      Hindi, Bengali and Urdu spell the same historical series with U+02B1, so
-      2.2.1 derives `Aspirated` for one and `Breathy` for the other. Phonetically
-      they are breathy in all four. Decide one transcription and apply it; the
-      assertion in `tests/features.tcyr` that pins the current state documents it.
+**Closed at 2.4.1 by deciding NOT to change the data.** The item read "Decide one
+transcription and apply it"; the decision is that the split is legitimate and both
+sides stay.
+
+- [x] Sanskrit keeps /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/ with U+02B0. Its inventory is a Pāṇinian varga
+      listing — the comments are *Kavarga, Chavarga, Tavarga, Pavarga* — under which
+      all ten mahāprāṇa are one natural class, the class Grassmann's Law and
+      Bartholomae's Law operate over. ⟨bʰ⟩ on a voiced base is the IPA chart's own
+      example for the diacritic, read as murmured release. Hindi, Bengali and Urdu
+      keep U+02B1, which is their literature's convention. Retranscribing either side
+      would break `phoneme_find` for consumers to fix a query that has a correct
+      answer without it.
+- [x] The premise that motivated the item was also wrong: the two spellings do **not**
+      produce different distinctive-feature vectors. `src/features.cyr` derives
+      `DF_SPREAD_GLOTTIS` from `Aspirated` and `Breathy` alike, so Sanskrit /ɡʰ/ and
+      Hindi /ɡʱ/ were already bit-identical there. The real inconsistency was one
+      level up, at the raw `PhonemeFeature` bit.
+- [x] Fixed by asking instead of spelling: `phoneme_is_breathy(p)` is true for
+      `Breathy`, or for any **voiced** segment marked `Aspirated`. "Which segments are
+      breathy?" now agrees across all four languages — 5 each — while each keeps its
+      own transcription. The voicing test is load-bearing and pinned: /kʰ/ is not
+      breathy in Sanskrit, Hindi, or Zulu.
 
 ### Data: Glottocode support
 

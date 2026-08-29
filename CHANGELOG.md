@@ -7,6 +7,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.1] - 2026-08-28
+
+Three of the four open data-accuracy items from the roadmap. Every value was checked
+by independent research and then adversarially refuted; **most proposed corrections
+did not survive that, and were not made**. A reference corpus is damaged as much by
+churn as by error, so a value defensible under any mainstream description stays — and
+the variety it commits to is now named in the source comment.
+
+### Fixed
+
+- **Thai had no falling tone at all.** The row was `˧ ˨˩ ˨˩˦ ˦˥ ˩˧˥` — two rising
+  shapes and no โท. It is now `˧ ˨˩ ˦˩ ˦˥ ˨˩˦` (33 / 21 / 41 / 45 / 214), all from
+  Tingsabadh & Abramson (1993), the IPA Handbook illustration, in the canonical order
+  สามัญ / เอก / โท / ตรี / จัตวา. `˩˧˥` appears in no description of Thai in any
+  tradition.
+
+  **The roadmap's own diagnosis of this was wrong, and dangerously so.** It read that
+  `˨˩˦` "is the shape of Mandarin's third tone" and that its appearing in two
+  unrelated languages "points at a copy-paste". But [214] is independently correct for
+  Thai's rising tone *and* for Mandarin's third — both languages genuinely have a
+  concave low rise. Acting on that text literally would have deleted Thai's one
+  correct contour value. The roadmap entry has been rewritten and the reasoning kept
+  as a record.
+
+  Falling is `˦˩` [41], not the `˥˩` [51] the roadmap named — that is Gandour's value,
+  and the other four slots are Tingsabadh & Abramson's. Mixing traditions inside one
+  row is what produced the defect in the first place.
+
+- **Vietnamese huyền was `˨˩˦`.** Here the copy-paste diagnosis *does* hold — that is
+  Mandarin's third tone, and no description of any Vietnamese dialect gives huyền a
+  dipping contour. It is a low fall, `˨˩` (Nguyễn Văn Lợi & Edmondson 1998, Northern),
+  which the rest of the row already follows.
+
+- **Burmese's checked tone was `˩ʔ`, a low level — the opposite of every description.**
+  Wheatley (1987:842) has "the pitch of the checked tone (high, in citation)"; Chang
+  (2008) and Gruber (2011) agree. `˩ʔ` was the corpus's generic checked placeholder,
+  also used for Literary Chinese. Now `˥˧ʔ` — `˥˧` rather than Watkins' `˥˩` because
+  `tone.cyr` derives register from the rounded mean of the levels, and `˥˩` would come
+  out `TONE_MID`, the very register the fix exists to correct.
+
+- **Wolof's vowel system was four qualities.** `/i e a o/` + long matches no analysis
+  of Wolof — no description lacks `/u/`, and the block was byte-identical to the
+  Classical Nahuatl one, i.e. a copy-paste rather than a reduced transcription. Now
+  the full 8 short + 7 long of Ka (1994) / Unseth (2009): `/i u e o ɛ ɔ ə a/`, with
+  `/ɛː ɔː uː/` added and no `/əː/` (Ka: "the vowel [ə] has no long form"). The CLAD
+  orthography mapping and the ATR pairing are recorded in the source comment.
+
+### Added
+
+- **`phoneme_is_breathy(p)`** — true for `Breathy`, or for any **voiced** segment
+  marked `Aspirated`. This closes the Sanskrit voiced-aspirate item **by deciding not
+  to change the data**, which is the opposite of what the roadmap called for.
+
+  Sanskrit spells its voiced aspirates with U+02B0 where Hindi, Bengali and Urdu use
+  U+02B1, and the item read "decide one transcription and apply it". The review found
+  the split legitimate: Sanskrit's inventory is a Pāṇinian varga listing — its comments
+  are *Kavarga, Chavarga, Tavarga, Pavarga* — under which all ten mahāprāṇa form one
+  natural class, the class Grassmann's Law and Bartholomae's Law operate over. ⟨bʰ⟩ on
+  a voiced base is the IPA chart's own example for the diacritic. Retranscribing would
+  have broken `phoneme_find(sa, "bʰ")` for every consumer.
+
+  The premise behind the item was also wrong: the two spellings do **not** yield
+  different distinctive-feature vectors. `features.cyr` derives `DF_SPREAD_GLOTTIS`
+  from `Aspirated` and `Breathy` alike, so Sanskrit /ɡʰ/ and Hindi /ɡʱ/ were already
+  bit-identical there. The real inconsistency was one level up, at the raw
+  `PhonemeFeature` bit, and asking rather than spelling fixes it: "which segments are
+  breathy?" now answers 5 for each of the four languages while each keeps its own
+  transcription. The voicing test is load-bearing and pinned — /kʰ/ is not breathy in
+  Sanskrit, Hindi or Zulu.
+
+- **Thai and Vietnamese tone assertions.** Neither language had a single tone
+  assertion anywhere in the suite, which is exactly why both errors survived to be
+  found by reading. All five Thai tones and four Vietnamese tones are now pinned by
+  index, which also pins the ordering convention the rows depend on. One assertion
+  deliberately records that Thai จัตวา and Mandarin tone 3 share `˨˩˦` **correctly**,
+  so the refuted copy-paste inference cannot be re-derived from the data.
+
+### Changed
+
+- Wolof's declared builder capacity 33 → 39 (24 consonants + 15 vowels). The old 33
+  was already wrong against the actual 32.
+
+### Verified and deliberately unchanged
+
+Each of these was proposed as a correction and refuted on the sources:
+
+- **Lao's six tones**, including its own `˩˧˥` — unlike Thai's, that is its genuine
+  low-onset rise (Enfield 2007, *khaa3* 'leg'), and the proposed replacement would
+  have deleted a tone.
+- **Mandarin's neutral `˧`**, **Literary Chinese's four**, **Vietnamese nặng `˨˩ˀ`**,
+  **Burmese low `˨˩`**, **Hausa and Somali as two-level systems** (both WALS "simple
+  tone system"; Somali's tone-bearing unit is the mora, so the *beer* triplet needs no
+  contour toneme).
+- **Somali's five vowel qualities** — Orwin (1994), a named analysis, not a truncation.
+  This is the one genuine remaining gap in the ATR item, and it is a choice of analysis
+  rather than an omission.
+- **The `AdvancedTongueRoot` bit still does not land.** Yoruba and Wolof are now
+  markable, but Somali is not, and marking two of three would leave ATR silently absent
+  from a language that has it. Somali first, then the bit.
+
 ## [2.4.0] - 2026-08-28
 
 Gematria and numeric letter values: a unified character-to-number layer across five

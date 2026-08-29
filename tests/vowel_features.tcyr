@@ -78,14 +78,14 @@ fn main() {
     assert_eq(PhonemeFeature.Syllabic, 4096, "Syllabic is bit 12");
     assert_eq(PhonemeFeature.ExtraShort, 8192, "ExtraShort is bit 13");
     var made = phoneme_vowel_full("ɛ̃ː", Height.OpenMid, Backness.Front, 0,
-        PhonemeFeature.Long | PhonemeFeature.Nasalized);
+      PhonemeFeature.Long | PhonemeFeature.Nasalized);
     assert_eq(phoneme_has_feature(made, PhonemeFeature.Long), 1, "composed vowel mask reads long");
     assert_eq(phoneme_has_feature(made, PhonemeFeature.Nasalized), 1, "composed vowel mask reads nasalized");
     assert_eq(phoneme_kind(made), PhonemeKind.Vowel, "still a vowel");
     assert_eq(phoneme_airstream(made), Airstream.Pulmonic, "vowels stay pulmonic");
     # The four-argument constructor still defaults to no features.
     assert_eq(phoneme_features(phoneme_vowel("a", Height.Open, Backness.Central, 0)), 0,
-        "phoneme_vowel defaults to no features");
+      "phoneme_vowel defaults to no features");
 
     # ---------------------------------------------------------------
     test_group("vowel_length");
@@ -113,7 +113,7 @@ fn main() {
     assert_eq(_count_kind(fr, PhonemeFeature.Nasalized, PhonemeKind.Vowel), 4, "French has 4 nasal vowels");
     # Nasalization on a vowel is not the Nasal *manner* a consonant carries.
     assert_eq(phoneme_has_feature(phoneme_find(fr, "ɛ̃"), PhonemeFeature.Prenasalized), 0,
-        "a nasal vowel is not prenasalized");
+      "a nasal vowel is not prenasalized");
     _vfeats(phoneme_guarani(), "ɨ̃", PhonemeFeature.Nasalized, "Guarani /ɨ̃/");
 
     # ---------------------------------------------------------------
@@ -150,7 +150,7 @@ fn main() {
         long_c = long_c + _count_kind(inv, PhonemeFeature.Long, PhonemeKind.Consonant);
         i = i + 1;
     }
-    assert_eq(long_v, 110, "110 long vowels in the corpus");
+    assert_eq(long_v, 113, "113 long vowels in the corpus");
     assert_eq(long_c, 1, "1 long consonant in the corpus");
 
     # ---------------------------------------------------------------
@@ -221,13 +221,19 @@ fn main() {
     # bit would therefore ship a feature nothing sets, which is the same mistake
     # `Velarized` was kept out of 2.2.1 to avoid.
     #
-    # It is also not a one-bit change. Three corpus languages have ATR harmony and
-    # two of them have incomplete vowel systems: Yoruba's /i e ɛ a ɔ o u/ is the
-    # classic 7-vowel ATR set and could be marked as-is, but Wolof lists only
-    # /i e a o/ and Somali /i e a o u/, both missing the vowels the contrast needs.
-    # Marking Yoruba alone would leave ATR present in one language and silently
-    # absent in two that have it — worse than uniformly absent. Filed in the
-    # roadmap as a data item.
+    # It is also not a one-bit change. Three corpus languages have ATR harmony, and
+    # as of 2.4.1 two of the three are markable: Yoruba's /i e ɛ a ɔ o u/ is the
+    # classic 7-vowel ATR set, and Wolof now carries its full 8 short + 7 long after
+    # 2.4.1 completed a block that had held only /i e a o/.
+    #
+    # SOMALI is what still gates this, and the gate is narrower than it was but has
+    # not moved. Its five qualities are not a truncation — they are Orwin (1994), a
+    # named analysis whose own wording is that "each of these FIVE vowels has a
+    # fronted (ATR) variant". A ten-quality listing needs a symbol decision that the
+    # sources do not agree on, and PHOIBLE marks advancedTongueRoot "−" on every
+    # Somali vowel in both its inventories. Marking two of three would leave ATR
+    # silently absent from a language that has it — worse than uniformly absent.
+    # Somali first, then the bit. Filed in the roadmap as a data item.
     var atr_marks = 0;
     i = 0;
     while (i < n) {

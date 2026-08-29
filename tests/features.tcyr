@@ -55,6 +55,18 @@ fn _feats(inv, ipa, feats, label) {
     return 0;
 }
 
+# Count segments that ARE breathy, however they are spelled.
+fn _count_breathy(inv) {
+    var ph = phoneme_list(inv);
+    var c = 0;
+    var i = 0;
+    while (i < vec_len(ph)) {
+        if (phoneme_is_breathy(vec_get(ph, i)) == 1) { c = c + 1; }
+        i = i + 1;
+    }
+    return c;
+}
+
 fn _count_feature(inv, feature) {
     return _count_feature_kind(inv, feature, PhonemeKind.Consonant);
 }
@@ -112,17 +124,42 @@ fn main() {
     _feats(sa, "kʰ", PhonemeFeature.Aspirated, "Sanskrit /kʰ/");
     _feats(sa, "k", 0, "Sanskrit /k/ is plain");
     assert_eq(_count_feature(sa, PhonemeFeature.Aspirated), 10, "Sanskrit has 10 aspirates");
-    # DATA NOTE: five of those ten are the *voiced* aspirates /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/,
-    # which are phonetically breathy-voiced — the same series Hindi, Bengali and
-    # Urdu transcribe with /ʱ/ and which this release therefore marks Breathy in
-    # those three languages. Sanskrit spells them with /ʰ/, so they come out
-    # Aspirated here. The transcription is inconsistent across the corpus, not the
-    # feature derivation; retranscribing Sanskrit is a data change beyond 2.2.1 and
-    # is filed for a later pass rather than made silently here.
+    # DATA NOTE, settled at 2.4.1. Five of those ten are the *voiced* aspirates
+    # /ɡʰ d͡ʑʰ ɖʰ d̪ʰ bʰ/, phonetically breathy — the same series Hindi, Bengali and
+    # Urdu transcribe with /ʱ/ and mark Breathy. Sanskrit spells them with /ʰ/, so the
+    # raw bit differs. This was filed as an inconsistency to resolve by retranscribing
+    # Sanskrit; the 2.4.1 review found that WRONG and the split legitimate. Sanskrit's
+    # inventory is a Pāṇinian varga listing, where all ten mahāprāṇa are one class —
+    # the class Grassmann's and Bartholomae's Laws operate over — and ⟨bʰ⟩ on a voiced
+    # base is the IPA chart's own example for the diacritic. Retranscribing would have
+    # broken phoneme_find(sa, "bʰ") for every consumer to fix a query that now has a
+    # correct answer either way, via phoneme_is_breathy.
     assert_eq(phoneme_find(sa, "ɡʱ"), 0,
       "Sanskrit has no /ɡʱ/ spelling — it uses /ɡʰ/ (see the note above)");
     assert(phoneme_find(sa, "ɡʰ") != 0, "Sanskrit spells the voiced aspirate /ɡʰ/");
-    assert_eq(_count_feature(sa, PhonemeFeature.Breathy), 0, "Sanskrit marks no breathy voice today");
+    assert_eq(_count_feature(sa, PhonemeFeature.Breathy), 0,
+      "the raw Breathy BIT stays 0 for Sanskrit — that records the transcription");
+
+    # The phonetic question, asked across all four sibling languages, must now agree.
+    test_group("breathy_is_asked_not_spelled");
+    assert_eq(phoneme_is_breathy(phoneme_find(sa, "ɡʰ")), 1, "Sanskrit /ɡʰ/ is breathy");
+    assert_eq(phoneme_is_breathy(phoneme_find(phoneme_hindi(), "ɡʱ")), 1, "Hindi /ɡʱ/ is breathy");
+    assert_eq(phoneme_is_breathy(phoneme_find(phoneme_bengali(), "ɡʱ")), 1, "Bengali /ɡʱ/ is breathy");
+    assert_eq(phoneme_is_breathy(phoneme_find(phoneme_urdu(), "ɡʱ")), 1, "Urdu /ɡʱ/ is breathy");
+    # Voicing is what makes the difference: a VOICELESS aspirate is not breathy,
+    # in Sanskrit or anywhere else. This is the assertion that would catch a naive
+    # "Aspirated implies Breathy" shortcut.
+    assert_eq(phoneme_is_breathy(phoneme_find(sa, "kʰ")), 0, "Sanskrit /kʰ/ is NOT breathy");
+    assert_eq(phoneme_is_breathy(phoneme_find(phoneme_hindi(), "kʰ")), 0, "Hindi /kʰ/ is NOT breathy");
+    assert_eq(phoneme_is_breathy(phoneme_find(sa, "k")), 0, "a plain stop is not breathy");
+    assert_eq(phoneme_is_breathy(phoneme_find(phoneme_zulu(), "pʰ")), 0, "Zulu /pʰ/ is voiceless, not breathy");
+    # Count the whole voiced-aspirate series in each of the four, by question not spelling.
+    assert_eq(_count_breathy(sa), 5, "Sanskrit has 5 breathy segments, asked phonetically");
+    assert_eq(_count_breathy(phoneme_hindi()), 5, "Hindi has 5, and agrees");
+    assert_eq(_count_breathy(phoneme_bengali()), 5, "Bengali has 5, and agrees");
+    assert_eq(_count_breathy(phoneme_urdu()), 5, "Urdu has 5, and agrees");
+
+    test_group("consonant_features");
     var zu = phoneme_zulu();
     _feats(zu, "pʰ", PhonemeFeature.Aspirated, "Zulu /pʰ/");
     # An aspirated click is both, on two different axes.
