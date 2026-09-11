@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.2] - 2026-09-11
+
+### Changed
+
+- **Toolchain `6.5.36` → `6.6.2`**, and bote `3.3.7` → `3.3.8`. No source change.
+  Zero compiler rejections, zero fail-open sites; six `callptr` sites, none
+  reaching a pair-returning target. **2407 assertions** pass unchanged.
+
+  The bote bump matters: bote <= 3.3.7 pinned majra 2.7.0, whose `_sub_new/2`
+  collides with libro's `_sub_new/1` — a hard error since cyrius 6.5.37 — and
+  `dist/bote.cyr` at 3.3.7 still called the retired `payload(`.
+
+
 ## [2.4.1] - 2026-08-28
 
 Three of the four open data-accuracy items from the roadmap. Every value was checked
