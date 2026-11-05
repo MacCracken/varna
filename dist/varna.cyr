@@ -4,6 +4,7 @@
 # Do not edit -- rebuild with: cyrius distlib
 
 # Requires (compile-verified; the leaves of dist/varna.deps):
+include "lib/result.cyr"
 include "lib/hashmap.cyr"
 
 # --- error.cyr ---
@@ -252,6 +253,17 @@ fn tone_register_name(register) {
 #                    vowel     → f0=height f1=backness f2=rounded(0/1)
 #   Inventory (40B): [0]=code  [8]=name  [16]=phonemes(vec)  [24]=stress
 #                    [32]=tones(vec of Tone records | 0)
+#
+# JSON (2.5.2, ADR 0003). Every enum below carries `#derive(Serialize)`, which
+# generates its by-name codec: `E_to_json(v, sb)` writes `"Plosive"`, and
+# `E_from_json_str(text)` returns Ok(value) / Err(-1). The record writers and
+# readers that call them live in src/json.cyr. The decoder's Result needs
+# lib/result.cyr in scope, and distlib's compile-verify does not record that leaf
+# on its own (an unreferenced decoder's undefined `Ok` / `Err` is only a warning),
+# so it is included here: a consumer that calls `Manner_from_json_str` gets it
+# through the bundle's `# Requires` block. Include-once keys on this spelling, the
+# one `[deps] stdlib` auto-prepends, so varna's own builds read it once.
+include "lib/result.cyr"
 
 # Airstream mechanism — orthogonal to manner of articulation.
 #
@@ -264,6 +276,7 @@ fn tone_register_name(register) {
 #
 # `Pulmonic` is the default and covers every vowel and all but 38 consonants in
 # the corpus, so `phoneme_consonant` keeps its arity and sets it implicitly.
+#derive(Serialize)
 enum Airstream {
     Pulmonic = 0;
     Ejective = 1;
@@ -288,6 +301,7 @@ enum Airstream {
 # aspirate series, and pharyngealization is the Arabic emphatic contrast — plus
 # `Raised` and `Lateral`. `Velarized` is deliberately absent: no corpus segment
 # needs it yet, and bits are additive.
+#derive(Serialize)
 enum PhonemeFeature {
     Aspirated = 1;        # ʰ  — voiceless aspiration
     Breathy = 2;          # ʱ  — breathy/murmured voice (Indic voiced aspirates)
@@ -306,6 +320,7 @@ enum PhonemeFeature {
     ExtraShort = 8192;    # ̆  — extra-short (Vietnamese /ɤ̆/)
 }
 
+#derive(Serialize)
 enum Manner {
     Plosive = 0;
     Nasal = 1;
@@ -318,6 +333,7 @@ enum Manner {
     Affricate = 8;
 }
 
+#derive(Serialize)
 enum Place {
     Bilabial = 0;
     Labiodental = 1;
@@ -333,6 +349,7 @@ enum Place {
     LabialVelar = 11;
 }
 
+#derive(Serialize)
 enum Height {
     Close = 0;
     NearClose = 1;
@@ -343,12 +360,14 @@ enum Height {
     Open = 6;
 }
 
+#derive(Serialize)
 enum Backness {
     Front = 0;
     Central = 1;
     Back = 2;
 }
 
+#derive(Serialize)
 enum StressPattern {
     Fixed = 0;
     Free = 1;
@@ -356,6 +375,7 @@ enum StressPattern {
     Tonal = 3;
 }
 
+#derive(Serialize)
 enum PhonemeKind {
     Consonant = 0;
     Vowel = 1;

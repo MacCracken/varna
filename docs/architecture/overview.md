@@ -26,6 +26,7 @@ varna/
 │   ├── cognate.cyr        — cross-language cognate tracking
 │   ├── dialect.cyr        — language-variety overlays (regional dialects, national standards)
 │   ├── registry.cyr       — central ISO 639 lookup across all domains
+│   ├── json.cyr           — JSON in the v1.x serde format (2.5.2, ADR 0003; not in dist/ yet)
 │   ├── logging.cyr        — VARNA_LOG env init (log + sakshi)        [-D LOGGING]
 │   ├── mcp.cyr            — 5 MCP tools, bote-core surface           [-D MCP]
 │   ├── daimon.cyr         — agent registration payload               [-D DAIMON]
@@ -33,9 +34,9 @@ varna/
 ├── lib/                   — vendored Cyrius stdlib snapshot (cyrius deps; gitignored)
 ├── dist/                  — consumer bundles (cyrius distlib --all)
 │   ├── varna.cyr          — full data engine, single file
-│   ├── varna.deps         — stdlib leaves varna.cyr needs (1: hashmap; read by cyrius deps)
+│   ├── varna.deps         — stdlib leaves varna.cyr needs (result, hashmap; read by cyrius deps)
 │   ├── varna-core.cyr     — [lib.core] profile (same modules today, see note)
-│   └── varna-core.deps    — the same single leaf
+│   └── varna-core.deps    — the same two leaves
 └── tests/
     ├── *.tcyr             — cross-module integration tests (cyrius test tests)
     └── *.bcyr             — cyrius bench harness (lib/bench.cyr)
@@ -157,7 +158,7 @@ The v1.x crate's external dependencies all resolve to Cyrius stdlib or builtins:
 | `criterion` | `cyrius bench` + `lib/bench.cyr` | toolchain |
 
 The serde row is the one gap in that map. v1.x derived `Serialize` / `Deserialize` on
-47 public types across 13 modules; the port carried none of it, and this page described
+44 public types (21 structs, 23 enums) across 13 modules; the port carried none of it, and this page described
 it as done until 2.5.1. varna's records are raw `load64` / `store64` layouts rather than
 `struct`s, so `#derive(Serialize)` cannot attach as they stand; how a record becomes
 JSON is the first decision of the 2.5.2 item.
@@ -183,7 +184,6 @@ varna
   ├─→ svara       — vocal synthesis (phoneme-to-audio)
   ├─→ sankhya     — ancient mathematical systems (script-aware numerals, Babylonian/Egyptian)
   ├─→ jnana       — multilingual knowledge access
-  ├─→ vidya       — programming reference (native language explanations)
   ├─→ vansh       — voice assistant TTS/STT (planned)
   └─→ sahifa      — OCR language detection, multilingual document processing (planned)
 ```
@@ -192,8 +192,8 @@ varna
 
 - **Data-driven**: Language data as fixed-layout records built and read through `load64` / `store64` accessors (no `struct` declarations), not embedded strings
 - **Queryable**: Every inventory supports lookup, filtering, counting, and `by_code()` dispatch
-- **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`). `[lib]` and `[lib.core]` currently declare identical module lists, so the two bundle *bodies* are byte-identical. Since 2.4.3 (cyrius 6.6.18+ `distlib`, whose compile-verify is the only authority over a sidecar) the two `.deps` sidecars are identical too — one leaf each at 2.5.1 (`hashmap`, whose requires block brings `alloc` / `string` / `vec` / `str`), four at 2.4.3–2.5.0; before 2.4.3 the full sidecar unioned in all sixteen `[deps].stdlib` entries
-- **Serializable — not yet**: no type emits or reads JSON today; it returns in 2.5.2 (roadmap P0), on bayan's JSON profile
+- **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`). `[lib]` and `[lib.core]` currently declare identical module lists, so the two bundle *bodies* are byte-identical. Since 2.4.3 (cyrius 6.6.18+ `distlib`, whose compile-verify is the only authority over a sidecar) the two `.deps` sidecars are identical too — `result hashmap` since 2.5.2's enum codecs (`hashmap`'s requires block brings `alloc` / `string` / `vec` / `str`), `hashmap` alone at 2.5.1, four leaves at 2.4.3–2.5.0; before 2.4.3 the full sidecar unioned in all sixteen `[deps].stdlib` entries
+- **Serializable — in progress (2.5.2)**: the v1.x serde format ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)) on bayan's JSON profile; phonemes and inventories done, the other modules to follow
 - **Extensible**: tagged enums everywhere — new variants are additive, no break for consumers
 - **Static-literal data**: pre-built inventories hold `'static` `str` literals — no per-build heap churn (Cyrius has no `Cow`)
 - **Builder pattern**: an inventory builder for ergonomic construction

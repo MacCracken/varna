@@ -10,9 +10,8 @@ the v1.x Rust source was removed at 2.1.4 and remains in git tags `1.0.0`–`2.1
 Used by [shabda](https://github.com/MacCracken/shabda) (G2P conversion),
 [shabdakosh](https://github.com/MacCracken/shabdakosh) (pronunciation dictionary),
 [svara](https://github.com/MacCracken/svara) (vocal synthesis),
-[sankhya](https://github.com/MacCracken/sankhya) (ancient mathematical systems),
-[jnana](https://github.com/MacCracken/jnana) (knowledge system), and
-[vidya](https://github.com/MacCracken/vidya) (programming reference).
+[sankhya](https://github.com/MacCracken/sankhya) (ancient mathematical systems), and
+[jnana](https://github.com/MacCracken/jnana) (knowledge system).
 
 ## Modules
 
@@ -63,10 +62,11 @@ modules = ["dist/varna.cyr"]
 
 `cyrius deps` clones varna at the tag and copies the bundle into `lib/varna.cyr`,
 reading `dist/varna.deps` to pull the stdlib leaves the bundle needs. That sidecar
-names only what `distlib`'s compile-verify proves — since 2.5.1 a single leaf,
-`hashmap`, whose own requires block brings `alloc`, `string`, `vec` and `str` — and
-the bundle opens with a matching `# Requires` include block. (A scratch consumer
-declaring only `hashmap` was built against the 2.5.1 bundle to check it.) If your own
+names only what `distlib`'s compile-verify proves — `result` and `hashmap` (the
+latter's requires block brings `alloc`, `string`, `vec` and `str`; `result` is for the
+phoneme enums' JSON name codecs) — and the bundle opens with a matching `# Requires`
+include block. (A scratch consumer declaring only those was built against the bundle
+and run to check it.) If your own
 code calls a stdlib family (`fmt`, `io`, `bayan`, `assert`, `bench`, …), declare it in
 your own `[deps] stdlib`; varna's sidecar does not bring it along. varna's optional
 `[deps.bayan]` is not resolved for consumers. For the linguistic data engine without
@@ -113,11 +113,13 @@ varna (this engine)
       └── bote (dist/bote-core.cyr)   — MCP / JSON-RPC core surface (recipe only, -D MCP)
 ```
 
-**varna does not serialize its types yet.** The v1.x crate derived `Serialize` /
-`Deserialize` on its public types; the Cyrius port did not carry that over, and no
-varna type emits or reads JSON today (only the `-D MCP` tools hand-build their
-output). It returns in **2.5.2** — the P0 at the top of the
-[roadmap](docs/development/roadmap.md). The `bayan-json` dependency is in place for it.
+**Serialization is coming back in 2.5.2.** The v1.x crate derived `Serialize` /
+`Deserialize` on its public types; the Cyrius port did not carry that over, so the
+2.5.1 release serializes nothing. 2.5.2 restores it in the v1.x serde format
+([ADR 0003](docs/adr/0003-json-wire-format-matches-v1x-serde.md)), module by module —
+the [roadmap](docs/development/roadmap.md)'s P0. Phonemes and inventories are done in
+the tree (`phoneme_to_json` / `phoneme_from_json`, `phoneme_inventory_to_json` /
+`phoneme_inventory_from_json` in `src/json.cyr`), not yet in `dist/`.
 
 Zero external (non-Cyrius) dependencies. The v1.x crate's `thiserror`, `tracing`,
 `tracing-subscriber`, and `criterion` resolve to Cyrius stdlib modules or language
@@ -140,7 +142,6 @@ dhvani — audio engine (mixing, DSP, output)
 Also feeds:
 - **sankhya** — ancient mathematical systems (script-aware numerals, Babylonian/Egyptian)
 - **jnana** — multilingual knowledge access
-- **vidya** — programming concepts explained in native languages
 - **vansh** (planned) — voice assistant with multilingual TTS/STT
 - **sahifa** (planned) — OCR language detection, multilingual document processing
 

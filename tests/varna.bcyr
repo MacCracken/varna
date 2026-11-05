@@ -29,6 +29,7 @@ include "src/script.cyr"
 include "src/registry.cyr"
 include "src/numerals.cyr"
 include "src/transliteration.cyr"
+include "src/json.cyr"
 
 # Pre-built state for lookup benchmarks.
 var _b_en = 0;
@@ -40,6 +41,7 @@ var _b_es = 0;
 var _b_allo = 0;
 var _b_phono = 0;
 var _b_rp = 0;
+var _b_en_json = 0;
 
 fn b_english_inventory() { phoneme_english(); return 0; }
 fn b_sanskrit_inventory() { phoneme_sanskrit(); return 0; }
@@ -74,6 +76,15 @@ fn b_lexicon_find() { lexicon_find(_b_es, "agua"); return 0; }
 fn b_allophone_realize() { allophone_realize(_b_allo, "t", Environment.Intervocalic); return 0; }
 fn b_phonotactics_is_permitted() { phonotactics_is_permitted(_b_phono, "str", SyllablePosition.Onset); return 0; }
 fn b_dialect_apply() { dialect_apply(_b_rp, _b_en); return 0; }
+# 2.5.2 JSON (ADR 0003): the full English inventory, 36 phonemes. Each call builds a
+# fresh str_builder / value tree (there is no builder reset and the bump allocator
+# never frees), so the iteration counts are kept low.
+fn b_json_inventory_write() {
+    var sb = str_builder_new();
+    phoneme_inventory_to_json(_b_en, sb);
+    return 0;
+}
+fn b_json_inventory_read() { phoneme_inventory_from_json(_b_en_json); return 0; }
 
 fn _bench(benches, name, fp, n) {
     var b = bench_new(name);
@@ -93,6 +104,9 @@ fn main() {
     _b_allo = allophone_english();
     _b_phono = phonotactics_english();
     _b_rp = dialect_british_english();
+    var jsb = str_builder_new();
+    phoneme_inventory_to_json(_b_en, jsb);
+    _b_en_json = str_cstr(str_builder_build(jsb));
 
     var benches = vec_new();
     _bench(benches, "english_phoneme_inventory", &b_english_inventory, 100000);
@@ -117,6 +131,8 @@ fn main() {
     _bench(benches, "allophone_realize", &b_allophone_realize, 1000000);
     _bench(benches, "phonotactics_is_permitted", &b_phonotactics_is_permitted, 1000000);
     _bench(benches, "dialect_apply_overlay", &b_dialect_apply, 100000);
+    _bench(benches, "json_inventory_write_en", &b_json_inventory_write, 2000);
+    _bench(benches, "json_inventory_read_en", &b_json_inventory_read, 1000);
     bench_report_all(benches);
     return 0;
 }

@@ -33,8 +33,8 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | Numeral systems | 9 — five of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek) |
 | Grammar profiles | 11 |
 | Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 35 files, **2,409 assertions**, 0 failing |
-| Benchmarks | 22, covering every domain |
+| Tests | 36 files, **2,478 assertions**, 0 failing (working tree; 2.5.1 shipped 35 / 2,409) |
+| Benchmarks | 24, covering every domain plus inventory JSON |
 | Reference coverage | 328/350 functions (93%) — a floor, not a correctness proof |
 
 ## Toolchain
@@ -82,6 +82,7 @@ the port and has since been extended past it.
 | `cognate` | cognate sets, etymology, borrowing type |
 | `dialect` | variety overlays (British English RP) |
 | `registry` | ISO 639 lookup across every module, plus family, endangerment, geography |
+| `json` | JSON in the v1.x serde format (2.5.2, ADR 0003): phoneme + inventory so far; not in `dist/` yet |
 
 **`-D`-gated surfaces.** Each test `#define`s its own macro, so `cyrius test tests` exercises
 all four. Default `cyrius build` excludes them.
@@ -113,9 +114,11 @@ transitive include of `lib/hashseed.cyr`.)
 
 Consumers pull one of two bundles, each with a compile-verified sidecar naming the
 stdlib leaves it needs and a matching `# Requires` include block: `dist/varna.cyr` or
-`dist/varna-core.cyr`, one leaf each at 2.5.1: `hashmap`, whose own requires block
-brings alloc / string / vec / str (checked by building a scratch consumer that declares
-only `hashmap`). It was 4 leaves at 2.4.3–2.5.0; before cyrius 6.6.18 the full sidecar
+`dist/varna-core.cyr`, `result hashmap` each in the working tree (`hashmap`'s own
+requires block brings alloc / string / vec / str; `result` is for the phoneme enums'
+JSON codecs, and src/phoneme.cyr includes it so distlib records it). Checked by building
+a scratch consumer against the bundle. It was `hashmap` alone at 2.5.1 and 4 leaves at
+2.4.3–2.5.0; before cyrius 6.6.18 the full sidecar
 unioned in the whole `[deps].stdlib` (16 leaves).
 
 ## Verification
@@ -137,25 +140,28 @@ Two verification habits are load-bearing here and worth keeping:
 
 ## Known gaps
 
-Full detail in the [roadmap](roadmap.md); in brief —
+The [roadmap](roadmap.md) is organized into releases (reorganized at 2.5.1). In brief:
 
-- **Glottocodes** are the one untouched data item, and need a source rather than a
-  decision. Generating them would produce fabrications indistinguishable from real
-  identifiers.
-- **Somali's vowel analysis** gates the `AdvancedTongueRoot` bit. Yoruba and Wolof are
-  markable as of 2.4.1; marking two of three is worse than marking none.
-- **Burmese and Lao tone rows** are under-sourced rather than wrong, and want a
-  single-source pass instead of cell-by-cell patching.
-- **Gematria follow-ons** carried out of 2.4.0: caching `script_alphabet_values`, a
-  variant-glyph alias map, the Maghrebi abjad, Glagolitic, mispar gadol.
-- **Serialization did not survive the port** — not just its tests. No varna type emits
-  or reads JSON; v1.x derived serde on 47 types across 13 modules and round-tripped
-  them in `serde_roundtrip.rs` (27 tests, never ported). `src/mcp.cyr` hand-builds its
-  JSON. Roadmap **2.5.2 (P0)**.
-
-Next release is **2.5.2** (bayan / serde integration, P0), ahead of the 2.5.0 coverage
-tier.
+- **2.5.2, P0 — serialization did not survive the port**, not just its tests. No varna
+  type emits or reads JSON. v1.x derived serde on 44 types (21 structs, 23 enums) across 13 modules and
+  round-tripped them in `serde_roundtrip.rs` (27 tests, never ported), and `src/mcp.cyr`
+  hand-builds its JSON. A scratch probe at 2.5.1 showed a `#derive(Serialize)` struct
+  matches the existing 56-byte phoneme record's layout, with both decoders
+  round-tripping. The open design call (ADR 0003) is whether enum fields go by name or
+  by number.
+- **2.5.3, data accuracy:** Somali's vowel analysis, which gates the
+  `AdvancedTongueRoot` bit; the Burmese and Lao tone rows, which are under-sourced rather
+  than wrong; Glottocodes, which need a source rather than a decision (generating them
+  would produce fabrications).
+- **2.5.4, hygiene:** caching `script_alphabet_values`; `grammar_by_code_lookup`, which
+  slowed at three straight toolchain pins (209 → ~241 ns); `assert` / `bench` into
+  `[test] stdlib`; `-D LOGGING` through sakshi.
+- **2.6.0+** is feature work: coverage scale, typology and interchange, linguistic
+  depth.
 
 ## Consumers
 
-shabda, shabdakosh, svara, sankhya, jnana, vidya. Planned: vansh, sahifa.
+Folding varna today, per their manifests in `~/Repos`: **shabda**, **shabdakosh** and
+**sankhya**, all at 2.4.1. **svara** is a named consumer with no `[deps.varna]` yet, and
+**jnana** is not checked out here. Planned: vansh, sahifa. vidya is not a consumer; it
+would only need varna if it gains speech support for the programming-language codex.

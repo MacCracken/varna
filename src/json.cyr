@@ -1,0 +1,369 @@
+# src/json.cyr — JSON for varna's records, in the v1.x serde format (ADR 0003).
+#
+# 2.5.2. The v1.x crate derived Serialize / Deserialize on every public type; the
+# Rust → Cyrius port carried none of it. This file restores it, record by record,
+# writing exactly what serde's default representation produced:
+#   - a struct is an object, fields in declaration order;
+#   - a unit enum variant is its name ("Plosive");
+#   - a data-carrying variant is externally tagged, {"Consonant":{...}};
+#   - None is null, a Vec an array.
+# Readers are as strict as serde's defaults. A missing required field, a wrong JSON
+# type (a number where a name or a bool belongs), an unknown enum name, or a tagged
+# object with other than one key makes a reader return 0. Unknown extra keys are
+# ignored, as serde ignores them. A field varna gained after v1.x is optional on
+# read and takes its constructor default, so a v1.x document still decodes.
+#
+# Enum names come from each enum's `#derive(Serialize)` codec (src/phoneme.cyr). A
+# struct derive cannot write an enum field by name, which is why the record writers
+# and readers are hand-written around those codecs. Readers parse with bayan's
+# value tree (`bayan_json_v_*`, from the dist/bayan-json.cyr profile).
+#
+# Contract. A writer appends one JSON value to the caller's str_builder and returns
+# 0. On -1 (a null record, or one whose kind is corrupt) nothing was written. A
+# reader takes NUL-terminated JSON text and returns a newly built record, or 0.
+#
+# Not in dist/ yet: see cyrius.cyml [lib] and roadmap 2.5.2's consumer-hazard bite.
+
+# --- shared ---------------------------------------------------------
+
+# Longest enum variant name a reader accepts. The longest in the corpus is
+# "LateralApproximant" (18 bytes), so anything over this is not a name.
+var _JSON_NAME_MAX = 47;
+
+fn _json_bool(sb, b) {
+    if (b != 0) { return str_builder_add_cstr(sb, "true"); }
+    return str_builder_add_cstr(sb, "false");
+}
+
+# Copy Str `s` into `buf` (at least _JSON_NAME_MAX + 1 bytes) as a C string.
+# Returns 1, or 0 when `s` is null, empty or too long to be a variant name.
+fn _json_name_from_str(s, buf) {
+    if (s == 0) { return 0; }
+    var n = str_len(s);
+    if (n == 0 || n > _JSON_NAME_MAX) { return 0; }
+    memcpy(buf, str_data(s), n);
+    store8(buf + n, 0);
+    return 1;
+}
+
+# The JSON string `v` copied into `buf` as a C string; 0 if `v` is not a string.
+fn _json_name(v, buf) { return _json_name_from_str(bayan_json_v_str(v), buf); }
+
+# A string member as a fresh NUL-terminated copy, or 0 when absent or not a string.
+fn _json_cstr(v) {
+    var s = bayan_json_v_str(v);
+    if (s == 0) { return 0; }
+    return str_cstr(s);
+}
+
+# A JSON bool as 0 / 1, or -1 when `v` is absent or not a bool (serde does not
+# read 0 / 1 as a bool, and neither does this).
+fn _json_bool_from(v) {
+    if (!bayan_json_v_is_bool(v)) { return 0 - 1; }
+    return bayan_json_v_bool(v);
+}
+
+# --- enum fields: name → value through each enum's derived codec -----
+# Each returns the value, or -1 for a value that is not a string naming a variant.
+# Every phoneme enum value is >= 0, so -1 cannot collide.
+
+fn _json_manner(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var t, x = Manner_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+fn _json_place(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var t, x = Place_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+fn _json_height(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var t, x = Height_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+fn _json_backness(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var t, x = Backness_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+fn _json_airstream(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var t, x = Airstream_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+fn _json_stress(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var t, x = StressPattern_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+fn _json_feature(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var t, x = PhonemeFeature_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+# The externally tagged variant key (a Str) as a PhonemeKind, or -1.
+fn _json_kind_key(key) {
+    var nb[48];
+    if (_json_name_from_str(key, &nb) == 0) { return 0 - 1; }
+    var t, x = PhonemeKind_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+# --- PhonemeFeature bit set ------------------------------------------
+
+# Write a PhonemeFeature mask as an array of flag names in ascending bit order;
+# an empty set is []. A bit no variant names is written as null, which no reader
+# accepts, so a corrupt mask cannot round-trip as a different one.
+fn _json_features(sb, mask) {
+    str_builder_putc(sb, '[');
+    var first = 1;
+    var bit = 1;
+    var i = 0;
+    while (i < 62) {
+        if ((mask & bit) != 0) {
+            if (first == 0) { str_builder_putc(sb, ','); }
+            PhonemeFeature_to_json(bit, sb);
+            first = 0;
+        }
+        bit = bit * 2;
+        i = i + 1;
+    }
+    str_builder_putc(sb, ']');
+    return 0;
+}
+
+# A features array back to a mask. An absent member is 0, since v1.x had no
+# features. Returns -1 for a non-array, or an element that names no flag.
+fn _json_features_from(v) {
+    if (v == 0) { return 0; }
+    if (!bayan_json_v_is_arr(v)) { return 0 - 1; }
+    var mask = 0;
+    var n = bayan_json_v_arr_len(v);
+    var i = 0;
+    while (i < n) {
+        var f = _json_feature(bayan_json_v_arr_get(v, i));
+        if (f <= 0) { return 0 - 1; }
+        mask = mask | f;
+        i = i + 1;
+    }
+    return mask;
+}
+
+# --- Phoneme ---------------------------------------------------------
+#
+# v1.x: {"ipa":"p","kind":{"Consonant":{"manner":"Plosive","place":"Bilabial","voiced":false}}}
+# varna adds `airstream` (2.2.0) and `features` (2.2.1) inside the variant object:
+#   {"ipa":"pʰ","kind":{"Consonant":{"manner":"Plosive","place":"Bilabial",
+#    "voiced":false,"airstream":"Pulmonic","features":["Aspirated"]}}}
+
+fn _json_kind_ok(kind) {
+    if (kind == PhonemeKind.Consonant) { return 1; }
+    if (kind == PhonemeKind.Vowel) { return 1; }
+    return 0;
+}
+
+# Append phoneme `p` to `sb`. Returns 0, or -1 (nothing written) for a null
+# record or one whose kind is neither Consonant nor Vowel.
+fn phoneme_to_json(p, sb) {
+    if (p == 0) { return 0 - 1; }
+    var kind = phoneme_kind(p);
+    if (_json_kind_ok(kind) == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"ipa\":");
+    str_builder_add_json_cstr(sb, phoneme_ipa(p));
+    str_builder_add_cstr(sb, ",\"kind\":{");
+    PhonemeKind_to_json(kind, sb);
+    if (kind == PhonemeKind.Vowel) {
+        str_builder_add_cstr(sb, ":{\"height\":");
+        Height_to_json(phoneme_height(p), sb);
+        str_builder_add_cstr(sb, ",\"backness\":");
+        Backness_to_json(phoneme_backness(p), sb);
+        str_builder_add_cstr(sb, ",\"rounded\":");
+        _json_bool(sb, phoneme_rounded(p));
+    } else {
+        str_builder_add_cstr(sb, ":{\"manner\":");
+        Manner_to_json(phoneme_manner(p), sb);
+        str_builder_add_cstr(sb, ",\"place\":");
+        Place_to_json(phoneme_place(p), sb);
+        str_builder_add_cstr(sb, ",\"voiced\":");
+        _json_bool(sb, phoneme_voiced(p));
+    }
+    str_builder_add_cstr(sb, ",\"airstream\":");
+    Airstream_to_json(phoneme_airstream(p), sb);
+    str_builder_add_cstr(sb, ",\"features\":");
+    _json_features(sb, phoneme_features(p));
+    str_builder_add_cstr(sb, "}}}");
+    return 0;
+}
+
+# A phoneme from a parsed JSON value, or 0.
+fn _json_phoneme(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var ipa = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "ipa"));
+    if (ipa == 0) { return 0; }
+    var kv = bayan_json_v_obj_get_by_cstr(v, "kind");
+    if (!bayan_json_v_is_obj(kv)) { return 0; }
+    if (bayan_json_v_obj_len(kv) != 1) { return 0; }
+    var kind = _json_kind_key(bayan_json_v_obj_key(kv, 0));
+    var body = bayan_json_v_obj_val(kv, 0);
+    if (!bayan_json_v_is_obj(body)) { return 0; }
+
+    var air = Airstream.Pulmonic;
+    var av = bayan_json_v_obj_get_by_cstr(body, "airstream");
+    if (av != 0) {
+        air = _json_airstream(av);
+        if (air < 0) { return 0; }
+    }
+    var feats = _json_features_from(bayan_json_v_obj_get_by_cstr(body, "features"));
+    if (feats < 0) { return 0; }
+
+    if (kind == PhonemeKind.Consonant) {
+        var manner = _json_manner(bayan_json_v_obj_get_by_cstr(body, "manner"));
+        var place = _json_place(bayan_json_v_obj_get_by_cstr(body, "place"));
+        var voiced = _json_bool_from(bayan_json_v_obj_get_by_cstr(body, "voiced"));
+        if (manner < 0 || place < 0 || voiced < 0) { return 0; }
+        return phoneme_consonant_full(ipa, manner, place, voiced, air, feats);
+    }
+    if (kind == PhonemeKind.Vowel) {
+        # varna's vowels are pulmonic without exception (phoneme_vowel_full sets it),
+        # so a vowel claiming another airstream is not a record varna can hold.
+        if (air != Airstream.Pulmonic) { return 0; }
+        var height = _json_height(bayan_json_v_obj_get_by_cstr(body, "height"));
+        var backness = _json_backness(bayan_json_v_obj_get_by_cstr(body, "backness"));
+        var rounded = _json_bool_from(bayan_json_v_obj_get_by_cstr(body, "rounded"));
+        if (height < 0 || backness < 0 || rounded < 0) { return 0; }
+        return phoneme_vowel_full(ipa, height, backness, rounded, feats);
+    }
+    return 0;
+}
+
+# A phoneme from NUL-terminated JSON text, or 0.
+#must_use
+fn phoneme_from_json(text) {
+    if (text == 0) { return 0; }
+    return _json_phoneme(bayan_json_v_parse_buf(text, strlen(text)));
+}
+
+# --- PhonemeInventory --------------------------------------------------
+#
+# v1.x field order: language_code, language_name, phonemes, tones, stress.
+# `tones` is null for a non-tonal language, else the Chao tone-letter strings the
+# inventory was built from (tone_letters of each Tone record). Since 2.2.4 varna
+# holds parsed Tone records, but each keeps its original string, so v1.x's shape
+# is reproduced exactly and reading it back re-parses the same records.
+
+# Append inventory `inv` to `sb`. Returns 0, or -1 (nothing written) for a null
+# inventory or one holding a phoneme phoneme_to_json would refuse.
+fn phoneme_inventory_to_json(inv, sb) {
+    if (inv == 0) { return 0 - 1; }
+    var ps = phoneme_list(inv);
+    var n = vec_len(ps);
+    var i = 0;
+    while (i < n) {
+        var p = vec_get(ps, i);
+        if (p == 0) { return 0 - 1; }
+        if (_json_kind_ok(phoneme_kind(p)) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+
+    str_builder_add_cstr(sb, "{\"language_code\":");
+    str_builder_add_json_cstr(sb, phoneme_language_code(inv));
+    str_builder_add_cstr(sb, ",\"language_name\":");
+    str_builder_add_json_cstr(sb, phoneme_language_name(inv));
+    str_builder_add_cstr(sb, ",\"phonemes\":[");
+    i = 0;
+    while (i < n) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        phoneme_to_json(vec_get(ps, i), sb);
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "],\"tones\":");
+    var tv = phoneme_tones(inv);
+    if (tv == 0) {
+        str_builder_add_cstr(sb, "null");
+    } else {
+        str_builder_putc(sb, '[');
+        var nt = vec_len(tv);
+        var j = 0;
+        while (j < nt) {
+            if (j > 0) { str_builder_putc(sb, ','); }
+            str_builder_add_json_cstr(sb, tone_letters(vec_get(tv, j)));
+            j = j + 1;
+        }
+        str_builder_putc(sb, ']');
+    }
+    str_builder_add_cstr(sb, ",\"stress\":");
+    StressPattern_to_json(phoneme_stress(inv), sb);
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+# An inventory from a parsed JSON value, or 0.
+fn _json_inventory(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var code = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "language_code"));
+    var name = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "language_name"));
+    if (code == 0 || name == 0) { return 0; }
+    var pv = bayan_json_v_obj_get_by_cstr(v, "phonemes");
+    if (!bayan_json_v_is_arr(pv)) { return 0; }
+    var stress = _json_stress(bayan_json_v_obj_get_by_cstr(v, "stress"));
+    if (stress < 0) { return 0; }
+
+    # `tones` is an Option: absent or null is none, an array of strings is some.
+    var tones = 0;
+    var tv = bayan_json_v_obj_get_by_cstr(v, "tones");
+    if (tv != 0 && !bayan_json_v_is_null(tv)) {
+        if (!bayan_json_v_is_arr(tv)) { return 0; }
+        tones = vec_new();
+        var nt = bayan_json_v_arr_len(tv);
+        var j = 0;
+        while (j < nt) {
+            var letters = _json_cstr(bayan_json_v_arr_get(tv, j));
+            if (letters == 0) { return 0; }
+            vec_push(tones, letters);
+            j = j + 1;
+        }
+    }
+
+    var inv = phoneme_builder_new(code, name);
+    phoneme_builder_stress(inv, stress);
+    var n = bayan_json_v_arr_len(pv);
+    var i = 0;
+    while (i < n) {
+        var p = _json_phoneme(bayan_json_v_arr_get(pv, i));
+        if (p == 0) { return 0; }
+        phoneme_builder_phoneme(inv, p);
+        i = i + 1;
+    }
+    if (tones != 0) { phoneme_builder_tones(inv, tones); }
+    return phoneme_builder_build(inv);
+}
+
+# An inventory from NUL-terminated JSON text, or 0.
+#must_use
+fn phoneme_inventory_from_json(text) {
+    if (text == 0) { return 0; }
+    return _json_inventory(bayan_json_v_parse_buf(text, strlen(text)));
+}

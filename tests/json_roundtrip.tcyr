@@ -1,0 +1,360 @@
+# tests/json_roundtrip.tcyr — JSON in the v1.x serde format (ADR 0003, roadmap 2.5.2).
+#
+# Ports v1.x tests/serde_roundtrip.rs: its phoneme half for now (serde_phoneme_consonant,
+# serde_phoneme_vowel, serde_phoneme_inventory_all_languages, _with_tones,
+# _without_tones); the other modules join as their serializers land. v1.x compared with
+# PartialEq; varna has no record equality, so the field-by-field helpers below stand in
+# for it. Beyond the port: exact text against what serde wrote, v1.x documents (which
+# lack `airstream` / `features`) decoding, every enum variant by name, and malformed
+# input.
+
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/json.cyr"
+
+# --- equality (v1.x derived PartialEq) ---
+
+fn _ph_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(phoneme_ipa(a), phoneme_ipa(b)) != 1) { return 0; }
+    if (phoneme_kind(a) != phoneme_kind(b)) { return 0; }
+    if (phoneme_manner(a) != phoneme_manner(b)) { return 0; }
+    if (phoneme_place(a) != phoneme_place(b)) { return 0; }
+    if (phoneme_voiced(a) != phoneme_voiced(b)) { return 0; }
+    if (phoneme_airstream(a) != phoneme_airstream(b)) { return 0; }
+    if (phoneme_features(a) != phoneme_features(b)) { return 0; }
+    return 1;
+}
+
+fn _tones_eq(a, b) {
+    if (a == 0 || b == 0) { return a == b; }
+    var n = vec_len(a);
+    if (n != vec_len(b)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (streq(tone_letters(vec_get(a, i)), tone_letters(vec_get(b, i))) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _inv_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(phoneme_language_code(a), phoneme_language_code(b)) != 1) { return 0; }
+    if (streq(phoneme_language_name(a), phoneme_language_name(b)) != 1) { return 0; }
+    if (phoneme_stress(a) != phoneme_stress(b)) { return 0; }
+    if (_tones_eq(phoneme_tones(a), phoneme_tones(b)) != 1) { return 0; }
+    var pa = phoneme_list(a);
+    var pb = phoneme_list(b);
+    var n = vec_len(pa);
+    if (n != vec_len(pb)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (_ph_eq(vec_get(pa, i), vec_get(pb, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+# --- helpers ---
+
+# Phoneme `p` as a NUL-terminated JSON C string (0 if the writer refused).
+fn _ph_text(p) {
+    var sb = str_builder_new();
+    if (phoneme_to_json(p, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _inv_text(inv) {
+    var sb = str_builder_new();
+    if (phoneme_inventory_to_json(inv, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _starts_with(s, prefix) {
+    var n = strlen(prefix);
+    if (strlen(s) < n) { return 0; }
+    return memeq(s, prefix, n);
+}
+
+fn _ends_with(s, suffix) {
+    var n = strlen(suffix);
+    var m = strlen(s);
+    if (m < n) { return 0; }
+    return memeq(s + m - n, suffix, n);
+}
+
+fn _contains(s, needle) {
+    var n = strlen(needle);
+    var m = strlen(s);
+    var i = 0;
+    while (i + n <= m) {
+        if (memeq(s + i, needle, n) == 1) { return 1; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+# --- serde_roundtrip.rs: phoneme types ---
+
+fn test_serde_phoneme_consonant() {
+    var p = phoneme_consonant("p", Manner.Plosive, Place.Bilabial, 0);
+    var back = phoneme_from_json(_ph_text(p));
+    assert(_ph_eq(p, back), "serde_phoneme_consonant: round trip");
+    return 0;
+}
+
+fn test_serde_phoneme_vowel() {
+    var p = phoneme_vowel("æ", Height.NearOpen, Backness.Front, 0);
+    var back = phoneme_from_json(_ph_text(p));
+    assert(_ph_eq(p, back), "serde_phoneme_vowel: round trip");
+    return 0;
+}
+
+fn test_serde_phoneme_inventory_all_languages() {
+    var codes = registry_all_codes();
+    var n = vec_len(codes);
+    var ok = 0;
+    var i = 0;
+    while (i < n) {
+        var code = vec_get(codes, i);
+        var inv = registry_phonemes(code);
+        var back = phoneme_inventory_from_json(_inv_text(inv));
+        if (_inv_eq(inv, back) == 1) { ok = ok + 1; }
+        else { println(code); }
+        i = i + 1;
+    }
+    assert_eq(n, 51, "51 registered languages");
+    assert_eq(ok, n, "serde_phoneme_inventory_all_languages: every inventory round-trips");
+    return 0;
+}
+
+fn test_serde_phoneme_inventory_with_tones() {
+    var inv = registry_phonemes("zh");
+    assert(phoneme_tones(inv) != 0, "zh has tones");
+    var back = phoneme_inventory_from_json(_inv_text(inv));
+    assert(_inv_eq(inv, back), "with_tones: round trip");
+    assert(_tones_eq(phoneme_tones(inv), phoneme_tones(back)), "with_tones: tones equal");
+    assert(vec_len(phoneme_tones(back)) > 0, "with_tones: tones present after decode");
+    return 0;
+}
+
+fn test_serde_phoneme_inventory_without_tones() {
+    var inv = registry_phonemes("en");
+    assert_eq(phoneme_tones(inv), 0, "en has no tones");
+    var back = phoneme_inventory_from_json(_inv_text(inv));
+    assert(back != 0, "without_tones: decoded");
+    assert_eq(phoneme_tones(back), 0, "without_tones: still none");
+    return 0;
+}
+
+# --- exact text: what v1.x serde wrote, plus airstream / features ---
+
+fn test_text_consonant() {
+    var t = _ph_text(phoneme_consonant("p", Manner.Plosive, Place.Bilabial, 0));
+    var want = "{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false,\"airstream\":\"Pulmonic\",\"features\":[]}}}";  #skip-lint
+    assert(streq(t, want), "consonant text is serde's shape");
+    return 0;
+}
+
+fn test_text_vowel() {
+    var t = _ph_text(phoneme_vowel("æ", Height.NearOpen, Backness.Front, 0));
+    var want = "{\"ipa\":\"æ\",\"kind\":{\"Vowel\":{\"height\":\"NearOpen\",\"backness\":\"Front\",\"rounded\":false,\"airstream\":\"Pulmonic\",\"features\":[]}}}";  #skip-lint
+    assert(streq(t, want), "vowel text is serde's shape");
+    return 0;
+}
+
+fn test_text_features_and_airstream() {
+    var asp = phoneme_consonant_full("pʰ", Manner.Plosive, Place.Bilabial, 0, Airstream.Pulmonic, PhonemeFeature.Aspirated);  #skip-lint
+    assert(_contains(_ph_text(asp), "\"features\":[\"Aspirated\"]"), "one flag by name");
+    var two = phoneme_consonant_full("tːʰ", Manner.Plosive, Place.Alveolar, 0, Airstream.Pulmonic, PhonemeFeature.Long | PhonemeFeature.Aspirated);  #skip-lint
+    assert(_contains(_ph_text(two), "\"features\":[\"Aspirated\",\"Long\"]"), "flags in ascending bit order");
+    var ej = phoneme_consonant_airstream("tʼ", Manner.Plosive, Place.Alveolar, 0, Airstream.Ejective);
+    var et = _ph_text(ej);
+    assert(_contains(et, "\"airstream\":\"Ejective\""), "airstream by name");
+    assert(_ph_eq(ej, phoneme_from_json(et)), "ejective round trip");
+    assert(_ph_eq(two, phoneme_from_json(_ph_text(two))), "two-flag round trip");
+    var voiced = phoneme_consonant("b", Manner.Plosive, Place.Bilabial, 1);
+    assert(_contains(_ph_text(voiced), "\"voiced\":true"), "bool written as true");
+    return 0;
+}
+
+fn test_text_inventory() {
+    var en = _inv_text(registry_phonemes("en"));
+    assert(_starts_with(en, "{\"language_code\":\"en\",\"language_name\":\""), "inventory opens with code, name");
+    assert(_contains(en, "\",\"phonemes\":[{\"ipa\":"), "then phonemes");
+    assert(_ends_with(en, "],\"tones\":null,\"stress\":\"Free\"}"), "then tones null, stress last");
+    var zh = _inv_text(registry_phonemes("zh"));
+    assert(_contains(zh, "\"tones\":[\""), "zh tones are strings");
+    return 0;
+}
+
+fn test_text_escaping() {
+    var p = phoneme_consonant("a\"b\\c", Manner.Plosive, Place.Bilabial, 0);
+    var t = _ph_text(p);
+    assert(_starts_with(t, "{\"ipa\":\"a\\\"b\\\\c\""), "quote and backslash escaped");
+    assert(_ph_eq(p, phoneme_from_json(t)), "escaped ipa round-trips");
+    return 0;
+}
+
+# --- v1.x documents and serde's tolerance ---
+
+fn test_v1x_documents_decode() {
+    var p = phoneme_from_json("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false}}}");  #skip-lint
+    assert(p != 0, "v1.x consonant decodes");
+    if (p != 0) {
+        assert_eq(phoneme_airstream(p), Airstream.Pulmonic, "absent airstream is Pulmonic");
+        assert_eq(phoneme_features(p), 0, "absent features is none");
+        assert_eq(phoneme_manner(p), Manner.Plosive, "manner");
+    }
+    var v = phoneme_from_json("{\"ipa\":\"æ\",\"kind\":{\"Vowel\":{\"height\":\"NearOpen\",\"backness\":\"Front\",\"rounded\":false}}}");  #skip-lint
+    assert(v != 0, "v1.x vowel decodes");
+    var inv = phoneme_inventory_from_json("{\"language_code\":\"xx\",\"language_name\":\"Test\",\"phonemes\":[],\"stress\":\"Fixed\"}");  #skip-lint
+    assert(inv != 0, "absent tones (an Option) decodes");
+    if (inv != 0) { assert_eq(phoneme_tones(inv), 0, "absent tones is none"); }
+    var x = phoneme_from_json("{\"extra\":[1,{\"a\":2}],\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false,\"later\":0}}}");  #skip-lint
+    assert(x != 0, "unknown keys are ignored, as by serde");
+    return 0;
+}
+
+# --- every enum variant by name ---
+
+fn test_enum_names() {
+    var bad = 0;
+    var i = 0;
+    while (i <= 8) {
+        var sb = str_builder_new();
+        Manner_to_json(i, sb);
+        var t, x = Manner_from_json_str(str_cstr(str_builder_build(sb)));
+        if (is_ok(t) != 1 || result_unwrap(t, x) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    i = 0;
+    while (i <= 11) {
+        var sb2 = str_builder_new();
+        Place_to_json(i, sb2);
+        var t2, x2 = Place_from_json_str(str_cstr(str_builder_build(sb2)));
+        if (is_ok(t2) != 1 || result_unwrap(t2, x2) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    i = 0;
+    while (i <= 6) {
+        var sb3 = str_builder_new();
+        Height_to_json(i, sb3);
+        var t3, x3 = Height_from_json_str(str_cstr(str_builder_build(sb3)));
+        if (is_ok(t3) != 1 || result_unwrap(t3, x3) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    i = 0;
+    while (i <= 3) {
+        var sb4 = str_builder_new();
+        StressPattern_to_json(i, sb4);
+        var t4, x4 = StressPattern_from_json_str(str_cstr(str_builder_build(sb4)));
+        if (is_ok(t4) != 1 || result_unwrap(t4, x4) != i) { bad = bad + 1; }
+        var sb5 = str_builder_new();
+        Airstream_to_json(i, sb5);
+        var t5, x5 = Airstream_from_json_str(str_cstr(str_builder_build(sb5)));
+        if (is_ok(t5) != 1 || result_unwrap(t5, x5) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    var bit = 1;
+    while (bit <= PhonemeFeature.ExtraShort) {
+        var sb6 = str_builder_new();
+        PhonemeFeature_to_json(bit, sb6);
+        var t6, x6 = PhonemeFeature_from_json_str(str_cstr(str_builder_build(sb6)));
+        if (is_ok(t6) != 1 || result_unwrap(t6, x6) != bit) { bad = bad + 1; }
+        bit = bit * 2;
+    }
+    assert_eq(bad, 0, "every phoneme enum variant round-trips by name");
+    var sb7 = str_builder_new();
+    Manner_to_json(Manner.LateralApproximant, sb7);
+    assert(str_eq_cstr(str_builder_build(sb7), "\"LateralApproximant\""), "longest name written whole");
+    return 0;
+}
+
+# --- malformed input: every reader returns 0 ---
+
+fn _rejects(text, label) {
+    assert_eq(phoneme_from_json(text), 0, label);
+    return 0;
+}
+
+fn test_malformed_phoneme() {
+    assert_eq(phoneme_from_json(0), 0, "null text");
+    _rejects("", "empty text");
+    _rejects("not json", "not JSON");
+    _rejects("null", "null document");
+    _rejects("[]", "array document");
+    _rejects("{\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false}}}", "missing ipa");  #skip-lint
+    _rejects("{\"ipa\":1,\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false}}}", "ipa not a string");  #skip-lint
+    _rejects("{\"ipa\":\"p\"}", "missing kind");
+    _rejects("{\"ipa\":\"p\",\"kind\":\"Consonant\"}", "kind not externally tagged");
+    _rejects("{\"ipa\":\"p\",\"kind\":{\"Fricative\":{}}}", "unknown kind variant");
+    _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false},\"Vowel\":{}}}", "tagged object with two keys");  #skip-lint
+    _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosiv\",\"place\":\"Bilabial\",\"voiced\":false}}}", "unknown manner name");  #skip-lint
+    _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":0,\"place\":\"Bilabial\",\"voiced\":false}}}", "manner as a number");  #skip-lint
+    _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":1}}}", "voiced as 1, not a bool");  #skip-lint
+    _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\"}}}", "missing voiced");  #skip-lint
+    _rejects("{\"ipa\":\"e\",\"kind\":{\"Vowel\":{\"height\":\"Mid\",\"backness\":\"Front\",\"rounded\":false,\"airstream\":\"Ejective\"}}}", "vowel with a non-pulmonic airstream");  #skip-lint
+    _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false,\"features\":\"Aspirated\"}}}", "features not an array");  #skip-lint
+    _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false,\"features\":[\"Nope\"]}}}", "unknown feature name");  #skip-lint
+    _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false,\"features\":[1]}}}", "feature as a number");  #skip-lint
+    _rejects("{\"ipa\":\"p\",\"ipa\":\"b\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false}}}", "duplicate key");  #skip-lint
+    _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"place\":\"Bilabial\",\"voiced\":false}}}", "over-long name");  #skip-lint
+    return 0;
+}
+
+fn test_malformed_inventory() {
+    assert_eq(phoneme_inventory_from_json(0), 0, "null text");
+    assert_eq(phoneme_inventory_from_json("{}"), 0, "empty object");
+    assert_eq(phoneme_inventory_from_json("{\"language_code\":\"xx\",\"language_name\":\"T\",\"phonemes\":[{\"ipa\":\"p\"}],\"stress\":\"Free\"}"), 0, "one bad phoneme fails the whole inventory");  #skip-lint
+    assert_eq(phoneme_inventory_from_json("{\"language_code\":\"xx\",\"language_name\":\"T\",\"phonemes\":[],\"stress\":\"Loud\"}"), 0, "unknown stress");  #skip-lint
+    assert_eq(phoneme_inventory_from_json("{\"language_code\":\"xx\",\"language_name\":\"T\",\"phonemes\":{},\"stress\":\"Free\"}"), 0, "phonemes not an array");  #skip-lint
+    assert_eq(phoneme_inventory_from_json("{\"language_code\":\"xx\",\"language_name\":\"T\",\"phonemes\":[],\"tones\":\"˥\",\"stress\":\"Free\"}"), 0, "tones not an array");  #skip-lint
+    assert_eq(phoneme_inventory_from_json("{\"language_code\":\"xx\",\"language_name\":\"T\",\"phonemes\":[],\"tones\":[5],\"stress\":\"Free\"}"), 0, "tone not a string");  #skip-lint
+    assert_eq(phoneme_inventory_from_json("{\"language_name\":\"T\",\"phonemes\":[],\"stress\":\"Free\"}"), 0, "missing language_code");  #skip-lint
+    return 0;
+}
+
+# --- writers refuse what they cannot write, and write nothing ---
+
+fn test_writer_refusals() {
+    var sb = str_builder_new();
+    assert_eq(phoneme_to_json(0, sb), 0 - 1, "null phoneme refused");
+    var bad = phoneme_consonant("p", Manner.Plosive, Place.Bilabial, 0);
+    store64(bad + 8, 7);
+    assert_eq(phoneme_to_json(bad, sb), 0 - 1, "corrupt kind refused");
+    assert_eq(phoneme_inventory_to_json(0, sb), 0 - 1, "null inventory refused");
+    var inv = phoneme_builder_new("xx", "T");
+    phoneme_builder_phoneme(inv, bad);
+    assert_eq(phoneme_inventory_to_json(inv, sb), 0 - 1, "inventory with a corrupt phoneme refused");
+    assert_eq(str_len(str_builder_build(sb)), 0, "nothing was written by any refusal");
+    return 0;
+}
+
+fn main() {
+    alloc_init();
+    test_group("json_roundtrip");
+    test_serde_phoneme_consonant();
+    test_serde_phoneme_vowel();
+    test_serde_phoneme_inventory_all_languages();
+    test_serde_phoneme_inventory_with_tones();
+    test_serde_phoneme_inventory_without_tones();
+    test_text_consonant();
+    test_text_vowel();
+    test_text_features_and_airstream();
+    test_text_inventory();
+    test_text_escaping();
+    test_v1x_documents_decode();
+    test_enum_names();
+    test_malformed_phoneme();
+    test_malformed_inventory();
+    test_writer_refusals();
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

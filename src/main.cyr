@@ -21,6 +21,9 @@ include "src/registry.cyr"
 include "src/numerals.cyr"
 include "src/transliteration.cyr"
 
+# JSON in the v1.x serde format (ADR 0003). Not in cyrius.cyml [lib] yet — see there.
+include "src/json.cyr"
+
 # Optional AI-integration surfaces — compiled in only under their -D defines.
 include "src/logging.cyr"
 include "src/daimon.cyr"

@@ -12,7 +12,7 @@
 
 ## Consumers
 
-shabda (G2P), shabdakosh (pronunciation dict), svara (vocal synthesis), sankhya (ancient math systems), jnana (knowledge), vidya (programming reference), vansh (voice assistant, planned), sahifa (document processing, planned)
+shabda (G2P), shabdakosh (pronunciation dict), svara (vocal synthesis), sankhya (ancient math systems), jnana (knowledge), vansh (voice assistant, planned), sahifa (document processing, planned)
 
 ## Toolchain — the Cyrius surface
 

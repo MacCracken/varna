@@ -13,9 +13,12 @@ output = "build/varna"
 
 # `[lib]` lets `cyrius distlib` concatenate src/ into a single
 # dist/varna.cyr bundle for downstream consumers (shabda, shabdakosh,
-# svara, sankhya, jnana, vidya) that fold the language engine in as one
+# svara, sankhya, jnana) that fold the language engine in as one
 # file. Order mirrors the include order in src/main.cyr — load-bearing
-# for Cyrius single-pass forward-reference resolution.
+# for Cyrius single-pass forward-reference resolution. One deliberate gap:
+# src/json.cyr (2.5.2, ADR 0003) is in src/main.cyr but in neither list
+# until roadmap 2.5.2's consumer-hazard bite settles how bayan reaches
+# consumers (shabda / shabdakosh declare the bayan monolith themselves).
 #   cyrius distlib       → dist/varna.cyr       (full data engine)
 #   cyrius distlib core  → dist/varna-core.cyr  ([lib.core], no AI surfaces)
 [lib]

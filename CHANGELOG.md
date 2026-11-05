@@ -7,11 +7,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Roadmap 2.5.2 (P0), bayan / serde integration. These are its first bites: the wire
+format decision and the phoneme module.
+
+### Added
+
+- **JSON for phonemes and inventories, in the v1.x serde format** (new `src/json.cyr`,
+  [ADR 0003](docs/adr/0003-json-wire-format-matches-v1x-serde.md)):
+  `phoneme_to_json(p, sb)` / `phoneme_from_json(text)` and
+  `phoneme_inventory_to_json(inv, sb)` / `phoneme_inventory_from_json(text)`. The
+  output is serde's default representation of the v1.x types, field for field, with
+  every enum value by name. The two fields varna gained in 2.2.x go inside the variant
+  object:
+
+  ```json
+  {"ipa":"pʰ","kind":{"Consonant":{"manner":"Plosive","place":"Bilabial","voiced":false,"airstream":"Pulmonic","features":["Aspirated"]}}}
+  ```
+
+  An inventory is `{"language_code":..,"language_name":..,"phonemes":[..],"tones":null|[..],"stress":"Free"}`,
+  in v1.x's field order. Tones are written as their Chao strings (`tone_letters`), as
+  v1.x wrote them, and re-parsed on read.
+
+  Readers are as strict as serde's defaults and return 0 for any of: a missing
+  required field, a wrong JSON type (`"manner":0`, `"voiced":1`), an unknown name, an
+  externally tagged object with other than one key, a duplicate key, or a vowel
+  claiming a non-pulmonic airstream. Unknown extra keys are ignored, as serde ignores
+  them. `airstream` and `features` are optional on read, so a **v1.x document
+  decodes** (as Pulmonic, no features). A writer refuses a null record or a corrupt
+  `kind` by returning -1, and writes nothing.
+
+- **By-name codecs on the eight phoneme enums** through `#derive(Serialize)`:
+  `Airstream`, `PhonemeFeature`, `Manner`, `Place`, `Height`, `Backness`,
+  `StressPattern`, `PhonemeKind`. `E_to_json(v, sb)` writes `"Plosive"`, and
+  `E_from_json_str(text)` returns `Ok(value)`, or `Err` for an unknown name. These
+  are in `dist/`, since they are generated from the enum declarations in
+  `src/phoneme.cyr`.
+
+- **`tests/json_roundtrip.tcyr`, 69 assertions.**
+  - The phoneme half of v1.x's `serde_roundtrip.rs`: consonant, vowel, all 51
+    inventories, with and without tones.
+  - Exact text against serde's shape, v1.x documents decoding, and every enum variant
+    by name.
+  - 21 malformed phoneme and 8 malformed inventory cases, and writer refusals.
+  - Mutation-checked: a writer that always wrote `"voiced":false` failed 3
+    assertions, and one that misspelled the `airstream` key failed 5.
+
+- **Two benchmarks**: `json_inventory_write_en` 47.5 µs avg and
+  `json_inventory_read_en` 167.7 µs avg (the 36-phoneme English inventory,
+  2026-11-05T17:42:22Z).
+
+### Changed
+
+- **`src/phoneme.cyr` includes `lib/result.cyr`**, and the bundles' sidecar is now
+  `result hashmap` (was `hashmap`). The enum decoders return a `Result`, but
+  distlib's compile-verify did not record that leaf on its own: a decoder nobody
+  calls leaves `Ok` / `Err` only as warnings. A consumer that called one would have
+  failed to build. A scratch consumer declaring only `hashmap` now builds against the
+  bundle with no warning and runs both codec directions. Include-once keys on the
+  spelling `[deps] stdlib` auto-prepends, so varna's own builds read the file once.
+- **`src/json.cyr` is not in `dist/` yet.** It is left out of `[lib]` and `[lib.core]`
+  until 2.5.2's consumer-hazard bite decides how bayan reaches consumers. varna's own
+  builds and tests include it through `src/main.cyr`.
+- **Binary size**: default 470,392 → 488,184 B, full `-D` 489,040 → 506,824 B,
+  `CYRIUS_DCE=1` 44,408 → 45,816 B.
+
+### Performance
+
+No benchmarked function changed, but several rows moved, so these microbenchmarks are
+**sensitive to code layout**. Interleaved against a build of the 2.5.1 tag on the same
+toolchain, three runs each (avg):
+
+| benchmark | 2.5.1 | this tree | |
+|---|---|---|---|
+| `grammar_by_code_lookup` | 244–246 ns | 213–214 ns | −13% |
+| `lexicon_find_word` | 778–781 ns | 861–862 ns | +10.5% |
+| `dialect_apply_overlay` | 2.959–2.972 µs | 3.116–3.150 µs | +5.7% |
+| `swadesh_by_code_lookup` | 102–103 ns | 106–107 ns | +4.5% |
+| `phonotactics_is_permitted` | 134–135 ns | 139–140 ns | +3.7% |
+
+`grammar_by_code_lookup` is back near its 6.6.2 figure (209 ns). The slowdown 2.4.3–2.5.1
+recorded across three toolchain pins was layout too, not codegen, which changes what
+roadmap 2.5.4 should investigate.
+
 ## [2.5.1] - 2026-11-05
 
 ### Found — serialization was never ported (roadmap 2.5.2, P0)
 
-The v1.x crate derived `Serialize` / `Deserialize` on 47 public types across 13
+The v1.x crate derived `Serialize` / `Deserialize` on 44 public types (corrected from "47" after release; 21 structs, 23 enums) across 13
 modules, called `serde_json` in 11, and round-tripped every public type in
 `tests/serde_roundtrip.rs` (27 tests). **The Cyrius port carried none of it.** No
 varna type emits or reads JSON, and no varna code calls bayan. The only JSON in the
