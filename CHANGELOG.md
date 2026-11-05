@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.3] - 2026-11-05
+
+### Changed
+
+- **Toolchain `6.6.2` → `6.6.20`.** No data or API change, and no compiler rejection:
+  the only source edit is the daimon version string below. **2409 assertions** across
+  35 files pass (2407 carried over + 2 new). `fmt --check`, `lint`, `vet` (21 deps,
+  0 untrusted), `deny` (0 violations) and `doc --check` are clean, and both build
+  profiles compile.
+
+- **Lock: 31 → 34 entries, regenerated from scratch** (`rm -rf lib && cyrius deps`).
+  The three new rows are leaves the 6.6.x stdlib now includes itself: `chrono`
+  (included by `hashseed`), plus `poison` and `alloc_cx` (both included by `alloc`).
+  The lock also gains a toolchain row (`cyrius 6.6.20`). From 6.6.20 a fresh
+  `cyrius deps` writes the lock itself, so the separate `--lock` step is no longer
+  needed. `cyrius deps --verify`: 34 verified, 0 failed.
+
+- **`dist/` regenerated under 6.6.18+ `distlib`.** Each bundle now opens with a
+  compile-verified `# Requires` block (`include "lib/string.cyr"`, `vec`, `alloc`,
+  `hashmap`), so `include "dist/varna.cyr"` compiles on its own. The sidecars shrink
+  because distlib's compile-verify is now the only authority over them. Before 6.6.18
+  the whole `[deps].stdlib` was unioned in.
+
+  | sidecar | 2.4.2 | 2.4.3 | dropped |
+  |---|---|---|---|
+  | `dist/varna.deps` | 16 | 4 | `fmt str slice syscalls io args assert bayan fnptr tagged result bench` |
+  | `dist/varna-core.deps` | 6 | 4 | `assert str` |
+
+  **Consumer impact:** a consumer that calls a stdlib family itself but got that leaf
+  only through varna's old sidecar now has to declare it in its own `[deps] stdlib`.
+  The 6.6.18+ CLI prints a `hint:` line naming the missing leaf. The current folders,
+  shabda, shabdakosh and sankhya (all at varna 2.4.1), already declare broad stdlib
+  lists of their own, so none of them should notice.
+
+- **bote recipe `3.3.7` → `3.3.17`.** This is the commented `[deps.bote]` block in
+  `cyrius.cyml`, which documents the `-D MCP` wiring and is not linked. 3.3.17 is the
+  bote tag that pins 6.6.20. The 2.4.2 entry below says bote moved to 3.3.8, but the
+  recipe's `tag` line was never edited and still read 3.3.7. At 3.3.17,
+  `dist/bote-core.deps` is `hashmap bayan sigil ct`: chrono and the rest arrive
+  through those leaves' own requires blocks, so wiring it no longer needs `chrono`
+  added by hand. It does pull the sigil crypto fold into the `-D MCP` build. Per
+  bote's own 3.3.17 notes no core module uses sigil or ct, and the leak is filed
+  upstream as a cyrius distlib bug.
+
+- **Binary size.** The default build grew from 683,376 B to 746,840 B and the full
+  `-D` build from 702,032 B to 761,392 B. Almost all of that is dead stdlib code the
+  6.6.x leaves now include themselves: unreachable bytes went from 618,665 to 675,744.
+  Under `CYRIUS_DCE=1` the live binary grows from 64,880 B to 71,000 B.
+
+### Fixed
+
+- **The daimon registration reported version `2.4.1`.** The string is hardcoded in
+  `src/daimon.cyr` and was missed at 2.4.2. It now reads `2.4.3`, and
+  `tests/daimon.tcyr` reads `VERSION` and asserts the two match, so the next bump
+  that misses it fails `cyrius tests`. The new test failed against the stale string
+  before the fix, so it does catch the drift.
+
+### Performance
+
+Neutral, apart from one lookup that the toolchain made slightly slower. The 6.6.20
+`lib/bench.cyr` is a different instrument: 6.6.9's "regime 6" stopped reporting a
+minimum computed after subtracting the *mean* clock floor, which had made `min` read
+low. So the raw recorded rows (`bench-history.csv`, 2026-11-05T16:37:07Z on 6.6.2 and
+16:39:13Z on 6.6.20, timer floor ~1.35 µs) are not directly comparable. 17 of 22 rows
+read faster and 4 slower, the slowest by +6.4% on `min`.
+
+To separate harness from compiler, the 6.6.2 harness was built against 6.6.20
+(`tests/varna.bcyr` including the old `lib/bench.cyr` under another path, with
+`bench` dropped from the scratch `[deps].stdlib`, because `cyrius bench` re-vendors
+`lib/` and auto-prepends the harness). Runs were interleaved, 2–3 each:
+
+| benchmark | 6.6.2 (old harness) | 6.6.20 (old harness) | 6.6.20 (new harness) |
+|---|---|---|---|
+| `phoneme_lookup_ipa` min | 313–327 ns | 310–312 ns | 353–369 ns |
+| `registry_all_codes_iter` min | 3.69–3.76 µs | 3.55–3.77 µs | 4.06–4.19 µs |
+| `grammar_by_code_lookup` avg | 209–210 ns | 238–239 ns | 228–229 ns |
+
+The first two only *look* slower: with the harness held constant they are unchanged,
+and the gap is the new instrument. `grammar_by_code_lookup` (`"ru"`, nine `streq`
+misses before the match) really is about 29 ns (~14%) slower on 6.6.20, with the
+harness held constant. `streq` is byte-identical across the two pins, and
+`script_by_code_lookup`, also a `streq` dispatch, got faster (109 → 104 ns avg), so
+this is codegen or layout specific to that function, not the string helpers. It is
+not chased here.
+
 ## [2.4.2] - 2026-09-11
 
 ### Changed

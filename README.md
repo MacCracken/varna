@@ -57,15 +57,18 @@ Depend on varna from another Cyrius project by adding it to `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.4.1"
+tag = "2.4.3"
 modules = ["dist/varna.cyr"]
 ```
 
 `cyrius deps` clones varna at the tag and copies the bundle into `lib/varna.cyr`,
-reading `dist/varna.deps` to pull the stdlib leaves the bundle needs. For the
-linguistic data engine without the `-D`-gated AI surfaces, use
-`modules = ["dist/varna-core.cyr"]` — its sidecar declares five leaves
-(`string`, `alloc`, `vec`, `assert`, `hashmap`) against the full bundle's sixteen:
+reading `dist/varna.deps` to pull the stdlib leaves the bundle needs. Since 2.4.3
+(cyrius 6.6.18+ `distlib`) that sidecar names only what the compile-verify proves —
+four leaves, `string`, `vec`, `alloc`, `hashmap` — and the bundle opens with a
+matching `# Requires` include block. If your own code calls a stdlib family
+(`fmt`, `io`, `bayan`, `assert`, `bench`, …), declare it in your own `[deps] stdlib`;
+varna's sidecar no longer brings it along. For the linguistic data engine without
+the `-D`-gated AI surfaces, use `modules = ["dist/varna-core.cyr"]` (same four leaves):
 
 ```cyrius
 include "lib/varna.cyr"

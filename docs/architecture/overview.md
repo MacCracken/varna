@@ -33,9 +33,9 @@ varna/
 ├── lib/                   — vendored Cyrius stdlib snapshot (cyrius deps; gitignored)
 ├── dist/                  — consumer bundles (cyrius distlib --all)
 │   ├── varna.cyr          — full data engine, single file
-│   ├── varna.deps         — stdlib leaves varna.cyr needs (16; read by cyrius deps)
+│   ├── varna.deps         — stdlib leaves varna.cyr needs (4; read by cyrius deps)
 │   ├── varna-core.cyr     — [lib.core] profile (same modules today, see note)
-│   └── varna-core.deps    — its tighter leaf set (5: string, alloc, vec, assert, hashmap)
+│   └── varna-core.deps    — same 4 leaves (string, vec, alloc, hashmap)
 └── tests/
     ├── *.tcyr             — cross-module integration tests (cyrius tests)
     └── *.bcyr             — cyrius bench harness (lib/bench.cyr)
@@ -188,7 +188,7 @@ varna
 
 - **Data-driven**: Language data as structured Cyrius `struct`s, not embedded strings
 - **Queryable**: Every inventory supports lookup, filtering, counting, and `by_code()` dispatch
-- **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`). `[lib]` and `[lib.core]` currently declare identical module lists, so the two bundle *bodies* are byte-identical; what differs is the `.deps` sidecar, and folding the core bundle pulls four stdlib leaves instead of sixteen
+- **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`). `[lib]` and `[lib.core]` currently declare identical module lists, so the two bundle *bodies* are byte-identical. Since 2.4.3 (cyrius 6.6.18+ `distlib`, whose compile-verify is the only authority over a sidecar) the two `.deps` sidecars are identical too — four leaves each; before, the full sidecar unioned in all sixteen `[deps].stdlib` entries
 - **Serializable**: All types emit JSON via `#derive(Serialize)` / `bayan` for data exchange
 - **Extensible**: tagged enums everywhere — new variants are additive, no break for consumers
 - **Static-literal data**: pre-built inventories hold `'static` `str` literals — no per-build heap churn (Cyrius has no `Cow`)

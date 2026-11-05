@@ -7,12 +7,14 @@
 
 ## Version
 
-**2.4.1** (2026-08-28) — data corrections. Thai had no falling tone, Vietnamese
-huyền was Mandarin's third tone, Burmese's checked tone was low where every source
-says high, and Wolof's vowel system was four qualities. `phoneme_is_breathy` closes
-the Sanskrit voiced-aspirate item by deciding *not* to retranscribe.
+**2.4.3** (2026-11-05) — toolchain `6.6.2` → `6.6.20`. No data or API change. The
+dist bundles are regenerated under 6.6.18+ `distlib` (compile-verified `# Requires`
+block; sidecar 16 → 4 leaves), and the daimon registration's stale version string is
+fixed and now held to `VERSION` by a test.
 
-Previous: **2.4.0** gematria and numeric letter values; **2.3.x** typological depth
+Previous: **2.4.2** toolchain `6.5.36` → `6.6.2`; **2.4.1** data corrections (Thai
+falling tone, Vietnamese huyền, Burmese checked tone, Wolof vowels,
+`phoneme_is_breathy`); **2.4.0** gematria and numeric letter values; **2.3.x** typological depth
 (grammar, classification, vitality and geography); **2.2.x** phonological depth
 (airstream, secondary features, distinctive features, structured tone); **2.1.x**
 toolchain, hardening, the test-suite port and the `rust-old/` removal; **2.0.0** the
@@ -27,19 +29,25 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | Numeral systems | 9 — five of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek) |
 | Grammar profiles | 11 |
 | Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 35 files, **2,442 assertions**, 0 failing |
-| Benchmarks | 23, covering every domain |
+| Tests | 35 files, **2,409 assertions**, 0 failing |
+| Benchmarks | 22, covering every domain |
 | Reference coverage | 328/350 functions (93%) — a floor, not a correctness proof |
 
 ## Toolchain
 
-- **Cyrius pin**: `6.5.36` (in `cyrius.cyml [package].cyrius`)
-- **Lock**: `cyrius deps --verify` clean — 29 verified, 0 failed
+- **Cyrius pin**: `6.6.20` (in `cyrius.cyml [package].cyrius`)
+- **Lock**: `cyrius deps --verify` clean — 34 verified, 0 failed. The lock also
+  records the toolchain (`cyrius 6.6.20`) as its last row.
 - **Lock authority is `cyrius deps`**, which walks the include graph. `cyrius lib sync`
-  name-matches `[deps].stdlib` instead and yields a *different* 29-module set (adds the
-  unreferenced `hashmap_fast.cyr`, drops `atomic.cyr`, which `lib/alloc.cyr` includes),
-  so locking its output breaks `--verify`. Sequence for a pin bump: edit the pin →
-  `rm -rf lib && cyrius deps` → `cyrius deps --lock` → `cyrius deps --verify`.
+  name-matches `[deps].stdlib` instead and resolves a *different* set (at 6.5.x it added
+  the unreferenced `hashmap_fast.cyr` and dropped `atomic.cyr`, which `lib/alloc.cyr`
+  includes), so locking its output breaks `--verify`. Sequence for a pin bump: edit the
+  pin → `rm -rf lib && cyrius deps` (from 6.6.20 this writes the lock itself) →
+  `cyrius deps --verify` → `cyrius distlib && cyrius distlib core`.
+- **Benchmarks across a pin bump**: `lib/bench.cyr` changes with the toolchain, and
+  `min` is not comparable across 6.6.9 (its "regime 6" stopped subtracting a mean clock
+  floor from a minimum). To separate harness from codegen, build `tests/varna.bcyr`
+  with the *old* harness under the *new* compiler — see the 2.4.3 CHANGELOG entry.
 
 ## Modules
 
@@ -83,11 +91,14 @@ io, args, assert, hashmap, bayan, fnptr, tagged, result, bench.
 
 Two are *planned* for `-D` surfaces but not yet wired, so they are absent from
 `cyrius.lock` until a module actually resolves them: `sakshi` (for `-D LOGGING`) and
-`bote` + `chrono` (for `-D MCP`).
+`bote` 3.3.17 (for `-D MCP`; its sidecar brings `hashmap bayan sigil ct` and, through
+their requires blocks, the rest). (`chrono` *is* in the lock now, but only as a
+transitive include of `lib/hashseed.cyr`.)
 
-Consumers pull one of two bundles, each with a generated sidecar naming the stdlib
-leaves it needs: `dist/varna.cyr` (16 leaves) or `dist/varna-core.cyr` (5 — string,
-alloc, vec, assert, hashmap), which drops the `-D` surfaces.
+Consumers pull one of two bundles, each with a compile-verified sidecar naming the
+stdlib leaves it needs and a matching `# Requires` include block: `dist/varna.cyr` or
+`dist/varna-core.cyr`, 4 leaves each (string, vec, alloc, hashmap). Before cyrius
+6.6.18 the full sidecar unioned in the whole `[deps].stdlib` (16 leaves).
 
 ## Verification
 

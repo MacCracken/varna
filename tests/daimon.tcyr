@@ -24,6 +24,17 @@ fn main() {
     var reg = daimon_registration();
     assert(streq(daimon_name(reg), "varna"), "name varna");
     assert(strlen(daimon_version(reg)) > 0, "version not empty");
+    # The registration hardcodes its version string, and it went stale for a whole
+    # release: 2.4.2 shipped reporting "2.4.1". VERSION is the canonical source, so
+    # hold the literal to it. `cyrius tests` runs from the repo root.
+    var vbuf = alloc(64);
+    var vn = file_read_all("VERSION", vbuf, 63);
+    assert(vn > 0, "VERSION readable from the repo root");
+    if (vn > 0) {
+        while (vn > 0 && load8(vbuf + vn - 1) <= 32) { vn = vn - 1; }
+        store8(vbuf + vn, 0);
+        assert(streq(daimon_version(reg), vbuf), "daimon version matches VERSION");
+    }
     assert_eq(vec_len(daimon_capabilities(reg)), 6, "6 capabilities");
     assert(_vec_has(daimon_supported_languages(reg), "en"), "languages has en");
     assert(_vec_has(daimon_supported_scripts(reg), "Latn"), "scripts has Latn");
