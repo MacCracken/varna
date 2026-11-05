@@ -1,6 +1,6 @@
 # Development Roadmap
 
-> **Current**: 2.4.3 · **Open work only** — shipped releases are in
+> **Current**: 2.5.0 · **Open work only** — shipped releases are in
 > [CHANGELOG.md](../../CHANGELOG.md) and the git tags.
 >
 > Tiers were numbered when the `2.2.0+` plan was drawn up against PHOIBLE, WALS,

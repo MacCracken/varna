@@ -7,12 +7,14 @@
 
 ## Version
 
-**2.4.3** (2026-11-05) — toolchain `6.6.2` → `6.6.20`. No data or API change. The
-dist bundles are regenerated under 6.6.18+ `distlib` (compile-verified `# Requires`
-block; sidecar 16 → 4 leaves), and the daimon registration's stale version string is
-fixed and now held to `VERSION` by a test.
+**2.5.0** (2026-11-05) — toolchain `6.6.20` → `6.7.9`, the Cyrius language minor
+(traits, `const`, real `!`, checked `bool`, narrow `*T` derefs, opt-in bounds
+checking). No data or API change and no varna source change beyond the daimon version
+string. The 6.7.x semantic changes were swept for and none touch varna's code. The
+suite also passes under `--bounds`.
 
-Previous: **2.4.2** toolchain `6.5.36` → `6.6.2`; **2.4.1** data corrections (Thai
+Previous: **2.4.3** toolchain `6.6.2` → `6.6.20`, dist bundles under 6.6.18+
+`distlib` (sidecar 16 → 4 leaves), daimon version held to `VERSION`; **2.4.2** toolchain `6.5.36` → `6.6.2`; **2.4.1** data corrections (Thai
 falling tone, Vietnamese huyền, Burmese checked tone, Wolof vowels,
 `phoneme_is_breathy`); **2.4.0** gematria and numeric letter values; **2.3.x** typological depth
 (grammar, classification, vitality and geography); **2.2.x** phonological depth
@@ -35,19 +37,23 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 
 ## Toolchain
 
-- **Cyrius pin**: `6.6.20` (in `cyrius.cyml [package].cyrius`)
+- **Cyrius pin**: `6.7.9` (in `cyrius.cyml [package].cyrius`)
 - **Lock**: `cyrius deps --verify` clean — 34 verified, 0 failed. The lock also
-  records the toolchain (`cyrius 6.6.20`) as its last row.
+  records the toolchain (`cyrius 6.7.9`) as its last row. `cyrius deps --locked`
+  (6.7.6+) checks lib/ and the lock against the tags without writing anything.
 - **Lock authority is `cyrius deps`**, which walks the include graph. `cyrius lib sync`
   name-matches `[deps].stdlib` instead and resolves a *different* set (at 6.5.x it added
   the unreferenced `hashmap_fast.cyr` and dropped `atomic.cyr`, which `lib/alloc.cyr`
   includes), so locking its output breaks `--verify`. Sequence for a pin bump: edit the
   pin → `rm -rf lib && cyrius deps` (from 6.6.20 this writes the lock itself) →
-  `cyrius deps --verify` → `cyrius distlib && cyrius distlib core`.
+  `cyrius deps --verify` → `cyrius distlib && cyrius distlib core`. Read cyrius's
+  `docs/development/ecosystem-migration.md` at the new tag first: it lists every
+  change that reaches consumer code, newest first.
 - **Benchmarks across a pin bump**: `lib/bench.cyr` changes with the toolchain, and
   `min` is not comparable across 6.6.9 (its "regime 6" stopped subtracting a mean clock
   floor from a minimum). To separate harness from codegen, build `tests/varna.bcyr`
   with the *old* harness under the *new* compiler — see the 2.4.3 CHANGELOG entry.
+  `lib/bench.cyr` is byte-identical between 6.6.20 and 6.7.9.
 
 ## Modules
 
@@ -74,7 +80,7 @@ the port and has since been extended past it.
 | `dialect` | variety overlays (British English RP) |
 | `registry` | ISO 639 lookup across every module, plus family, endangerment, geography |
 
-**`-D`-gated surfaces.** Each test `#define`s its own macro, so `cyrius tests` exercises
+**`-D`-gated surfaces.** Each test `#define`s its own macro, so `cyrius test tests` exercises
 all four. Default `cyrius build` excludes them.
 
 | Define | Module | Holds |
@@ -91,8 +97,9 @@ io, args, assert, hashmap, bayan, fnptr, tagged, result, bench.
 
 Two are *planned* for `-D` surfaces but not yet wired, so they are absent from
 `cyrius.lock` until a module actually resolves them: `sakshi` (for `-D LOGGING`) and
-`bote` 3.3.17 (for `-D MCP`; its sidecar brings `hashmap bayan sigil ct` and, through
-their requires blocks, the rest). (`chrono` *is* in the lock now, but only as a
+`bote` 3.4.10 (for `-D MCP`; its sidecar brings `hashmap bayan sigil ct` and, through
+their requires blocks, the rest; its `log` module's sakshi arrives through bote's own
+libro dep). (`chrono` *is* in the lock now, but only as a
 transitive include of `lib/hashseed.cyr`.)
 
 Consumers pull one of two bundles, each with a compile-verified sidecar naming the
@@ -103,7 +110,7 @@ stdlib leaves it needs and a matching `# Requires` include block: `dist/varna.cy
 ## Verification
 
 `sh scripts/check.sh` is the local gate: `cyrius deps` + lock verify + `fmt --check` +
-`lint` + build (default and full `-D`) + `cyrius tests`. `vet`, `deny` and `doc --check`
+`lint` + build (default and full `-D`) + `cyrius test tests`. `vet`, `deny` and `doc --check`
 pass separately. CI runs the gate plus bench and distlib; `release.yml` bundles
 `dist/varna.cyr`.
 

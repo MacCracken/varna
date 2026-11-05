@@ -57,7 +57,7 @@ Depend on varna from another Cyrius project by adding it to `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.4.3"
+tag = "2.5.0"
 modules = ["dist/varna.cyr"]
 ```
 
@@ -144,7 +144,7 @@ cyrius build src/main.cyr build/varna # compile the engine + demo entry
 cyrius distlib --all                 # bundle src/ → dist/varna.cyr + varna-core.cyr
 
 sh scripts/check.sh                  # local gate: deps + fmt + lint + build + tests
-cyrius tests                         # run tests/*.tcyr (recursive)
+cyrius test tests                    # run tests/*.tcyr (recursive)
 cyrius bench tests/varna.bcyr        # run benchmarks (tests/*.bcyr)
 ./scripts/bench-history.sh           # benchmarks with CSV trend history
 ```

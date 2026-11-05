@@ -39,7 +39,7 @@ echo "== build (-D LOGGING -D MCP -D DAIMON -D HOOSH) =="
 cyrius build -D LOGGING -D MCP -D DAIMON -D HOOSH src/main.cyr build/varna-full >/dev/null
 
 echo "== tests =="
-cyrius tests
+cyrius test tests
 
 echo ""
 echo "OK: all gates pass"

@@ -26,7 +26,7 @@ deny:
 
 # Run test suite (tests/*.tcyr)
 test:
-	cyrius tests
+	cyrius test tests
 
 # Run benchmarks with history
 bench:

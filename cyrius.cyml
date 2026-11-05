@@ -5,7 +5,7 @@ description = "Varna — multilingual language engine: phoneme inventories, writ
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/varna"
 language = "cyrius"
-cyrius = "6.6.20"
+cyrius = "6.7.9"
 
 [build]
 entry = "src/main.cyr"
@@ -106,24 +106,32 @@ stdlib = [
 
 # --- Added with -D MCP (src/mcp.cyr), not before -------------------
 # bote is the AGNOS MCP / JSON-RPC core, consumed as the transport-free
-# `dist/bote-core.cyr` bundle — 12 modules at 3.3.17 (error, protocol,
-# jsonx, registry, prompts, resources, events, audit, dispatch, codec,
-# schema, content). `cyrius deps` copies it into lib/bote-core.cyr.
+# `dist/bote-core.cyr` bundle — 13 modules at 3.4.10 (log, error,
+# protocol, jsonx, registry, prompts, resources, events, audit, dispatch,
+# codec, schema, content). `cyrius deps` copies it into lib/bote-core.cyr.
+# The bundle states its own minimum toolchain, cyrius 6.7.2 (it uses
+# `const`); varna's 6.7.9 pin clears that.
 #
 # Since cyrius 6.6.18 a sidecar names only the leaves distlib's compile-
 # verify proves, and the bundle opens with a matching `# Requires` include
-# block. At 3.3.17 `dist/bote-core.deps` is `hashmap bayan sigil ct`; the
+# block. At 3.4.10 `dist/bote-core.deps` is `hashmap bayan sigil ct`; the
 # rest (chrono, string, vec, ...) arrive through those leaves' own requires
-# blocks, so nothing needs appending to [deps].stdlib by hand any more.
-# The cost: `sigil` and `ct` pull the sigil crypto fold into the -D MCP
-# build. No core module uses them — bote's CHANGELOG for 3.3.17 records it
-# as a distlib artifact (libro's needs recorded against the core bundle),
-# filed upstream in cyrius. The default build is unaffected either way.
+# blocks, so nothing needs appending to [deps].stdlib by hand. Two costs
+# land in the -D MCP build: `sigil` and `ct` pull the sigil crypto fold
+# (no core module uses them; bote 3.3.17's CHANGELOG records it as a
+# distlib artifact, filed upstream in cyrius), and 3.4.0's `log` module
+# calls sakshi, which a [deps.bote] pin receives through bote's own libro
+# dep. (Copying the bundle by hand instead would mean declaring "sakshi"
+# here.) The default build is unaffected either way.
+#
+# Since cyrius 6.7.6 a `path` beside `git` / `tag` is a dev override, read
+# only in local mode (`--local` / CYRIUS_LOCAL=1). A default build always
+# builds the tag and checks its commit pin in cyrius.lock.
 #
 # Kept commented on purpose: src/mcp.cyr hand-builds its JSON today and
 # links nothing from bote, so the recipe is documentation of how to wire
-# it, not an active dependency. bote 3.3.17 is the tag that pins Cyrius
-# 6.6.20, the same pin as varna 2.4.3; bote 3.4.0+ moved on to 6.7.x.
+# it, not an active dependency. bote 3.4.10 is the last tag that pins
+# Cyrius 6.7.9, the same pin as varna 2.5.0 (3.4.11+ moved to 6.7.18).
 #
 # NOTE: the v1.x `daimon` and `hoosh` Cargo features did NOT link those
 # crates — they only flipped on serde_json. Their Cyrius equivalents are
@@ -134,5 +142,5 @@ stdlib = [
 # [deps.bote]
 # git = "https://github.com/MacCracken/bote"
 # path = "../bote"
-# tag = "3.3.17"
+# tag = "3.4.10"
 # modules = ["dist/bote-core.cyr"]

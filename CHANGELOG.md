@@ -7,6 +7,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-11-05
+
+### Changed
+
+- **Toolchain `6.6.20` → `6.7.9`, the Cyrius language minor.** No data or API change,
+  and no varna source change beyond the daimon version string below. **2409
+  assertions** across 35 files pass. `fmt --check`, `lint`, `vet` (21 deps,
+  0 untrusted), `deny` (0 violations) and `doc --check` are clean, and both build
+  profiles compile with no warnings.
+
+  6.7.x changes what some existing code *means*, not just what compiles, so the tree was
+  swept for each such construct (with comments and string literals stripped first).
+  None occur in `src/` or `tests/`:
+
+  | since | change | in varna |
+  |---|---|---|
+  | 6.7.3 | a lone `!` was silently dropped by the lexer (`if (!ok)` meant `if (ok)`); it is now a real operator | no `!` outside `!=` |
+  | 6.7.9 | unary `-` / `~` on a constant binds tighter than a following literal operator (`-K + 10` was 15, now 5) | no unary op on a name |
+  | 6.7.8 | `*p` through a narrow `*T` reads and writes the element width, not a word; signed slice elements read negative | no `*T` derefs, no slices |
+  | 6.7.8–6.7.9 | a `for` step must assign a declared variable; stray tokens after it are refused | no `for` loops (all `while`) |
+  | 6.7.0–6.7.8 | `trait`, `const`, `true`, `false`, `do`, `dyn` reserved; untyped `self` in an `impl` is `*T` | none used, no `impl` |
+
+  As an extra check the suite was also run under 6.7.8's opt-in bounds-checked mode
+  (`cyrius test --bounds tests`): 2409 / 2409 pass. That mode checks typed arrays and
+  slices only, not varna's raw `load*` / `store*` accesses.
+
+- **`cyrius tests` → `cyrius test tests`** in `scripts/check.sh`, the `Makefile`'s
+  `test` target and the docs. 6.7.6 deprecated the old spelling, and 6.7.9 warns that
+  the next release removes it.
+
+- **Lock regenerated** (`rm -rf lib && cyrius deps`): the same 34 files at 6.7.9
+  hashes, with the toolchain row now `cyrius 6.7.9`. `cyrius deps --verify`: 34
+  verified, 0 failed. The new `cyrius deps --locked` (6.7.6) reports lib/ and the
+  lock are exactly what the tags resolve.
+
+- **`dist/` regenerated.** Only the `# Version:` header line changed, and both
+  sidecars are still the same four leaves. The bundle body is byte-identical to
+  2.4.3's, which was built and verified on 6.6.20.
+
+- **bote recipe `3.3.17` → `3.4.10`**, the last bote tag pinned to 6.7.9. This is the
+  commented `[deps.bote]` block, which documents the `-D MCP` wiring and is not linked.
+  At 3.4.x the core bundle is 13 modules, adding `log`, and states a minimum of cyrius
+  6.7.2. Its `log` module calls sakshi, which a `[deps.bote]` pin gets through bote's
+  own libro dep. The sidecar is unchanged (`hashmap bayan sigil ct`). The recipe also
+  notes that since 6.7.6 a `path` beside `git` / `tag` is a local-mode-only override.
+
+- **Binary size** is flat. The default build went from 746,840 B to 746,824 B, the full
+  `-D` build from 761,392 B to 765,472 B, and the `CYRIUS_DCE=1` build from 71,000 B to
+  70,984 B.
+
+### Fixed
+
+- **The daimon registration version is `2.5.0`.** The `tests/daimon.tcyr` guard
+  added in 2.4.3 failed on this bump before the string was edited, which is what it
+  is for.
+
+### Performance
+
+Neutral. `lib/bench.cyr` is byte-identical between 6.6.20 and 6.7.9, so unlike 2.4.3
+the recorded rows compare directly: 2026-11-05T16:52:29Z on 6.6.20 (timer floor
+1.353 µs) and 16:56:15Z on 6.7.9 (1.378 µs). The four largest movers in those rows
+(`gematria_string_value_in` +7.3%, `dialect_apply_overlay` +4.9%,
+`gematria_char_value_ordinal` +4.9% on `min`, and `grammar_by_code_lookup`) were then
+run interleaved, three runs per pin:
+
+| benchmark | 6.6.20 min | 6.7.9 min |
+|---|---|---|
+| `gematria_string_value_in` | 813–820 ns | 817–835 ns |
+| `dialect_apply_overlay` | 2.868–2.886 µs | 2.877–2.923 µs |
+| `gematria_char_value_ordinal` | 496–501 ns | 495–498 ns |
+| `grammar_by_code_lookup` | 228–229 ns | 228–232 ns |
+
+All four are within ~1–2%, so the recorded deltas were run-to-run drift.
+`grammar_by_code_lookup`'s slowdown since 6.6.2 (see 2.4.3) is not recovered on 6.7.9.
+
 ## [2.4.3] - 2026-11-05
 
 ### Changed

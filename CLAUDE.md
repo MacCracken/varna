@@ -6,8 +6,8 @@
 
 - **Type**: Flat Cyrius library (`dist/varna.cyr` bundle) + thin demo entry — no longer a Rust crate; migrated at v2.0 (see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md))
 - **License**: GPL-3.0
-- **Toolchain**: Cyrius, pinned in `cyrius.cyml` (`cyrius = "6.6.20"`)
-- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.4.3**
+- **Toolchain**: Cyrius, pinned in `cyrius.cyml` (`cyrius = "6.7.9"`)
+- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.5.0**
 - **Rust archive**: none in the tree. The v1.x crate was frozen in `rust-old/` at 2.0.0 and deleted at 2.1.4 ([ADR 0002](docs/adr/0002-remove-the-rust-old-archive.md)); it stays recoverable from git tags `1.0.0`–`2.1.3` (`git show 2.1.3:rust-old/src/...`)
 
 ## Consumers
@@ -25,7 +25,7 @@ lint, and bench with the cyrius toolchain only.
 | Verify lock | `cyrius deps --verify` | Checks `cyrius.lock` hashes; part of `scripts/check.sh` |
 | Build | `cyrius build src/main.cyr build/varna` | `-D LOGGING -D MCP -D DAIMON -D HOOSH` for optional surfaces |
 | Bundle | `cyrius distlib` | Concatenates `src/` → `dist/varna.cyr` for consumers (`distlib core` → `dist/varna-core.cyr`) |
-| Run tests | `cyrius tests` | Recursively runs `tests/*.tcyr` |
+| Run tests | `cyrius test tests` | Recursively runs `tests/*.tcyr` |
 | Run benchmarks | `cyrius bench tests/varna.bcyr` | `lib/bench.cyr` harness (`.bcyr` in `tests/`) |
 | Format | `cyrius fmt <file> [--check]` | Per-file; `--check` is the CI gate |
 | Lint | `cyrius lint <file>` | Static analysis (`#skip-lint` exempts a line) |
@@ -43,7 +43,7 @@ them against.
 ### P(-1): Scaffold Hardening (before any new features)
 
 0. Read roadmap, CHANGELOG, and open issues — know what was intended before auditing what was built
-1. Test + benchmark sweep of existing code (`cyrius tests`, `cyrius bench`)
+1. Test + benchmark sweep of existing code (`cyrius test tests`, `cyrius bench`)
 2. Cleanliness check: `cyrius fmt --check`, `cyrius lint`, `cyrius vet`, `cyrius deny`, `cyrius doc --check` (or `sh scripts/check.sh`)
 3. Get baseline benchmarks (`./scripts/bench-history.sh`)
 4. Internal deep review — gaps, optimizations, security, logging/errors, docs

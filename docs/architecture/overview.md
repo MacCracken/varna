@@ -37,7 +37,7 @@ varna/
 │   ├── varna-core.cyr     — [lib.core] profile (same modules today, see note)
 │   └── varna-core.deps    — same 4 leaves (string, vec, alloc, hashmap)
 └── tests/
-    ├── *.tcyr             — cross-module integration tests (cyrius tests)
+    ├── *.tcyr             — cross-module integration tests (cyrius test tests)
     └── *.bcyr             — cyrius bench harness (lib/bench.cyr)
 ```
 

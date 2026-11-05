@@ -5,13 +5,13 @@
 ```sh
 cyrius deps                              # resolve dependencies
 cyrius build src/main.cyr build/varna    # compile
-cyrius tests                             # run tests/*.tcyr (recursive)
+cyrius test tests                        # run tests/*.tcyr (recursive)
 ```
 
 ## Layout
 
 - `src/main.cyr` — entry point. Top-level `var r = main(); syscall(SYS_EXIT, r);`.
-- `tests/` — test suite (`.tcyr` files, auto-discovered by `cyrius tests`).
+- `tests/` — test suite (`.tcyr` files, auto-discovered by `cyrius test`).
 - `dist/` — the bundles `cyrius distlib` builds for consumers (`varna.cyr`, `varna-core.cyr`, and their `.deps` sidecars).
 
 ## Adding a feature

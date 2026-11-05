@@ -26,7 +26,7 @@ fn main() {
     assert(strlen(daimon_version(reg)) > 0, "version not empty");
     # The registration hardcodes its version string, and it went stale for a whole
     # release: 2.4.2 shipped reporting "2.4.1". VERSION is the canonical source, so
-    # hold the literal to it. `cyrius tests` runs from the repo root.
+    # hold the literal to it. `cyrius test` runs from the repo root.
     var vbuf = alloc(64);
     var vn = file_read_all("VERSION", vbuf, 63);
     assert(vn > 0, "VERSION readable from the repo root");

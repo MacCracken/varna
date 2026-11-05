@@ -12,7 +12,7 @@ Thank you for your interest in contributing to Varna.
 
 ## Prerequisites
 
-- Cyrius toolchain (`cyrius`), pinned in `cyrius.cyml` (`cyrius = "6.6.20"`).
+- Cyrius toolchain (`cyrius`), pinned in `cyrius.cyml` (`cyrius = "6.7.9"`).
   Install via `curl -sSf https://raw.githubusercontent.com/MacCracken/cyrius/main/scripts/install.sh | sh`
 - `cyrius deps` to resolve the stdlib snapshot (+ `bote` for `-D MCP`) into `lib/`
 
@@ -24,7 +24,7 @@ Thank you for your interest in contributing to Varna.
 | `cyrius deps --verify` | Check `lib/` against the committed `cyrius.lock` |
 | `cyrius build src/main.cyr build/varna` | Build the engine + demo entry (`-D LOGGING -D MCP -D DAIMON -D HOOSH` for optional surfaces) |
 | `cyrius distlib` | Bundle `src/` → `dist/varna.cyr` for consumers |
-| `cyrius tests` | Run `tests/*.tcyr` (recursive) |
+| `cyrius test tests` | Run `tests/*.tcyr` (recursive) |
 | `cyrius bench tests/varna.bcyr` | Run benchmarks (`tests/*.bcyr`) |
 | `cyrius fmt <file> --check` | Formatting gate |
 | `cyrius lint <file>` | Static analysis |
@@ -68,7 +68,7 @@ Gate optional surfaces behind a `-D` define (`#ifdef NAME` … `#endif`), not a 
 
 ## Testing
 
-- Tests live in `tests/*.tcyr` (run by `cyrius tests`)
+- Tests live in `tests/*.tcyr` (run by `cyrius test tests`)
 - Define-gated tests with `#ifdef NAME` for optional surfaces
 - Target: 80%+ line coverage (`cyrius coverage`)
 
