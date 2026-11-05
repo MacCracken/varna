@@ -33,9 +33,9 @@ varna/
 ├── lib/                   — vendored Cyrius stdlib snapshot (cyrius deps; gitignored)
 ├── dist/                  — consumer bundles (cyrius distlib --all)
 │   ├── varna.cyr          — full data engine, single file
-│   ├── varna.deps         — stdlib leaves varna.cyr needs (4; read by cyrius deps)
+│   ├── varna.deps         — stdlib leaves varna.cyr needs (1: hashmap; read by cyrius deps)
 │   ├── varna-core.cyr     — [lib.core] profile (same modules today, see note)
-│   └── varna-core.deps    — same 4 leaves (string, vec, alloc, hashmap)
+│   └── varna-core.deps    — the same single leaf
 └── tests/
     ├── *.tcyr             — cross-module integration tests (cyrius test tests)
     └── *.bcyr             — cyrius bench harness (lib/bench.cyr)
@@ -136,10 +136,11 @@ are digit and notation tables, queried through `numerals_value_of` directly.
 ```
 varna (this engine)
   │  Cyrius stdlib (resolved by `cyrius deps` into lib/)
-  ├── bayan           — JSON serialization for all types (#derive(Serialize), json_parse/json_build)
   ├── result + tagged — native enum + Result<T,E> error model (VarnaError)
   ├── str / string / slice / vec / hashmap / fmt / io — core data structures + formatting
   │
+  ├── bayan (dist/bayan-json.cyr) — JSON for the serde replacement      (git dep, optional,
+  │                                   on by default; NOT YET CALLED — roadmap 2.5.2 P0)
   └── optional (define-gated):
       ├── log + sakshi               — structured logging + audit         (-D LOGGING)
       └── bote (dist/bote-core.cyr)  — MCP / JSON-RPC core surface        (-D MCP)
@@ -149,14 +150,17 @@ The v1.x crate's external dependencies all resolve to Cyrius stdlib or builtins:
 
 | Rust dependency | Cyrius equivalent | Kind |
 |-----------------|-------------------|------|
-| `serde` + `serde_json` | `bayan` — `#derive(Serialize)` + `json_parse`/`json_build` | stdlib |
+| `serde` + `serde_json` | **not ported** — planned on bayan's `dist/bayan-json.cyr` profile (roadmap 2.5.2, P0) | git dep |
 | `thiserror` | native `enum` + `Result<T,E>` (`lib/result.cyr`, `lib/tagged.cyr`) | builtin |
 | `tracing` | `lib/log.cyr` (level filtering) | stdlib |
 | `tracing-subscriber` | `lib/sakshi.cyr` (output routing; env-filter wired by hand) | stdlib |
 | `criterion` | `cyrius bench` + `lib/bench.cyr` | toolchain |
 
-Deserialization is hand-rolled via `bayan` `json_parse`/`json_get` accessors — Cyrius
-ships `#derive(Serialize)` but no `#derive(Deserialize)` counterpart.
+The serde row is the one gap in that map. v1.x derived `Serialize` / `Deserialize` on
+47 public types across 13 modules; the port carried none of it, and this page described
+it as done until 2.5.1. varna's records are raw `load64` / `store64` layouts rather than
+`struct`s, so `#derive(Serialize)` cannot attach as they stand; how a record becomes
+JSON is the first decision of the 2.5.2 item.
 
 ## Build Defines
 
@@ -186,10 +190,10 @@ varna
 
 ## Design Principles
 
-- **Data-driven**: Language data as structured Cyrius `struct`s, not embedded strings
+- **Data-driven**: Language data as fixed-layout records built and read through `load64` / `store64` accessors (no `struct` declarations), not embedded strings
 - **Queryable**: Every inventory supports lookup, filtering, counting, and `by_code()` dispatch
-- **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`). `[lib]` and `[lib.core]` currently declare identical module lists, so the two bundle *bodies* are byte-identical. Since 2.4.3 (cyrius 6.6.18+ `distlib`, whose compile-verify is the only authority over a sidecar) the two `.deps` sidecars are identical too — four leaves each; before, the full sidecar unioned in all sixteen `[deps].stdlib` entries
-- **Serializable**: All types emit JSON via `#derive(Serialize)` / `bayan` for data exchange
+- **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`). `[lib]` and `[lib.core]` currently declare identical module lists, so the two bundle *bodies* are byte-identical. Since 2.4.3 (cyrius 6.6.18+ `distlib`, whose compile-verify is the only authority over a sidecar) the two `.deps` sidecars are identical too — one leaf each at 2.5.1 (`hashmap`, whose requires block brings `alloc` / `string` / `vec` / `str`), four at 2.4.3–2.5.0; before 2.4.3 the full sidecar unioned in all sixteen `[deps].stdlib` entries
+- **Serializable — not yet**: no type emits or reads JSON today; it returns in 2.5.2 (roadmap P0), on bayan's JSON profile
 - **Extensible**: tagged enums everywhere — new variants are additive, no break for consumers
 - **Static-literal data**: pre-built inventories hold `'static` `str` literals — no per-build heap churn (Cyrius has no `Cow`)
 - **Builder pattern**: an inventory builder for ergonomic construction

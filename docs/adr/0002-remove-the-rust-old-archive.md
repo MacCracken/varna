@@ -35,6 +35,14 @@ made the removal decidable:
    four (`tests/invariants.tcyr`, `adversarial.tcyr`, `integration.tcyr`,
    `mcp_json.tcyr`), taking the suite from 652 to 1,005 assertions.
 
+   > **Amendment (2026-11-05, v2.5.1).** That list is not the four `rust-old/tests/`
+   > suites. They were `invariants.rs`, `adversarial.rs`, `integration.rs` and
+   > **`serde_roundtrip.rs`**; `mcp_json.tcyr` stands in for the last, and the 27
+   > round-trip tests were never ported, because the serialization they test was not
+   > ported either. Point 1's "all 150 `pub fn`" check could not see that gap: serde
+   > derives are not `pub fn`s. The fix is roadmap **2.5.2 (P0)**; the deletion itself
+   > stands, since the round-trip suite stays recoverable from tag `2.1.3`.
+
 ## Decision
 
 **Delete `rust-old/` at 2.1.4.**

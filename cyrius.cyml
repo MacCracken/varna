@@ -5,7 +5,7 @@ description = "Varna — multilingual language engine: phoneme inventories, writ
 license = "GPL-3.0-only"
 repository = "https://github.com/MacCracken/varna"
 language = "cyrius"
-cyrius = "6.7.9"
+cyrius = "6.7.18"
 
 [build]
 entry = "src/main.cyr"
@@ -71,7 +71,8 @@ modules = [
 # load-bearing.
 #
 # Rust → Cyrius dependency map (the v1.x crate's Cargo deps):
-#   serde + serde_json  →  bayan           (JSON: #derive(Serialize) + json_parse/json_build)
+#   serde + serde_json  →  bayan-json      ([deps.bayan] below — NOT YET PORTED: no varna
+#                                           type serializes today; roadmap 2.5.2 (P0))
 #   thiserror           →  result + tagged (native enum + Result<T,E>, lib/result.cyr)
 #   tracing             →  sakshi          (structured logging/audit — added with -D LOGGING)
 #   tracing-subscriber  →  sakshi          (no separate subscriber; env-filter wired by hand)
@@ -97,32 +98,61 @@ stdlib = [
     "args",
     "assert",
     "hashmap",
-    "bayan",
     "fnptr",
     "tagged",
     "result",
     "bench",
 ]
 
+# --- bayan: the serde / serde_json replacement --------------------
+# bayan ships one profile per format. varna needs JSON only, so it takes
+# the thin `dist/bayan-json.cyr` profile as a named dep, NOT the `bayan`
+# stdlib monolith. At cyrius 6.7.18 the monolith carries math plus ~353 KB
+# of Unicode tables that DCE cannot drop: varna's live (CYRIUS_DCE=1)
+# binary was 414,664 B with it and is 44,408 B with this profile. Never
+# list "bayan" in [deps].stdlib as well — both files would be vendored
+# and 27 JSON symbols defined twice (last definition wins). The profile
+# omits the short `json_v_*` aliases; call the qualified `bayan_json_v_*`.
+#
+# The tag tracks the bayan the toolchain pin vendors (cyrius 6.7.18 →
+# bayan 1.11.1), the same tag mihi, samay, iam and ai-hwaccel take.
+#
+# Optional, on by default: [features] resolve from the ROOT manifest
+# only, so varna's own builds and tests get it and downstream consumers
+# do not. That matters because shabda and shabdakosh declare the bayan
+# monolith in their own [deps].stdlib; pulling the profile into them
+# too would hit that double definition. No varna code calls bayan yet:
+# serialization was lost in the Rust → Cyrius port and returns as
+# roadmap 2.5.2 (P0), which decides whether the dep stays optional once
+# the serializers enter dist/varna.cyr.
+[features]
+default = ["bayan"]
+
+[deps.bayan]
+optional = true
+git = "https://github.com/MacCracken/bayan.git"
+tag = "1.11.1"
+modules = ["dist/bayan-json.cyr"]
+
 # --- Added with -D MCP (src/mcp.cyr), not before -------------------
 # bote is the AGNOS MCP / JSON-RPC core, consumed as the transport-free
-# `dist/bote-core.cyr` bundle — 13 modules at 3.4.10 (log, error,
-# protocol, jsonx, registry, prompts, resources, events, audit, dispatch,
-# codec, schema, content). `cyrius deps` copies it into lib/bote-core.cyr.
-# The bundle states its own minimum toolchain, cyrius 6.7.2 (it uses
-# `const`); varna's 6.7.9 pin clears that.
+# `dist/bote-core.cyr` bundle — 15 modules at 3.8.14 (log, error,
+# protocol, jsonx, regex, format, registry, prompts, resources, events,
+# audit, dispatch, codec, schema, content). `cyrius deps` copies it into
+# lib/bote-core.cyr. The bundle states its own minimum toolchain, cyrius
+# 6.7.13; varna's 6.7.18 pin clears that.
 #
 # Since cyrius 6.6.18 a sidecar names only the leaves distlib's compile-
 # verify proves, and the bundle opens with a matching `# Requires` include
-# block. At 3.4.10 `dist/bote-core.deps` is `hashmap bayan sigil ct`; the
-# rest (chrono, string, vec, ...) arrive through those leaves' own requires
-# blocks, so nothing needs appending to [deps].stdlib by hand. Two costs
-# land in the -D MCP build: `sigil` and `ct` pull the sigil crypto fold
-# (no core module uses them; bote 3.3.17's CHANGELOG records it as a
-# distlib artifact, filed upstream in cyrius), and 3.4.0's `log` module
-# calls sakshi, which a [deps.bote] pin receives through bote's own libro
-# dep. (Copying the bundle by hand instead would mean declaring "sakshi"
-# here.) The default build is unaffected either way.
+# block. At 3.8.14 `dist/bote-core.deps` is `hashmap sys`; the rest arrive
+# through those leaves' own requires blocks, so nothing needs appending to
+# [deps].stdlib by hand. The sigil crypto fold that `sigil ct` dragged in
+# through 3.4.x is gone, dropped once cyrius 6.7.13's distlib stopped
+# recording a named dep's kept fold as the bundle's need. One indirect
+# need remains: the `log` module calls sakshi, which a [deps.bote] pin
+# receives through bote's own libro dep. (Copying the bundle by hand
+# instead would mean declaring "sakshi" here.) The default build is
+# unaffected either way.
 #
 # Since cyrius 6.7.6 a `path` beside `git` / `tag` is a dev override, read
 # only in local mode (`--local` / CYRIUS_LOCAL=1). A default build always
@@ -130,17 +160,18 @@ stdlib = [
 #
 # Kept commented on purpose: src/mcp.cyr hand-builds its JSON today and
 # links nothing from bote, so the recipe is documentation of how to wire
-# it, not an active dependency. bote 3.4.10 is the last tag that pins
-# Cyrius 6.7.9, the same pin as varna 2.5.0 (3.4.11+ moved to 6.7.18).
+# it, not an active dependency. bote 3.8.14 is bote's latest release and
+# pins Cyrius 6.7.18, the same pin as varna 2.5.1.
 #
 # NOTE: the v1.x `daimon` and `hoosh` Cargo features did NOT link those
 # crates — they only flipped on serde_json. Their Cyrius equivalents are
-# pure -D DAIMON / -D HOOSH build defines (JSON via bayan, already a
-# stdlib dep), so neither needs a [deps.*] entry. daimon and hoosh ship
+# pure -D DAIMON / -D HOOSH build defines (JSON via the [deps.bayan]
+# profile above, from 2.5.2), so neither needs a [deps.*] entry of its
+# own. daimon and hoosh ship
 # as Cyrius binaries today with no consumable [lib]/dist bundle.
 #
 # [deps.bote]
 # git = "https://github.com/MacCracken/bote"
 # path = "../bote"
-# tag = "3.4.10"
+# tag = "3.8.14"
 # modules = ["dist/bote-core.cyr"]

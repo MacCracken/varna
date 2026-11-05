@@ -14,7 +14,7 @@ Depend on varna from another Cyrius project via `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.5.0"
+tag = "2.5.1"
 modules = ["dist/varna.cyr"]
 ```
 
@@ -406,8 +406,9 @@ var reg = daimon_registration();
 #               transliterate, language_compare, numeral_value
 ```
 
-Serialize with the `bayan` JSON encoder — `var json = json_build(reg);` (the payload type
-carries `#derive(Serialize)`) — to pass to the daimon client.
+There is no JSON encoding of the registration yet: varna's serialization did not survive
+the Rust → Cyrius port and returns in 2.5.2 (roadmap P0). Until then a daimon client reads
+the record through the accessors above.
 
 ---
 

@@ -57,18 +57,20 @@ Depend on varna from another Cyrius project by adding it to `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.5.0"
+tag = "2.5.1"
 modules = ["dist/varna.cyr"]
 ```
 
 `cyrius deps` clones varna at the tag and copies the bundle into `lib/varna.cyr`,
-reading `dist/varna.deps` to pull the stdlib leaves the bundle needs. Since 2.4.3
-(cyrius 6.6.18+ `distlib`) that sidecar names only what the compile-verify proves —
-four leaves, `string`, `vec`, `alloc`, `hashmap` — and the bundle opens with a
-matching `# Requires` include block. If your own code calls a stdlib family
-(`fmt`, `io`, `bayan`, `assert`, `bench`, …), declare it in your own `[deps] stdlib`;
-varna's sidecar no longer brings it along. For the linguistic data engine without
-the `-D`-gated AI surfaces, use `modules = ["dist/varna-core.cyr"]` (same four leaves):
+reading `dist/varna.deps` to pull the stdlib leaves the bundle needs. That sidecar
+names only what `distlib`'s compile-verify proves — since 2.5.1 a single leaf,
+`hashmap`, whose own requires block brings `alloc`, `string`, `vec` and `str` — and
+the bundle opens with a matching `# Requires` include block. (A scratch consumer
+declaring only `hashmap` was built against the 2.5.1 bundle to check it.) If your own
+code calls a stdlib family (`fmt`, `io`, `bayan`, `assert`, `bench`, …), declare it in
+your own `[deps] stdlib`; varna's sidecar does not bring it along. varna's optional
+`[deps.bayan]` is not resolved for consumers. For the linguistic data engine without
+the `-D`-gated AI surfaces, use `modules = ["dist/varna-core.cyr"]` (same sidecar):
 
 ```cyrius
 include "lib/varna.cyr"
@@ -101,18 +103,25 @@ with sentinel-return checks in place of `Option`/`unwrap`.
 ```
 varna (this engine)
   │  Cyrius stdlib (resolved by `cyrius deps` into lib/)
-  ├── bayan          — JSON serialization (#derive(Serialize), json_parse/json_build)
   ├── result + tagged — native enum + Result<T,E> error model (VarnaError)
   ├── str / string / slice / vec / hashmap / fmt / io — core data structures + formatting
   ├── log + sakshi   — structured logging + audit (only under -D LOGGING)
   │
-  └── git dep (only under -D MCP):
-      └── bote (dist/bote-core.cyr) — MCP / JSON-RPC core surface
+  └── git deps:
+      ├── bayan (dist/bayan-json.cyr) — JSON, for the serde replacement; optional, on
+      │                                 by default for varna's own builds (see below)
+      └── bote (dist/bote-core.cyr)   — MCP / JSON-RPC core surface (recipe only, -D MCP)
 ```
 
-Zero external (non-Cyrius) dependencies. The v1.x crate's `serde`, `serde_json`,
-`thiserror`, `tracing`, `tracing-subscriber`, and `criterion` all resolve to Cyrius
-stdlib modules or language builtins — see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md).
+**varna does not serialize its types yet.** The v1.x crate derived `Serialize` /
+`Deserialize` on its public types; the Cyrius port did not carry that over, and no
+varna type emits or reads JSON today (only the `-D MCP` tools hand-build their
+output). It returns in **2.5.2** — the P0 at the top of the
+[roadmap](docs/development/roadmap.md). The `bayan-json` dependency is in place for it.
+
+Zero external (non-Cyrius) dependencies. The v1.x crate's `thiserror`, `tracing`,
+`tracing-subscriber`, and `criterion` resolve to Cyrius stdlib modules or language
+builtins, and `serde` / `serde_json` to bayan once 2.5.2 lands — see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md).
 
 ## Architecture
 

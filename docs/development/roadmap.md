@@ -1,12 +1,62 @@
 # Development Roadmap
 
-> **Current**: 2.5.0 · **Open work only** — shipped releases are in
+> **Current**: 2.5.1 · **Open work only** — shipped releases are in
 > [CHANGELOG.md](../../CHANGELOG.md) and the git tags.
 >
 > Tiers were numbered when the `2.2.0+` plan was drawn up against PHOIBLE, WALS,
 > Glottolog, Unicode CLDR and the IPA spec. They are the intended sequence, not a
-> commitment to ship in that order; `(P1)`–`(P4)` are priority. The pre-port
+> commitment to ship in that order; `(P0)`–`(P4)` are priority. The pre-port
 > `1.1.0`–`1.5.0` numbering was retired at 2.1.3.
+
+## 2.5.2 — bayan / serde integration (P0)
+
+**The port dropped serialization, and the docs said it hadn't.** The v1.x crate derived
+`Serialize` / `Deserialize` on 47 public types across 13 modules and called `serde_json`
+in 11. `tests/serde_roundtrip.rs` round-tripped every public type in 27 tests, and
+`integration.rs` / `adversarial.rs` leaned on it too. The Cyrius port has **no
+serialization at all**: no type emits or ingests JSON, and the only JSON in the tree is
+`src/mcp.cyr`'s hand-built output. Until 2.5.1 the README, `docs/architecture/overview.md`
+("All types emit JSON via `#derive(Serialize)` / `bayan`"), `docs/guides/usage.md` (a
+`json_build(reg)` call that does not exist), ADR 0001 and the `cyrius.cyml` dependency
+map all described it as done. Found at 2.5.1, when no varna code turned out to call
+bayan. Those claims were corrected there, and ADRs 0001 and 0002 carry amendments.
+
+- [ ] **Design first: how a varna record becomes JSON.** varna's types are raw
+      `load64`/`store64` records, not `struct`s, so `#derive(Serialize)` cannot attach to
+      them as they are. Pick one, measured on one module before rolling out: (a) a
+      per-type `*_to_json` / `*_from_json` pair over bayan's JSON builder and value tree
+      (`bayan_json_v_*`), or (b) converting the records to `struct`s so the derive
+      applies. Write the choice up as ADR 0003.
+- [ ] **Serialize every public type v1.x serialized** — phoneme (incl. allophone,
+      syllable), inventories, grammar, lexicon (incl. cognate, swadesh), dialect, script
+      (incl. numerals, transliteration), registry. One module per bite, each landing with
+      its tests (CLAUDE.md: large work in small bites).
+- [ ] **Deserialize them back.** v1.x round-tripped (`from_str` → equality), not just
+      emitted. Enum variants serialize by stable name, not by tag value, so an additive
+      variant never shifts a consumer's data.
+- [ ] **Port `serde_roundtrip.rs`** — its 27 tests as a `tests/json_roundtrip.tcyr`
+      covering every public type, plus the malformed-input cases from `adversarial.rs`.
+- [ ] **Move `-D MCP` / `-D DAIMON` / `-D HOOSH` onto it** — `src/mcp.cyr`'s hand-built
+      JSON and daimon's registration payload go through the same serializers.
+- [ ] **Benchmarks** for to-JSON / from-JSON on a full inventory and the registry.
+- [ ] **Document it** — the false claims came out at 2.5.1; 2.5.2 writes the real API
+      into the README, overview and usage guide, and closes ADR 0001's amendment.
+
+**Dependency shape (settled at 2.5.1, revisit only with a measurement).** Take bayan's
+thin JSON profile, not the stdlib monolith: `[deps.bayan]` at the tag the toolchain
+pin vendors, with `modules = ["dist/bayan-json.cyr"]`, and `bayan` *not* in
+`[deps].stdlib`. At cyrius 6.7.18 the monolith carries ~353 KB of Unicode tables that
+DCE cannot drop: varna's live binary was 414,664 B with it, against 44,408 B with
+`bayan-json`. Call the fully qualified `bayan_json_v_*` names; the profile omits the
+short aliases.
+
+**Consumer hazard to resolve before the bundle depends on it.** shabda and shabdakosh
+declare the `bayan` monolith in their own `[deps].stdlib`. A consumer that vendors
+both the monolith and `bayan-json` gets 27 JSON symbols defined twice (last
+definition wins), the collision samay's manifest documents. Before the serializers
+enter `dist/varna.cyr`, either keep `[deps.bayan]` `optional` behind a feature (the
+ai-hwaccel pattern, so consumers opt in) or move those consumers to the profile in
+step. Check `dist/varna.deps` and the `# Requires` block after each `distlib`.
 
 ## Data corrections
 
@@ -153,4 +203,6 @@ corrections.
 > 2.0.0 port and everything on it except the line above is met. One of its
 > entries — "full JSON roundtrip tests for all public types" — did **not**
 > survive the port intact: the Rust `serde_roundtrip.rs` suite was never carried
-> over and `src/mcp.cyr` hand-builds its JSON. See 2.1.3.
+> over and `src/mcp.cyr` hand-builds its JSON. See 2.1.3. Worse than that entry
+> said, serialization itself was not ported — the **2.5.2 (P0)** section at the
+> top is the fix.

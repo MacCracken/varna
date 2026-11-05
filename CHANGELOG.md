@@ -7,6 +7,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-11-05
+
+### Found — serialization was never ported (roadmap 2.5.2, P0)
+
+The v1.x crate derived `Serialize` / `Deserialize` on 47 public types across 13
+modules, called `serde_json` in 11, and round-tripped every public type in
+`tests/serde_roundtrip.rs` (27 tests). **The Cyrius port carried none of it.** No
+varna type emits or reads JSON, and no varna code calls bayan. The only JSON in the
+tree is the hand-built output in `src/mcp.cyr`. Meanwhile the README, the architecture
+overview, the usage guide (which showed a `json_build(reg)` call that does not exist),
+ADR 0001 and the `cyrius.cyml` dependency map all described it as done.
+
+This came to light because the toolchain bump made bayan expensive (below), and
+checking what varna uses bayan for turned up nothing. ADR 0002 records the port's
+"all four" standalone test suites as ported, but its list swaps `mcp_json.tcyr` in for
+`serde_roundtrip.rs`. Its "all 150 `pub fn`" parity check could not catch the gap,
+because serde derives are not `pub fn`s. Restoring serialization is now the **P0 at
+the top of the roadmap, targeted at 2.5.2**. The false claims are corrected in this
+release, and ADRs 0001 and 0002 carry dated amendments.
+
+### Changed
+
+- **Toolchain `6.7.9` → `6.7.18`.** No data or API change, and no varna source change
+  beyond the daimon version string. **2409 assertions** across 35 files pass, also
+  under `cyrius test --bounds tests`. `fmt --check`, `lint`, `vet` (21 deps,
+  0 untrusted), `deny` (0 violations) and `doc --check` are clean. 6.7.10–6.7.18 move
+  a great deal of struct-value, `Str`, multi-value-return and declaration-zone
+  semantics. varna's code was swept for every construct those changes reach
+  (comments and strings stripped), and none occur: no `struct`, `Str`, tuple, `f64`,
+  `ret2`, `: stack` pair, `**T`, closure, `impl` or narrow scalar annotation, no
+  duplicate global or fn, and one spelling per include path.
+
+- **bayan: the stdlib monolith → the thin `bayan-json` profile.** At 6.7.18 the
+  stdlib's `lib/bayan.cyr` (bayan 1.11.1) includes `math` and the 7-file
+  `lib/unicode/` family, about 353 KB of tables that DCE cannot drop. Every varna build
+  prepends `[deps].stdlib`, so all of it landed in every binary. bayan ships one dist
+  profile per format, and serde / serde_json map onto JSON only, so varna now takes
+  `dist/bayan-json.cyr` as a named dep (`[deps.bayan]`, tag 1.11.1, the bayan the pin
+  vendors and the same declaration mihi, samay, iam and ai-hwaccel use). `"bayan"` is
+  gone from `[deps].stdlib`, since declaring both would define 27 JSON symbols twice.
+
+  | build | 6.7.9, monolith | 6.7.18, monolith | 6.7.18, `bayan-json` |
+  |---|---|---|---|
+  | default | 746,824 B | 1,319,880 B | **470,392 B** |
+  | full `-D` | 765,472 B | 1,338,528 B | **489,040 B** |
+  | `CYRIUS_DCE=1` (live) | 70,984 B | 414,664 B | **44,408 B** |
+
+  So 2.5.1 binaries are 37% smaller than 2.5.0's, not 77% larger. The dep is
+  `optional = true` with `[features] default = ["bayan"]`, the ai-hwaccel pattern.
+  Features resolve from the root manifest only, so varna's own builds and tests get
+  it and consumers do not. That matters: shabda and shabdakosh declare the bayan
+  monolith themselves and would otherwise vendor both files. Whether the dep stays
+  optional once serializers enter the bundle is a 2.5.2 decision.
+
+- **Lock: 34 → 35 entries.** `lib/bayan.cyr` is replaced by `lib/bayan-json.cyr`, and
+  `lib/math.cyr` is added (the profile includes it). There is also a `commit` row
+  pinning bayan 1.11.1 to `965298d`, checked against bayan's own tag, and the
+  toolchain row is now `cyrius 6.7.18`. `cyrius deps --verify`: 35 verified, 0
+  failed; `cyrius deps --locked` is clean. `cyrius deps` now fetches bayan from
+  GitHub at the tag.
+
+- **`dist/` sidecars: 4 leaves → 1 (`hashmap`).** distlib's compile-verify finds that
+  `hashmap`'s own requires block brings `alloc`, `string`, `vec` and `str`. To check
+  that before trusting it, a scratch consumer declaring only `hashmap` was built
+  against the 2.5.1 bundle and run (`phoneme_has(phoneme_english(), "θ")` → 1).
+
+- **bote recipe `3.4.10` → `3.8.14`**, bote's latest release (2026-11-05), which pins
+  6.7.18. At 3.8.14 the core bundle is 15 modules (adding `regex` and `format`) and
+  needs cyrius ≥ 6.7.13. Its sidecar is now `hashmap sys`: bote dropped `sigil` and
+  `ct` once cyrius 6.7.13's distlib stopped recording a named dep's kept fold, so the
+  `-D MCP` wiring no longer drags the crypto fold in. The block is still commented
+  documentation and is not linked.
+
+### Fixed
+
+- **Docs that described serialization as done**: the README dependency stack, the
+  overview's dependency map, "Serializable" claim and "structured Cyrius `struct`s"
+  claim (varna's records are `load64` / `store64` layouts with no `struct`
+  declarations), the usage guide's `json_build(reg)` example, and the `cyrius.cyml`
+  map. Each now says what is true and points at roadmap 2.5.2.
+- **The daimon registration version is `2.5.1`.** The `tests/daimon.tcyr` guard failed
+  until it was edited, as on the last bump.
+
+### Performance
+
+The binary sizes above are the headline. `lib/bench.cyr` is byte-identical between
+6.7.9 and 6.7.18, so the recorded rows compare directly: 2026-11-05T17:02:48Z on 6.7.9
+(timer floor 1.371 µs) and 17:13:45Z on 6.7.18 (1.383 µs). The five largest movers were
+then run interleaved, three runs per pin, against a 6.7.9 build of the 2.5.0 tag (avg):
+
+| benchmark | 6.7.9 | 6.7.18 | |
+|---|---|---|---|
+| `phoneme_lookup_ipa` | 374–375 ns | 336–340 ns | **~10% faster**, every run |
+| `grammar_by_code_lookup` | 227–231 ns | 241–244 ns | **~5.5% slower**, every run |
+| `lexicon_find_word` | 784–794 ns | 767–776 ns | ~2% faster |
+| `gematria_string_value_in` | 829–841 ns (one run 971) | 849–860 ns | noise |
+| `registry_all_codes_iter` | 3.85–4.66 µs | 4.01–4.72 µs | noise, both ways |
+
+The two consistent effects can't be attributed to one cause. The 6.7.18 build differs
+in both the compiler and the bayan file prepended to every compile, which changes code
+layout. `grammar_by_code_lookup` (`"ru"`, nine `streq` misses) has now slowed at three
+consecutive pins: 209 ns avg on 6.6.2, ~229 on 6.6.20 and 6.7.9, and ~241 on 6.7.18.
+
 ## [2.5.0] - 2026-11-05
 
 ### Changed

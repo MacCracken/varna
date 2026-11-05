@@ -7,13 +7,15 @@
 
 ## Version
 
-**2.5.0** (2026-11-05) — toolchain `6.6.20` → `6.7.9`, the Cyrius language minor
-(traits, `const`, real `!`, checked `bool`, narrow `*T` derefs, opt-in bounds
-checking). No data or API change and no varna source change beyond the daimon version
-string. The 6.7.x semantic changes were swept for and none touch varna's code. The
-suite also passes under `--bounds`.
+**2.5.1** (2026-11-05) — toolchain `6.7.9` → `6.7.18`; bayan moved from the stdlib
+monolith to its thin `dist/bayan-json.cyr` profile (an optional `[deps.bayan]`, on by
+default), which keeps the 6.7.18 monolith's ~353 KB of Unicode tables out and leaves
+the live binary 37% smaller than at 2.5.0. bote recipe → 3.8.14. And the finding that
+sets the next release: **varna does not serialize** — the port dropped v1.x's serde
+surface, while the docs claimed it. That is roadmap **2.5.2 (P0)**.
 
-Previous: **2.4.3** toolchain `6.6.2` → `6.6.20`, dist bundles under 6.6.18+
+Previous: **2.5.0** toolchain `6.6.20` → `6.7.9` (the language minor; semantic changes
+swept, none touch varna; suite passes under `--bounds`); **2.4.3** toolchain `6.6.2` → `6.6.20`, dist bundles under 6.6.18+
 `distlib` (sidecar 16 → 4 leaves), daimon version held to `VERSION`; **2.4.2** toolchain `6.5.36` → `6.6.2`; **2.4.1** data corrections (Thai
 falling tone, Vietnamese huyền, Burmese checked tone, Wolof vowels,
 `phoneme_is_breathy`); **2.4.0** gematria and numeric letter values; **2.3.x** typological depth
@@ -37,9 +39,10 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 
 ## Toolchain
 
-- **Cyrius pin**: `6.7.9` (in `cyrius.cyml [package].cyrius`)
-- **Lock**: `cyrius deps --verify` clean — 34 verified, 0 failed. The lock also
-  records the toolchain (`cyrius 6.7.9`) as its last row. `cyrius deps --locked`
+- **Cyrius pin**: `6.7.18` (in `cyrius.cyml [package].cyrius`)
+- **Lock**: `cyrius deps --verify` clean — 35 verified, 0 failed. The lock also
+  records the toolchain (`cyrius 6.7.18`) as its last row, and a `commit` row pinning
+  bayan 1.11.1 (`965298d`). `cyrius deps --locked`
   (6.7.6+) checks lib/ and the lock against the tags without writing anything.
 - **Lock authority is `cyrius deps`**, which walks the include graph. `cyrius lib sync`
   name-matches `[deps].stdlib` instead and resolves a *different* set (at 6.5.x it added
@@ -88,24 +91,32 @@ all four. Default `cyrius build` excludes them.
 | `-D DAIMON` | `daimon` | agent registration payload (6 capabilities, 51 languages, 19 scripts) |
 | `-D HOOSH` | `hoosh` | `LanguageQuery` + `answer_from_data` |
 | `-D LOGGING` | `logging` | level-gated stderr logger; `sakshi` audit still deferred |
-| `-D MCP` | `mcp` | 5 tools + `invoke`; hand-built JSON, no bote/bayan yet |
+| `-D MCP` | `mcp` | 5 tools + `invoke`; hand-built JSON, no bote/bayan yet (2.5.2 moves it onto bayan) |
 
 ## Dependencies
 
 Declared in `cyrius.cyml [deps].stdlib`: string, fmt, alloc, vec, str, slice, syscalls,
-io, args, assert, hashmap, bayan, fnptr, tagged, result, bench.
+io, args, assert, hashmap, fnptr, tagged, result, bench.
+
+bayan is a named dep, not a stdlib leaf: `[deps.bayan]` at tag 1.11.1 (what the 6.7.18
+pin vendors) with `modules = ["dist/bayan-json.cyr"]`, `optional = true` and
+`[features] default = ["bayan"]`. Features resolve from the root manifest only, so
+varna's own builds get it and consumers do not — shabda and shabdakosh declare the
+bayan monolith themselves, and vendoring both files double-defines 27 JSON symbols.
+Nothing calls it yet; it is in place for 2.5.2.
 
 Two are *planned* for `-D` surfaces but not yet wired, so they are absent from
 `cyrius.lock` until a module actually resolves them: `sakshi` (for `-D LOGGING`) and
-`bote` 3.4.10 (for `-D MCP`; its sidecar brings `hashmap bayan sigil ct` and, through
-their requires blocks, the rest; its `log` module's sakshi arrives through bote's own
-libro dep). (`chrono` *is* in the lock now, but only as a
+`bote` 3.8.14 (for `-D MCP`; its sidecar is `hashmap sys` and the rest arrive through
+their requires blocks; its `log` module's sakshi arrives through bote's own libro dep). (`chrono` *is* in the lock now, but only as a
 transitive include of `lib/hashseed.cyr`.)
 
 Consumers pull one of two bundles, each with a compile-verified sidecar naming the
 stdlib leaves it needs and a matching `# Requires` include block: `dist/varna.cyr` or
-`dist/varna-core.cyr`, 4 leaves each (string, vec, alloc, hashmap). Before cyrius
-6.6.18 the full sidecar unioned in the whole `[deps].stdlib` (16 leaves).
+`dist/varna-core.cyr`, one leaf each at 2.5.1: `hashmap`, whose own requires block
+brings alloc / string / vec / str (checked by building a scratch consumer that declares
+only `hashmap`). It was 4 leaves at 2.4.3–2.5.0; before cyrius 6.6.18 the full sidecar
+unioned in the whole `[deps].stdlib` (16 leaves).
 
 ## Verification
 
@@ -137,10 +148,13 @@ Full detail in the [roadmap](roadmap.md); in brief —
   single-source pass instead of cell-by-cell patching.
 - **Gematria follow-ons** carried out of 2.4.0: caching `script_alphabet_values`, a
   variant-glyph alias map, the Maghrebi abjad, Glagolitic, mispar gadol.
-- **JSON round-trip tests did not survive the port.** The Rust `serde_roundtrip.rs`
-  suite was never carried over and `src/mcp.cyr` still hand-builds its JSON.
+- **Serialization did not survive the port** — not just its tests. No varna type emits
+  or reads JSON; v1.x derived serde on 47 types across 13 modules and round-tripped
+  them in `serde_roundtrip.rs` (27 tests, never ported). `src/mcp.cyr` hand-builds its
+  JSON. Roadmap **2.5.2 (P0)**.
 
-Next feature tier is **2.5.0** (coverage scale).
+Next release is **2.5.2** (bayan / serde integration, P0), ahead of the 2.5.0 coverage
+tier.
 
 ## Consumers
 

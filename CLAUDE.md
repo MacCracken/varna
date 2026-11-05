@@ -6,8 +6,8 @@
 
 - **Type**: Flat Cyrius library (`dist/varna.cyr` bundle) + thin demo entry — no longer a Rust crate; migrated at v2.0 (see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md))
 - **License**: GPL-3.0
-- **Toolchain**: Cyrius, pinned in `cyrius.cyml` (`cyrius = "6.7.9"`)
-- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.5.0**
+- **Toolchain**: Cyrius, pinned in `cyrius.cyml` (`cyrius = "6.7.18"`)
+- **Version**: SemVer; canonical source is `VERSION` (read by `cyrius.cyml` via `${file:VERSION}`). Current target: **2.5.1**
 - **Rust archive**: none in the tree. The v1.x crate was frozen in `rust-old/` at 2.0.0 and deleted at 2.1.4 ([ADR 0002](docs/adr/0002-remove-the-rust-old-archive.md)); it stays recoverable from git tags `1.0.0`–`2.1.3` (`git show 2.1.3:rust-old/src/...`)
 
 ## Consumers
@@ -21,7 +21,7 @@ lint, and bench with the cyrius toolchain only.
 
 | Action | Command | Notes |
 |---|---|---|
-| Resolve deps | `cyrius deps` | Reads `cyrius.cyml`, copies stdlib into `lib/` (gitignored); bote is added under `-D MCP` |
+| Resolve deps | `cyrius deps` | Reads `cyrius.cyml`, copies stdlib into `lib/` (gitignored) and fetches bayan's `dist/bayan-json.cyr` profile at its tag (the optional `[deps.bayan]`, on by default). `[deps.bote]` is a commented recipe, not resolved |
 | Verify lock | `cyrius deps --verify` | Checks `cyrius.lock` hashes; part of `scripts/check.sh` |
 | Build | `cyrius build src/main.cyr build/varna` | `-D LOGGING -D MCP -D DAIMON -D HOOSH` for optional surfaces |
 | Bundle | `cyrius distlib` | Concatenates `src/` → `dist/varna.cyr` for consumers (`distlib core` → `dist/varna-core.cyr`) |

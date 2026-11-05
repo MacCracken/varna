@@ -9,6 +9,14 @@
 > [ADR 0002](0002-remove-the-rust-old-archive.md). References to `rust-old/` below are
 > preserved as written; the crate remains recoverable from git tags `1.0.0`–`2.1.3`.
 
+> **Amendment (2026-11-05, v2.5.1) — serialization was not ported.** The Decision and
+> Consequences below say JSON serialization maps to `bayan` `#derive(Serialize)` with
+> hand-rolled deserialization. Neither was implemented: no varna type serializes, no
+> varna code calls bayan, and v1.x's `serde_roundtrip.rs` (27 tests) was never carried
+> over. The mapping stands as the intent. The work is roadmap **2.5.2 (P0)**, on bayan's
+> thin `dist/bayan-json.cyr` profile rather than the stdlib monolith. Also note that
+> `#derive` needs `struct`s, and varna's records are raw `load64` / `store64` layouts.
+
 ## Context
 
 Varna shipped as a Rust crate through v1.0 — a flat library of phoneme inventories,
