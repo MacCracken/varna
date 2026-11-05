@@ -1,8 +1,9 @@
 # tests/json_roundtrip.tcyr — JSON in the v1.x serde format (ADR 0003, roadmap 2.5.2).
 #
-# Ports v1.x tests/serde_roundtrip.rs: its phoneme half for now (serde_phoneme_consonant,
-# serde_phoneme_vowel, serde_phoneme_inventory_all_languages, _with_tones,
-# _without_tones); the other modules join as their serializers land. v1.x compared with
+# Ports v1.x tests/serde_roundtrip.rs, module by module as the serializers land: phoneme
+# (serde_phoneme_consonant, serde_phoneme_vowel, serde_phoneme_inventory_all_languages,
+# _with_tones, _without_tones) and phonology (serde_allophone_rule_set,
+# serde_allophone_rule, serde_phonotactics_all, serde_syllable_template). v1.x compared with
 # PartialEq; varna has no record equality, so the field-by-field helpers below stand in
 # for it. Beyond the port: exact text against what serde wrote, v1.x documents (which
 # lack `airstream` / `features`) decoding, every enum variant by name, and malformed
@@ -13,6 +14,8 @@ include "src/phoneme.cyr"
 include "src/inventories.cyr"
 include "src/script.cyr"
 include "src/registry.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
 include "src/json.cyr"
 
 # --- equality (v1.x derived PartialEq) ---
@@ -335,6 +338,226 @@ fn test_writer_refusals() {
     return 0;
 }
 
+# --- phonology: allophone rules, syllable templates, phonotactics ---
+
+fn _rule_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(allophone_rule_phoneme(a), allophone_rule_phoneme(b)) != 1) { return 0; }
+    if (streq(allophone_rule_allophone(a), allophone_rule_allophone(b)) != 1) { return 0; }
+    if (allophone_rule_environment(a) != allophone_rule_environment(b)) { return 0; }
+    return allophone_rule_obligatory(a) == allophone_rule_obligatory(b);
+}
+
+fn _rset_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(allophone_language_code(a), allophone_language_code(b)) != 1) { return 0; }
+    var ra = allophone_rules(a);
+    var rb = allophone_rules(b);
+    var n = vec_len(ra);
+    if (n != vec_len(rb)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (_rule_eq(vec_get(ra, i), vec_get(rb, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _tmpl_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (syllable_max_onset(a) != syllable_max_onset(b)) { return 0; }
+    if (syllable_max_coda(a) != syllable_max_coda(b)) { return 0; }
+    if (syllable_complex_nucleus(a) != syllable_complex_nucleus(b)) { return 0; }
+    return streq(syllable_pattern(a), syllable_pattern(b));
+}
+
+fn _cons_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (constraint_kind(a) != constraint_kind(b)) { return 0; }
+    if (constraint_position(a) != constraint_position(b)) { return 0; }
+    if (streq(constraint_description(a), constraint_description(b)) != 1) { return 0; }
+    var sa = constraint_sequences(a);
+    var sq = constraint_sequences(b);
+    var n = vec_len(sa);
+    if (n != vec_len(sq)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (streq(vec_get(sa, i), vec_get(sq, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _phono_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(phonotactics_language_code(a), phonotactics_language_code(b)) != 1) { return 0; }
+    if (_tmpl_eq(phonotactics_syllable(a), phonotactics_syllable(b)) != 1) { return 0; }
+    var ca = phonotactics_constraints(a);
+    var cb = phonotactics_constraints(b);
+    var n = vec_len(ca);
+    if (n != vec_len(cb)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (_cons_eq(vec_get(ca, i), vec_get(cb, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _rule_text(r) {
+    var sb = str_builder_new();
+    if (allophone_rule_to_json(r, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _rset_text(rs) {
+    var sb = str_builder_new();
+    if (allophone_rule_set_to_json(rs, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _tmpl_text(t) {
+    var sb = str_builder_new();
+    if (syllable_template_to_json(t, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _cons_text(c) {
+    var sb = str_builder_new();
+    if (phonotactic_constraint_to_json(c, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _phono_text(p) {
+    var sb = str_builder_new();
+    if (phonotactics_to_json(p, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn test_serde_allophone_rule_set() {
+    var rs = allophone_english();
+    assert(vec_len(allophone_rules(rs)) > 0, "English has rules");
+    assert(_rset_eq(rs, allophone_rule_set_from_json(_rset_text(rs))), "serde_allophone_rule_set: round trip");
+    return 0;
+}
+
+fn test_serde_allophone_rule() {
+    var r = _arule_new("t", "ɾ", Environment.Intervocalic, 0);
+    var t = _rule_text(r);
+    assert(_rule_eq(r, allophone_rule_from_json(t)), "serde_allophone_rule: round trip");
+    assert(streq(t, "{\"phoneme\":\"t\",\"allophone\":\"ɾ\",\"environment\":\"Intervocalic\",\"obligatory\":false}"), "rule text is serde's shape");  #skip-lint
+    return 0;
+}
+
+fn test_serde_phonotactics_all() {
+    var en = phonotactics_english();
+    var sa = phonotactics_sanskrit();
+    var ja = phonotactics_japanese();
+    assert(_phono_eq(en, phonotactics_from_json(_phono_text(en))), "serde_phonotactics_all: en");
+    assert(_phono_eq(sa, phonotactics_from_json(_phono_text(sa))), "serde_phonotactics_all: sa");
+    assert(_phono_eq(ja, phonotactics_from_json(_phono_text(ja))), "serde_phonotactics_all: ja");
+    var et = _phono_text(en);
+    assert(_starts_with(et, "{\"language_code\":\"en\",\"syllable\":{\"max_onset\":"), "profile opens with code, template");  #skip-lint
+    assert(_contains(et, "},\"constraints\":[{\"kind\":"), "then constraints");
+    assert(_ends_with(et, "]}"), "constraints last");
+    return 0;
+}
+
+fn test_serde_syllable_template() {
+    var t = _syllable_new(3, 4, 1, "(C)(C)(C)V(C)(C)(C)(C)");
+    var tt = _tmpl_text(t);
+    assert(_tmpl_eq(t, syllable_template_from_json(tt)), "serde_syllable_template: round trip");
+    assert(streq(tt, "{\"max_onset\":3,\"max_coda\":4,\"complex_nucleus\":true,\"pattern\":\"(C)(C)(C)V(C)(C)(C)(C)\"}"), "template text is serde's shape");  #skip-lint
+    return 0;
+}
+
+fn test_text_constraint() {
+    var c = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset, "s+stop onsets");
+    _constraint_add_seq(c, "str");
+    _constraint_add_seq(c, "spr");
+    var t = _cons_text(c);
+    assert(streq(t, "{\"kind\":\"Permitted\",\"position\":\"Onset\",\"sequences\":[\"str\",\"spr\"],\"description\":\"s+stop onsets\"}"), "constraint text is serde's shape");  #skip-lint
+    assert(_cons_eq(c, phonotactic_constraint_from_json(t)), "constraint round trip");
+    var empty = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.AcrossBoundary, "none");
+    assert(_cons_eq(empty, phonotactic_constraint_from_json(_cons_text(empty))), "empty sequences round-trip");
+    return 0;
+}
+
+fn test_enum_names_phonology() {
+    var bad = 0;
+    var i = 0;
+    while (i <= 8) {
+        var sb = str_builder_new();
+        Environment_to_json(i, sb);
+        var t, x = Environment_from_json_str(str_cstr(str_builder_build(sb)));
+        if (is_ok(t) != 1 || result_unwrap(t, x) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    i = 0;
+    while (i <= 3) {
+        var sb2 = str_builder_new();
+        SyllablePosition_to_json(i, sb2);
+        var t2, x2 = SyllablePosition_from_json_str(str_cstr(str_builder_build(sb2)));
+        if (is_ok(t2) != 1 || result_unwrap(t2, x2) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    i = 0;
+    while (i <= 1) {
+        var sb3 = str_builder_new();
+        ConstraintKind_to_json(i, sb3);
+        var t3, x3 = ConstraintKind_from_json_str(str_cstr(str_builder_build(sb3)));
+        if (is_ok(t3) != 1 || result_unwrap(t3, x3) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "every phonology enum variant round-trips by name");
+    return 0;
+}
+
+fn test_v1x_before_after_refused() {
+    assert_eq(allophone_rule_from_json("{\"phoneme\":\"n\",\"allophone\":\"ŋ\",\"environment\":{\"Before\":{\"Specific\":\"k\"}},\"obligatory\":true}"), 0, "Before(Specific) refused: varna cannot hold it");  #skip-lint
+    assert_eq(allophone_rule_from_json("{\"phoneme\":\"l\",\"allophone\":\"ɫ\",\"environment\":{\"After\":\"Vowel\"},\"obligatory\":false}"), 0, "After(Vowel) refused");  #skip-lint
+    assert_eq(allophone_rule_set_from_json("{\"language_code\":\"xx\",\"rules\":[{\"phoneme\":\"n\",\"allophone\":\"ŋ\",\"environment\":{\"Before\":\"Plosive\"},\"obligatory\":true}]}"), 0, "a set holding one is refused whole");  #skip-lint
+    return 0;
+}
+
+fn test_malformed_phonology() {
+    assert_eq(allophone_rule_from_json(0), 0, "rule: null text");
+    assert_eq(allophone_rule_from_json("{\"phoneme\":\"t\",\"allophone\":\"ɾ\",\"environment\":2,\"obligatory\":false}"), 0, "rule: environment as a number");  #skip-lint
+    assert_eq(allophone_rule_from_json("{\"phoneme\":\"t\",\"allophone\":\"ɾ\",\"environment\":\"Intervocalic\",\"obligatory\":\"false\"}"), 0, "rule: obligatory as a string");  #skip-lint
+    assert_eq(allophone_rule_from_json("{\"phoneme\":\"t\",\"environment\":\"Intervocalic\",\"obligatory\":false}"), 0, "rule: missing allophone");  #skip-lint
+    assert_eq(allophone_rule_set_from_json("{\"language_code\":\"xx\",\"rules\":{}}"), 0, "set: rules not an array");
+    assert_eq(allophone_rule_set_from_json("{\"rules\":[]}"), 0, "set: missing language_code");
+    assert_eq(syllable_template_from_json("{\"max_onset\":256,\"max_coda\":0,\"complex_nucleus\":false,\"pattern\":\"V\"}"), 0, "template: u8 over 255");  #skip-lint
+    assert_eq(syllable_template_from_json("{\"max_onset\":-1,\"max_coda\":0,\"complex_nucleus\":false,\"pattern\":\"V\"}"), 0, "template: negative u8");  #skip-lint
+    assert_eq(syllable_template_from_json("{\"max_onset\":1.5,\"max_coda\":0,\"complex_nucleus\":false,\"pattern\":\"V\"}"), 0, "template: float for a u8");  #skip-lint
+    assert_eq(syllable_template_from_json("{\"max_onset\":\"3\",\"max_coda\":0,\"complex_nucleus\":false,\"pattern\":\"V\"}"), 0, "template: string for a u8");  #skip-lint
+    assert_eq(syllable_template_from_json("{\"max_onset\":1,\"max_coda\":0,\"complex_nucleus\":1,\"pattern\":\"V\"}"), 0, "template: 1 for a bool");  #skip-lint
+    assert_eq(syllable_template_from_json("{\"max_onset\":1,\"max_coda\":0,\"complex_nucleus\":false}"), 0, "template: missing pattern");  #skip-lint
+    assert_eq(phonotactic_constraint_from_json("{\"kind\":\"Allowed\",\"position\":\"Onset\",\"sequences\":[],\"description\":\"d\"}"), 0, "constraint: unknown kind");  #skip-lint
+    assert_eq(phonotactic_constraint_from_json("{\"kind\":\"Permitted\",\"position\":\"Middle\",\"sequences\":[],\"description\":\"d\"}"), 0, "constraint: unknown position");  #skip-lint
+    assert_eq(phonotactic_constraint_from_json("{\"kind\":\"Permitted\",\"position\":\"Onset\",\"sequences\":\"str\",\"description\":\"d\"}"), 0, "constraint: sequences not an array");  #skip-lint
+    assert_eq(phonotactic_constraint_from_json("{\"kind\":\"Permitted\",\"position\":\"Onset\",\"sequences\":[1],\"description\":\"d\"}"), 0, "constraint: sequence not a string");  #skip-lint
+    assert_eq(phonotactic_constraint_from_json("{\"kind\":\"Permitted\",\"position\":\"Onset\",\"sequences\":[]}"), 0, "constraint: missing description");  #skip-lint
+    assert_eq(phonotactics_from_json("{\"language_code\":\"xx\",\"constraints\":[]}"), 0, "profile: missing syllable");  #skip-lint
+    assert_eq(phonotactics_from_json("{\"language_code\":\"xx\",\"syllable\":{\"max_onset\":1,\"max_coda\":0,\"complex_nucleus\":false,\"pattern\":\"V\"},\"constraints\":[{}]}"), 0, "profile: one bad constraint");  #skip-lint
+    return 0;
+}
+
+fn test_writer_refusals_phonology() {
+    var sb = str_builder_new();
+    assert_eq(allophone_rule_to_json(0, sb), 0 - 1, "null rule refused");
+    assert_eq(allophone_rule_set_to_json(0, sb), 0 - 1, "null set refused");
+    var rs = _aset_new("xx");
+    vec_push(allophone_rules(rs), 0);
+    assert_eq(allophone_rule_set_to_json(rs, sb), 0 - 1, "set with a null rule refused");
+    assert_eq(syllable_template_to_json(0, sb), 0 - 1, "null template refused");
+    assert_eq(phonotactic_constraint_to_json(0, sb), 0 - 1, "null constraint refused");
+    assert_eq(phonotactics_to_json(0, sb), 0 - 1, "null profile refused");
+    assert_eq(phonotactics_to_json(_phonotactics_new("xx", 0), sb), 0 - 1, "profile without a template refused");
+    assert_eq(str_len(str_builder_build(sb)), 0, "nothing was written by any refusal");
+    return 0;
+}
+
 fn main() {
     alloc_init();
     test_group("json_roundtrip");
@@ -353,6 +576,15 @@ fn main() {
     test_malformed_phoneme();
     test_malformed_inventory();
     test_writer_refusals();
+    test_serde_allophone_rule_set();
+    test_serde_allophone_rule();
+    test_serde_phonotactics_all();
+    test_serde_syllable_template();
+    test_text_constraint();
+    test_enum_names_phonology();
+    test_v1x_before_after_refused();
+    test_malformed_phonology();
+    test_writer_refusals_phonology();
     return assert_summary();
 }
 

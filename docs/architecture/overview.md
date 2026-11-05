@@ -193,7 +193,7 @@ varna
 - **Data-driven**: Language data as fixed-layout records built and read through `load64` / `store64` accessors (no `struct` declarations), not embedded strings
 - **Queryable**: Every inventory supports lookup, filtering, counting, and `by_code()` dispatch
 - **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`). `[lib]` and `[lib.core]` currently declare identical module lists, so the two bundle *bodies* are byte-identical. Since 2.4.3 (cyrius 6.6.18+ `distlib`, whose compile-verify is the only authority over a sidecar) the two `.deps` sidecars are identical too — `result hashmap` since 2.5.2's enum codecs (`hashmap`'s requires block brings `alloc` / `string` / `vec` / `str`), `hashmap` alone at 2.5.1, four leaves at 2.4.3–2.5.0; before 2.4.3 the full sidecar unioned in all sixteen `[deps].stdlib` entries
-- **Serializable — in progress (2.5.2)**: the v1.x serde format ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)) on bayan's JSON profile; phonemes and inventories done, the other modules to follow
+- **Serializable — in progress (2.5.2)**: the v1.x serde format ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)) on bayan's JSON profile; phonemes, inventories and the phonology types done; script, grammar, lexicon, dialect and registry to follow
 - **Extensible**: tagged enums everywhere — new variants are additive, no break for consumers
 - **Static-literal data**: pre-built inventories hold `'static` `str` literals — no per-build heap churn (Cyrius has no `Cow`)
 - **Builder pattern**: an inventory builder for ergonomic construction

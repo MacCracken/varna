@@ -42,6 +42,7 @@ var _b_allo = 0;
 var _b_phono = 0;
 var _b_rp = 0;
 var _b_en_json = 0;
+var _b_phono_json = 0;
 
 fn b_english_inventory() { phoneme_english(); return 0; }
 fn b_sanskrit_inventory() { phoneme_sanskrit(); return 0; }
@@ -85,6 +86,12 @@ fn b_json_inventory_write() {
     return 0;
 }
 fn b_json_inventory_read() { phoneme_inventory_from_json(_b_en_json); return 0; }
+fn b_json_phonotactics_write() {
+    var sb = str_builder_new();
+    phonotactics_to_json(_b_phono, sb);
+    return 0;
+}
+fn b_json_phonotactics_read() { phonotactics_from_json(_b_phono_json); return 0; }
 
 fn _bench(benches, name, fp, n) {
     var b = bench_new(name);
@@ -107,6 +114,9 @@ fn main() {
     var jsb = str_builder_new();
     phoneme_inventory_to_json(_b_en, jsb);
     _b_en_json = str_cstr(str_builder_build(jsb));
+    var psb = str_builder_new();
+    phonotactics_to_json(_b_phono, psb);
+    _b_phono_json = str_cstr(str_builder_build(psb));
 
     var benches = vec_new();
     _bench(benches, "english_phoneme_inventory", &b_english_inventory, 100000);
@@ -133,6 +143,8 @@ fn main() {
     _bench(benches, "dialect_apply_overlay", &b_dialect_apply, 100000);
     _bench(benches, "json_inventory_write_en", &b_json_inventory_write, 2000);
     _bench(benches, "json_inventory_read_en", &b_json_inventory_read, 1000);
+    _bench(benches, "json_phonotactics_write_en", &b_json_phonotactics_write, 5000);
+    _bench(benches, "json_phonotactics_read_en", &b_json_phonotactics_read, 2000);
     bench_report_all(benches);
     return 0;
 }

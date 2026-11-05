@@ -8,11 +8,13 @@
 #
 # is_permitted returns tri-state: 1 = permitted, 0 = forbidden, (0-1) = unspecified.
 
+#derive(Serialize)
 enum ConstraintKind {
     Permitted = 0;
     Forbidden = 1;
 }
 
+#derive(Serialize)
 enum SyllablePosition {
     Onset = 0;
     Coda = 1;

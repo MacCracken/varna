@@ -33,8 +33,8 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | Numeral systems | 9 — five of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek) |
 | Grammar profiles | 11 |
 | Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 36 files, **2,478 assertions**, 0 failing (working tree; 2.5.1 shipped 35 / 2,409) |
-| Benchmarks | 24, covering every domain plus inventory JSON |
+| Tests | 36 files, **2,524 assertions**, 0 failing (working tree; 2.5.1 shipped 35 / 2,409) |
+| Benchmarks | 26, covering every domain plus inventory and phonotactics JSON |
 | Reference coverage | 328/350 functions (93%) — a floor, not a correctness proof |
 
 ## Toolchain
@@ -82,7 +82,7 @@ the port and has since been extended past it.
 | `cognate` | cognate sets, etymology, borrowing type |
 | `dialect` | variety overlays (British English RP) |
 | `registry` | ISO 639 lookup across every module, plus family, endangerment, geography |
-| `json` | JSON in the v1.x serde format (2.5.2, ADR 0003): phoneme + inventory so far; not in `dist/` yet |
+| `json` | JSON in the v1.x serde format (2.5.2, ADR 0003): phoneme, inventory, allophone rules, syllable templates, phonotactics so far; not in `dist/` yet |
 
 **`-D`-gated surfaces.** Each test `#define`s its own macro, so `cyrius test tests` exercises
 all four. Default `cyrius build` excludes them.
@@ -142,13 +142,15 @@ Two verification habits are load-bearing here and worth keeping:
 
 The [roadmap](roadmap.md) is organized into releases (reorganized at 2.5.1). In brief:
 
-- **2.5.2, P0 — serialization did not survive the port**, not just its tests. No varna
-  type emits or reads JSON. v1.x derived serde on 44 types (21 structs, 23 enums) across 13 modules and
-  round-tripped them in `serde_roundtrip.rs` (27 tests, never ported), and `src/mcp.cyr`
-  hand-builds its JSON. A scratch probe at 2.5.1 showed a `#derive(Serialize)` struct
-  matches the existing 56-byte phoneme record's layout, with both decoders
-  round-tripping. The open design call (ADR 0003) is whether enum fields go by name or
-  by number.
+- **2.5.2, P0 — serialization did not survive the port**, not just its tests. v1.x
+  derived serde on 44 types (21 structs, 23 enums) and round-tripped them in
+  `serde_roundtrip.rs` (27 tests, never ported). Restoring it in v1.x's exact format
+  ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md), names for every enum)
+  is in progress in `src/json.cyr`. Phoneme, inventory and the phonology types are done
+  (9 of the 27 tests ported); script, grammar, lexicon, dialect and registry remain, as
+  do the `-D MCP` / `DAIMON` / `HOOSH` JSON and the consumer-hazard bite that puts it in
+  `dist/`. v1.x's `Before` / `After` allophone environments were never ported, and
+  readers refuse them.
 - **2.5.3, data accuracy:** Somali's vowel analysis, which gates the
   `AdvancedTongueRoot` bit; the Burmese and Lao tone rows, which are under-sourced rather
   than wrong; Glottocodes, which need a source rather than a decision (generating them

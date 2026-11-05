@@ -39,15 +39,37 @@ for its by-name codec (a struct derive cannot write an enum field by name, so re
 writers / readers are hand-written around those codecs in `src/json.cyr`). Readers are
 as strict as serde's defaults and accept v1.x documents.
 
-**Done so far** (CHANGELOG `[Unreleased]`): ADR 0003; the phoneme module —
-`phoneme_to_json` / `_from_json`, `phoneme_inventory_to_json` / `_from_json`, codecs on
-the eight phoneme enums, `tests/json_roundtrip.tcyr` (the phoneme half of
-`serde_roundtrip.rs` plus exact text, v1.x input and malformed input; 69 assertions),
-and the inventory benchmarks.
+**Done so far** (CHANGELOG `[Unreleased]`):
+- ADR 0003.
+- **phoneme**: `phoneme_*` and `phoneme_inventory_*` to / from JSON, with codecs on the
+  eight phoneme enums.
+- **phonology**: `allophone_rule_*`, `allophone_rule_set_*`, `syllable_template_*`,
+  `phonotactic_constraint_*` and `phonotactics_*` to / from JSON, with codecs on
+  `Environment`, `ConstraintKind` and `SyllablePosition`.
+- `tests/json_roundtrip.tcyr`: 9 of `serde_roundtrip.rs`'s 27 tests ported, plus exact
+  text, v1.x input and malformed input (115 assertions, mutation-checked).
+- Inventory and phonotactics benchmarks.
+
+Tone has no bite of its own: v1.x had no Tone type (tones were strings), and
+inventories already write them as strings.
+
+**Next session starts here.** The pattern is fixed: `#derive(Serialize)` on each enum,
+a hand-written writer / reader pair per record in `src/json.cyr` in v1.x field order,
+equality helpers, the ported tests, then exact-text and malformed cases in
+`tests/json_roundtrip.tcyr`, a mutation check, and a bench pair. Read the v1.x types
+with `git show 2.1.3:rust-old/src/<path>.rs`. Watch for **enum variant names
+colliding across enums**: Cyrius enum constants are global, which is what blocked
+`PhonemeClass`.
 
 Remaining bites, in order:
 
-- [ ] **phonology siblings**: allophone, syllable / phonotactics, tone.
+- [ ] **`Before(PhonemeClass)` / `After(PhonemeClass)`**, a model gap rather than a
+      serde one. The port deferred both `Environment` variants and `PhonemeClass`,
+      because `PhonemeClass`'s variant names (`Vowel`, `Consonant`, `Nasal`,
+      `Plosive`, `Fricative`, `Voiceless`, `Voiced`, `Specific`) collide with existing
+      enum constants. Readers refuse such v1.x documents today. Porting it needs
+      non-colliding constant names, plus a hand-written name map so the JSON still
+      says `"Vowel"`. No current ruleset uses either variant.
 - [ ] **script**: script, numerals, transliteration.
 - [ ] **grammar, lexicon** (with cognate and swadesh), **dialect, registry**.
 - [ ] **Malformed input**: `adversarial.rs`'s cases against every decoder.

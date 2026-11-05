@@ -367,3 +367,290 @@ fn phoneme_inventory_from_json(text) {
     if (text == 0) { return 0; }
     return _json_inventory(bayan_json_v_parse_buf(text, strlen(text)));
 }
+
+# --- shared: more field readers -------------------------------------
+
+# A JSON integer in 0..255 (v1.x's u8 fields), or -1 for anything else: a float,
+# a negative or larger number, a non-number. serde refuses the same for a u8.
+fn _json_u8(v) {
+    if (!bayan_json_v_is_int(v)) { return 0 - 1; }
+    var n = bayan_json_v_int(v);
+    if (n < 0 || n > 255) { return 0 - 1; }
+    return n;
+}
+
+# An array of strings as a fresh vec of C strings, or 0 when `v` is not an array
+# or holds a non-string.
+fn _json_cstr_vec(v) {
+    if (!bayan_json_v_is_arr(v)) { return 0; }
+    var out = vec_new();
+    var n = bayan_json_v_arr_len(v);
+    var i = 0;
+    while (i < n) {
+        var s = _json_cstr(bayan_json_v_arr_get(v, i));
+        if (s == 0) { return 0; }
+        vec_push(out, s);
+        i = i + 1;
+    }
+    return out;
+}
+
+# Append a vec of C strings as a JSON array of strings.
+fn _json_cstr_array(sb, vs) {
+    str_builder_putc(sb, '[');
+    var n = vec_len(vs);
+    var i = 0;
+    while (i < n) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        str_builder_add_json_cstr(sb, vec_get(vs, i));
+        i = i + 1;
+    }
+    str_builder_putc(sb, ']');
+    return 0;
+}
+
+# An Environment by name, or -1. v1.x's externally tagged {"Before":..} /
+# {"After":..} are objects, not names, and fail here on purpose: varna's port
+# deferred those two variants (src/allophone.cyr; roadmap 2.5.2), so it cannot
+# hold them.
+fn _json_environment(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var t, x = Environment_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+fn _json_constraint_kind(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var t, x = ConstraintKind_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+fn _json_position(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var t, x = SyllablePosition_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0 - 1; }
+    return result_unwrap(t, x);
+}
+
+# --- AllophoneRule / AllophoneRuleSet -----------------------------------
+#
+# v1.x: {"phoneme":"t","allophone":"ɾ","environment":"Intervocalic","obligatory":false}
+#       {"language_code":"en","rules":[ ..rules.. ]}
+
+# Append allophone rule `r`. Returns 0, or -1 (nothing written) for a null rule.
+fn allophone_rule_to_json(r, sb) {
+    if (r == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"phoneme\":");
+    str_builder_add_json_cstr(sb, allophone_rule_phoneme(r));
+    str_builder_add_cstr(sb, ",\"allophone\":");
+    str_builder_add_json_cstr(sb, allophone_rule_allophone(r));
+    str_builder_add_cstr(sb, ",\"environment\":");
+    Environment_to_json(allophone_rule_environment(r), sb);
+    str_builder_add_cstr(sb, ",\"obligatory\":");
+    _json_bool(sb, allophone_rule_obligatory(r));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_allophone_rule(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var ph = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "phoneme"));
+    var al = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "allophone"));
+    if (ph == 0 || al == 0) { return 0; }
+    var env = _json_environment(bayan_json_v_obj_get_by_cstr(v, "environment"));
+    var ob = _json_bool_from(bayan_json_v_obj_get_by_cstr(v, "obligatory"));
+    if (env < 0 || ob < 0) { return 0; }
+    return _arule_new(ph, al, env, ob);
+}
+
+# An allophone rule from NUL-terminated JSON text, or 0.
+#must_use
+fn allophone_rule_from_json(text) {
+    if (text == 0) { return 0; }
+    return _json_allophone_rule(bayan_json_v_parse_buf(text, strlen(text)));
+}
+
+# Append rule set `s`. Returns 0, or -1 (nothing written) for a null set or one
+# holding a null rule.
+fn allophone_rule_set_to_json(s, sb) {
+    if (s == 0) { return 0 - 1; }
+    var rules = allophone_rules(s);
+    var n = vec_len(rules);
+    var i = 0;
+    while (i < n) {
+        if (vec_get(rules, i) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "{\"language_code\":");
+    str_builder_add_json_cstr(sb, allophone_language_code(s));
+    str_builder_add_cstr(sb, ",\"rules\":[");
+    i = 0;
+    while (i < n) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        allophone_rule_to_json(vec_get(rules, i), sb);
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "]}");
+    return 0;
+}
+
+fn _json_allophone_rule_set(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var code = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "language_code"));
+    if (code == 0) { return 0; }
+    var rv = bayan_json_v_obj_get_by_cstr(v, "rules");
+    if (!bayan_json_v_is_arr(rv)) { return 0; }
+    var s = _aset_new(code);
+    var n = bayan_json_v_arr_len(rv);
+    var i = 0;
+    while (i < n) {
+        var r = _json_allophone_rule(bayan_json_v_arr_get(rv, i));
+        if (r == 0) { return 0; }
+        vec_push(allophone_rules(s), r);
+        i = i + 1;
+    }
+    return s;
+}
+
+# An allophone rule set from NUL-terminated JSON text, or 0.
+#must_use
+fn allophone_rule_set_from_json(text) {
+    if (text == 0) { return 0; }
+    return _json_allophone_rule_set(bayan_json_v_parse_buf(text, strlen(text)));
+}
+
+# --- SyllableTemplate / PhonotacticConstraint / Phonotactics ------------
+#
+# v1.x: {"max_onset":3,"max_coda":4,"complex_nucleus":true,"pattern":"(C)(C)(C)V(C)(C)(C)(C)"}
+#       {"kind":"Permitted","position":"Onset","sequences":["str",..],"description":".."}
+#       {"language_code":"en","syllable":{..template..},"constraints":[ ..constraints.. ]}
+
+# Append syllable template `t`. Returns 0, or -1 (nothing written) for a null one.
+fn syllable_template_to_json(t, sb) {
+    if (t == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"max_onset\":");
+    str_builder_add_int(sb, syllable_max_onset(t));
+    str_builder_add_cstr(sb, ",\"max_coda\":");
+    str_builder_add_int(sb, syllable_max_coda(t));
+    str_builder_add_cstr(sb, ",\"complex_nucleus\":");
+    _json_bool(sb, syllable_complex_nucleus(t));
+    str_builder_add_cstr(sb, ",\"pattern\":");
+    str_builder_add_json_cstr(sb, syllable_pattern(t));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_syllable_template(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var on = _json_u8(bayan_json_v_obj_get_by_cstr(v, "max_onset"));
+    var co = _json_u8(bayan_json_v_obj_get_by_cstr(v, "max_coda"));
+    var cn = _json_bool_from(bayan_json_v_obj_get_by_cstr(v, "complex_nucleus"));
+    var pat = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "pattern"));
+    if (on < 0 || co < 0 || cn < 0 || pat == 0) { return 0; }
+    return _syllable_new(on, co, cn, pat);
+}
+
+# A syllable template from NUL-terminated JSON text, or 0.
+#must_use
+fn syllable_template_from_json(text) {
+    if (text == 0) { return 0; }
+    return _json_syllable_template(bayan_json_v_parse_buf(text, strlen(text)));
+}
+
+# Append phonotactic constraint `c`. Returns 0, or -1 (nothing written) for a null one.
+fn phonotactic_constraint_to_json(c, sb) {
+    if (c == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"kind\":");
+    ConstraintKind_to_json(constraint_kind(c), sb);
+    str_builder_add_cstr(sb, ",\"position\":");
+    SyllablePosition_to_json(constraint_position(c), sb);
+    str_builder_add_cstr(sb, ",\"sequences\":");
+    _json_cstr_array(sb, constraint_sequences(c));
+    str_builder_add_cstr(sb, ",\"description\":");
+    str_builder_add_json_cstr(sb, constraint_description(c));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_phonotactic_constraint(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var kind = _json_constraint_kind(bayan_json_v_obj_get_by_cstr(v, "kind"));
+    var pos = _json_position(bayan_json_v_obj_get_by_cstr(v, "position"));
+    var seqs = _json_cstr_vec(bayan_json_v_obj_get_by_cstr(v, "sequences"));
+    var desc = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "description"));
+    if (kind < 0 || pos < 0 || seqs == 0 || desc == 0) { return 0; }
+    var c = _constraint_new(kind, pos, desc);
+    var n = vec_len(seqs);
+    var i = 0;
+    while (i < n) {
+        _constraint_add_seq(c, vec_get(seqs, i));
+        i = i + 1;
+    }
+    return c;
+}
+
+# A phonotactic constraint from NUL-terminated JSON text, or 0.
+#must_use
+fn phonotactic_constraint_from_json(text) {
+    if (text == 0) { return 0; }
+    return _json_phonotactic_constraint(bayan_json_v_parse_buf(text, strlen(text)));
+}
+
+# Append phonotactic profile `p`. Returns 0, or -1 (nothing written) for a null
+# profile, a null template, or a null constraint.
+fn phonotactics_to_json(p, sb) {
+    if (p == 0) { return 0 - 1; }
+    if (phonotactics_syllable(p) == 0) { return 0 - 1; }
+    var cs = phonotactics_constraints(p);
+    var n = vec_len(cs);
+    var i = 0;
+    while (i < n) {
+        if (vec_get(cs, i) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "{\"language_code\":");
+    str_builder_add_json_cstr(sb, phonotactics_language_code(p));
+    str_builder_add_cstr(sb, ",\"syllable\":");
+    syllable_template_to_json(phonotactics_syllable(p), sb);
+    str_builder_add_cstr(sb, ",\"constraints\":[");
+    i = 0;
+    while (i < n) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        phonotactic_constraint_to_json(vec_get(cs, i), sb);
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "]}");
+    return 0;
+}
+
+fn _json_phonotactics(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var code = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "language_code"));
+    if (code == 0) { return 0; }
+    var tmpl = _json_syllable_template(bayan_json_v_obj_get_by_cstr(v, "syllable"));
+    if (tmpl == 0) { return 0; }
+    var cv = bayan_json_v_obj_get_by_cstr(v, "constraints");
+    if (!bayan_json_v_is_arr(cv)) { return 0; }
+    var p = _phonotactics_new(code, tmpl);
+    var n = bayan_json_v_arr_len(cv);
+    var i = 0;
+    while (i < n) {
+        var c = _json_phonotactic_constraint(bayan_json_v_arr_get(cv, i));
+        if (c == 0) { return 0; }
+        _phonotactics_add(p, c);
+        i = i + 1;
+    }
+    return p;
+}
+
+# A phonotactic profile from NUL-terminated JSON text, or 0.
+#must_use
+fn phonotactics_from_json(text) {
+    if (text == 0) { return 0; }
+    return _json_phonotactics(bayan_json_v_parse_buf(text, strlen(text)));
+}

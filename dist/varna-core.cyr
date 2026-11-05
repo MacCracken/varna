@@ -3822,10 +3822,17 @@ fn phoneme_mongolian() {
 # AllophoneRuleSet (16B): [0]=language_code [8]=rules(vec)
 #
 # Environment is modeled as plain int constants. The v1.x parametrized
-# Before(PhonemeClass)/After(PhonemeClass) variants are deferred — no current
+# Before(PhonemeClass)/After(PhonemeClass) variants are deferred (roadmap 2.5.2) — no current
 # ruleset uses them, and PhonemeClass's names (Vowel/Consonant/Nasal/Plosive/
-# Fricative) would collide with the Manner/PhonemeKind enum constants.
+# Fricative) would collide with the Manner/PhonemeKind enum constants (enum
+# constants are global names: a second `Vowel` is "duplicate symbol ... last
+# definition wins", re-measured on cyrius 6.7.18). So a v1.x JSON document holding
+# {"Before":..} or {"After":..} is refused by the reader (src/json.cyr), never
+# silently mapped; roadmap 2.5.2 lists porting the two variants.
+#
+# `#derive(Serialize)` gives Environment its by-name JSON codec (ADR 0003).
 
+#derive(Serialize)
 enum Environment {
     WordInitial = 0;
     WordFinal = 1;
@@ -3924,11 +3931,13 @@ fn allophone_english() {
 #
 # is_permitted returns tri-state: 1 = permitted, 0 = forbidden, (0-1) = unspecified.
 
+#derive(Serialize)
 enum ConstraintKind {
     Permitted = 0;
     Forbidden = 1;
 }
 
+#derive(Serialize)
 enum SyllablePosition {
     Onset = 0;
     Coda = 1;

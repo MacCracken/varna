@@ -5,9 +5,9 @@ History in `bench-history.csv`. `min` is the most representative
 per-op figure (the bump allocator never frees, so `avg` carries
 accumulating alloc overhead).
 
-Latest: **2026-11-05T17:42:22Z** commit `8749177` on cyrius `6.7.18`
+Latest: **2026-11-05T17:52:39Z** commit `04f47b3` on cyrius `6.7.18`
 
-Timer floor: **1.378us** per clock read (measured on this host,
+Timer floor: **1.339us** per clock read (measured on this host,
 subtracted from every sample). Cyrius >=6.5.19 calibrates this at
 runtime; the value is a property of the host clocksource and
 moves between reboots, so rows recorded under different floors are
@@ -24,26 +24,28 @@ not directly comparable.
 | Benchmark | min | avg |
 |-----------|-----|-----|
 | `english_phoneme_inventory` | 5ns | 5ns |
-| `sanskrit_phoneme_inventory` | 5ns | 5ns |
+| `sanskrit_phoneme_inventory` | 4ns | 4ns |
 | `greek_phoneme_inventory` | 5ns | 5ns |
-| `phoneme_lookup_ipa` | 338ns | 342ns |
-| `registry_phonemes_lookup` | 52ns | 52ns |
-| `registry_all_codes_iter` | 4.003us | 4.034us |
-| `script_by_code_lookup` | 103ns | 104ns |
-| `script_contains_codepoint` | 13ns | 14ns |
-| `transliterate_devanagari_char` | 569ns | 577ns |
-| `transliterate_greek_word` | 19.375us | 19.618us |
-| `numeral_value_of_char` | 186ns | 187ns |
-| `numeral_string_value_word` | 614ns | 618ns |
-| `gematria_char_value` | 296ns | 303ns |
-| `gematria_char_value_ordinal` | 505ns | 510ns |
-| `gematria_string_value_in` | 846ns | 860ns |
-| `gematria_alphabet_table` | 1.305us | 1.338us |
-| `grammar_by_code_lookup` | 211ns | 213ns |
-| `swadesh_by_code_lookup` | 106ns | 106ns |
-| `lexicon_find_word` | 845ns | 861ns |
-| `allophone_realize` | 34ns | 34ns |
-| `phonotactics_is_permitted` | 138ns | 139ns |
-| `dialect_apply_overlay` | 3.051us | 3.113us |
-| `json_inventory_write_en` | 46.486us | 47.452us |
-| `json_inventory_read_en` | 164.688us | 167.711us |
+| `phoneme_lookup_ipa` | 324ns | 340ns |
+| `registry_phonemes_lookup` | 51ns | 52ns |
+| `registry_all_codes_iter` | 4.383us | 4.525us |
+| `script_by_code_lookup` | 105ns | 108ns |
+| `script_contains_codepoint` | 13ns | 13ns |
+| `transliterate_devanagari_char` | 552ns | 579ns |
+| `transliterate_greek_word` | 18.535us | 19.444us |
+| `numeral_value_of_char` | 180ns | 184ns |
+| `numeral_string_value_word` | 607ns | 628ns |
+| `gematria_char_value` | 289ns | 295ns |
+| `gematria_char_value_ordinal` | 478ns | 500ns |
+| `gematria_string_value_in` | 828ns | 850ns |
+| `gematria_alphabet_table` | 1.261us | 1.303us |
+| `grammar_by_code_lookup` | 207ns | 211ns |
+| `swadesh_by_code_lookup` | 105ns | 106ns |
+| `lexicon_find_word` | 735ns | 775ns |
+| `allophone_realize` | 33ns | 34ns |
+| `phonotactics_is_permitted` | 127ns | 129ns |
+| `dialect_apply_overlay` | 2.803us | 2.972us |
+| `json_inventory_write_en` | 43.850us | 46.474us |
+| `json_inventory_read_en` | 160.587us | 163.948us |
+| `json_phonotactics_write_en` | 5.144us | 5.278us |
+| `json_phonotactics_read_en` | 13.854us | 14.240us |

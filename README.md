@@ -118,8 +118,9 @@ varna (this engine)
 2.5.1 release serializes nothing. 2.5.2 restores it in the v1.x serde format
 ([ADR 0003](docs/adr/0003-json-wire-format-matches-v1x-serde.md)), module by module —
 the [roadmap](docs/development/roadmap.md)'s P0. Phonemes and inventories are done in
-the tree (`phoneme_to_json` / `phoneme_from_json`, `phoneme_inventory_to_json` /
-`phoneme_inventory_from_json` in `src/json.cyr`), not yet in `dist/`.
+the tree, along with allophone rules, syllable templates and phonotactic profiles
+(`phoneme_to_json` / `phoneme_from_json`, `phonotactics_to_json` /
+`phonotactics_from_json` and so on, in `src/json.cyr`), not yet in `dist/`.
 
 Zero external (non-Cyrius) dependencies. The v1.x crate's `thiserror`, `tracing`,
 `tracing-subscriber`, and `criterion` resolve to Cyrius stdlib modules or language

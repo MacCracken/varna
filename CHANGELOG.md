@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Roadmap 2.5.2 (P0), bayan / serde integration. These are its first bites: the wire
-format decision and the phoneme module.
+Roadmap 2.5.2 (P0), bayan / serde integration. Done so far: the wire format
+decision, the phoneme module, and the phonology module (allophone rules, syllable
+templates, phonotactics). The script, grammar, lexicon, dialect and registry modules
+remain; the roadmap's 2.5.2 section lists them in order.
 
 ### Added
 
@@ -36,25 +38,53 @@ format decision and the phoneme module.
   decodes** (as Pulmonic, no features). A writer refuses a null record or a corrupt
   `kind` by returning -1, and writes nothing.
 
+- **JSON for the phonology types**, the same way: `allophone_rule_to_json` /
+  `_from_json`, `allophone_rule_set_to_json` / `_from_json`,
+  `syllable_template_to_json` / `_from_json`, `phonotactic_constraint_to_json` /
+  `_from_json`, and `phonotactics_to_json` / `_from_json`. Each matches v1.x's serde
+  output field for field:
+
+  ```json
+  {"phoneme":"t","allophone":"ɾ","environment":"Intervocalic","obligatory":false}
+  {"max_onset":3,"max_coda":4,"complex_nucleus":true,"pattern":"(C)(C)(C)V(C)(C)(C)(C)"}
+  {"kind":"Permitted","position":"Onset","sequences":["str","spr"],"description":".."}
+  ```
+
+  A rule set is `{"language_code":..,"rules":[..]}`, and a profile is
+  `{"language_code":..,"syllable":{..},"constraints":[..]}`. The `u8` fields
+  (`max_onset`, `max_coda`) must be JSON integers in 0..255, as serde requires.
+  **v1.x's `Before(PhonemeClass)` / `After(PhonemeClass)` environments are refused,
+  not mapped.** The port deferred both variants and `PhonemeClass` itself, because
+  Cyrius enum constants are global names: a second `Vowel` is "duplicate symbol ...
+  last definition wins". So varna cannot hold such a rule. No ruleset uses them, and
+  porting them is now a roadmap 2.5.2 item.
+
 - **By-name codecs on the eight phoneme enums** through `#derive(Serialize)`:
   `Airstream`, `PhonemeFeature`, `Manner`, `Place`, `Height`, `Backness`,
   `StressPattern`, `PhonemeKind`. `E_to_json(v, sb)` writes `"Plosive"`, and
   `E_from_json_str(text)` returns `Ok(value)`, or `Err` for an unknown name. These
   are in `dist/`, since they are generated from the enum declarations in
-  `src/phoneme.cyr`.
+  `src/phoneme.cyr`. `Environment`, `ConstraintKind` and `SyllablePosition` got the
+  same derive in `src/allophone.cyr` / `src/syllable.cyr`.
 
-- **`tests/json_roundtrip.tcyr`, 69 assertions.**
+- **`tests/json_roundtrip.tcyr`, 115 assertions.**
   - The phoneme half of v1.x's `serde_roundtrip.rs`: consonant, vowel, all 51
     inventories, with and without tones.
   - Exact text against serde's shape, v1.x documents decoding, and every enum variant
     by name.
   - 21 malformed phoneme and 8 malformed inventory cases, and writer refusals.
+  - The phonology half: `serde_allophone_rule_set`, `serde_allophone_rule`,
+    `serde_phonotactics_all` (en / sa / ja) and `serde_syllable_template`, with exact
+    text, every new enum variant by name, `Before` / `After` refused, 19 malformed
+    cases (u8 over 255, negative, float or string; unknown names; wrong types;
+    missing fields) and writer refusals.
   - Mutation-checked: a writer that always wrote `"voiced":false` failed 3
-    assertions, and one that misspelled the `airstream` key failed 5.
+    assertions, one that misspelled the `airstream` key failed 5, and a template
+    writer that put `max_onset` in `max_coda` failed 3.
 
-- **Two benchmarks**: `json_inventory_write_en` 47.5 µs avg and
-  `json_inventory_read_en` 167.7 µs avg (the 36-phoneme English inventory,
-  2026-11-05T17:42:22Z).
+- **Four benchmarks** (2026-11-05T17:52:39Z, avg): `json_inventory_write_en` 46.5 µs
+  and `json_inventory_read_en` 163.9 µs (the 36-phoneme English inventory),
+  `json_phonotactics_write_en` 5.3 µs and `json_phonotactics_read_en` 14.2 µs.
 
 ### Changed
 
@@ -68,8 +98,8 @@ format decision and the phoneme module.
 - **`src/json.cyr` is not in `dist/` yet.** It is left out of `[lib]` and `[lib.core]`
   until 2.5.2's consumer-hazard bite decides how bayan reaches consumers. varna's own
   builds and tests include it through `src/main.cyr`.
-- **Binary size**: default 470,392 → 488,184 B, full `-D` 489,040 → 506,824 B,
-  `CYRIUS_DCE=1` 44,408 → 45,816 B.
+- **Binary size** (2.5.1 → now): default 470,392 → 501,184 B, full `-D` 489,040 →
+  515,728 B, `CYRIUS_DCE=1` 44,408 → 46,528 B.
 
 ### Performance
 
@@ -88,6 +118,13 @@ toolchain, three runs each (avg):
 `grammar_by_code_lookup` is back near its 6.6.2 figure (209 ns). The slowdown 2.4.3–2.5.1
 recorded across three toolchain pins was layout too, not codegen, which changes what
 roadmap 2.5.4 should investigate.
+
+The phonology bite moved rows again, in the recorded runs 17:42:22Z → 17:52:39Z:
+`lexicon_find_word` −13% (845 → 735 ns, back at its 2.5.1 level), `dialect_apply_overlay`
+−8.1%, `phonotactics_is_permitted` −8.0%, `registry_all_codes_iter` +9.5% (a row that
+has swung ±10% between runs throughout). **These were not A/B'd interleaved this
+time**, because the session was cut short. None of those functions changed, which is
+consistent with the layout finding above.
 
 ## [2.5.1] - 2026-11-05
 
