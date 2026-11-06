@@ -492,6 +492,40 @@ fn test_enum_names() {
     return 0;
 }
 
+# The names writer `to` gives values 0..last, or bits 0..last when `bits` is set: unquoted
+# and space-separated.
+fn _wire_names(to, last, bits) {
+    var sb = str_builder_new();
+    var v = 1;
+    var i = 0;
+    while (i <= last) {
+        if (i > 0) { str_builder_putc(sb, ' '); }
+        var one = str_builder_new();
+        if (bits != 0) {
+            fncall2(to, v, one);
+        } else {
+            fncall2(to, i, one);
+        }
+        var s = str_builder_build(one);
+        var j = 1;
+        while (j < str_len(s) - 1) {
+            str_builder_putc(sb, load8(str_data(s) + j));
+            j = j + 1;
+        }
+        v = v * 2;
+        i = i + 1;
+    }
+    return str_cstr(str_builder_build(sb));
+}
+
+# As tests/json_roundtrip.tcyr's test_wire_names: a rename passes every round trip.
+fn test_wire_names() {
+    assert(streq(_wire_names(&ComparisonAspect_to_json, 3, 0), "Phonology Grammar Script Lexicon"), "ComparisonAspect");  #skip-lint
+    assert(streq(_wire_names(&ResponseSource_to_json, 2, 0), "VarnaData LlmGenerated Hybrid"), "ResponseSource");  #skip-lint
+    assert(streq(_wire_names(&LanguageQueryTag_to_json, 4, 0), "IdentifyLanguage ExplainPhonology ExamplesForPhoneme ComparativeAnalysis EtymologyLookup"), "LanguageQueryTag");  #skip-lint
+    return 0;
+}
+
 fn main() {
     alloc_init();
     test_mcp_payloads_are_the_records();
@@ -503,6 +537,7 @@ fn main() {
     test_confidence();
     test_query_response_json();
     test_enum_names();
+    test_wire_names();
     return assert_summary();
 }
 

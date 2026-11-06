@@ -43,7 +43,8 @@ var _varna_all_codes = 0;    # cached vec of cstrings, lazily built
 # read back as 0, distinguishing "not classified" from any placeholder string.
 # --- Vitality and geography (2.3.2) --------------------------------
 # Variant names are prefixed: Cyrius enum variants share one flat symbol namespace,
-# and `Historical` is already taken by ScriptStatus.
+# and `Historical` is already taken by ScriptStatus. The spellings are also the JSON
+# names (ADR 0003), so renaming one breaks stored documents.
 #
 # The scale is UNESCO-style, with one addition. END_HISTORICAL covers a language
 # with no native-speaker community that remains in active scholarly, liturgical or

@@ -26,9 +26,9 @@ varna/
 │   ├── cognate.cyr        — cross-language cognate tracking
 │   ├── dialect.cyr        — language-variety overlays (regional dialects, national standards)
 │   ├── registry.cyr       — central ISO 639 lookup across all domains
-│   ├── json.cyr           — JSON in the v1.x serde format (2.5.2, ADR 0003; not in dist/ yet)
+│   ├── json.cyr           — JSON in the v1.x serde format (ADR 0003; dist/varna-json.cyr only)
 │   ├── logging.cyr        — VARNA_LOG env init (log + sakshi)        [-D LOGGING]
-│   ├── mcp.cyr            — 5 MCP tools, bote-core surface           [-D MCP]
+│   ├── mcp.cyr            — 5 MCP tools, payloads from json.cyr      [-D MCP]
 │   ├── daimon.cyr         — agent registration payload               [-D DAIMON]
 │   └── hoosh.cyr          — LLM query interface                      [-D HOOSH]
 ├── lib/                   — vendored Cyrius stdlib snapshot (cyrius deps; gitignored)
@@ -140,28 +140,29 @@ varna (this engine)
   ├── result + tagged — native enum + Result<T,E> error model (VarnaError)
   ├── str / string / slice / vec / hashmap / fmt / io — core data structures + formatting
   │
-  ├── bayan (dist/bayan-json.cyr) — JSON for the serde replacement      (git dep, optional,
-  │                                   on by default; NOT YET CALLED — roadmap 2.5.2 P0)
+  ├── bayan (dist/bayan-json.cyr) — JSON, called by json.cyr            (git dep, optional,
+  │                                   on by default; never resolved for consumers)
   └── optional (define-gated):
       ├── log + sakshi               — structured logging + audit         (-D LOGGING)
-      └── bote (dist/bote-core.cyr)  — MCP / JSON-RPC core surface        (-D MCP)
+      └── bote (dist/bote-core.cyr)  — MCP / JSON-RPC core (recipe only, not wired)
 ```
 
 The v1.x crate's external dependencies all resolve to Cyrius stdlib or builtins:
 
 | Rust dependency | Cyrius equivalent | Kind |
 |-----------------|-------------------|------|
-| `serde` + `serde_json` | **not ported** — planned on bayan's `dist/bayan-json.cyr` profile (roadmap 2.5.2, P0) | git dep |
+| `serde` + `serde_json` | `src/json.cyr` on bayan's `dist/bayan-json.cyr` profile ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)) | git dep |
 | `thiserror` | native `enum` + `Result<T,E>` (`lib/result.cyr`, `lib/tagged.cyr`) | builtin |
 | `tracing` | `lib/log.cyr` (level filtering) | stdlib |
 | `tracing-subscriber` | `lib/sakshi.cyr` (output routing; env-filter wired by hand) | stdlib |
 | `criterion` | `cyrius bench` + `lib/bench.cyr` | toolchain |
 
-The serde row is the one gap in that map. v1.x derived `Serialize` / `Deserialize` on
-44 public types (21 structs, 23 enums) across 13 modules; the port carried none of it, and this page described
-it as done until 2.5.1. varna's records are raw `load64` / `store64` layouts rather than
-`struct`s, so `#derive(Serialize)` cannot attach as they stand; how a record becomes
-JSON is the first decision of the 2.5.2 item.
+v1.x derived `Serialize` / `Deserialize` on 44 public types (21 structs, 23 enums) across
+13 modules, and the port carried none of it. 2.5.2 restored it. varna's records are raw
+`load64` / `store64` layouts rather than `struct`s, and a struct derive cannot write an
+enum field by name, so each enum takes `#derive(Serialize)`, and the record writers and
+readers are hand-written around those codecs. A reader's text comes through
+`_json_parse`, which refuses what bayan's parser lets past.
 
 ## Build Defines
 
@@ -169,7 +170,7 @@ JSON is the first decision of the 2.5.2 item.
 |--------|---------|
 | _(none)_ | core data engine (phoneme/script/grammar/lexicon/registry/dialect) |
 | `-D LOGGING` | `log`+`sakshi` init, `VARNA_LOG` env var |
-| `-D MCP` | 5 MCP tool definitions (folds `bote-core`) |
+| `-D MCP` | 5 MCP tool definitions |
 | `-D DAIMON` | agent registration payload |
 | `-D HOOSH` | LLM query interface |
 
@@ -193,7 +194,7 @@ varna
 - **Data-driven**: Language data as fixed-layout records built and read through `load64` / `store64` accessors (no `struct` declarations), not embedded strings
 - **Queryable**: Every inventory supports lookup, filtering, counting, and `by_code()` dispatch
 - **Composable**: Each module is independent — consumers fold only the bundle they need (`dist/varna-core.cyr` vs `dist/varna.cyr`). `[lib]` and `[lib.core]` currently declare identical module lists, so the two bundle *bodies* are byte-identical. Since 2.4.3 (cyrius 6.6.18+ `distlib`, whose compile-verify is the only authority over a sidecar) the two `.deps` sidecars are identical too — `result hashmap` since 2.5.2's enum codecs (`hashmap`'s requires block brings `alloc` / `string` / `vec` / `str`), `hashmap` alone at 2.5.1, four leaves at 2.4.3–2.5.0; before 2.4.3 the full sidecar unioned in all sixteen `[deps].stdlib` entries
-- **Serializable — in progress (2.5.2)**: the v1.x serde format ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)) on bayan's JSON profile; phonemes, inventories and the phonology types done; script, grammar, lexicon, dialect and registry to follow
+- **Serializable**: the v1.x serde format ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)) on bayan's JSON profile, for every type v1.x serialized. `dist/varna-json.cyr` is the one bundle that calls bayan, so JSON is opt-in and `dist/varna.cyr` needs no bayan
 - **Extensible**: tagged enums everywhere — new variants are additive, no break for consumers
 - **Static-literal data**: pre-built inventories hold `'static` `str` literals — no per-build heap churn (Cyrius has no `Cow`)
 - **Builder pattern**: an inventory builder for ergonomic construction

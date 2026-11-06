@@ -2012,6 +2012,71 @@ fn test_utf8_boundaries() {
     return 0;
 }
 
+# The names writer `to` gives values 0..last, or bits 0..last when `bits` is set: unquoted
+# and space-separated.
+fn _wire_names(to, last, bits) {
+    var sb = str_builder_new();
+    var v = 1;
+    var i = 0;
+    while (i <= last) {
+        if (i > 0) { str_builder_putc(sb, ' '); }
+        var one = str_builder_new();
+        if (bits != 0) {
+            fncall2(to, v, one);
+        } else {
+            fncall2(to, i, one);
+        }
+        var s = str_builder_build(one);
+        var j = 1;
+        while (j < str_len(s) - 1) {
+            str_builder_putc(sb, load8(str_data(s) + j));
+            j = j + 1;
+        }
+        v = v * 2;
+        i = i + 1;
+    }
+    return str_cstr(str_builder_build(sb));
+}
+
+# The spellings are the wire contract (ADR 0003), and a round trip cannot see one change:
+# rename a constant and the derive moves the writer and the reader together, so stored
+# JSON breaks with every other test passing. So each list is written out. The v1.x enums'
+# lists were checked against git tag 2.1.3 when this test was written.
+fn test_wire_names() {
+    assert(streq(_wire_names(&Environment_to_json, 8, 0), "WordInitial WordFinal Intervocalic PreVocalic PostVocalic SyllableFinal SyllableInitial PreStress Unstressed"), "Environment");  #skip-lint
+    assert(streq(_wire_names(&BorrowingType_to_json, 3, 0), "Loanword Calque SemanticLoan Inherited"), "BorrowingType");  #skip-lint
+    assert(streq(_wire_names(&VarietyKind_to_json, 3, 0), "Regional NationalStandard Sociolect Creole"), "VarietyKind");  #skip-lint
+    assert(streq(_wire_names(&Morphology_to_json, 3, 0), "Isolating Agglutinative Fusional Polysynthetic"), "Morphology");  #skip-lint
+    assert(streq(_wire_names(&WordOrder_to_json, 5, 0), "SVO SOV VSO VOS OVS OSV"), "WordOrder");  #skip-lint
+    assert(streq(_wire_names(&Alignment_to_json, 4, 0), "ALIGN_NOMINATIVE_ACCUSATIVE ALIGN_ERGATIVE_ABSOLUTIVE ALIGN_SPLIT_ERGATIVE ALIGN_ACTIVE_STATIVE ALIGN_NO_DOMINANT"), "Alignment");  #skip-lint
+    assert(streq(_wire_names(&AdpositionOrder_to_json, 3, 0), "ADP_PREPOSITIONAL ADP_POSTPOSITIONAL ADP_INPOSITIONAL ADP_NO_DOMINANT"), "AdpositionOrder");  #skip-lint
+    assert(streq(_wire_names(&TenseMarking_to_json, 2, 0), "TENSE_INFLECTIONAL TENSE_NONE TENSE_NO_DOMINANT"), "TenseMarking");  #skip-lint
+    assert(streq(_wire_names(&Evidentiality_to_json, 2, 0), "EVID_NONE EVID_GRAMMATICALIZED EVID_BORDERLINE"), "Evidentiality");  #skip-lint
+    assert(streq(_wire_names(&NegationStrategy_to_json, 4, 0), "NEG_PARTICLE NEG_AFFIX NEG_AUXILIARY NEG_DOUBLE NEG_NO_DOMINANT"), "NegationStrategy");  #skip-lint
+    assert(streq(_wire_names(&ArticleType_to_json, 3, 0), "ART_DEFINITE_AND_INDEFINITE ART_DEFINITE_ONLY ART_INDEFINITE_ONLY ART_NONE"), "ArticleType");  #skip-lint
+    assert(streq(_wire_names(&AdjectiveOrder_to_json, 2, 0), "ADJ_BEFORE_NOUN ADJ_AFTER_NOUN ADJ_NO_DOMINANT"), "AdjectiveOrder");  #skip-lint
+    assert(streq(_wire_names(&RelativeClauseOrder_to_json, 3, 0), "REL_AFTER_NOUN REL_BEFORE_NOUN REL_INTERNALLY_HEADED REL_CORRELATIVE"), "RelativeClauseOrder");  #skip-lint
+    assert(streq(_wire_names(&PartOfSpeech_to_json, 10, 0), "Noun Verb Adjective Adverb Pronoun Preposition Conjunction Interjection Determiner Particle Numeral"), "PartOfSpeech");  #skip-lint
+    assert(streq(_wire_names(&NumeralSystemKind_to_json, 2, 0), "Decimal Alphabetic Other"), "NumeralSystemKind");  #skip-lint
+    assert(streq(_wire_names(&LetterRole_to_json, 2, 0), "ROLE_LETTER ROLE_ALLOGRAPH ROLE_NUMERAL_SIGN"), "LetterRole");  #skip-lint
+    assert(streq(_wire_names(&Airstream_to_json, 3, 0), "Pulmonic Ejective Implosive Click"), "Airstream");  #skip-lint
+    assert(streq(_wire_names(&PhonemeFeature_to_json, 13, 1), "Aspirated Breathy Palatalized Labialized Pharyngealized Tense Devoiced Prenasalized Long Raised Lateral Nasalized Syllabic ExtraShort"), "PhonemeFeature");  #skip-lint
+    assert(streq(_wire_names(&Manner_to_json, 8, 0), "Plosive Nasal Trill TapFlap Fricative LateralFricative Approximant LateralApproximant Affricate"), "Manner");  #skip-lint
+    assert(streq(_wire_names(&Place_to_json, 11, 0), "Bilabial Labiodental Dental Alveolar Postalveolar Retroflex Palatal Velar Uvular Pharyngeal Glottal LabialVelar"), "Place");  #skip-lint
+    assert(streq(_wire_names(&Height_to_json, 6, 0), "Close NearClose CloseMid Mid OpenMid NearOpen Open"), "Height");  #skip-lint
+    assert(streq(_wire_names(&Backness_to_json, 2, 0), "Front Central Back"), "Backness");  #skip-lint
+    assert(streq(_wire_names(&StressPattern_to_json, 3, 0), "Fixed Free PitchAccent Tonal"), "StressPattern");  #skip-lint
+    assert(streq(_wire_names(&PhonemeKind_to_json, 1, 0), "Consonant Vowel"), "PhonemeKind");  #skip-lint
+    assert(streq(_wire_names(&EndangermentLevel_to_json, 7, 0), "END_SAFE END_VULNERABLE END_THREATENED END_SHIFTING END_MORIBUND END_NEARLY_EXTINCT END_EXTINCT END_HISTORICAL"), "EndangermentLevel");  #skip-lint
+    assert(streq(_wire_names(&MacroArea_to_json, 5, 0), "AREA_AFRICA AREA_EURASIA AREA_PAPUNESIA AREA_NORTH_AMERICA AREA_SOUTH_AMERICA AREA_AUSTRALIA"), "MacroArea");  #skip-lint
+    assert(streq(_wire_names(&ScriptType_to_json, 5, 0), "Alphabet Abugida Abjad Syllabary Logographic Mixed"), "ScriptType");  #skip-lint
+    assert(streq(_wire_names(&Direction_to_json, 3, 0), "LeftToRight RightToLeft TopToBottom Bidirectional"), "Direction");  #skip-lint
+    assert(streq(_wire_names(&ScriptStatus_to_json, 2, 0), "Living Limited Historical"), "ScriptStatus");  #skip-lint
+    assert(streq(_wire_names(&ConstraintKind_to_json, 1, 0), "Permitted Forbidden"), "ConstraintKind");  #skip-lint
+    assert(streq(_wire_names(&SyllablePosition_to_json, 3, 0), "Onset Coda Nucleus AcrossBoundary"), "SyllablePosition");  #skip-lint
+    return 0;
+}
+
 fn main() {
     alloc_init();
     test_group("json_roundtrip");
@@ -2073,6 +2138,7 @@ fn main() {
     test_hostile_decoders();
     test_hostile_sizes();
     test_utf8_boundaries();
+    test_wire_names();
     return assert_summary();
 }
 

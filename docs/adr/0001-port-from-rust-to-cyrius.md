@@ -16,6 +16,11 @@
 > over. The mapping stands as the intent. The work is roadmap **2.5.2 (P0)**, on bayan's
 > thin `dist/bayan-json.cyr` profile rather than the stdlib monolith. Also note that
 > `#derive` needs `struct`s, and varna's records are raw `load64` / `store64` layouts.
+>
+> **Closed at 2.5.2.** Every type v1.x serialized has JSON again, in v1.x's format
+> ([ADR 0003](0003-json-wire-format-matches-v1x-serde.md)). The Decision's mapping was
+> half right: bayan's parser reads it, but enums alone take `#derive(Serialize)`, and the
+> record writers and readers are hand-written around them.
 
 ## Context
 

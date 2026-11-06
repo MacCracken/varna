@@ -7,14 +7,15 @@
 
 ## Version
 
-**2.5.1** (2026-11-05) — toolchain `6.7.9` → `6.7.18`; bayan moved from the stdlib
-monolith to its thin `dist/bayan-json.cyr` profile (an optional `[deps.bayan]`, on by
-default), which keeps the 6.7.18 monolith's ~353 KB of Unicode tables out and leaves
-the live binary 37% smaller than at 2.5.0. bote recipe → 3.8.14. And the finding that
-sets the next release: **varna does not serialize** — the port dropped v1.x's serde
-surface, while the docs claimed it. That is roadmap **2.5.2 (P0)**.
+**2.5.2** (2026-11-05) — **varna serializes again.** Every type v1.x serialized has JSON in
+v1.x's format ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)), with v1.x's
+dropped variants restored, and the `-D` surfaces on the same serializers.
+`dist/varna-json.cyr` is how a consumer opts in, and `dist/varna.cyr` still needs no bayan.
 
-Previous: **2.5.0** toolchain `6.6.20` → `6.7.9` (the language minor; semantic changes
+Previous: **2.5.1** toolchain `6.7.9` → `6.7.18`, bayan moved to its thin
+`dist/bayan-json.cyr` profile, and the finding that set 2.5.2: the port had dropped
+serialization while the docs claimed it.
+**2.5.0** toolchain `6.6.20` → `6.7.9` (the language minor; semantic changes
 swept, none touch varna; suite passes under `--bounds`); **2.4.3** toolchain `6.6.2` → `6.6.20`, dist bundles under 6.6.18+
 `distlib` (sidecar 16 → 4 leaves), daimon version held to `VERSION`; **2.4.2** toolchain `6.5.36` → `6.6.2`; **2.4.1** data corrections (Thai
 falling tone, Vietnamese huyền, Burmese checked tone, Wolof vowels,
@@ -33,9 +34,9 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | Numeral systems | 9 — five of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek) |
 | Grammar profiles | 11 |
 | Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 36 files, **2,524 assertions**, 0 failing (working tree; 2.5.1 shipped 35 / 2,409) |
-| Benchmarks | 26, covering every domain plus inventory and phonotactics JSON |
-| Reference coverage | 328/350 functions (93%) — a floor, not a correctness proof |
+| Tests | 37 files, **2,924 assertions**, 0 failing, plus a fuzz harness (2.5.1 shipped 35 / 2,409) |
+| Benchmarks | 42, covering every domain and every module's JSON |
+| Reference coverage | 403/408 functions (98%) — a floor, not a correctness proof |
 
 ## Toolchain
 
@@ -82,17 +83,17 @@ the port and has since been extended past it.
 | `cognate` | cognate sets, etymology, borrowing type |
 | `dialect` | variety overlays (British English RP) |
 | `registry` | ISO 639 lookup across every module, plus family, endangerment, geography |
-| `json` | JSON in the v1.x serde format (2.5.2, ADR 0003): phoneme, inventory, allophone rules, syllable templates, phonotactics so far; not in `dist/` yet |
+| `json` | JSON in the v1.x serde format (2.5.2, ADR 0003) for every type v1.x serialized, plus `registry_info`; in `dist/varna-json.cyr` only |
 
 **`-D`-gated surfaces.** Each test `#define`s its own macro, so `cyrius test tests` exercises
 all four. Default `cyrius build` excludes them.
 
 | Define | Module | Holds |
 |---|---|---|
-| `-D DAIMON` | `daimon` | agent registration payload (6 capabilities, 51 languages, 19 scripts) |
-| `-D HOOSH` | `hoosh` | `LanguageQuery` + `answer_from_data` |
+| `-D DAIMON` | `daimon` | agent registration payload (6 capabilities, 51 languages, 19 scripts), with JSON |
+| `-D HOOSH` | `hoosh` | `LanguageQuery` + `answer_from_data`, with JSON |
 | `-D LOGGING` | `logging` | level-gated stderr logger; `sakshi` audit still deferred |
-| `-D MCP` | `mcp` | 5 tools + `invoke`; hand-built JSON, no bote/bayan yet (2.5.2 moves it onto bayan) |
+| `-D MCP` | `mcp` | 5 tools + `invoke`; payloads from `src/json.cyr`, as v1.x's `to_value` gave them; no bote |
 
 ## Dependencies
 
@@ -104,7 +105,7 @@ pin vendors) with `modules = ["dist/bayan-json.cyr"]`, `optional = true` and
 `[features] default = ["bayan"]`. Features resolve from the root manifest only, so
 varna's own builds get it and consumers do not — shabda and shabdakosh declare the
 bayan monolith themselves, and vendoring both files double-defines 27 JSON symbols.
-Nothing calls it yet; it is in place for 2.5.2.
+`src/json.cyr` calls it, and so `dist/varna-json.cyr` does; `dist/varna.cyr` does not.
 
 Two are *planned* for `-D` surfaces but not yet wired, so they are absent from
 `cyrius.lock` until a module actually resolves them: `sakshi` (for `-D LOGGING`) and
@@ -112,21 +113,26 @@ Two are *planned* for `-D` surfaces but not yet wired, so they are absent from
 their requires blocks; its `log` module's sakshi arrives through bote's own libro dep). (`chrono` *is* in the lock now, but only as a
 transitive include of `lib/hashseed.cyr`.)
 
-Consumers pull one of two bundles, each with a compile-verified sidecar naming the
+Consumers pull one of three bundles, each with a compile-verified sidecar naming the
 stdlib leaves it needs and a matching `# Requires` include block: `dist/varna.cyr` or
 `dist/varna-core.cyr`, `result hashmap` each in the working tree (`hashmap`'s own
-requires block brings alloc / string / vec / str; `result` is for the phoneme enums'
-JSON codecs, and src/phoneme.cyr includes it so distlib records it). Checked by building
-a scratch consumer against the bundle. It was `hashmap` alone at 2.5.1 and 4 leaves at
-2.4.3–2.5.0; before cyrius 6.6.18 the full sidecar
-unioned in the whole `[deps].stdlib` (16 leaves).
+requires block brings alloc / string / vec / str; `result` is for the enums' JSON codecs,
+and src/phoneme.cyr includes it so distlib records it), or `dist/varna-json.cyr`,
+`result fnptr hashmap`, the engine plus the serializers. That third one needs a bayan the
+consumer declares, the thin profile or the monolith but never both, which is why the
+sidecar leaves it out. Checked by building scratch consumers each way. The sidecar was
+`hashmap` alone at 2.5.1 and 4 leaves at 2.4.3–2.5.0; before cyrius 6.6.18 the full
+sidecar unioned in the whole `[deps].stdlib` (16 leaves).
+
+compile-verify records only what reachable code needs, so a sidecar proves nothing about
+code nobody calls. `fnptr` and `result` are listed because the modules include them.
 
 ## Verification
 
 `sh scripts/check.sh` is the local gate: `cyrius deps` + lock verify + `fmt --check` +
 `lint` + build (default and full `-D`) + `cyrius test tests`. `vet`, `deny` and `doc --check`
-pass separately. CI runs the gate plus bench and distlib; `release.yml` bundles
-`dist/varna.cyr`.
+pass separately. CI runs the gate plus bench, fuzz and all three distlib bundles;
+`release.yml` bundles `dist/varna.cyr` and `dist/varna-json.cyr`.
 
 Two verification habits are load-bearing here and worth keeping:
 
@@ -142,15 +148,6 @@ Two verification habits are load-bearing here and worth keeping:
 
 The [roadmap](roadmap.md) is organized into releases (reorganized at 2.5.1). In brief:
 
-- **2.5.2, P0 — serialization did not survive the port**, not just its tests. v1.x
-  derived serde on 44 types (21 structs, 23 enums) and round-tripped them in
-  `serde_roundtrip.rs` (27 tests, never ported). Restoring it in v1.x's exact format
-  ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md), names for every enum)
-  is in progress in `src/json.cyr`. Phoneme, inventory and the phonology types are done
-  (9 of the 27 tests ported); script, grammar, lexicon, dialect and registry remain, as
-  do the `-D MCP` / `DAIMON` / `HOOSH` JSON and the consumer-hazard bite that puts it in
-  `dist/`. v1.x's `Before` / `After` allophone environments were never ported, and
-  readers refuse them.
 - **2.5.3, data accuracy:** Somali's vowel analysis, which gates the
   `AdvancedTongueRoot` bit; the Burmese and Lao tone rows, which are under-sourced rather
   than wrong; Glottocodes, which need a source rather than a decision (generating them

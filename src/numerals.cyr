@@ -30,7 +30,8 @@ fn _nsys_new(script_code, name, kind) {
 # needs this: it asks "which letter of the alphabet is this?", and only a letter
 # has an answer. Deriving the ordinal from a mapping's raw index instead assumes
 # every entry occupies an alphabet position, which silently shifts every letter
-# after any entry that does not — see the Greek final sigma note below.
+# after any entry that does not — see the Greek final sigma note below. The spellings
+# are also the JSON names (ADR 0003), so renaming one breaks stored documents.
 #derive(Serialize)
 enum LetterRole {
     ROLE_LETTER = 0;         # a letter of the alphabet; occupies one position

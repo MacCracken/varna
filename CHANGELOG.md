@@ -7,11 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Roadmap 2.5.2 (P0), bayan / serde integration. Done so far: the wire format
-decision, the phoneme module, the phonology module (allophone rules, syllable
-templates, phonotactics), v1.x's `Before` / `After` environments, and the script
-module (script, numerals, transliteration). The grammar, lexicon, dialect and registry
-modules remain; the roadmap's 2.5.2 section lists them in order.
+## [2.5.2] - 2026-11-05
+
+Roadmap 2.5.2 (P0), bayan / serde integration. **Every type v1.x serialized has JSON
+again**, in v1.x's format, and all 26 of `serde_roundtrip.rs`'s serde tests are ported.
+The port's dropped variants are back, the `-D` surfaces sit on the same serializers, and
+`dist/varna-json.cyr` is how a consumer opts in.
+
+### Breaking
+
+- **`-D MCP`: `varna_phonemes`, `varna_script` and `varna_grammar` return the whole
+  record**, as v1.x's `serde_json::to_value` did. The port had returned a few hand-picked
+  fields, and `script_type` as a bare integer.
+
+  | Tool | Was | Now |
+  |---|---|---|
+  | `varna_phonemes` | `language_code`, `language_name`, `consonant_count`, `vowel_count` | the inventory: `phoneme_inventory_to_json` |
+  | `varna_script` | `code`, `name`, `script_type` (an integer) | the script: `script_to_json` |
+  | `varna_grammar` | `language_code`, `case_count`, `gender_count` | the profile: `grammar_profile_to_json` |
+
+  **Migration**: fields kept their names, so `language_code`, `case_count` and the like
+  read as before. `script_type` is now a name, `"Alphabet"`, not `0`. `consonant_count`
+  and `vowel_count` are gone, as they were not in v1.x: count `phonemes` by the key
+  inside `kind`, or call `phoneme_consonant_count`. `varna_translate_ipa` and
+  `varna_compare` keep their shape.
 
 ### Added
 
@@ -94,32 +113,86 @@ modules remain; the roadmap's 2.5.2 section lists them in order.
   decodes as a letter with no base. The reader holds the constructors' invariant, so an
   allograph without a base and a base on anything else are both refused.
 
-- **By-name codecs on the eight phoneme enums** through `#derive(Serialize)`:
-  `Airstream`, `PhonemeFeature`, `Manner`, `Place`, `Height`, `Backness`,
-  `StressPattern`, `PhonemeKind`. `E_to_json(v, sb)` writes `"Plosive"`, and
-  `E_from_json_str(text)` returns `Ok(value)`, or `Err` for an unknown name. These
-  are in `dist/`, since they are generated from the enum declarations in
-  `src/phoneme.cyr`. `Environment`, `ConstraintKind`, `SyllablePosition`, `ScriptType`,
-  `Direction`, `ScriptStatus`, `NumeralSystemKind` and `LetterRole` got the same derive.
+- **JSON for grammar, lexicon, cognate and dialect**, in the v1.x format:
+  `grammar_profile_*`, `lex_entry_*`, `lexicon_*`, `cognate_entry_*`, `cognate_set_*`,
+  `etymology_*` and `language_variety_*`, each `_to_json` / `_from_json`. A Swadesh list
+  is a `Lexicon`, so it needs nothing of its own.
 
-- **`tests/json_roundtrip.tcyr`, 115 assertions.**
-  - The phoneme half of v1.x's `serde_roundtrip.rs`: consonant, vowel, all 51
-    inventories, with and without tones.
-  - Exact text against serde's shape, v1.x documents decoding, and every enum variant
-    by name.
-  - 21 malformed phoneme and 8 malformed inventory cases, and writer refusals.
-  - The phonology half: `serde_allophone_rule_set`, `serde_allophone_rule`,
-    `serde_phonotactics_all` (en / sa / ja) and `serde_syllable_template`, with exact
-    text, every new enum variant by name, `Before` / `After` refused, 19 malformed
-    cases (u8 over 255, negative, float or string; unknown names; wrong types;
-    missing fields) and writer refusals.
-  - Mutation-checked: a writer that always wrote `"voiced":false` failed 3
-    assertions, one that misspelled the `airstream` key failed 5, and a template
-    writer that put `max_onset` in `max_coda` failed 3.
+  ```json
+  {"word":"water","ipa":"ˈwɔːtər","gloss":"water","pos":"Noun","frequency_rank":250,"swadesh_index":23}
+  {"source_language":"fr","source_form":"café","borrowing_type":"Loanword","period":null}
+  ```
 
-- **Four benchmarks** (2026-11-05T17:52:39Z, avg): `json_inventory_write_en` 46.5 µs
-  and `json_inventory_read_en` 163.9 µs (the 36-phoneme English inventory),
-  `json_phonotactics_write_en` 5.3 µs and `json_phonotactics_read_en` 14.2 µs.
+  A grammar profile writes v1.x's eight fields, then the nine from 2.3.0, which are
+  optional on read and take `_gp_new`'s defaults. So a v1.x document decodes to a profile
+  that states it does not carry them. `has_future` is a tri-state, so it is an
+  `Option<bool>` on the wire: `true`, `false`, or `null` for disputed.
+
+- **`WordOrder::Free` and `VarietyKind::Historical`**, which the port dropped because
+  both names were taken (`StressPattern.Free`, `ScriptStatus.Historical`). They are
+  `WordOrder.FreeOrder` and `VarietyKind.HistoricalVariety`, and the wire keeps v1.x's
+  `"Free"` and `"Historical"`. A v1.x document holding either used to be unreadable.
+  No pre-built profile or variety uses them.
+
+- **`registry_info_to_json` / `_from_json`.** New, not a restoration: v1.x's `LanguageInfo`
+  did not derive `Serialize`. It keeps v1.x's `script_codes` name, and every field but
+  the three Options is required. Coordinates stay integer milli-degrees, and a reader
+  holds them to ±90,000 and ±180,000.
+
+- **`-D DAIMON` and `-D HOOSH` encode their v1.x types**: `capability_*` and
+  `agent_registration_*`; `language_query_*`, whose struct variants are externally tagged
+  (`{"IdentifyLanguage":{"text":".."}}`), and `query_response_*`. `-D MCP` adds
+  `tool_result_*`, for `{"Success":..}` / `{"Error":".."}`. `confidence` stays per-mille
+  in the record and is v1.x's number on the wire, so 1000 is `1.0`. A value finer than a
+  thousandth rounds on read, and one outside 0.0–1.0 is refused.
+  `hoosh_answer_from_data` restores `structured_data`: the phoneme, as JSON text, where
+  the port always returned none.
+
+- **`dist/varna-json.cyr`** (`cyrius distlib json`): the engine plus `src/json.cyr`.
+  It settles how bayan reaches consumers. `dist/varna.cyr` does not call bayan, so
+  existing consumers carry no risk and no new dependency. A consumer that wants JSON
+  folds this bundle instead and declares bayan its own way. Built and run as scratch
+  consumers:
+
+  | Bundle | bayan declared as | Result |
+  |---|---|---|
+  | `dist/varna.cyr` | nothing | builds, 380,216 B |
+  | `dist/varna-json.cyr` | `dist/bayan-json.cyr` profile | builds, round-trips, 533,640 B |
+  | `dist/varna-json.cyr` | `bayan` monolith, as shabda and shabdakosh do | builds, round-trips, 1,383,120 B |
+  | `dist/varna-json.cyr` | nothing | refused at build, naming the `bayan_json_*` calls |
+
+- **By-name codecs** through `#derive(Serialize)` on every enum on the wire: 8 in
+  `src/phoneme.cyr` and 26 more across the modules. `E_to_json(v, sb)` writes `"Plosive"`,
+  and `E_from_json_str(text)` returns `Ok(value)`, or `Err` for an unknown name. An enum
+  varna added after v1.x has no v1.x name to keep, so its constants go on the wire as
+  they stand: `"ROLE_ALLOGRAPH"`, `"ALIGN_NOMINATIVE_ACCUSATIVE"`, `"END_SAFE"`. Every
+  spelling is now a contract, and `test_wire_names` writes each one out, since a rename
+  moves the writer and the reader together and passes any round trip.
+
+- **`tests/varna.fcyr` fuzzes the decoders.** It was a stub that decoded nothing. It now
+  mutates a seed for each of the 24 decoders 300,000 times, and checks two things:
+  nothing crashes, and anything that decodes re-encodes to text that decodes to itself.
+  35,086 of the documents decoded. It passes under `--bounds` and allocator poison, and
+  CI runs it.
+
+- **`tests/json_roundtrip.tcyr` (369 assertions) and `tests/json_surfaces.tcyr` (115).**
+  - All 26 serde tests from v1.x's `serde_roundtrip.rs`, and its hoosh and daimon ones.
+  - Documents worked out by hand from the v1.x source and compared byte for byte, so
+    they pin the format rather than this writer agreeing with this reader.
+  - Every enum variant by name, with every spelling written out, and malformed cases for
+    every field of every type.
+  - Each hostile transform runs against all 19 core decoders: every truncation of every
+    document, trailing garbage, a byte order mark, duplicate keys. Also 200,000 open
+    brackets, a 100 KB name aimed at the 48-byte stack buffer, and RFC 3629's boundaries.
+  - **Mutation-checked** on the final code: 128 deliberate defects after an unmutated
+    control. 123 fail an assertion, 4 crash because what they remove is the guard against
+    that crash, and 1 is equivalent, since every caller of `_json_u32` already refuses
+    any negative. Earlier survivors found 3 real gaps, now covered (an escaped quote
+    flipping what counts as inside a string, an explicit `null` kept as the text
+    `"null"`, and a renamed constant passing every round trip), and 2 pieces of dead
+    code, now removed.
+
+- **Benchmarks** for every module's serializers: 20 rows, on `BENCHMARKS.md`.
 
 ### Fixed
 
@@ -128,6 +201,15 @@ modules remain; the roadmap's 2.5.2 section lists them in order.
   `"manner":"Plosive\u0000junk"` decoded as `Plosive`, and `"ipa":"p\u0000q"` decoded as
   `p`. Every reader now refuses both: the first is an unknown name, and the second is a
   value varna cannot hold.
+- **A JSON reader accepted what RFC 8259 and serde refuse.** bayan's parser lets through a
+  raw control byte inside a string and invalid UTF-8, and neither can be seen after
+  decoding: an escaped `\n` and a raw newline are the same byte by then, and invalid
+  UTF-8 kept in a record comes back out as a document a strict reader refuses. All
+  readers now come through `_json_parse`, which checks the text first. That is about 8%
+  of a read, and bayan's parser is the better home for it (roadmap).
+- **`varna_compare` wrote into a fixed 4,096-byte buffer**, where running out truncated
+  the document into invalid JSON. Every handler now builds in a `str_builder`, and all
+  2,601 language pairs parse. `_mcp_append_json` and its helpers are gone.
 
 ### Changed
 
@@ -138,16 +220,40 @@ modules remain; the roadmap's 2.5.2 section lists them in order.
   failed to build. A scratch consumer declaring only `hashmap` now builds against the
   bundle with no warning and runs both codec directions. Include-once keys on the
   spelling `[deps] stdlib` auto-prepends, so varna's own builds read the file once.
-- **`src/json.cyr` is not in `dist/` yet.** It is left out of `[lib]` and `[lib.core]`
-  until 2.5.2's consumer-hazard bite decides how bayan reaches consumers. varna's own
-  builds and tests include it through `src/main.cyr`.
-- **Binary size** (2.5.1 → now): default 470,392 → 501,184 B, full `-D` 489,040 →
-  515,728 B, `CYRIUS_DCE=1` 44,408 → 46,528 B.
+- **`src/json.cyr` includes `lib/fnptr.cyr`**, and `dist/varna-json.deps` is
+  `result fnptr hashmap`. Its readers call the derived decoders through one `_json_enum`,
+  which replaced 15 identical wrappers. bayan is deliberately not in that sidecar, since
+  which bayan to use is the consumer's choice.
+- **Rule writers refuse a corrupt environment** (-1, nothing written). One out of range
+  used to be written as `null`.
+- **Binary size** (2.5.1 → 2.5.2): default 470,392 → 546,512 B, full `-D` 489,040 →
+  569,840 B, `CYRIUS_DCE=1` 44,408 → 63,184 B.
 
 ### Performance
 
-No benchmarked function changed, but several rows moved, so these microbenchmarks are
-**sensitive to code layout**. Interleaved against a build of the 2.5.1 tag on the same
+Interleaved against the commit before this work: **no non-JSON row separates** over four
+runs, so `allophone_realize`'s value comparison does not show above noise, and JSON writes
+are unchanged. **JSON reads are about 13% slower**, the cost of the stricter readers
+(median of five runs): `json_inventory_read_en` 164.0 → 185.7 µs,
+`json_phonotactics_read_en` 14.3 → 16.2 µs. Measured by taking it out, `_json_parse`'s scan
+is about 8% of a read, two-thirds of that rise. The rest is the per-string NUL checks and
+the indirect call in `_json_enum`.
+
+The new rows (median avg):
+
+| module | write | read | document |
+|---|---|---|---|
+| `script` | 2.1 µs | 8.5 µs | Devanagari |
+| `numerals` | 17.4 µs | 74.6 µs | Greek isopsephy |
+| `transliteration` | 18.0 µs | 50.9 µs | Devanagari → IAST |
+| `grammar` | 3.0 µs | 15.4 µs | English |
+| `lexicon` | 31.0 µs | 101.9 µs | Arabic Swadesh-25 |
+| `cognate` | 4.9 µs | 13.5 µs | water |
+| `dialect` | 2.3 µs | 9.0 µs | British English |
+| `registry` | 2.4 µs | 8.1 µs | English |
+
+Earlier in 2.5.2 no benchmarked function changed, but several rows moved, so these
+microbenchmarks are **sensitive to code layout**. Interleaved against a build of the 2.5.1 tag on the same
 toolchain, three runs each (avg):
 
 | benchmark | 2.5.1 | this tree | |

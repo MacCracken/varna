@@ -39,7 +39,8 @@ enum WordOrder {
 # --- WALS-style typological dimensions (2.3.0) ---------------------
 # Variant names are prefixed: Cyrius enum variants share one flat symbol
 # namespace, and several of these would otherwise collide across enums (NONE,
-# NO_DOMINANT) or with existing constants.
+# NO_DOMINANT) or with existing constants. The spellings are also the JSON names
+# (ADR 0003), so renaming one breaks stored documents.
 #
 # Each enum carries the full standard classification, not merely the values the
 # 51-language corpus happens to attest. Unlike a per-phoneme feature bit, a

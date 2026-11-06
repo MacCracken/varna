@@ -1,6 +1,6 @@
 # Development Roadmap
 
-> **Current**: 2.5.1 · **Open work only.** Shipped releases are in
+> **Current**: 2.5.2 · **Open work only.** Shipped releases are in
 > [CHANGELOG.md](../../CHANGELOG.md) and the git tags.
 >
 > Releases are listed in their intended order, which is not a commitment to ship
@@ -11,78 +11,11 @@
 
 | Release | Theme | Priority |
 |---|---|---|
-| **2.5.2** | bayan / serde integration: restore what the port dropped | **P0** |
 | 2.5.3 | Data accuracy: Somali ATR, Burmese / Lao tone rows, Glottocodes | P2 |
 | 2.5.4 | Hygiene and follow-ons: a numerals cache, layout-sensitive benchmarks, test-scoped deps, sakshi logging | P3 |
 | 2.6.0 | Coverage scale: allophony, phonotactics, transliteration, numerals, provenance, PHOIBLE | P3 |
 | 2.7.0 | Typology and interchange: PHOIBLE export, WALS codes, cross-cutting queries, ISO 639 | P4 |
 | 2.8.0+ | Linguistic depth: prosody, morphology, historical phonology, sign language, Hangul | P4 |
-
-## 2.5.2 — bayan / serde integration (P0)
-
-**The port dropped serialization, and the docs said it hadn't.** The v1.x crate derived
-`Serialize` / `Deserialize` on 44 public types (21 structs, 23 enums) across 13 modules, called `serde_json`
-in 11, and round-tripped every public type in `tests/serde_roundtrip.rs` (27 tests).
-The Cyrius port had none of it: no varna type emitted or read JSON, and the only JSON
-in the tree was `src/mcp.cyr`'s hand-built output. The false claims were corrected at
-2.5.1, and ADRs 0001 and 0002 carry amendments. 2.5.1's CHANGELOG has the full account.
-
-**Settled at 2.5.1 (revisit only with a measurement).** Use bayan's thin JSON profile,
-not the stdlib monolith: an optional `[deps.bayan]` with
-`modules = ["dist/bayan-json.cyr"]`, on by default, at the tag the toolchain pin
-vendors. The monolith's Unicode tables made the live binary 414,664 B against
-44,408 B. Call the qualified `bayan_json_v_*` names.
-
-**Decided: [ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)** — the v1.x
-serde format, field for field, every enum by name. Each enum takes `#derive(Serialize)`
-for its by-name codec (a struct derive cannot write an enum field by name, so record
-writers / readers are hand-written around those codecs in `src/json.cyr`). Readers are
-as strict as serde's defaults and accept v1.x documents.
-
-**Done so far** (CHANGELOG `[Unreleased]`):
-- ADR 0003.
-- **phoneme**: `phoneme_*` and `phoneme_inventory_*` to / from JSON, with codecs on the
-  eight phoneme enums.
-- **phonology**: `allophone_rule_*`, `allophone_rule_set_*`, `syllable_template_*`,
-  `phonotactic_constraint_*` and `phonotactics_*` to / from JSON, with codecs on
-  `Environment`, `ConstraintKind` and `SyllablePosition`.
-- **`Before` / `After(PhonemeClass)`**: ported as `EnvBefore` / `EnvAfter` and
-  `PhonemeClass`, with JSON. See ADR 0003's amendment for the hand-written names.
-- **script**: `script_*`, `numeral_mapping_*`, `numeral_system_*` and
-  `transliteration_table_*` to / from JSON, with codecs on `ScriptType`, `Direction`,
-  `ScriptStatus`, `NumeralSystemKind` and `LetterRole`.
-- `tests/json_roundtrip.tcyr`: 16 of `serde_roundtrip.rs`'s 27 tests ported, plus exact
-  text, v1.x input and malformed input (mutation-checked).
-- Benchmarks: inventory, phonotactics, script, numerals, transliteration.
-
-Tone has no bite of its own: v1.x had no Tone type (tones were strings), and
-inventories already write them as strings.
-
-**Next session starts here.** The pattern is fixed: `#derive(Serialize)` on each enum,
-a hand-written writer / reader pair per record in `src/json.cyr` in v1.x field order,
-equality helpers, the ported tests, then exact-text and malformed cases in
-`tests/json_roundtrip.tcyr`, a mutation check, and a bench pair. Read the v1.x types
-with `git show 2.1.3:rust-old/src/<path>.rs`. Watch for **enum variant names
-colliding across enums**: Cyrius enum constants are global, which is what blocked
-`PhonemeClass`. When a mutation check reports no summary, the test crashed: that is not
-a kill, so run an unmutated control first.
-
-Remaining bites, in order:
-
-- [ ] **grammar, lexicon** (with cognate and swadesh), **dialect, registry**.
-- [ ] **Malformed input**: `adversarial.rs`'s cases against every decoder.
-- [ ] **`-D MCP` / `-D DAIMON` / `-D HOOSH` onto the serializers**: replace
-      `src/mcp.cyr`'s hand-built JSON, and encode daimon's registration payload.
-      bote-core stays a commented recipe in `cyrius.cyml`; wiring it is not in scope.
-- [ ] **Consumer hazard, before the serializers enter `dist/varna.cyr`.** shabda and
-      shabdakosh declare the `bayan` monolith in their own `[deps].stdlib`, and
-      vendoring it beside `bayan-json` defines 27 JSON symbols twice. Either keep
-      `[deps.bayan]` optional so consumers opt in (the ai-hwaccel pattern), or move
-      those two to the profile in step. Re-check `dist/varna.deps` and the
-      `# Requires` block after each `distlib`.
-- [ ] **Benchmarks** for each module's serializers as it lands (the inventory pair is in).
-- [ ] **Docs**: write the real API into the README, the overview and the usage guide,
-      and close ADR 0001's amendment.
 
 ## 2.5.3 — Data accuracy (P2)
 
@@ -134,6 +67,14 @@ variety it commits to is named in the source comment.
       backend may not do) before reading a row's movement as a code change; until then,
       interleave A/B against the previous build for any row that moves, as 2.4.3–2.5.2
       did. If alignment is the cause, file it with cyrius, with the repro.
+- [ ] **bayan: refuse a raw control byte in a string and invalid UTF-8.** RFC 8259
+      requires both, and its parser accepts both. `_json_parse` scans for them in varna,
+      at about 8% of a read, and the parser already walks those bytes. Once bayan refuses
+      them, `_json_text_ok` goes. Reproduce with a raw newline or a 0xFF byte in a string.
+- [ ] **MCP input schemas.** v1.x's `ToolSchema` declared each tool's parameters and
+      which are required. The port's `ToolDef` keeps only `"object"`, so an agent listing
+      tools cannot see them. This goes with the `bote` wiring, still a recipe in
+      `cyrius.cyml`.
 - [ ] **Move `assert` and `bench` to `[test] stdlib`** (cyrius 6.7.6+), so they stop
       being prepended to the library build. Measure the binary before and after.
 - [ ] **`-D LOGGING` through sakshi.** `src/logging.cyr` is a level-gated stderr logger;
@@ -205,9 +146,11 @@ Consumers checked at 2.5.1, from their manifests in `~/Repos`:
 
 - **shabda** and **shabdakosh** fold `dist/varna.cyr` at varna **2.4.1** (`[deps.varna]`),
   which meets the old v1.0 criterion "shabda + shabdakosh consuming varna". Moving
-  them to 2.5.x is their own release work, and 2.5.2's consumer hazard concerns these
-  two.
+  them to 2.5.x is their own release work.
 - **sankhya** folds varna 2.4.1.
+- From 2.5.2, a consumer that wants JSON folds `dist/varna-json.cyr` instead. shabda,
+  shabdakosh and sankhya already declare the bayan monolith, so they change only the
+  `modules` line. This was simulated with scratch consumers, not run in those repos.
 - **svara** is a named consumer with no `[deps.varna]` yet. **jnana** is not checked
   out here, so its status was not checked.
 - **vidya** is not a consumer. It would need varna only if it gains speech support for
@@ -238,4 +181,4 @@ again. The CHANGELOG entries have the full reasoning.
   serialization was never ported. The fix is 2.5.2, on bayan's thin JSON profile.
 
 > The v1.0 criteria checklist was retired at 2.1.3. Its "full JSON roundtrip tests for
-> all public types" entry is 2.5.2's work.
+> all public types" entry was met at 2.5.2.

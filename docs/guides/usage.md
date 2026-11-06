@@ -14,7 +14,7 @@ Depend on varna from another Cyrius project via `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.5.1"
+tag = "2.5.2"
 modules = ["dist/varna.cyr"]
 ```
 
@@ -362,10 +362,61 @@ var etym = Etymology {
 
 ---
 
+## JSON
+
+varna reads and writes the format v1.x's serde did, field for field, with every enum by
+name ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)). A writer appends one
+value to a `str_builder` and returns 0, or -1 with nothing written. A reader takes
+NUL-terminated text and returns a new record, or 0.
+
+```cyrius
+var sb = str_builder_new();
+if (phoneme_inventory_to_json(phoneme_english(), sb) != 0) { return 1; }
+var text = str_cstr(str_builder_build(sb));
+
+var inv = phoneme_inventory_from_json(text);
+if (inv == 0) { return 1; }
+```
+
+| Type | Writer and reader, each `_to_json` / `_from_json` |
+|---|---|
+| Phonemes | `phoneme`, `phoneme_inventory` |
+| Phonology | `allophone_rule`, `allophone_rule_set`, `syllable_template`, `phonotactic_constraint`, `phonotactics` |
+| Script | `script`, `numeral_mapping`, `numeral_system`, `transliteration_table` |
+| Grammar | `grammar_profile` |
+| Lexicon | `lex_entry`, `lexicon` (also every Swadesh list), `cognate_entry`, `cognate_set`, `etymology` |
+| Dialect and registry | `language_variety`, `registry_info` |
+| `-D MCP` | `tool_result` |
+| `-D DAIMON` | `capability`, `agent_registration` |
+| `-D HOOSH` | `language_query`, `query_response` |
+
+Consumers get these from `dist/varna-json.cyr`, which needs a bayan declared alongside it.
+The README's quick start shows both ways.
+
+A document from v1.x decodes, since a field varna gained later is optional on read:
+
+```json
+{"ipa":"p","kind":{"Consonant":{"manner":"Plosive","place":"Bilabial","voiced":false}}}
+```
+
+Readers are as strict as serde's defaults. A missing field, a wrong JSON type, an unknown
+name, a duplicate key, invalid UTF-8 or a raw control byte in a string refuses the whole
+document, and unknown extra keys are ignored. Two things serde would hold and varna cannot
+are also refused: a string containing U+0000, and a `confidence` outside 0.0–1.0.
+
+v1.x's two parametrized environments carry a class, which is a label matched by equality:
+
+```cyrius
+var e = EnvBefore(ClassSpecific("k"));              # {"Before":{"Specific":"k"}}
+var f = EnvAfter(PhonemeClass.ClassVowel);          # {"After":"Vowel"}
+environment_eq(e, EnvBefore(ClassSpecific("k")));   # 1: compared by value
+```
+
+---
+
 ## MCP Tools
 
-Requires `-D MCP`. Exposes varna data as structured tools for AI agent frameworks (backed
-by `bote-core`):
+Requires `-D MCP`. Exposes varna data as structured tools for AI agent frameworks:
 
 ```cyrius
 # Enumerate available tools
@@ -376,18 +427,24 @@ var tools = mcp_tool_definitions();
 var params = map_new();
 map_set(params, "language", "ja");
 
-var res = mcp_invoke("varna_phonemes", params);   # res: ToolResult tagged enum
-match res {
-    ToolResult.Success(json) => { /* emit json */ }
-    ToolResult.Error(msg)    => { /* report msg */ }
+var res = mcp_invoke("varna_phonemes", params);
+if (mcp_result_is_ok(res) == 1) {
+    # A JSON object: here, the whole inventory, as phoneme_inventory_to_json writes it.
+    println(mcp_result_payload(res));
+} else {
+    # A plain message, not JSON.
+    println(mcp_result_payload(res));
 }
 
 # Transliterate via MCP
 var tp = map_new();
 map_set(tp, "text",   "αβγ");
 map_set(tp, "scheme", "greek_beta");
-# mcp_invoke("varna_translate_ipa", tp) -> ToolResult.Success("abg")
+# mcp_invoke("varna_translate_ipa", tp) -> {"scheme":"greek_beta","input":"αβγ","output":"abg"}
 ```
+
+`tool_result_to_json(res, sb)` writes the result as v1.x did, `{"Success":..}` or
+`{"Error":".."}`.
 
 ---
 
@@ -400,15 +457,13 @@ var reg = daimon_registration();
 
 # daimon_name(reg), daimon_version(reg)
 # daimon_supported_languages(reg) -> 51
-# daimon_supported_scripts(reg)   -> 10
+# daimon_supported_scripts(reg)   -> 19
 # daimon_capabilities(reg)        -> 6
 # capabilities: phoneme_lookup, script_lookup, grammar_profile,
 #               transliterate, language_compare, numeral_value
 ```
 
-There is no JSON encoding of the registration yet: varna's serialization did not survive
-the Rust → Cyrius port and returns in 2.5.2 (roadmap P0). Until then a daimon client reads
-the record through the accessors above.
+`agent_registration_to_json(reg, sb)` encodes it in the v1.x format.
 
 ---
 

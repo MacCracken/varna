@@ -192,7 +192,7 @@ modules = ["dist/bayan-json.cyr"]
 # Kept commented on purpose: src/mcp.cyr builds its JSON with src/json.cyr
 # and links nothing from bote, so the recipe is documentation of how to
 # wire it, not an active dependency. bote 3.8.14 is bote's latest release and
-# pins Cyrius 6.7.18, the same pin as varna 2.5.1.
+# pins Cyrius 6.7.18, the same pin as varna 2.5.2.
 #
 # NOTE: the v1.x `daimon` and `hoosh` Cargo features did NOT link those
 # crates — they only flipped on serde_json. Their Cyrius equivalents are

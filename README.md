@@ -56,7 +56,7 @@ Depend on varna from another Cyrius project by adding it to `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.5.1"
+tag = "2.5.2"
 modules = ["dist/varna.cyr"]
 ```
 
@@ -70,7 +70,27 @@ and run to check it.) If your own
 code calls a stdlib family (`fmt`, `io`, `bayan`, `assert`, `bench`, …), declare it in
 your own `[deps] stdlib`; varna's sidecar does not bring it along. varna's optional
 `[deps.bayan]` is not resolved for consumers. For the linguistic data engine without
-the `-D`-gated AI surfaces, use `modules = ["dist/varna-core.cyr"]` (same sidecar):
+the `-D`-gated AI surfaces, use `modules = ["dist/varna-core.cyr"]` (same sidecar).
+
+For JSON, fold `dist/varna-json.cyr` instead: the same engine plus the serializers. It
+calls bayan, and which bayan is your choice, so declare one yourself. The thin profile
+keeps out the monolith's Unicode tables:
+
+```cyml
+[deps.varna]
+git = "https://github.com/MacCracken/varna"
+tag = "2.5.2"
+modules = ["dist/varna-json.cyr"]
+
+[deps.bayan]
+git = "https://github.com/MacCracken/bayan.git"
+tag = "1.11.1"
+modules = ["dist/bayan-json.cyr"]
+```
+
+Or list `"bayan"` in `[deps] stdlib` if you already use the monolith, but never both,
+since that defines 27 JSON symbols twice. With neither, the build refuses and names the
+`bayan_json_*` calls. `dist/varna.cyr` needs no bayan at all.
 
 ```cyrius
 include "lib/varna.cyr"
@@ -113,18 +133,14 @@ varna (this engine)
       └── bote (dist/bote-core.cyr)   — MCP / JSON-RPC core surface (recipe only, -D MCP)
 ```
 
-**Serialization is coming back in 2.5.2.** The v1.x crate derived `Serialize` /
-`Deserialize` on its public types; the Cyrius port did not carry that over, so the
-2.5.1 release serializes nothing. 2.5.2 restores it in the v1.x serde format
-([ADR 0003](docs/adr/0003-json-wire-format-matches-v1x-serde.md)), module by module —
-the [roadmap](docs/development/roadmap.md)'s P0. Phonemes and inventories are done in
-the tree, along with allophone rules, syllable templates and phonotactic profiles
-(`phoneme_to_json` / `phoneme_from_json`, `phonotactics_to_json` /
-`phonotactics_from_json` and so on, in `src/json.cyr`), not yet in `dist/`.
+**JSON** is in the v1.x serde format
+([ADR 0003](docs/adr/0003-json-wire-format-matches-v1x-serde.md)), for every type v1.x
+serialized: `phoneme_inventory_to_json(inv, sb)` / `phoneme_inventory_from_json(text)` and
+so on, in `src/json.cyr`. See [the usage guide](docs/guides/usage.md#json).
 
 Zero external (non-Cyrius) dependencies. The v1.x crate's `thiserror`, `tracing`,
 `tracing-subscriber`, and `criterion` resolve to Cyrius stdlib modules or language
-builtins, and `serde` / `serde_json` to bayan once 2.5.2 lands — see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md).
+builtins, and `serde` / `serde_json` to bayan — see [ADR 0001](docs/adr/0001-port-from-rust-to-cyrius.md).
 
 ## Architecture
 

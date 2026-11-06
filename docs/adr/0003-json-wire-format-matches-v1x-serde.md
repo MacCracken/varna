@@ -16,11 +16,20 @@
 >
 > Everything else holds the Decision: an enum varna added after v1.x has no v1.x name to
 > keep, so the wire carries its constants as they stand (`"ROLE_ALLOGRAPH"`,
-> `"ALIGN_NOMINATIVE_ACCUSATIVE"`).
+> `"ALIGN_NOMINATIVE_ACCUSATIVE"`). The alternative was clean names
+> (`"NominativeAccusative"`), which would need a hand-written map for all 48 values,
+> because constants such as `NO_DOMINANT` recur across enums. Prefixed constants were
+> chosen on 2026-11-05. These spellings are as much a contract as v1.x's, and a round trip
+> cannot catch a rename, so `test_wire_names` writes out every one.
 >
 > A reader also refuses any string holding U+0000, which the Decision did not cover.
 > serde accepts one, but varna's strings are NUL-terminated, so it would decode to a
-> different value.
+> different value. One leniency remains: `-0` reads as the integer 0 where serde refuses
+> it, because bayan's value tree cannot tell them apart.
+>
+> The Consequences say `src/json.cyr` stays out of `dist/` until the consumer hazard is
+> settled. It was settled by a third bundle: `dist/varna-json.cyr` holds the serializers,
+> and `dist/varna.cyr` never calls bayan. See `cyrius.cyml` `[lib.json]`.
 
 ## Context
 
