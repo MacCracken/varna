@@ -173,6 +173,8 @@ fn main() {
     _seed(&query_response_from_json, &query_response_to_json, "{\"query_id\":\"q\",\"source\":\"Hybrid\",\"content\":\"c\",\"confidence\":0.875,\"structured_data\":{\"a\":[1,2.5,\"x\",null,true]}}");  #skip-lint
     _seed(&tool_result_from_json, &tool_result_to_json, "{\"Success\":{\"a\":[1,2.5,\"x\\n\",null,false]}}");  #skip-lint
     _seed(&tool_result_from_json, &tool_result_to_json, "{\"Error\":\"unknown tool: x\"}");  #skip-lint
+    _seed(&tool_def_from_json, &tool_def_to_json, "{\"name\":\"n\",\"description\":\"d\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"a\":{\"description\":\"x\",\"type\":\"string\"}},\"required\":[\"a\"]}}");  #skip-lint
+    _seed(&tool_definitions_from_json, &tool_definitions_to_json, "[{\"name\":\"n\",\"description\":\"d\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"a\":{\"enum\":[1,\"b\"]}},\"required\":[]}}]");  #skip-lint
     fuzz_main(300000);
     fmt_int(_decoded);
     println(" of 300000 mutated documents decoded");

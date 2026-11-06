@@ -230,6 +230,206 @@ fn test_tool_result_json() {
     return 0;
 }
 
+# --- mcp tool definitions ---
+
+# By hand from v1.x's tool_definitions(), through bote's serde shape. A property's keys are
+# sorted because serde_json sorts them. varna_translate_ipa's description is v1.x's plus
+# the sentence 2.1.5 needed, when that tool's result changed.
+fn _v1x_tools() {
+    var v = vec_new();
+    vec_push(v, "{\"name\":\"varna_phonemes\",\"description\":\"Get the phoneme inventory for a language. Returns consonants, vowels, stress pattern, and tone system.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"language\":{\"description\":\"ISO 639 language code (e.g., 'en', 'ja', 'ar')\",\"type\":\"string\"}},\"required\":[\"language\"]}}");  #skip-lint
+    vec_push(v, "{\"name\":\"varna_script\",\"description\":\"Get writing system metadata for a script. Returns type, direction, Unicode ranges, and status.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"code\":{\"description\":\"ISO 15924 script code (e.g., 'Latn', 'Arab', 'Deva')\",\"type\":\"string\"}},\"required\":[\"code\"]}}");  #skip-lint
+    vec_push(v, "{\"name\":\"varna_grammar\",\"description\":\"Get the grammatical profile for a language. Returns morphology type, word order, case count, gender, and classifier usage.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"language\":{\"description\":\"ISO 639 language code (e.g., 'de', 'ja', 'ru')\",\"type\":\"string\"}},\"required\":[\"language\"]}}");  #skip-lint
+    vec_push(v, "{\"name\":\"varna_translate_ipa\",\"description\":\"Transliterate text between scripts. Supports Devanagari↔IAST and Greek↔Beta Code. Returns scheme, input and output.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"text\":{\"description\":\"Text to transliterate\",\"type\":\"string\"},\"scheme\":{\"description\":\"Transliteration scheme: 'devanagari_iast' or 'greek_beta'\",\"type\":\"string\"}},\"required\":[\"text\",\"scheme\"]}}");  #skip-lint
+    vec_push(v, "{\"name\":\"varna_compare\",\"description\":\"Compare two languages. Returns shared/unique phonemes, typological differences, and cognate information.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"lang1\":{\"description\":\"First language ISO 639 code\",\"type\":\"string\"},\"lang2\":{\"description\":\"Second language ISO 639 code\",\"type\":\"string\"}},\"required\":[\"lang1\",\"lang2\"]}}");  #skip-lint
+    return v;
+}
+
+fn test_tool_definitions_json() {
+    var tools = mcp_tool_definitions();
+    assert_eq(mcp_tool_definitions(), tools, "the definitions are cached");
+    var want = _v1x_tools();
+    assert_eq(vec_len(tools), vec_len(want), "five tools");
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(tools)) {
+        if (streq(_text_of(&tool_def_to_json, vec_get(tools, i)), vec_get(want, i)) != 1) {
+            println(_text_of(&tool_def_to_json, vec_get(tools, i)));
+            bad = bad + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "each tool is byte for byte v1.x's serde form");
+
+    # What v1.x's test_tool_definitions_serde checked, and that nothing moved.
+    var t = _text_of(&tool_definitions_to_json, tools);
+    var back = tool_definitions_from_json(t);
+    assert(back != 0, "the list decodes");
+    if (back == 0) { return 0; }
+    assert_eq(vec_len(back), 5, "all five");
+    assert(streq(_text_of(&tool_definitions_to_json, back), t), "and writes back unchanged");
+
+    # What a host sends as `inputSchema` in tools/list.
+    assert(streq(_text_of(&tool_input_schema_to_json, vec_get(tools, 0)), "{\"type\":\"object\",\"properties\":{\"language\":{\"description\":\"ISO 639 language code (e.g., 'en', 'ja', 'ar')\",\"type\":\"string\"}},\"required\":[\"language\"]}"), "the schema alone, which is the value of inputSchema");  #skip-lint
+    assert(_json_parse(_text_of(&tool_input_schema_to_json, vec_get(tools, 3))) != 0, "and parses");
+    return 0;
+}
+
+# The value a tool accepts for parameter `name`.
+fn _sample(name) {
+    if (streq(name, "language") == 1 || streq(name, "lang1") == 1) { return "en"; }
+    if (streq(name, "lang2") == 1) { return "de"; }
+    if (streq(name, "code") == 1) { return "Latn"; }
+    if (streq(name, "scheme") == 1) { return "greek_beta"; }
+    return "abc";
+}
+
+fn _params_without(t, skip) {
+    var m = map_new();
+    var req = tool_def_required(t);
+    var i = 0;
+    while (i < vec_len(req)) {
+        if (i != skip) { map_set(m, vec_get(req, i), _sample(vec_get(req, i))); }
+        i = i + 1;
+    }
+    return m;
+}
+
+fn _cat(a, b) {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, a);
+    str_builder_add_cstr(sb, b);
+    return str_cstr(str_builder_build(sb));
+}
+
+# The schema is a promise about mcp_invoke, and nothing else ties the two together: the
+# handlers read their parameters by name, and a schema that drifted would still parse.
+fn test_schemas_match_the_handlers() {
+    var tools = mcp_tool_definitions();
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(tools)) {
+        var t = vec_get(tools, i);
+        var name = tool_def_name(t);
+        var req = tool_def_required(t);
+        var ps = tool_def_properties(t);
+
+        # Every property is required, and every required name is a property.
+        if (vec_len(ps) != vec_len(req)) { bad = bad + 1; }
+        var k = 0;
+        while (k < vec_len(ps) && k < vec_len(req)) {
+            if (streq(tool_param_name(vec_get(ps, k)), vec_get(req, k)) != 1) { bad = bad + 1; }
+            k = k + 1;
+        }
+
+        # What the schema requires is enough: mcp_invoke needs nothing undeclared.
+        if (mcp_result_is_ok(mcp_invoke(name, _params_without(t, 0 - 1))) != 1) {
+            println(name);
+            bad = bad + 1;
+        }
+
+        # And each one is needed: leave it out and that is the name the error gives.
+        var j = 0;
+        while (j < vec_len(req)) {
+            var r = mcp_invoke(name, _params_without(t, j));
+            var want = _cat("missing required parameter: ", vec_get(req, j));
+            if (mcp_result_is_error(r) != 1 || streq(mcp_result_payload(r), want) != 1) {
+                println(want);
+                bad = bad + 1;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "each schema states exactly what mcp_invoke demands");
+    return 0;
+}
+
+fn test_tool_def_decoding() {
+    var g = "{\"name\":\"n\",\"description\":\"d\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"a\":{\"description\":\"x\",\"type\":\"string\"}},\"required\":[\"a\"]}}";  #skip-lint
+    var t = tool_def_from_json(g);
+    assert(t != 0, "a tool decodes");
+    if (t == 0) { return 0; }
+    assert(streq(tool_def_name(t), "n"), "name");
+    assert(streq(tool_def_description(t), "d"), "description");
+    assert(streq(tool_def_schema_type(t), "object"), "type");
+    assert_eq(vec_len(tool_def_properties(t)), 1, "one property");
+    assert_eq(vec_len(tool_def_required(t)), 1, "one required");
+    if (vec_len(tool_def_properties(t)) != 1 || vec_len(tool_def_required(t)) != 1) { return 0; }
+    assert(streq(tool_param_name(vec_get(tool_def_properties(t), 0)), "a"), "its name");
+    assert(streq(vec_get(tool_def_required(t), 0), "a"), "required");
+    assert(streq(_text_of(&tool_def_to_json, t), g), "writes back unchanged");
+
+    # v1.x's property was any JSON, and a keyword varna never writes must survive.
+    var rich = _with(g, "{\"description\":\"x\",\"type\":\"string\"}", "{\"enum\":[\"p\",\"q\"],\"minLength\":1,\"type\":\"string\"}");
+    var r = tool_def_from_json(rich);
+    assert(r != 0, "a richer property decodes");
+    if (r != 0) { assert(streq(_text_of(&tool_def_to_json, r), rich), "and keeps every keyword"); }
+
+    # #[serde(default)]: absent is empty. bote's other fields are read past.
+    var bare = tool_def_from_json("{\"name\":\"n\",\"description\":\"d\",\"input_schema\":{\"type\":\"object\"}}");  #skip-lint
+    assert(bare != 0, "absent properties and required decode");
+    if (bare != 0) {
+        assert_eq(vec_len(tool_def_properties(bare)), 0, "as no properties");
+        assert_eq(vec_len(tool_def_required(bare)), 0, "and nothing required");
+        assert(_with(_text_of(&tool_def_to_json, bare), "\"properties\":{},\"required\":[]", "") != 0, "written as empty");
+    }
+    assert(tool_def_from_json(_with(g, "\"name\":\"n\"", "\"annotations\":{\"readOnlyHint\":true},\"version\":\"1\",\"deprecated\":\"x\",\"name\":\"n\"")) != 0, "bote's optional fields are ignored");  #skip-lint
+    # type was bote's String, not a closed set, so whatever it says survives.
+    var other = _with(g, "\"object\"", "\"string\"");
+    var ot = tool_def_from_json(other);
+    assert(ot != 0, "another type decodes");
+    if (ot != 0) {
+        assert(streq(tool_def_schema_type(ot), "string"), "and is kept");
+        assert(streq(_text_of(&tool_def_to_json, ot), other), "and written");
+    }
+
+    var d = vec_new();
+    vec_push(d, _with(g, "\"name\":\"n\",", ""));
+    vec_push(d, _with(g, "\"name\":\"n\"", "\"name\":7"));
+    vec_push(d, _with(g, "\"description\":\"d\",", ""));
+    vec_push(d, _with(g, "\"description\":\"d\"", "\"description\":null"));
+    vec_push(d, _with(g, ",\"input_schema\":{\"type\":\"object\",\"properties\":{\"a\":{\"description\":\"x\",\"type\":\"string\"}},\"required\":[\"a\"]}", ""));  #skip-lint
+    vec_push(d, _with(g, "\"input_schema\":{", "\"inputSchema\":{"));
+    vec_push(d, _with(g, "\"type\":\"object\",", ""));
+    vec_push(d, _with(g, "\"type\":\"object\"", "\"type\":7"));
+    vec_push(d, _with(g, "\"properties\":{\"a\":{\"description\":\"x\",\"type\":\"string\"}}", "\"properties\":[]"));
+    vec_push(d, _with(g, "\"properties\":{\"a\":{\"description\":\"x\",\"type\":\"string\"}}", "\"properties\":null"));
+    vec_push(d, _with(g, "\"properties\":{\"a\":", "\"properties\":{\"a\\u0000b\":"));
+    vec_push(d, _with(g, "\"required\":[\"a\"]", "\"required\":\"a\""));
+    vec_push(d, _with(g, "\"required\":[\"a\"]", "\"required\":[7]"));
+    vec_push(d, _with(g, "\"required\":[\"a\"]", "\"required\":null"));
+    vec_push(d, "[]");
+    _refuses_all(&tool_def_from_json, d, "every malformed tool is refused");
+    assert_eq(tool_def_from_json(0), 0, "tool: null text");
+
+    var l = vec_new();
+    vec_push(l, "{}");
+    vec_push(l, "null");
+    vec_push(l, g);
+    vec_push(l, "[7]");
+    vec_push(l, _cat(_cat("[", g), ",null]"));
+    _refuses_all(&tool_definitions_from_json, l, "every malformed list is refused");
+    assert_eq(tool_definitions_from_json(0), 0, "list: null text");
+    var empty = tool_definitions_from_json("[]");
+    assert(empty != 0, "an empty list is a list");
+    if (empty != 0) { assert_eq(vec_len(empty), 0, "and is empty"); }
+
+    var sb = str_builder_new();
+    assert_eq(tool_def_to_json(0, sb), 0 - 1, "a null tool is refused");
+    assert_eq(tool_input_schema_to_json(0, sb), 0 - 1, "by the schema writer too");
+    assert_eq(tool_definitions_to_json(0, sb), 0 - 1, "a null list is refused");
+    var nt = _tool_def_new("n", "d");
+    vec_push(tool_def_properties(nt), 0);
+    assert_eq(tool_def_to_json(nt, sb), 0 - 1, "a null parameter is refused");
+    var nl = vec_new();
+    vec_push(nl, _tool_def_new("n", "d"));
+    vec_push(nl, 0);
+    assert_eq(tool_definitions_to_json(nl, sb), 0 - 1, "a list holding a null tool is refused");
+    assert_eq(str_len(str_builder_build(sb)), 0, "nothing was written");
+    return 0;
+}
+
 # --- daimon ---
 
 fn _cap_eq(a, b) {
@@ -532,6 +732,9 @@ fn main() {
     test_mcp_compare();
     test_mcp_echoes_are_escaped();
     test_tool_result_json();
+    test_tool_definitions_json();
+    test_schemas_match_the_handlers();
+    test_tool_def_decoding();
     test_daimon_json();
     test_language_query_json();
     test_confidence();

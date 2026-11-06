@@ -141,7 +141,12 @@ fn _json_name(v, buf) { return _json_name_from_str(bayan_json_v_str(v), buf); }
 # 0 for one holding U+0000: JSON can spell it, but a C string would stop there and hand
 # back a different value, so it is a value varna cannot hold.
 fn _json_cstr(v) {
-    var s = bayan_json_v_str(v);
+    return _json_str_cstr(bayan_json_v_str(v));
+}
+
+# Str `s`, such as an object key, as a fresh NUL-terminated copy, or 0 when `s` is null
+# or holds U+0000.
+fn _json_str_cstr(s) {
     if (s == 0) { return 0; }
     var c = str_cstr(s);
     if (strlen(c) != str_len(s)) { return 0; }

@@ -6,7 +6,9 @@
 # src/json.cyr does + lib/hashmap.cyr.
 #
 # ToolResult (16B): [0]=tag(0=Success,1=Error) [8]=payload(cstr)
-# ToolDef (24B):    [0]=name [8]=description [16]=schema_type
+# ToolDef (40B):    [0]=name [8]=description [16]=schema_type
+#                   [24]=properties(vec of ToolParam) [32]=required(vec of cstr)
+# ToolParam (16B):  [0]=name [8]=schema(JSON text)
 #
 # Payload contract (uniform since 2.1.5):
 #   Success -> a JSON object. varna_phonemes, varna_script and varna_grammar return the
@@ -38,26 +40,70 @@ fn mcp_result_is_error(r) { if (load64(r) == 1) { return 1; } return 0; }
 fn mcp_result_payload(r) { return load64(r + 8); }
 
 fn _tool_def_new(name, description) {
-    var t = alloc(24);
+    var t = alloc(40);
     store64(t, name);
     store64(t + 8, description);
     store64(t + 16, "object");
+    store64(t + 24, vec_new());
+    store64(t + 32, vec_new());
+    return t;
+}
+
+fn _tool_param_new(name, schema) {
+    var p = alloc(16);
+    store64(p, name);
+    store64(p + 8, schema);
+    return p;
+}
+
+# Declare a required string parameter. A property's schema is held as JSON text because
+# v1.x's was a free-form serde_json::Value, so a decoded one keeps what a typed record
+# would drop. This text is what v1.x's json!({"type": .., "description": ..}) wrote:
+# serde_json keeps an object's keys sorted, so `description` comes first.
+fn _tool_add_param(t, name, description) {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "{\"description\":");
+    str_builder_add_json_cstr(sb, description);
+    str_builder_add_cstr(sb, ",\"type\":\"string\"}");
+    vec_push(load64(t + 24), _tool_param_new(name, str_cstr(str_builder_build(sb))));
+    vec_push(load64(t + 32), name);
     return t;
 }
 
 fn tool_def_name(t) { return load64(t); }
 fn tool_def_description(t) { return load64(t + 8); }
 fn tool_def_schema_type(t) { return load64(t + 16); }
+fn tool_def_properties(t) { return load64(t + 24); }
+fn tool_def_required(t) { return load64(t + 32); }
+fn tool_param_name(p) { return load64(p); }
+fn tool_param_schema(p) { return load64(p + 8); }
 
-# The 5 MCP tool definitions exposed by varna.
+var _c_mcp_tools = 0;
+# The 5 MCP tool definitions exposed by varna, with v1.x's input schemas. Each parameter
+# here must be one mcp_invoke demands: tests/json_surfaces.tcyr holds the two together.
 fn mcp_tool_definitions() {
+    if (_c_mcp_tools != 0) { return _c_mcp_tools; }
     var tools = vec_new();
-    vec_push(tools, _tool_def_new("varna_phonemes", "Get the phoneme inventory for a language. Returns consonants, vowels, stress pattern, and tone system."));  #skip-lint
-    vec_push(tools, _tool_def_new("varna_script", "Get writing system metadata for a script. Returns type, direction, Unicode ranges, and status."));  #skip-lint
-    vec_push(tools, _tool_def_new("varna_grammar", "Get the grammatical profile for a language. Returns morphology type, word order, case count, gender, and classifier usage."));  #skip-lint
-    vec_push(tools, _tool_def_new("varna_translate_ipa", "Transliterate text between scripts. Supports Devanagari and IAST and Greek and Beta Code. Returns scheme, input and output."));  #skip-lint
-    vec_push(tools, _tool_def_new("varna_compare", "Compare two languages. Returns shared/unique phonemes, typological differences, and cognate information."));  #skip-lint
-    return tools;
+    var phonemes = _tool_def_new("varna_phonemes", "Get the phoneme inventory for a language. Returns consonants, vowels, stress pattern, and tone system.");  #skip-lint
+    _tool_add_param(phonemes, "language", "ISO 639 language code (e.g., 'en', 'ja', 'ar')");
+    vec_push(tools, phonemes);
+    var script = _tool_def_new("varna_script", "Get writing system metadata for a script. Returns type, direction, Unicode ranges, and status.");  #skip-lint
+    _tool_add_param(script, "code", "ISO 15924 script code (e.g., 'Latn', 'Arab', 'Deva')");
+    vec_push(tools, script);
+    var grammar = _tool_def_new("varna_grammar", "Get the grammatical profile for a language. Returns morphology type, word order, case count, gender, and classifier usage.");  #skip-lint
+    _tool_add_param(grammar, "language", "ISO 639 language code (e.g., 'de', 'ja', 'ru')");
+    vec_push(tools, grammar);
+    # v1.x's description, plus what this tool has returned since 2.1.5.
+    var translate = _tool_def_new("varna_translate_ipa", "Transliterate text between scripts. Supports Devanagari↔IAST and Greek↔Beta Code. Returns scheme, input and output.");  #skip-lint
+    _tool_add_param(translate, "text", "Text to transliterate");
+    _tool_add_param(translate, "scheme", "Transliteration scheme: 'devanagari_iast' or 'greek_beta'");
+    vec_push(tools, translate);
+    var compare = _tool_def_new("varna_compare", "Compare two languages. Returns shared/unique phonemes, typological differences, and cognate information.");  #skip-lint
+    _tool_add_param(compare, "lang1", "First language ISO 639 code");
+    _tool_add_param(compare, "lang2", "Second language ISO 639 code");
+    vec_push(tools, compare);
+    _c_mcp_tools = tools;
+    return _c_mcp_tools;
 }
 
 # Append `src` to `buf` at `off`, writing no further than `cap - 1` so the
@@ -266,6 +312,148 @@ fn _json_tool_result(v) {
 #must_use
 fn tool_result_from_json(text) {
     return _json_tool_result(_json_parse(text));
+}
+
+# --- ToolDef as JSON ------------------------------------------------------
+#
+# ToolDef and ToolSchema were bote's types in v1.x. Its serde wrote:
+#   {"name":"varna_phonemes","description":"..","input_schema":{"type":"object",
+#    "properties":{"language":{"description":"..","type":"string"}},"required":["language"]}}
+# bote's `tools/list` did not send that: it named the field `inputSchema`, as MCP does, and
+# so does bote today. tool_definitions_to_json is the serde form v1.x's test pinned. A host
+# answering `tools/list` wants tool_input_schema_to_json, for its own `inputSchema` key.
+# bote's `version`, `deprecated` and `annotations` were omitted when None, as they all were
+# here, so they are not held and a reader ignores them. v1.x's properties were a HashMap in
+# no fixed order; these keep the order they are declared or read in.
+
+fn _json_tool_ok(t) {
+    if (t == 0) { return 0; }
+    var ps = tool_def_properties(t);
+    var n = vec_len(ps);
+    var i = 0;
+    while (i < n) {
+        if (vec_get(ps, i) == 0) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+# Append tool `t`'s input schema alone, the value of `inputSchema` in `tools/list`.
+# Returns 0, or -1 (nothing written) for a null tool or one holding a null parameter.
+fn tool_input_schema_to_json(t, sb) {
+    if (_json_tool_ok(t) == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"type\":");
+    str_builder_add_json_cstr(sb, tool_def_schema_type(t));
+    str_builder_add_cstr(sb, ",\"properties\":{");
+    var ps = tool_def_properties(t);
+    var n = vec_len(ps);
+    var i = 0;
+    while (i < n) {
+        var p = vec_get(ps, i);
+        if (i > 0) { str_builder_putc(sb, ','); }
+        str_builder_add_json_cstr(sb, tool_param_name(p));
+        str_builder_putc(sb, ':');
+        str_builder_add_cstr(sb, tool_param_schema(p));
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "},\"required\":");
+    _json_cstr_array(sb, tool_def_required(t));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+# Append tool `t` in v1.x's serde form. Returns 0, or -1 (nothing written), as
+# tool_input_schema_to_json refuses.
+fn tool_def_to_json(t, sb) {
+    if (_json_tool_ok(t) == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"name\":");
+    str_builder_add_json_cstr(sb, tool_def_name(t));
+    str_builder_add_cstr(sb, ",\"description\":");
+    str_builder_add_json_cstr(sb, tool_def_description(t));
+    str_builder_add_cstr(sb, ",\"input_schema\":");
+    tool_input_schema_to_json(t, sb);
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+# Append a vec of tools as an array. Returns 0, or -1 (nothing written) for a null vec
+# or one holding a tool tool_def_to_json would refuse.
+fn tool_definitions_to_json(tools, sb) {
+    if (tools == 0) { return 0 - 1; }
+    var n = vec_len(tools);
+    var i = 0;
+    while (i < n) {
+        if (_json_tool_ok(vec_get(tools, i)) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+    str_builder_putc(sb, '[');
+    i = 0;
+    while (i < n) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        tool_def_to_json(vec_get(tools, i), sb);
+        i = i + 1;
+    }
+    str_builder_putc(sb, ']');
+    return 0;
+}
+
+fn _json_tool_def(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var name = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "name"));
+    var desc = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "description"));
+    if (name == 0 || desc == 0) { return 0; }
+    # `type` is required, so a schema that is not an object refuses itself.
+    var sv = bayan_json_v_obj_get_by_cstr(v, "input_schema");
+    var stype = _json_cstr(bayan_json_v_obj_get_by_cstr(sv, "type"));
+    if (stype == 0) { return 0; }
+
+    var t = _tool_def_new(name, desc);
+    store64(t + 16, stype);
+
+    # `properties` and `required` were #[serde(default)]: absent is empty, null is not.
+    var pv = bayan_json_v_obj_get_by_cstr(sv, "properties");
+    if (pv != 0) {
+        if (!bayan_json_v_is_obj(pv)) { return 0; }
+        var n = bayan_json_v_obj_len(pv);
+        var i = 0;
+        while (i < n) {
+            var key = _json_str_cstr(bayan_json_v_obj_key(pv, i));
+            if (key == 0) { return 0; }
+            var schema = str_cstr(bayan_json_v_build(bayan_json_v_obj_val(pv, i)));
+            vec_push(tool_def_properties(t), _tool_param_new(key, schema));
+            i = i + 1;
+        }
+    }
+    var rv = bayan_json_v_obj_get_by_cstr(sv, "required");
+    if (rv != 0) {
+        var req = _json_cstr_vec(rv);
+        if (req == 0) { return 0; }
+        store64(t + 32, req);
+    }
+    return t;
+}
+
+# A tool definition from NUL-terminated JSON text in v1.x's serde form, or 0.
+#must_use
+fn tool_def_from_json(text) {
+    return _json_tool_def(_json_parse(text));
+}
+
+# A vec of tool definitions from NUL-terminated JSON text, or 0.
+#must_use
+fn tool_definitions_from_json(text) {
+    var v = _json_parse(text);
+    if (!bayan_json_v_is_arr(v)) { return 0; }
+    var out = vec_new();
+    var n = bayan_json_v_arr_len(v);
+    var i = 0;
+    while (i < n) {
+        var t = _json_tool_def(bayan_json_v_arr_get(v, i));
+        if (t == 0) { return 0; }
+        vec_push(out, t);
+        i = i + 1;
+    }
+    return out;
 }
 
 #endif

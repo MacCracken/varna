@@ -386,7 +386,7 @@ if (inv == 0) { return 1; }
 | Grammar | `grammar_profile` |
 | Lexicon | `lex_entry`, `lexicon` (also every Swadesh list), `cognate_entry`, `cognate_set`, `etymology` |
 | Dialect and registry | `language_variety`, `registry_info` |
-| `-D MCP` | `tool_result` |
+| `-D MCP` | `tool_result`, `tool_def`, `tool_definitions` |
 | `-D DAIMON` | `capability`, `agent_registration` |
 | `-D HOOSH` | `language_query`, `query_response` |
 
@@ -445,6 +445,22 @@ map_set(tp, "scheme", "greek_beta");
 
 `tool_result_to_json(res, sb)` writes the result as v1.x did, `{"Success":..}` or
 `{"Error":".."}`.
+
+Each definition carries its input schema, so an agent can see what to pass:
+
+```cyrius
+var t = vec_get(mcp_tool_definitions(), 1);       # varna_script
+vec_get(tool_def_required(t), 0);                 # "code"
+tool_param_name(vec_get(tool_def_properties(t), 0));   # "code"
+
+# A host answering tools/list wants the schema alone, under its own `inputSchema` key:
+var sb = str_builder_new();
+tool_input_schema_to_json(t, sb);
+# {"type":"object","properties":{"code":{"description":"..","type":"string"}},"required":["code"]}
+```
+
+`tool_definitions_to_json(tools, sb)` writes the whole list in v1.x's serde form, where the
+key is `input_schema`.
 
 ---
 

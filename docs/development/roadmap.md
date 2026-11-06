@@ -71,10 +71,6 @@ variety it commits to is named in the source comment.
       requires both, and its parser accepts both. `_json_parse` scans for them in varna,
       at about 8% of a read, and the parser already walks those bytes. Once bayan refuses
       them, `_json_text_ok` goes. Reproduce with a raw newline or a 0xFF byte in a string.
-- [ ] **MCP input schemas.** v1.x's `ToolSchema` declared each tool's parameters and
-      which are required. The port's `ToolDef` keeps only `"object"`, so an agent listing
-      tools cannot see them. This goes with the `bote` wiring, still a recipe in
-      `cyrius.cyml`.
 - [ ] **Move `assert` and `bench` to `[test] stdlib`** (cyrius 6.7.6+), so they stop
       being prepended to the library build. Measure the binary before and after.
 - [ ] **`-D LOGGING` through sakshi.** `src/logging.cyr` is a level-gated stderr logger;

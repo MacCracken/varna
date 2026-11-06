@@ -148,6 +148,26 @@ The port's dropped variants are back, the `-D` surfaces sit on the same serializ
   `hoosh_answer_from_data` restores `structured_data`: the phoneme, as JSON text, where
   the port always returned none.
 
+- **`-D MCP`: tool input schemas**, which the port dropped. v1.x's `ToolSchema` declared
+  each tool's parameters and which were required, and the port's `ToolDef` kept only the
+  string `"object"`, so an agent listing tools could not see what to pass.
+  `tool_def_properties`, `tool_def_required`, `tool_param_name` and `tool_param_schema`
+  read them, and there are two ways to write them, because v1.x had two:
+
+  ```json
+  {"name":"varna_script","description":"..","input_schema":{"type":"object","properties":{"code":{"description":"..","type":"string"}},"required":["code"]}}
+  ```
+
+  - `tool_def_to_json` and `tool_definitions_to_json`, with `_from_json`, are the serde
+    form above, which is what v1.x's test round-tripped.
+  - `tool_input_schema_to_json` writes the schema alone. A host answering `tools/list`
+    wants this under its own `inputSchema` key, the name MCP uses and bote sent.
+
+  A property is held as JSON text, since v1.x's was a free-form `Value`, so a decoded one
+  keeps keywords varna does not write. bote's `version`, `deprecated` and `annotations`
+  were always unset here, so they are not held. `varna_translate_ipa`'s description gets
+  its `↔` back, and keeps the sentence 2.1.5 added. `mcp_tool_definitions` is now cached.
+
 - **`dist/varna-json.cyr`** (`cyrius distlib json`): the engine plus `src/json.cyr`.
   It settles how bayan reaches consumers. `dist/varna.cyr` does not call bayan, so
   existing consumers carry no risk and no new dependency. A consumer that wants JSON
@@ -170,27 +190,29 @@ The port's dropped variants are back, the `-D` surfaces sit on the same serializ
   moves the writer and the reader together and passes any round trip.
 
 - **`tests/varna.fcyr` fuzzes the decoders.** It was a stub that decoded nothing. It now
-  mutates a seed for each of the 24 decoders 300,000 times, and checks two things:
-  nothing crashes, and anything that decodes re-encodes to text that decodes to itself.
-  35,086 of the documents decoded. It passes under `--bounds` and allocator poison, and
-  CI runs it.
+  mutates seeds for all 26 decoders over 300,000 rounds, and checks two things: nothing
+  crashes, and anything that decodes re-encodes to text that decodes to itself. 36,263 of
+  the documents decoded. It passes under `--bounds` and allocator poison, and CI runs it.
 
-- **`tests/json_roundtrip.tcyr` (369 assertions) and `tests/json_surfaces.tcyr` (115).**
+- **`tests/json_roundtrip.tcyr` (369 assertions) and `tests/json_surfaces.tcyr` (155).**
   - All 26 serde tests from v1.x's `serde_roundtrip.rs`, and its hoosh and daimon ones.
   - Documents worked out by hand from the v1.x source and compared byte for byte, so
     they pin the format rather than this writer agreeing with this reader.
   - Every enum variant by name, with every spelling written out, and malformed cases for
     every field of every type.
+  - Each MCP schema held against `mcp_invoke` in both directions: what it requires is
+    enough to succeed, and leaving out any one gives that name's error. A schema that
+    drifted from its handler would otherwise still parse.
   - Each hostile transform runs against all 19 core decoders: every truncation of every
     document, trailing garbage, a byte order mark, duplicate keys. Also 200,000 open
     brackets, a 100 KB name aimed at the 48-byte stack buffer, and RFC 3629's boundaries.
-  - **Mutation-checked** on the final code: 128 deliberate defects after an unmutated
-    control. 123 fail an assertion, 4 crash because what they remove is the guard against
+  - **Mutation-checked** on the final code: 155 deliberate defects after an unmutated
+    control. 149 fail an assertion, 5 crash because what they remove is the guard against
     that crash, and 1 is equivalent, since every caller of `_json_u32` already refuses
-    any negative. Earlier survivors found 3 real gaps, now covered (an escaped quote
+    any negative. Earlier survivors found 4 real gaps, now covered (an escaped quote
     flipping what counts as inside a string, an explicit `null` kept as the text
-    `"null"`, and a renamed constant passing every round trip), and 2 pieces of dead
-    code, now removed.
+    `"null"`, a renamed constant passing every round trip, and a tool's `type` lost on
+    read), and 3 pieces of dead code, now removed.
 
 - **Benchmarks** for every module's serializers: 20 rows, on `BENCHMARKS.md`.
 

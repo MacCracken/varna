@@ -34,9 +34,9 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | Numeral systems | 9 — five of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek) |
 | Grammar profiles | 11 |
 | Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 37 files, **2,924 assertions**, 0 failing, plus a fuzz harness (2.5.1 shipped 35 / 2,409) |
+| Tests | 37 files, **2,964 assertions**, 0 failing, plus a fuzz harness (2.5.1 shipped 35 / 2,409) |
 | Benchmarks | 42, covering every domain and every module's JSON |
-| Reference coverage | 403/408 functions (98%) — a floor, not a correctness proof |
+| Reference coverage | 411/417 functions (98%) — a floor, not a correctness proof |
 
 ## Toolchain
 
@@ -93,7 +93,7 @@ all four. Default `cyrius build` excludes them.
 | `-D DAIMON` | `daimon` | agent registration payload (6 capabilities, 51 languages, 19 scripts), with JSON |
 | `-D HOOSH` | `hoosh` | `LanguageQuery` + `answer_from_data`, with JSON |
 | `-D LOGGING` | `logging` | level-gated stderr logger; `sakshi` audit still deferred |
-| `-D MCP` | `mcp` | 5 tools + `invoke`; payloads from `src/json.cyr`, as v1.x's `to_value` gave them; no bote |
+| `-D MCP` | `mcp` | 5 tools with v1.x's input schemas + `invoke`; payloads from `src/json.cyr`, as v1.x's `to_value` gave them; no bote |
 
 ## Dependencies
 
