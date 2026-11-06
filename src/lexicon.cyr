@@ -6,6 +6,7 @@
 #                 [32]=frequency_rank [40]=swadesh_index   ((0-1) = None for both)
 # Lexicon (16B):  [0]=language_code [8]=entries(vec)
 
+#derive(Serialize)
 enum PartOfSpeech {
     Noun = 0;
     Verb = 1;

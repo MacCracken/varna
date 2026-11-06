@@ -2,14 +2,23 @@
 # JSON payloads are verified by substring (the Rust tests check key presence /
 # value equality, which map directly to `contains` on the hand-built JSON).
 
+include "src/error.cyr"
 include "src/util.cyr"
 include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
-include "src/script.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
 include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
 include "src/registry.cyr"
+include "src/numerals.cyr"
 include "src/transliteration.cyr"
+include "src/json.cyr"
 #define MCP
 include "src/mcp.cyr"
 

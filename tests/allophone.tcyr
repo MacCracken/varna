@@ -2,6 +2,61 @@
 
 include "src/allophone.cyr"
 
+# v1.x's Environment::Before(PhonemeClass) / ::After, which the port deferred to 2.5.2.
+fn test_class_environments() {
+    test_group("class_environments");
+    var nasal = PhonemeClass.ClassNasal;
+
+    # Unit variants stay plain constants, and are not conditioned.
+    assert_eq(environment_is_conditioned(Environment.WordInitial), 0, "a unit is not conditioned");
+    assert_eq(environment_is_conditioned(Environment.Unstressed), 0, "nor the last unit");
+    assert_eq(environment_side(Environment.Intervocalic), 0 - 1, "a unit has no side");
+    assert_eq(environment_class(Environment.Intervocalic), 0 - 1, "a unit has no class");
+    assert_eq(phoneme_class_is_specific(PhonemeClass.ClassVoiced), 0, "a unit class is not specific");
+    assert_eq(phoneme_class_ipa(nasal), 0, "a unit class has no symbol");
+
+    # Accessors see the v1.x payload.
+    var b = EnvBefore(nasal);
+    assert_eq(environment_is_conditioned(b), 1, "Before is conditioned");
+    assert_eq(environment_side(b), ClassEnvironment.EnvBefore, "Before's side");
+    assert_eq(environment_class(b), nasal, "Before's class");
+    var a = EnvAfter(ClassSpecific("k"));
+    assert_eq(environment_side(a), ClassEnvironment.EnvAfter, "After's side");
+    assert_eq(phoneme_class_is_specific(environment_class(a)), 1, "After holds a Specific");
+    assert(streq(phoneme_class_ipa(environment_class(a)), "k"), "After's symbol");
+
+    # Equality is by value, as v1.x's derived PartialEq was: boxes built apart match.
+    assert(environment_eq(Environment.PreVocalic, Environment.PreVocalic), "unit equals itself");
+    assert_eq(environment_eq(Environment.PreVocalic, Environment.PostVocalic), 0, "units differ");
+    assert(environment_eq(b, b), "a box equals itself");
+    assert(environment_eq(EnvBefore(nasal), EnvBefore(nasal)), "two boxes, same side and class");
+    assert_eq(environment_eq(EnvBefore(nasal), EnvAfter(nasal)), 0, "sides differ");
+    assert_eq(environment_eq(EnvBefore(nasal), EnvBefore(PhonemeClass.ClassPlosive)), 0, "classes differ");
+    assert(environment_eq(EnvAfter(ClassSpecific("k")), EnvAfter(ClassSpecific("k"))), "same symbol, built apart");
+    assert_eq(environment_eq(EnvAfter(ClassSpecific("k")), EnvAfter(ClassSpecific("g"))), 0, "symbols differ");
+    assert_eq(environment_eq(EnvAfter(ClassSpecific("k")), EnvAfter(nasal)), 0, "Specific vs a unit class");
+    assert_eq(environment_eq(b, Environment.WordInitial), 0, "a box vs a unit");
+    assert_eq(environment_eq(Environment.WordInitial, b), 0, "a unit vs a box");
+
+    # A value is not confused across the two enums: Before(ClassVowel) is 0 inside a box,
+    # and Environment.WordInitial is 0 outright.
+    assert_eq(environment_eq(EnvBefore(PhonemeClass.ClassVowel), Environment.WordInitial), 0, "payload 0 is not unit 0");
+
+    # realize matches the way v1.x's `&r.environment == env` did.
+    var s = _aset_new("xx");
+    _aset_add(s, "n", "ŋ", EnvBefore(ClassSpecific("k")), 1);
+    _aset_add(s, "n", "ɲ", EnvBefore(nasal), 1);
+    _aset_add(s, "n", "m", Environment.WordFinal, 0);
+    assert(streq(allophone_realize(s, "n", EnvBefore(ClassSpecific("k"))), "ŋ"), "realize: Specific");
+    assert(streq(allophone_realize(s, "n", EnvBefore(nasal)), "ɲ"), "realize: unit class");
+    assert(streq(allophone_realize(s, "n", Environment.WordFinal), "m"), "realize: unit beside them");
+    assert(streq(allophone_realize(s, "n", EnvAfter(nasal)), "n"), "realize: wrong side is unchanged");
+    assert(streq(allophone_realize(s, "n", EnvBefore(ClassSpecific("g"))), "n"), "realize: wrong symbol is unchanged");
+    assert(streq(allophone_realize(s, "n", 99), "n"), "realize: an unknown unit is unchanged");
+    assert_eq(vec_len(allophone_rules_for(s, "n")), 3, "rules_for sees all three");
+    return 0;
+}
+
 fn main() {
     alloc_init();
     test_group("english_allophones");
@@ -35,6 +90,7 @@ fn main() {
     assert_eq(allophone_rule_environment(schwa), Environment.Unstressed, "schwa unstressed");
     assert_eq(allophone_rule_obligatory(schwa), 0, "schwa raising optional");
 
+    test_class_environments();
     return assert_summary();
 }
 

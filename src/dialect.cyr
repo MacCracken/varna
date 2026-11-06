@@ -6,14 +6,17 @@
 # LanguageVariety (56B): [0]=code [8]=name [16]=parent [24]=kind
 #   [32]=added_phonemes(vec) [40]=removed_phonemes(vec) [48]=allophone_overrides(vec)
 
-# VarietyKind.Historical is omitted: its name would collide with the
-# ScriptStatus.Historical enum constant (Cyrius enum variants share one flat
-# symbol namespace). No pre-built variety uses it.
+# HistoricalVariety is v1.x's VarietyKind::Historical, a stage like Middle English.
+# `Historical` is taken by ScriptStatus.Historical, since enum constants are global
+# names, so src/json.cyr maps this one value to v1.x's name by hand. No pre-built variety
+# uses it. Numbered last so the others keep their values; the wire goes by name.
+#derive(Serialize)
 enum VarietyKind {
     Regional = 0;
     NationalStandard = 1;
     Sociolect = 2;
     Creole = 3;
+    HistoricalVariety = 4;
 }
 
 fn _variety_new(code, name, parent, kind) {

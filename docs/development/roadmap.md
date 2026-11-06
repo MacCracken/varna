@@ -46,9 +46,14 @@ as strict as serde's defaults and accept v1.x documents.
 - **phonology**: `allophone_rule_*`, `allophone_rule_set_*`, `syllable_template_*`,
   `phonotactic_constraint_*` and `phonotactics_*` to / from JSON, with codecs on
   `Environment`, `ConstraintKind` and `SyllablePosition`.
-- `tests/json_roundtrip.tcyr`: 9 of `serde_roundtrip.rs`'s 27 tests ported, plus exact
-  text, v1.x input and malformed input (115 assertions, mutation-checked).
-- Inventory and phonotactics benchmarks.
+- **`Before` / `After(PhonemeClass)`**: ported as `EnvBefore` / `EnvAfter` and
+  `PhonemeClass`, with JSON. See ADR 0003's amendment for the hand-written names.
+- **script**: `script_*`, `numeral_mapping_*`, `numeral_system_*` and
+  `transliteration_table_*` to / from JSON, with codecs on `ScriptType`, `Direction`,
+  `ScriptStatus`, `NumeralSystemKind` and `LetterRole`.
+- `tests/json_roundtrip.tcyr`: 16 of `serde_roundtrip.rs`'s 27 tests ported, plus exact
+  text, v1.x input and malformed input (mutation-checked).
+- Benchmarks: inventory, phonotactics, script, numerals, transliteration.
 
 Tone has no bite of its own: v1.x had no Tone type (tones were strings), and
 inventories already write them as strings.
@@ -59,18 +64,11 @@ equality helpers, the ported tests, then exact-text and malformed cases in
 `tests/json_roundtrip.tcyr`, a mutation check, and a bench pair. Read the v1.x types
 with `git show 2.1.3:rust-old/src/<path>.rs`. Watch for **enum variant names
 colliding across enums**: Cyrius enum constants are global, which is what blocked
-`PhonemeClass`.
+`PhonemeClass`. When a mutation check reports no summary, the test crashed: that is not
+a kill, so run an unmutated control first.
 
 Remaining bites, in order:
 
-- [ ] **`Before(PhonemeClass)` / `After(PhonemeClass)`**, a model gap rather than a
-      serde one. The port deferred both `Environment` variants and `PhonemeClass`,
-      because `PhonemeClass`'s variant names (`Vowel`, `Consonant`, `Nasal`,
-      `Plosive`, `Fricative`, `Voiceless`, `Voiced`, `Specific`) collide with existing
-      enum constants. Readers refuse such v1.x documents today. Porting it needs
-      non-colliding constant names, plus a hand-written name map so the JSON still
-      says `"Vowel"`. No current ruleset uses either variant.
-- [ ] **script**: script, numerals, transliteration.
 - [ ] **grammar, lexicon** (with cognate and swadesh), **dialect, registry**.
 - [ ] **Malformed input**: `adversarial.rs`'s cases against every decoder.
 - [ ] **`-D MCP` / `-D DAIMON` / `-D HOOSH` onto the serializers**: replace

@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 Roadmap 2.5.2 (P0), bayan / serde integration. Done so far: the wire format
-decision, the phoneme module, and the phonology module (allophone rules, syllable
-templates, phonotactics). The script, grammar, lexicon, dialect and registry modules
-remain; the roadmap's 2.5.2 section lists them in order.
+decision, the phoneme module, the phonology module (allophone rules, syllable
+templates, phonotactics), v1.x's `Before` / `After` environments, and the script
+module (script, numerals, transliteration). The grammar, lexicon, dialect and registry
+modules remain; the roadmap's 2.5.2 section lists them in order.
 
 ### Added
 
@@ -53,19 +54,53 @@ remain; the roadmap's 2.5.2 section lists them in order.
   A rule set is `{"language_code":..,"rules":[..]}`, and a profile is
   `{"language_code":..,"syllable":{..},"constraints":[..]}`. The `u8` fields
   (`max_onset`, `max_coda`) must be JSON integers in 0..255, as serde requires.
-  **v1.x's `Before(PhonemeClass)` / `After(PhonemeClass)` environments are refused,
-  not mapped.** The port deferred both variants and `PhonemeClass` itself, because
-  Cyrius enum constants are global names: a second `Vowel` is "duplicate symbol ...
-  last definition wins". So varna cannot hold such a rule. No ruleset uses them, and
-  porting them is now a roadmap 2.5.2 item.
+
+- **`allophone`: v1.x's `Before(PhonemeClass)` / `After(PhonemeClass)` environments**,
+  which the port deferred. `EnvBefore(cls)` and `EnvAfter(cls)` build one, and
+  `PhonemeClass` holds v1.x's seven classes plus `ClassSpecific(ipa)`:
+
+  | v1.x | varna | JSON |
+  |---|---|---|
+  | `Environment::Intervocalic` | `Environment.Intervocalic` | `"Intervocalic"` |
+  | `Before(PhonemeClass::Nasal)` | `EnvBefore(PhonemeClass.ClassNasal)` | `{"Before":"Nasal"}` |
+  | `After(PhonemeClass::Specific("k".into()))` | `EnvAfter(ClassSpecific("k"))` | `{"After":{"Specific":"k"}}` |
+
+  The constants differ from v1.x's names because Cyrius enum constants are global, so a
+  second `Vowel` is "duplicate symbol ... last definition wins". `Environment` itself
+  is unchanged, since `#derive` refuses an enum with a payload variant; these two
+  variants are a separate `ClassEnvironment`, stored as a pointer in the rule's
+  environment slot. A unit environment is still a plain int, and every existing caller
+  works as it did. New `environment_eq`, `environment_is_conditioned`,
+  `environment_side`, `environment_class`, `phoneme_class_eq`,
+  `phoneme_class_is_specific` and `phoneme_class_ipa`. `allophone_realize` now compares
+  by value, as v1.x's `==` did, so a caller can build the environment it asks about. As
+  in v1.x these are labels matched by equality: nothing evaluates a class against a
+  phoneme, and `allophone_english()` uses neither. Rule writers now also refuse a
+  corrupt environment (-1, nothing written); one out of range used to be written as
+  `null`.
+
+- **JSON for the script module**, in the v1.x format: `script_to_json` / `_from_json`,
+  `numeral_mapping_to_json` / `_from_json`, `numeral_system_to_json` / `_from_json`, and
+  `transliteration_table_to_json` / `_from_json`:
+
+  ```json
+  {"code":"Latn","name":"Latin","script_type":"Alphabet","direction":"LeftToRight","status":"Living","attestation":null,"unicode_ranges":[[65,90],[97,122],[192,255],[256,591]],"languages":["en","fr","es","de","pt","it"]}
+  {"scheme":"IAST","source_script":"Deva","target_script":"Latn","forward":[["अ","a"],["आ","ā"]]}
+  {"character":"ς","value":200,"role":"ROLE_ALLOGRAPH","base":"σ"}
+  ```
+
+  A tuple is a two-element array, and `u32` fields are JSON integers in 0..4294967295.
+  `role` and `base` are additive (2.4.0): a v1.x mapping, `{"character":"α","value":1}`,
+  decodes as a letter with no base. The reader holds the constructors' invariant, so an
+  allograph without a base and a base on anything else are both refused.
 
 - **By-name codecs on the eight phoneme enums** through `#derive(Serialize)`:
   `Airstream`, `PhonemeFeature`, `Manner`, `Place`, `Height`, `Backness`,
   `StressPattern`, `PhonemeKind`. `E_to_json(v, sb)` writes `"Plosive"`, and
   `E_from_json_str(text)` returns `Ok(value)`, or `Err` for an unknown name. These
   are in `dist/`, since they are generated from the enum declarations in
-  `src/phoneme.cyr`. `Environment`, `ConstraintKind` and `SyllablePosition` got the
-  same derive in `src/allophone.cyr` / `src/syllable.cyr`.
+  `src/phoneme.cyr`. `Environment`, `ConstraintKind`, `SyllablePosition`, `ScriptType`,
+  `Direction`, `ScriptStatus`, `NumeralSystemKind` and `LetterRole` got the same derive.
 
 - **`tests/json_roundtrip.tcyr`, 115 assertions.**
   - The phoneme half of v1.x's `serde_roundtrip.rs`: consonant, vowel, all 51
@@ -85,6 +120,14 @@ remain; the roadmap's 2.5.2 section lists them in order.
 - **Four benchmarks** (2026-11-05T17:52:39Z, avg): `json_inventory_write_en` 46.5 µs
   and `json_inventory_read_en` 163.9 µs (the 36-phoneme English inventory),
   `json_phonotactics_write_en` 5.3 µs and `json_phonotactics_read_en` 14.2 µs.
+
+### Fixed
+
+- **A JSON reader could accept a name that was never written, or lose the end of a
+  string.** JSON can spell U+0000 and a C string stops at it, so
+  `"manner":"Plosive\u0000junk"` decoded as `Plosive`, and `"ipa":"p\u0000q"` decoded as
+  `p`. Every reader now refuses both: the first is an unknown name, and the second is a
+  value varna cannot hold.
 
 ### Changed
 

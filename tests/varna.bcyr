@@ -43,6 +43,19 @@ var _b_phono = 0;
 var _b_rp = 0;
 var _b_en_json = 0;
 var _b_phono_json = 0;
+var _b_grek_num = 0;
+var _b_script_json = 0;
+var _b_num_json = 0;
+var _b_tt_json = 0;
+var _b_grammar = 0;
+var _b_lexicon = 0;
+var _b_cognate = 0;
+var _b_info = 0;
+var _b_grammar_json = 0;
+var _b_lexicon_json = 0;
+var _b_cognate_json = 0;
+var _b_variety_json = 0;
+var _b_info_json = 0;
 
 fn b_english_inventory() { phoneme_english(); return 0; }
 fn b_sanskrit_inventory() { phoneme_sanskrit(); return 0; }
@@ -92,6 +105,54 @@ fn b_json_phonotactics_write() {
     return 0;
 }
 fn b_json_phonotactics_read() { phonotactics_from_json(_b_phono_json); return 0; }
+fn b_json_script_write() {
+    var sb = str_builder_new();
+    script_to_json(_b_deva, sb);
+    return 0;
+}
+fn b_json_script_read() { script_from_json(_b_script_json); return 0; }
+fn b_json_numerals_write() {
+    var sb = str_builder_new();
+    numeral_system_to_json(_b_grek_num, sb);
+    return 0;
+}
+fn b_json_numerals_read() { numeral_system_from_json(_b_num_json); return 0; }
+fn b_json_translit_write() {
+    var sb = str_builder_new();
+    transliteration_table_to_json(_b_iast, sb);
+    return 0;
+}
+fn b_json_translit_read() { transliteration_table_from_json(_b_tt_json); return 0; }
+fn b_json_grammar_write() {
+    var sb = str_builder_new();
+    grammar_profile_to_json(_b_grammar, sb);
+    return 0;
+}
+fn b_json_grammar_read() { grammar_profile_from_json(_b_grammar_json); return 0; }
+fn b_json_lexicon_write() {
+    var sb = str_builder_new();
+    lexicon_to_json(_b_lexicon, sb);
+    return 0;
+}
+fn b_json_lexicon_read() { lexicon_from_json(_b_lexicon_json); return 0; }
+fn b_json_cognate_write() {
+    var sb = str_builder_new();
+    cognate_set_to_json(_b_cognate, sb);
+    return 0;
+}
+fn b_json_cognate_read() { cognate_set_from_json(_b_cognate_json); return 0; }
+fn b_json_variety_write() {
+    var sb = str_builder_new();
+    language_variety_to_json(_b_rp, sb);
+    return 0;
+}
+fn b_json_variety_read() { language_variety_from_json(_b_variety_json); return 0; }
+fn b_json_registry_write() {
+    var sb = str_builder_new();
+    registry_info_to_json(_b_info, sb);
+    return 0;
+}
+fn b_json_registry_read() { registry_info_from_json(_b_info_json); return 0; }
 
 fn _bench(benches, name, fp, n) {
     var b = bench_new(name);
@@ -117,6 +178,35 @@ fn main() {
     var psb = str_builder_new();
     phonotactics_to_json(_b_phono, psb);
     _b_phono_json = str_cstr(str_builder_build(psb));
+    _b_grek_num = numerals_greek_isopsephy();
+    var ssb = str_builder_new();
+    script_to_json(_b_deva, ssb);
+    _b_script_json = str_cstr(str_builder_build(ssb));
+    var nsb = str_builder_new();
+    numeral_system_to_json(_b_grek_num, nsb);
+    _b_num_json = str_cstr(str_builder_build(nsb));
+    var tsb = str_builder_new();
+    transliteration_table_to_json(_b_iast, tsb);
+    _b_tt_json = str_cstr(str_builder_build(tsb));
+    _b_grammar = grammar_english();
+    var gsb = str_builder_new();
+    grammar_profile_to_json(_b_grammar, gsb);
+    _b_grammar_json = str_cstr(str_builder_build(gsb));
+    _b_lexicon = swadesh_arabic();
+    var lsb = str_builder_new();
+    lexicon_to_json(_b_lexicon, lsb);
+    _b_lexicon_json = str_cstr(str_builder_build(lsb));
+    _b_cognate = cognate_water();
+    var csb = str_builder_new();
+    cognate_set_to_json(_b_cognate, csb);
+    _b_cognate_json = str_cstr(str_builder_build(csb));
+    var vsb = str_builder_new();
+    language_variety_to_json(_b_rp, vsb);
+    _b_variety_json = str_cstr(str_builder_build(vsb));
+    _b_info = registry_info("en");
+    var rsb = str_builder_new();
+    registry_info_to_json(_b_info, rsb);
+    _b_info_json = str_cstr(str_builder_build(rsb));
 
     var benches = vec_new();
     _bench(benches, "english_phoneme_inventory", &b_english_inventory, 100000);
@@ -145,6 +235,22 @@ fn main() {
     _bench(benches, "json_inventory_read_en", &b_json_inventory_read, 1000);
     _bench(benches, "json_phonotactics_write_en", &b_json_phonotactics_write, 5000);
     _bench(benches, "json_phonotactics_read_en", &b_json_phonotactics_read, 2000);
+    _bench(benches, "json_script_write_deva", &b_json_script_write, 10000);
+    _bench(benches, "json_script_read_deva", &b_json_script_read, 5000);
+    _bench(benches, "json_numerals_write_greek", &b_json_numerals_write, 2000);
+    _bench(benches, "json_numerals_read_greek", &b_json_numerals_read, 1000);
+    _bench(benches, "json_translit_write_iast", &b_json_translit_write, 1000);
+    _bench(benches, "json_translit_read_iast", &b_json_translit_read, 500);
+    _bench(benches, "json_grammar_write_en", &b_json_grammar_write, 10000);
+    _bench(benches, "json_grammar_read_en", &b_json_grammar_read, 5000);
+    _bench(benches, "json_lexicon_write_ar", &b_json_lexicon_write, 2000);
+    _bench(benches, "json_lexicon_read_ar", &b_json_lexicon_read, 1000);
+    _bench(benches, "json_cognate_write_water", &b_json_cognate_write, 10000);
+    _bench(benches, "json_cognate_read_water", &b_json_cognate_read, 5000);
+    _bench(benches, "json_variety_write_rp", &b_json_variety_write, 10000);
+    _bench(benches, "json_variety_read_rp", &b_json_variety_read, 5000);
+    _bench(benches, "json_registry_write_en", &b_json_registry_write, 10000);
+    _bench(benches, "json_registry_read_en", &b_json_registry_read, 5000);
     bench_report_all(benches);
     return 0;
 }

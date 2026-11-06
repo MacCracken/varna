@@ -6,14 +6,23 @@
 # allocation with attacker-controlled bytes. These tests pin the bound: the
 # rendered payload must always stay inside its buffer.
 
+include "src/error.cyr"
 include "src/util.cyr"
 include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
-include "src/script.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
 include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
 include "src/registry.cyr"
+include "src/numerals.cyr"
 include "src/transliteration.cyr"
+include "src/json.cyr"
 #define MCP
 include "src/mcp.cyr"
 #define HOOSH
@@ -89,8 +98,8 @@ fn main() {
     map_set(ok1, "language", "en");
     var okr = mcp_invoke("varna_phonemes", ok1);
     assert_eq(mcp_result_is_ok(okr), 1, "known language succeeds");
-    assert(strlen(mcp_result_payload(okr)) < 512, "phonemes payload inside its buffer");
-    assert(strlen(mcp_result_payload(okr)) > 20, "phonemes payload is non-trivial");
+    # The whole inventory since 2.5.2, built in a str_builder rather than a fixed buffer.
+    assert(strlen(mcp_result_payload(okr)) > 512, "phonemes payload holds the whole inventory");
 
     var ok2 = map_new();
     map_set(ok2, "lang1", "sa");

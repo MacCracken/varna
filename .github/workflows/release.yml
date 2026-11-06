@@ -48,13 +48,15 @@ jobs:
         run: |
           mkdir -p build
           cyrius build src/main.cyr build/varna
-          cyrius distlib   # dist/varna.cyr — the consumable single-file bundle
+          cyrius distlib        # dist/varna.cyr — the consumable single-file bundle
+          cyrius distlib json   # dist/varna-json.cyr — the same, plus JSON (needs bayan)
 
       - name: Archive
         run: |
           TAG="${GITHUB_REF_NAME}"
           git archive --format=tar.gz --prefix="varna-${TAG}/" -o "varna-${TAG}-src.tar.gz" HEAD
           cp dist/varna.cyr "varna-${TAG}.cyr"
+          cp dist/varna-json.cyr "varna-json-${TAG}.cyr"
           sha256sum varna-*.tar.gz varna-*.cyr build/varna > SHA256SUMS
 
       - name: Extract changelog

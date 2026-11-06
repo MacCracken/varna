@@ -1,8 +1,7 @@
 # src/daimon.cyr — AGNOS agent-framework registration (-D DAIMON).
 #
-# Ported from v1.x Rust src/daimon.rs. Builds the registration payload; JSON
-# serialization is the consumer's concern (the v1.x serde path). Requires
-# registry.cyr + script.cyr.
+# Ported from v1.x Rust src/daimon.rs. Builds the registration payload, and encodes it
+# in the v1.x serde format (ADR 0003). Requires everything src/json.cyr does.
 #
 # Capability (32B):        [0]=name [8]=description [16]=inputs(vec) [24]=output
 # AgentRegistration (48B): [0]=name [8]=version [16]=description [24]=capabilities(vec)
@@ -33,13 +32,19 @@ fn daimon_capabilities(r) { return load64(r + 24); }
 fn daimon_supported_languages(r) { return load64(r + 32); }
 fn daimon_supported_scripts(r) { return load64(r + 40); }
 
+fn _registration_new(name, version, description, caps, languages, scripts) {
+    var r = alloc(48);
+    store64(r, name);
+    store64(r + 8, version);
+    store64(r + 16, description);
+    store64(r + 24, caps);
+    store64(r + 32, languages);
+    store64(r + 40, scripts);
+    return r;
+}
+
 # Build varna's agent registration for daimon.
 fn daimon_registration() {
-    var r = alloc(48);
-    store64(r, "varna");
-    store64(r + 8, "2.5.1");
-    store64(r + 16, "Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access");  #skip-lint
-
     var caps = vec_new();
     var c1 = _capability_new("phoneme_lookup", "Look up phoneme inventory for a language by ISO 639 code", "PhonemeInventory");  #skip-lint
     _capability_add_input(c1, "language_code");
@@ -63,10 +68,114 @@ fn daimon_registration() {
     _capability_add_input(c6, "system");
     vec_push(caps, c6);
 
-    store64(r + 24, caps);
-    store64(r + 32, registry_all_codes());
-    store64(r + 40, script_all_codes());
-    return r;
+    return _registration_new("varna", "2.5.1", "Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access",  #skip-lint
+        caps, registry_all_codes(), script_all_codes());
+}
+
+# --- JSON -----------------------------------------------------------------
+#
+# v1.x: {"name":"phoneme_lookup","description":"..","inputs":["language_code"],"output":"PhonemeInventory"}
+#       {"name":"varna","version":"..","description":"..","capabilities":[..],
+#        "supported_languages":[..],"supported_scripts":[..]}
+
+# Append capability `c`. Returns 0, or -1 (nothing written) for a null one.
+fn capability_to_json(c, sb) {
+    if (c == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"name\":");
+    str_builder_add_json_cstr(sb, capability_name(c));
+    str_builder_add_cstr(sb, ",\"description\":");
+    str_builder_add_json_cstr(sb, capability_description(c));
+    str_builder_add_cstr(sb, ",\"inputs\":");
+    _json_cstr_array(sb, capability_inputs(c));
+    str_builder_add_cstr(sb, ",\"output\":");
+    str_builder_add_json_cstr(sb, capability_output(c));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_capability(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var name = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "name"));
+    var desc = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "description"));
+    var output = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "output"));
+    if (name == 0 || desc == 0 || output == 0) { return 0; }
+    var inputs = _json_cstr_vec(bayan_json_v_obj_get_by_cstr(v, "inputs"));
+    if (inputs == 0) { return 0; }
+    var c = _capability_new(name, desc, output);
+    var n = vec_len(inputs);
+    var i = 0;
+    while (i < n) {
+        _capability_add_input(c, vec_get(inputs, i));
+        i = i + 1;
+    }
+    return c;
+}
+
+# A capability from NUL-terminated JSON text, or 0.
+#must_use
+fn capability_from_json(text) {
+    return _json_capability(_json_parse(text));
+}
+
+# Append agent registration `r`. Returns 0, or -1 (nothing written) for a null one or
+# one holding a null capability.
+fn agent_registration_to_json(r, sb) {
+    if (r == 0) { return 0 - 1; }
+    var caps = daimon_capabilities(r);
+    var n = vec_len(caps);
+    var i = 0;
+    while (i < n) {
+        if (vec_get(caps, i) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "{\"name\":");
+    str_builder_add_json_cstr(sb, daimon_name(r));
+    str_builder_add_cstr(sb, ",\"version\":");
+    str_builder_add_json_cstr(sb, daimon_version(r));
+    str_builder_add_cstr(sb, ",\"description\":");
+    str_builder_add_json_cstr(sb, daimon_description(r));
+    str_builder_add_cstr(sb, ",\"capabilities\":[");
+    i = 0;
+    while (i < n) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        capability_to_json(vec_get(caps, i), sb);
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "],\"supported_languages\":");
+    _json_cstr_array(sb, daimon_supported_languages(r));
+    str_builder_add_cstr(sb, ",\"supported_scripts\":");
+    _json_cstr_array(sb, daimon_supported_scripts(r));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_agent_registration(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var name = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "name"));
+    var version = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "version"));
+    var desc = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "description"));
+    if (name == 0 || version == 0 || desc == 0) { return 0; }
+    var cv = bayan_json_v_obj_get_by_cstr(v, "capabilities");
+    if (!bayan_json_v_is_arr(cv)) { return 0; }
+    var langs = _json_cstr_vec(bayan_json_v_obj_get_by_cstr(v, "supported_languages"));
+    var scripts = _json_cstr_vec(bayan_json_v_obj_get_by_cstr(v, "supported_scripts"));
+    if (langs == 0 || scripts == 0) { return 0; }
+    var caps = vec_new();
+    var n = bayan_json_v_arr_len(cv);
+    var i = 0;
+    while (i < n) {
+        var c = _json_capability(bayan_json_v_arr_get(cv, i));
+        if (c == 0) { return 0; }
+        vec_push(caps, c);
+        i = i + 1;
+    }
+    return _registration_new(name, version, desc, caps, langs, scripts);
+}
+
+# An agent registration from NUL-terminated JSON text, or 0.
+#must_use
+fn agent_registration_from_json(text) {
+    return _json_agent_registration(_json_parse(text));
 }
 
 #endif

@@ -1,10 +1,22 @@
 # tests/daimon.tcyr — daimon registration parity (v1.x Rust src/daimon.rs).
 
+include "src/error.cyr"
+include "src/util.cyr"
 include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
 include "src/script.cyr"
 include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+include "src/json.cyr"
 #define DAIMON
 include "src/daimon.cyr"
 

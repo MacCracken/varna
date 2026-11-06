@@ -1,0 +1,510 @@
+# tests/json_surfaces.tcyr — JSON on the optional surfaces (-D MCP / DAIMON / HOOSH).
+#
+# roadmap 2.5.2. The v1.x tools returned serde_json::to_value of the record, the port
+# returned a few hand-picked fields, and 2.5.2 restores the record. Ports v1.x's two
+# hoosh serde tests and its daimon one, and pins what the handlers return against the
+# writers and against documents worked out by hand from the v1.x source.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+include "src/json.cyr"
+#define MCP
+#define DAIMON
+#define HOOSH
+include "src/daimon.cyr"
+include "src/hoosh.cyr"
+include "src/mcp.cyr"
+
+fn _text_of(fp, rec) {
+    var sb = str_builder_new();
+    if (fncall2(fp, rec, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _with(doc, old, new) {
+    var at = strstr(doc, old);
+    if (at < 0) {
+        println(old);
+        assert(0, "_with: the text above is not in the document");
+        return doc;
+    }
+    var sb = str_builder_new();
+    var i = 0;
+    while (i < at) {
+        str_builder_putc(sb, load8(doc + i));
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, new);
+    str_builder_add_cstr(sb, doc + at + strlen(old));
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _refuses_all(fp, docs, label) {
+    var through = 0;
+    var i = 0;
+    while (i < vec_len(docs)) {
+        if (fncall1(fp, vec_get(docs, i)) != 0) {
+            println(vec_get(docs, i));
+            through = through + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(through, 0, label);
+    return 0;
+}
+
+fn _map1(key, value) {
+    var m = map_new();
+    map_set(m, key, value);
+    return m;
+}
+
+fn _strs_eq(a, b) {
+    var n = vec_len(a);
+    if (n != vec_len(b)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (streq(vec_get(a, i), vec_get(b, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+# --- mcp ---
+
+fn test_mcp_payloads_are_the_records() {
+    var codes = registry_all_codes();
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var code = vec_get(codes, i);
+        var r = mcp_invoke("varna_phonemes", _map1("language", code));
+        if (streq(mcp_result_payload(r), _text_of(&phoneme_inventory_to_json, registry_phonemes(code))) != 1) {
+            println(code);
+            bad = bad + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "varna_phonemes returns the whole inventory, for all 51");
+
+    var sc = script_all_codes();
+    bad = 0;
+    i = 0;
+    while (i < vec_len(sc)) {
+        var c = vec_get(sc, i);
+        var r2 = mcp_invoke("varna_script", _map1("code", c));
+        if (streq(mcp_result_payload(r2), _text_of(&script_to_json, script_by_code(c))) != 1) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "varna_script returns the whole script, for all of them");
+
+    var gc = grammar_all_codes();
+    bad = 0;
+    i = 0;
+    while (i < vec_len(gc)) {
+        var g = vec_get(gc, i);
+        var r3 = mcp_invoke("varna_grammar", _map1("language", g));
+        if (streq(mcp_result_payload(r3), _text_of(&grammar_profile_to_json, grammar_by_code(g))) != 1) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "varna_grammar returns the whole profile, for all of them");
+
+    # By hand from v1.x's latin(), so this pins the format and not just agreement.
+    var latin = mcp_payload_of("varna_script", "code", "Latn");
+    assert(streq(latin, "{\"code\":\"Latn\",\"name\":\"Latin\",\"script_type\":\"Alphabet\",\"direction\":\"LeftToRight\",\"status\":\"Living\",\"attestation\":null,\"unicode_ranges\":[[65,90],[97,122],[192,255],[256,591]],\"languages\":[\"en\",\"fr\",\"es\",\"de\",\"pt\",\"it\"]}"), "script_type is a name again");  #skip-lint
+    return 0;
+}
+
+fn mcp_payload_of(tool, key, value) {
+    return mcp_result_payload(mcp_invoke(tool, _map1(key, value)));
+}
+
+fn _compare(a, b) {
+    var p = map_new();
+    map_set(p, "lang1", a);
+    map_set(p, "lang2", b);
+    return mcp_invoke("varna_compare", p);
+}
+
+fn test_mcp_compare() {
+    var r = _compare("en", "de");
+    var t = mcp_result_payload(r);
+    assert(_json_parse(t) != 0, "compare is valid JSON");
+    var v = _json_parse(t);
+    var both = bayan_json_v_obj_get_by_cstr(v, "shared_phonemes");
+    assert(bayan_json_v_is_arr(both), "shared_phonemes is an array");
+    assert_eq(bayan_json_v_arr_len(both), bayan_json_v_int(bayan_json_v_obj_get_by_cstr(v, "shared_count")), "shared_count counts it");
+    var gc = bayan_json_v_obj_get_by_cstr(v, "grammar_comparison");
+    assert(bayan_json_v_is_obj(gc), "grammar_comparison is an object");
+    assert_eq(bayan_json_v_bool(bayan_json_v_obj_get_by_cstr(gc, "same_word_order")), 1, "en and de are both SVO");
+    assert_eq(bayan_json_v_bool(bayan_json_v_obj_get_by_cstr(gc, "same_morphology")), 1, "and both fusional");
+
+    # Every ordered pair, which is also what a fixed buffer would have truncated.
+    var codes = registry_all_codes();
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var j = 0;
+        while (j < vec_len(codes)) {
+            if (_json_parse(mcp_result_payload(_compare(vec_get(codes, i), vec_get(codes, j)))) == 0) { bad = bad + 1; }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "all 2,601 comparisons parse");
+    return 0;
+}
+
+fn test_mcp_echoes_are_escaped() {
+    var sb = str_builder_new();
+    var i = 0;
+    while (i < 20000) {
+        str_builder_add_cstr(sb, "\"\\\n\t");
+        i = i + 1;
+    }
+    var hostile = str_cstr(str_builder_build(sb));
+    var p = map_new();
+    map_set(p, "text", hostile);
+    map_set(p, "scheme", "devanagari_iast");
+    var t = mcp_result_payload(mcp_invoke("varna_translate_ipa", p));
+    var v = _json_parse(t);
+    assert(v != 0, "80 KB of quotes, backslashes and controls comes out valid");
+    if (v == 0) { return 0; }
+    assert(streq(str_cstr(bayan_json_v_str(bayan_json_v_obj_get_by_cstr(v, "input"))), hostile), "and the input echoes exactly");
+    return 0;
+}
+
+fn test_tool_result_json() {
+    var ok = mcp_invoke("varna_grammar", _map1("language", "en"));
+    var t = _text_of(&tool_result_to_json, ok);
+    assert(_with(t, "{\"Success\":", "") != 0, "Success is externally tagged");
+    var back = tool_result_from_json(t);
+    assert(back != 0, "Success decodes");
+    if (back == 0) { return 0; }
+    assert_eq(mcp_result_is_ok(back), 1, "and is a Success");
+    assert(streq(mcp_result_payload(back), mcp_result_payload(ok)), "with the same payload");
+
+    var e = mcp_invoke("no_such_tool", map_new());
+    var et = _text_of(&tool_result_to_json, e);
+    assert(streq(et, "{\"Error\":\"unknown tool: no_such_tool\"}"), "Error text is serde's shape");
+    var eb = tool_result_from_json(et);
+    assert(eb != 0, "Error decodes");
+    if (eb == 0) { return 0; }
+    assert_eq(mcp_result_is_error(eb), 1, "and is an Error");
+    assert(streq(mcp_result_payload(eb), mcp_result_payload(e)), "with the same message");
+
+    # Success carries any JSON at all, as v1.x's serde_json::Value did.
+    var d = tool_result_from_json("{\"Success\":null}");
+    assert(d != 0, "a null Success decodes");
+    if (d != 0) { assert(streq(mcp_result_payload(d), "null"), "and keeps it"); }
+
+    var bad = vec_new();
+    vec_push(bad, "{}");
+    vec_push(bad, "\"Success\"");
+    vec_push(bad, "{\"Failure\":1}");
+    vec_push(bad, "{\"Error\":7}");
+    vec_push(bad, "{\"Error\":null}");
+    vec_push(bad, "{\"Success\":1,\"Error\":\"x\"}");
+    _refuses_all(&tool_result_from_json, bad, "every malformed result is refused");
+    assert_eq(tool_result_from_json(0), 0, "result: null text");
+    var sb = str_builder_new();
+    assert_eq(tool_result_to_json(0, sb), 0 - 1, "a null result is refused");
+    var forged = _tool_ok("1");
+    store64(forged, 9);
+    assert_eq(tool_result_to_json(forged, sb), 0 - 1, "a tag that is neither is refused");
+    assert_eq(str_len(str_builder_build(sb)), 0, "nothing was written");
+    return 0;
+}
+
+# --- daimon ---
+
+fn _cap_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(capability_name(a), capability_name(b)) != 1) { return 0; }
+    if (streq(capability_description(a), capability_description(b)) != 1) { return 0; }
+    if (_strs_eq(capability_inputs(a), capability_inputs(b)) != 1) { return 0; }
+    return streq(capability_output(a), capability_output(b));
+}
+
+fn test_daimon_json() {
+    var r = daimon_registration();
+    var t = _text_of(&agent_registration_to_json, r);
+    var v = _json_parse(t);
+    assert(v != 0, "the registration is valid JSON");
+    assert(streq(str_cstr(bayan_json_v_str(bayan_json_v_obj_get_by_cstr(v, "name"))), "varna"), "name");
+    var back = agent_registration_from_json(t);
+    assert(back != 0, "v1.x's serde_roundtrip: it decodes");
+    if (back == 0) { return 0; }
+    assert(streq(daimon_name(back), daimon_name(r)), "name survives");
+    assert(streq(daimon_version(back), daimon_version(r)), "version survives");
+    assert(streq(daimon_description(back), daimon_description(r)), "description survives");
+    assert(_strs_eq(daimon_supported_languages(back), daimon_supported_languages(r)), "languages survive");
+    assert(_strs_eq(daimon_supported_scripts(back), daimon_supported_scripts(r)), "scripts survive");
+    var ca = daimon_capabilities(r);
+    var cb = daimon_capabilities(back);
+    assert_eq(vec_len(cb), vec_len(ca), "every capability survives");
+    if (vec_len(cb) != vec_len(ca)) { return 0; }
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(ca)) {
+        if (_cap_eq(vec_get(ca, i), vec_get(cb, i)) != 1) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "each one whole");
+
+    # By hand from v1.x's registration().
+    var cap = "{\"name\":\"script_lookup\",\"description\":\"Look up writing system metadata by ISO 15924 code\",\"inputs\":[\"script_code\"],\"output\":\"Script\"}";  #skip-lint
+    assert(streq(_text_of(&capability_to_json, vec_get(ca, 1)), cap), "capability text is serde's shape");
+    assert(_cap_eq(vec_get(ca, 1), capability_from_json(cap)), "and decodes");
+
+    var d = vec_new();
+    vec_push(d, _with(cap, "\"name\":\"script_lookup\",", ""));
+    vec_push(d, _with(cap, "\"script_lookup\"", "7"));
+    vec_push(d, _with(cap, "\"description\":\"Look up writing system metadata by ISO 15924 code\",", ""));
+    vec_push(d, _with(cap, "\"inputs\":[\"script_code\"],", ""));
+    vec_push(d, _with(cap, "[\"script_code\"]", "\"script_code\""));
+    vec_push(d, _with(cap, "[\"script_code\"]", "[7]"));
+    vec_push(d, _with(cap, ",\"output\":\"Script\"", ""));
+    vec_push(d, "[]");
+    _refuses_all(&capability_from_json, d, "every malformed capability is refused");
+
+    var a = vec_new();
+    vec_push(a, _with(t, "\"name\":\"varna\",", ""));
+    vec_push(a, _with(t, "\"version\":\"", "\"version\":7,\"x\":\""));
+    vec_push(a, _with(t, "\"capabilities\":[", "\"capabilities\":[7,"));
+    vec_push(a, _with(t, "\"supported_languages\":[", "\"supported_languages\":[7,"));
+    vec_push(a, _with(t, "\"supported_scripts\":[", "\"supported_scripts\":[7,"));
+    vec_push(a, "{}");
+    _refuses_all(&agent_registration_from_json, a, "every malformed registration is refused");
+    assert_eq(agent_registration_from_json(0), 0, "registration: null text");
+    assert_eq(capability_from_json(0), 0, "capability: null text");
+
+    var sb = str_builder_new();
+    assert_eq(capability_to_json(0, sb), 0 - 1, "a null capability is refused");
+    assert_eq(agent_registration_to_json(0, sb), 0 - 1, "a null registration is refused");
+    var nr = _registration_new("a", "b", "c", vec_new(), vec_new(), vec_new());
+    vec_push(daimon_capabilities(nr), 0);
+    assert_eq(agent_registration_to_json(nr, sb), 0 - 1, "one holding a null capability is refused");
+    assert_eq(str_len(str_builder_build(sb)), 0, "nothing was written");
+    return 0;
+}
+
+# --- hoosh ---
+
+fn _query_doc_ok(q, want) {
+    var t = _text_of(&language_query_to_json, q);
+    if (streq(t, want) != 1) {
+        println(t);
+        return 0;
+    }
+    var back = language_query_from_json(t);
+    if (back == 0) { return 0; }
+    return streq(_text_of(&language_query_to_json, back), want);
+}
+
+fn test_language_query_json() {
+    assert(_query_doc_ok(hoosh_identify("hello"), "{\"IdentifyLanguage\":{\"text\":\"hello\"}}"), "IdentifyLanguage");  #skip-lint
+    assert(_query_doc_ok(hoosh_explain_phonology("en", "vowel reduction"), "{\"ExplainPhonology\":{\"language\":\"en\",\"topic\":\"vowel reduction\"}}"), "ExplainPhonology");  #skip-lint
+    assert(_query_doc_ok(hoosh_examples_for_phoneme("en", "θ", 3), "{\"ExamplesForPhoneme\":{\"language\":\"en\",\"ipa\":\"θ\",\"count\":3}}"), "ExamplesForPhoneme");  #skip-lint
+    assert(_query_doc_ok(hoosh_compare("en", "de", ComparisonAspect.Grammar), "{\"ComparativeAnalysis\":{\"languages\":[\"en\",\"de\"],\"aspect\":\"Grammar\"}}"), "ComparativeAnalysis");  #skip-lint
+    assert(_query_doc_ok(hoosh_etymology_lookup("café", "fr"), "{\"EtymologyLookup\":{\"word\":\"café\",\"source_language\":\"fr\"}}"), "EtymologyLookup");  #skip-lint
+
+    # A decoded query does the work a built one does.
+    var q = language_query_from_json("{\"ExamplesForPhoneme\":{\"language\":\"en\",\"ipa\":\"θ\",\"count\":3}}");  #skip-lint
+    assert(q != 0, "the query decodes");
+    if (q != 0) {
+        assert(hoosh_answer_from_data(q) != 0, "and resolves from data");
+    }
+    # v1.x's languages is a Vec of any length.
+    assert(_query_doc_ok(language_query_from_json("{\"ComparativeAnalysis\":{\"languages\":[\"en\",\"de\",\"fr\"],\"aspect\":\"Lexicon\"}}"), "{\"ComparativeAnalysis\":{\"languages\":[\"en\",\"de\",\"fr\"],\"aspect\":\"Lexicon\"}}"), "three languages");  #skip-lint
+
+    var bad = vec_new();
+    vec_push(bad, "{}");
+    vec_push(bad, "\"IdentifyLanguage\"");
+    vec_push(bad, "{\"IdentifyLanguage\":\"hello\"}");
+    vec_push(bad, "{\"IdentifyLanguage\":{}}");
+    vec_push(bad, "{\"IdentifyLanguage\":{\"text\":7}}");
+    vec_push(bad, "{\"IdentifyLanguage\":{\"text\":\"a\"},\"x\":1}");
+    vec_push(bad, "{\"Translate\":{\"text\":\"a\"}}");
+    vec_push(bad, "{\"ExplainPhonology\":{\"language\":\"en\"}}");
+    vec_push(bad, "{\"ExamplesForPhoneme\":{\"language\":\"en\",\"ipa\":\"p\"}}");
+    vec_push(bad, "{\"ExamplesForPhoneme\":{\"language\":\"en\",\"ipa\":\"p\",\"count\":256}}");
+    vec_push(bad, "{\"ExamplesForPhoneme\":{\"language\":\"en\",\"ipa\":\"p\",\"count\":-1}}");
+    vec_push(bad, "{\"ComparativeAnalysis\":{\"languages\":\"en\",\"aspect\":\"Grammar\"}}");
+    vec_push(bad, "{\"ComparativeAnalysis\":{\"languages\":[\"en\"],\"aspect\":\"Syntax\"}}");
+    vec_push(bad, "{\"ComparativeAnalysis\":{\"languages\":[\"en\"]}}");
+    vec_push(bad, "{\"EtymologyLookup\":{\"word\":\"w\"}}");
+    _refuses_all(&language_query_from_json, bad, "every malformed query is refused");
+    assert_eq(language_query_from_json(0), 0, "query: null text");
+
+    var sb = str_builder_new();
+    assert_eq(language_query_to_json(0, sb), 0 - 1, "a null query is refused");
+    var forged = hoosh_identify("x");
+    store64(forged, 9);
+    assert_eq(language_query_to_json(forged, sb), 0 - 1, "a tag no variant names is refused");
+    assert_eq(str_len(str_builder_build(sb)), 0, "nothing was written");
+    return 0;
+}
+
+fn _conf_text(c) {
+    var sb = str_builder_new();
+    _json_confidence_write(sb, c);
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _conf_read(text) {
+    return _json_confidence(_json_parse(text));
+}
+
+fn test_confidence() {
+    assert(streq(_conf_text(1000), "1.0"), "1000 is 1.0");
+    assert(streq(_conf_text(0), "0.0"), "0 is 0.0");
+    assert(streq(_conf_text(500), "0.5"), "500 is 0.5");
+    assert(streq(_conf_text(100), "0.1"), "100 is 0.1");
+    assert(streq(_conf_text(120), "0.12"), "120 is 0.12");
+    assert(streq(_conf_text(875), "0.875"), "875 is 0.875");
+    assert(streq(_conf_text(1), "0.001"), "1 is 0.001");
+    assert(streq(_conf_text(10), "0.01"), "10 is 0.01");
+    assert(streq(_conf_text(0 - 1), "null"), "None is null");
+
+    var bad = 0;
+    var i = 0;
+    while (i <= 1000) {
+        if (_conf_read(_conf_text(i)) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "every per-mille value round-trips through its decimal");
+
+    assert_eq(_conf_read("1"), 1000, "an integer reads, as serde reads it into f64");
+    assert_eq(_conf_read("0"), 0, "and zero");
+    assert_eq(_conf_read("0.1234"), 123, "a finer value rounds down");
+    assert_eq(_conf_read("0.1236"), 124, "and up");
+    assert_eq(_conf_read("null"), 0 - 1, "null is None");
+    assert_eq(_json_confidence(0), 0 - 1, "absent is None");
+    assert_eq(_conf_read("-0.0"), 0, "negative zero is zero");
+    assert_eq(_conf_read("-0.001"), 0 - 2, "a negative value is refused, not read as None");
+    assert_eq(_conf_read("-1"), 0 - 2, "nor is -1 the sentinel");
+    assert_eq(_conf_read("1.001"), 0 - 2, "past 1.0 is refused");
+    assert_eq(_conf_read("1e308"), 0 - 2, "and far past it");
+    assert_eq(_conf_read("\"1.0\""), 0 - 2, "a string is refused");
+    assert_eq(_conf_read("true"), 0 - 2, "a bool is refused");
+    return 0;
+}
+
+fn test_query_response_json() {
+    var r = hoosh_answer_from_data(hoosh_examples_for_phoneme("en", "θ", 3));
+    assert(r != 0, "θ resolves");
+    if (r == 0) { return 0; }
+    var data = hoosh_response_structured_data(r);
+    assert(data != 0, "structured_data is back");
+    if (data == 0) { return 0; }
+    assert(streq(data, _text_of(&phoneme_to_json, phoneme_find(phoneme_english(), "θ"))), "it is the phoneme");
+
+    var t = _text_of(&query_response_to_json, r);
+    assert(streq(t, "{\"query_id\":null,\"source\":\"VarnaData\",\"content\":\"/θ/ is present in English (24C + 12V inventory)\",\"confidence\":1.0,\"structured_data\":{\"ipa\":\"θ\",\"kind\":{\"Consonant\":{\"manner\":\"Fricative\",\"place\":\"Dental\",\"voiced\":false,\"airstream\":\"Pulmonic\",\"features\":[]}}}}"), "response text is serde's shape");  #skip-lint
+    var back = query_response_from_json(t);
+    assert(back != 0, "v1.x's serde_roundtrip: it decodes");
+    if (back == 0) { return 0; }
+    assert(streq(_text_of(&query_response_to_json, back), t), "to the same text");
+    assert_eq(hoosh_response_confidence(back), 1000, "confidence");
+    assert(hoosh_response_structured_data(back) != 0, "the data survives");
+    if (hoosh_response_structured_data(back) == 0) { return 0; }
+    assert(phoneme_from_json(hoosh_response_structured_data(back)) != 0, "and is a phoneme");
+
+    var miss = hoosh_answer_from_data(hoosh_examples_for_phoneme("en", "ʀ", 3));
+    assert_eq(hoosh_response_structured_data(miss), 0, "no data for a phoneme not found");
+    assert(_with(_text_of(&query_response_to_json, miss), "\"structured_data\":null", "") != 0, "written as null");
+
+    # The Options: absent, and a query_id held.
+    var small = query_response_from_json("{\"source\":\"Hybrid\",\"content\":\"c\"}");
+    assert(small != 0, "absent Options decode");
+    if (small == 0) { return 0; }
+    assert_eq(hoosh_response_query_id(small), 0, "query_id None");
+    assert_eq(hoosh_response_confidence(small), 0 - 1, "confidence None");
+    assert_eq(hoosh_response_structured_data(small), 0, "structured_data None");
+    assert(streq(_text_of(&query_response_to_json, small), "{\"query_id\":null,\"source\":\"Hybrid\",\"content\":\"c\",\"confidence\":null,\"structured_data\":null}"), "and write as null");  #skip-lint
+    var id = query_response_from_json("{\"query_id\":\"q1\",\"source\":\"LlmGenerated\",\"content\":\"c\",\"confidence\":0.875,\"structured_data\":[1,\"a\",null]}");  #skip-lint
+    assert(id != 0, "a full response decodes");
+    if (id == 0) { return 0; }
+    assert(streq(hoosh_response_query_id(id), "q1"), "query_id");
+    assert_eq(hoosh_response_confidence(id), 875, "confidence 0.875");
+    assert(hoosh_response_structured_data(id) != 0, "any JSON is held as data");
+    if (hoosh_response_structured_data(id) == 0) { return 0; }
+    assert(streq(hoosh_response_structured_data(id), "[1,\"a\",null]"), "unchanged");
+
+    var g = "{\"query_id\":null,\"source\":\"Hybrid\",\"content\":\"c\",\"confidence\":0.5,\"structured_data\":null}";  #skip-lint
+    # A written null is None, not the text "null": the wire cannot show the difference.
+    var nul = query_response_from_json(g);
+    assert(nul != 0, "an explicit null decodes");
+    if (nul == 0) { return 0; }
+    assert_eq(hoosh_response_structured_data(nul), 0, "and is None");
+    var d = vec_new();
+    vec_push(d, _with(g, "\"query_id\":null", "\"query_id\":7"));
+    vec_push(d, _with(g, "\"source\":\"Hybrid\",", ""));
+    vec_push(d, _with(g, "\"Hybrid\"", "\"Guess\""));
+    vec_push(d, _with(g, "\"Hybrid\"", "2"));
+    vec_push(d, _with(g, "\"content\":\"c\",", ""));
+    vec_push(d, _with(g, "\"c\"", "null"));
+    vec_push(d, _with(g, "0.5", "1.5"));
+    vec_push(d, _with(g, "0.5", "-0.5"));
+    vec_push(d, _with(g, "0.5", "\"0.5\""));
+    _refuses_all(&query_response_from_json, d, "every malformed response is refused");
+    assert_eq(query_response_from_json(0), 0, "response: null text");
+    var sb = str_builder_new();
+    assert_eq(query_response_to_json(0, sb), 0 - 1, "a null response is refused");
+    assert_eq(str_len(str_builder_build(sb)), 0, "nothing was written");
+    return 0;
+}
+
+fn test_enum_names() {
+    var bad = 0;
+    var i = 0;
+    while (i <= 3) {
+        var sb = str_builder_new();
+        ComparisonAspect_to_json(i, sb);
+        var t, x = ComparisonAspect_from_json_str(str_cstr(str_builder_build(sb)));
+        if (is_ok(t) != 1 || result_unwrap(t, x) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    i = 0;
+    while (i <= 2) {
+        var sb2 = str_builder_new();
+        ResponseSource_to_json(i, sb2);
+        var t2, x2 = ResponseSource_from_json_str(str_cstr(str_builder_build(sb2)));
+        if (is_ok(t2) != 1 || result_unwrap(t2, x2) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "every hoosh enum variant round-trips by name");
+    return 0;
+}
+
+fn main() {
+    alloc_init();
+    test_mcp_payloads_are_the_records();
+    test_mcp_compare();
+    test_mcp_echoes_are_escaped();
+    test_tool_result_json();
+    test_daimon_json();
+    test_language_query_json();
+    test_confidence();
+    test_query_response_json();
+    test_enum_names();
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

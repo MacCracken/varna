@@ -6,6 +6,7 @@
 # CognateEntry (24B): [0]=language [8]=word [16]=ipa
 # Etymology (32B):    [0]=source_language [8]=source_form [16]=borrowing_type [24]=period(cstr|0)
 
+#derive(Serialize)
 enum BorrowingType {
     Loanword = 0;
     Calque = 1;

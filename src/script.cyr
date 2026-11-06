@@ -6,6 +6,7 @@
 #               [40]=attestation(cstr|0) [48]=unicode_ranges(vec) [56]=languages(vec)
 # range (16B):  [0]=lo  [8]=hi
 
+#derive(Serialize)
 enum ScriptType {
     Alphabet = 0;
     Abugida = 1;
@@ -15,6 +16,7 @@ enum ScriptType {
     Mixed = 5;
 }
 
+#derive(Serialize)
 enum Direction {
     LeftToRight = 0;
     RightToLeft = 1;
@@ -22,6 +24,7 @@ enum Direction {
     Bidirectional = 3;
 }
 
+#derive(Serialize)
 enum ScriptStatus {
     Living = 0;
     Limited = 1;
@@ -66,6 +69,8 @@ fn script_status(s) { return load64(s + 32); }
 fn script_attestation(s) { return load64(s + 40); }
 fn script_unicode_ranges(s) { return load64(s + 48); }
 fn script_languages(s) { return load64(s + 56); }
+fn script_range_lo(r) { return load64(r); }
+fn script_range_hi(r) { return load64(r + 8); }
 
 # Check whether a Unicode code point falls within this script's ranges.
 fn script_contains_codepoint(s, cp) {

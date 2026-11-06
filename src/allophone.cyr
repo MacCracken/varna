@@ -5,16 +5,29 @@
 # AllophoneRule (32B):    [0]=phoneme [8]=allophone [16]=environment [24]=obligatory(0/1)
 # AllophoneRuleSet (16B): [0]=language_code [8]=rules(vec)
 #
-# Environment is modeled as plain int constants. The v1.x parametrized
-# Before(PhonemeClass)/After(PhonemeClass) variants are deferred (roadmap 2.5.2) — no current
-# ruleset uses them, and PhonemeClass's names (Vowel/Consonant/Nasal/Plosive/
-# Fricative) would collide with the Manner/PhonemeKind enum constants (enum
-# constants are global names: a second `Vowel` is "duplicate symbol ... last
-# definition wins", re-measured on cyrius 6.7.18). So a v1.x JSON document holding
-# {"Before":..} or {"After":..} is refused by the reader (src/json.cyr), never
-# silently mapped; roadmap 2.5.2 lists porting the two variants.
+# v1.x's one `Environment` enum is two declarations here, for one reason each.
+# `#derive(Serialize)` refuses an enum with a payload variant, and it is what gives the
+# unit variants their by-name codec (ADR 0003), so `Before` / `After` cannot join
+# `Environment`. And enum constants are global names: a second `Vowel` is "duplicate
+# symbol ... last definition wins", so `PhonemeClass` cannot use v1.x's variant names, and
+# neither set takes a bare `Before` / `After` that every consumer of dist/ would inherit.
 #
-# `#derive(Serialize)` gives Environment its by-name JSON codec (ADR 0003).
+#   v1.x                                       varna
+#   Environment::Intervocalic                  Environment.Intervocalic      (an int)
+#   Environment::Before(PhonemeClass::Nasal)   EnvBefore(PhonemeClass.ClassNasal)
+#   Environment::After(PhonemeClass::Specific  EnvAfter(ClassSpecific("k"))
+#     ("k".into()))
+#
+# So an environment VALUE is a unit `Environment` constant, or a box (tag at +0, payload
+# at +8) from EnvBefore / EnvAfter. A `PhonemeClass` value is a unit constant, or a box
+# from ClassSpecific. The two are told apart by range, and compared by value with
+# environment_eq, as v1.x's derived PartialEq compared them.
+#
+# As in v1.x, `Before` / `After` are labels matched by equality. No code evaluates a class
+# against a phoneme, and allophone_english() uses neither.
+#
+# src/json.cyr maps PhonemeClass to v1.x's names by hand, the one exception to ADR 0003's
+# derived enum names (see its amendment).
 
 #derive(Serialize)
 enum Environment {
@@ -27,6 +40,83 @@ enum Environment {
     SyllableInitial = 6;
     PreStress = 7;
     Unstressed = 8;
+}
+
+# v1.x's PhonemeClass, a broad class of phonemes for environment matching.
+enum PhonemeClass {
+    ClassVowel = 0;
+    ClassConsonant = 1;
+    ClassNasal = 2;
+    ClassPlosive = 3;
+    ClassFricative = 4;
+    ClassVoiceless = 5;
+    ClassVoiced = 6;
+    ClassSpecific(ipa);
+}
+
+# v1.x's Environment::Before / ::After. Each takes a PhonemeClass value.
+enum ClassEnvironment {
+    EnvBefore(cls);
+    EnvAfter(cls);
+}
+
+# The first page is never mapped, so no box sits below this, and no enum here comes near
+# it. A value is a box exactly when it is at or above it.
+var _ALLOPHONE_BOX_MIN = 4096;
+
+# 1 when `e` is a box from EnvBefore / EnvAfter, 0 when it is a unit Environment.
+#must_use
+fn environment_is_conditioned(e) {
+    if (e >= _ALLOPHONE_BOX_MIN) { return 1; }
+    return 0;
+}
+
+# A conditioned environment's side (ClassEnvironment.EnvBefore / .EnvAfter), or -1 for
+# a unit Environment.
+#must_use
+fn environment_side(e) {
+    if (environment_is_conditioned(e) == 0) { return 0 - 1; }
+    return load64(e);
+}
+
+# A conditioned environment's PhonemeClass value, or -1 for a unit Environment.
+#must_use
+fn environment_class(e) {
+    if (environment_is_conditioned(e) == 0) { return 0 - 1; }
+    return load64(e + 8);
+}
+
+# 1 when `c` is a box from ClassSpecific, 0 when it is a unit PhonemeClass.
+#must_use
+fn phoneme_class_is_specific(c) {
+    if (c >= _ALLOPHONE_BOX_MIN) { return 1; }
+    return 0;
+}
+
+# The IPA symbol a ClassSpecific names, or 0 for a unit PhonemeClass.
+#must_use
+fn phoneme_class_ipa(c) {
+    if (phoneme_class_is_specific(c) == 0) { return 0; }
+    return load64(c + 8);
+}
+
+# 1 when two PhonemeClass values are equal: the same constant, or the same IPA symbol.
+#must_use
+fn phoneme_class_eq(a, b) {
+    if (a == b) { return 1; }
+    if (phoneme_class_is_specific(a) == 0 || phoneme_class_is_specific(b) == 0) { return 0; }
+    return streq(load64(a + 8), load64(b + 8));
+}
+
+# 1 when two environment values are equal: the same constant, or the same side and class.
+# Two boxes built apart compare equal, which is what lets a caller build the environment
+# it asks allophone_realize about.
+#must_use
+fn environment_eq(a, b) {
+    if (a == b) { return 1; }
+    if (environment_is_conditioned(a) == 0 || environment_is_conditioned(b) == 0) { return 0; }
+    if (load64(a) != load64(b)) { return 0; }
+    return phoneme_class_eq(load64(a + 8), load64(b + 8));
 }
 
 fn _arule_new(phoneme, allophone, env, obligatory) {
@@ -80,7 +170,9 @@ fn allophone_realize(s, phoneme, env) {
     var i = 0;
     while (i < n) {
         var r = vec_get(rules, i);
-        if (streq(load64(r), phoneme) == 1 && load64(r + 16) == env) { return load64(r + 8); }
+        if (streq(load64(r), phoneme) == 1 && environment_eq(load64(r + 16), env) == 1) {
+            return load64(r + 8);
+        }
         i = i + 1;
     }
     return phoneme;

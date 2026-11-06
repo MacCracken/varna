@@ -10,6 +10,7 @@
 # Sentinels: value_of -> (0-1) when unmapped (value 0 is valid, e.g. Deva 0);
 #            char_for / string_value -> 0 / (0-1) when not found.
 
+#derive(Serialize)
 enum NumeralSystemKind {
     Decimal = 0;
     Alphabetic = 1;
@@ -30,6 +31,7 @@ fn _nsys_new(script_code, name, kind) {
 # has an answer. Deriving the ordinal from a mapping's raw index instead assumes
 # every entry occupies an alphabet position, which silently shifts every letter
 # after any entry that does not — see the Greek final sigma note below.
+#derive(Serialize)
 enum LetterRole {
     ROLE_LETTER = 0;         # a letter of the alphabet; occupies one position
     ROLE_ALLOGRAPH = 1;      # positional variant of another letter (Greek ς, Hebrew finals)
@@ -52,14 +54,18 @@ fn _nsys_add_sign(sys, character, value) {
     return _nsys_add_full(sys, character, value, LetterRole.ROLE_NUMERAL_SIGN, 0);
 }
 
-fn _nsys_add_full(sys, character, value, role, base) {
+fn _nsys_mapping_new(character, value, role, base) {
     var m = alloc(40);
     store64(m, character);
     store64(m + 8, strlen(character));
     store64(m + 16, value);
     store64(m + 24, role);
     store64(m + 32, base);
-    vec_push(load64(sys + 24), m);
+    return m;
+}
+
+fn _nsys_add_full(sys, character, value, role, base) {
+    vec_push(load64(sys + 24), _nsys_mapping_new(character, value, role, base));
     return sys;
 }
 

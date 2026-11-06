@@ -1,16 +1,17 @@
 # src/hoosh.cyr — structured LLM query interface (-D HOOSH).
 #
-# Ported from v1.x Rust src/hoosh.rs. Requires registry.cyr + phoneme.cyr.
-# Divergences from the v1.x serde shape: confidence is per-mille (1000 = 1.0,
-# (0-1) = None) to avoid f64; structured_data is deferred (0 = None) — it needs
-# the JSON path that lands with mcp.cyr.
+# Ported from v1.x Rust src/hoosh.rs. Requires everything src/json.cyr does.
+# The record holds confidence per-mille (1000 = 1.0, (0-1) = None) to avoid f64; on the
+# wire it is the number v1.x wrote, so 1000 is 1.0. A value finer than a thousandth
+# rounds on read. structured_data holds JSON text (0 = None), written out as it stands.
 #
 # LanguageQuery (40B): [0]=tag [8]=f0 [16]=f1 [24]=f2
 # QueryResponse (40B): [0]=query_id(cstr|0) [8]=source [16]=content
-#                      [24]=confidence(per-mille|0-1) [32]=structured_data(0)
+#                      [24]=confidence(per-mille|0-1) [32]=structured_data(cstr|0)
 
 #ifdef HOOSH
 
+#derive(Serialize)
 enum ComparisonAspect {
     Phonology = 0;
     Grammar = 1;
@@ -18,12 +19,14 @@ enum ComparisonAspect {
     Lexicon = 3;
 }
 
+#derive(Serialize)
 enum ResponseSource {
     VarnaData = 0;
     LlmGenerated = 1;
     Hybrid = 2;
 }
 
+#derive(Serialize)
 enum LanguageQueryTag {
     IdentifyLanguage = 0;
     ExplainPhonology = 1;
@@ -138,7 +141,10 @@ fn hoosh_answer_from_data(q) {
             off = _hb_append_int(buf, off, cap, phoneme_vowel_count(inv));
             off = _hb_append(buf, off, cap, "V inventory)");
             store8(buf + off, 0);
-            return _query_response_new(0, ResponseSource.VarnaData, buf, 1000, 0);
+            # v1.x's serde_json::to_value(inv.find(ipa)): the phoneme itself.
+            var data = str_builder_new();
+            phoneme_to_json(phoneme_find(inv, ipa), data);
+            return _query_response_new(0, ResponseSource.VarnaData, buf, 1000, str_cstr(str_builder_build(data)));
         }
         var cap2 = 256;
         var b2 = alloc(cap2);
@@ -179,6 +185,181 @@ fn hoosh_answer_from_data(q) {
         return 0;
     }
     return 0;
+}
+
+# --- JSON -----------------------------------------------------------------
+#
+# v1.x's LanguageQuery has struct variants, externally tagged:
+#   {"IdentifyLanguage":{"text":".."}}
+#   {"ExplainPhonology":{"language":"en","topic":".."}}
+#   {"ExamplesForPhoneme":{"language":"en","ipa":"θ","count":3}}
+#   {"ComparativeAnalysis":{"languages":["en","de"],"aspect":"Phonology"}}
+#   {"EtymologyLookup":{"word":"..","source_language":"fr"}}
+# QueryResponse: {"query_id":null,"source":"VarnaData","content":"..","confidence":1.0,
+#                 "structured_data":{..}}
+
+# Append query `q`. Returns 0, or -1 (nothing written) for a null query or one whose
+# tag names no variant.
+fn language_query_to_json(q, sb) {
+    if (q == 0) { return 0 - 1; }
+    var tag = load64(q);
+    if (tag < LanguageQueryTag.IdentifyLanguage || tag > LanguageQueryTag.EtymologyLookup) { return 0 - 1; }
+    str_builder_putc(sb, '{');
+    LanguageQueryTag_to_json(tag, sb);
+    if (tag == LanguageQueryTag.IdentifyLanguage) {
+        str_builder_add_cstr(sb, ":{\"text\":");
+        str_builder_add_json_cstr(sb, load64(q + 8));
+    } elif (tag == LanguageQueryTag.ExplainPhonology) {
+        str_builder_add_cstr(sb, ":{\"language\":");
+        str_builder_add_json_cstr(sb, load64(q + 8));
+        str_builder_add_cstr(sb, ",\"topic\":");
+        str_builder_add_json_cstr(sb, load64(q + 16));
+    } elif (tag == LanguageQueryTag.ExamplesForPhoneme) {
+        str_builder_add_cstr(sb, ":{\"language\":");
+        str_builder_add_json_cstr(sb, load64(q + 8));
+        str_builder_add_cstr(sb, ",\"ipa\":");
+        str_builder_add_json_cstr(sb, load64(q + 16));
+        str_builder_add_cstr(sb, ",\"count\":");
+        str_builder_add_int(sb, load64(q + 24));
+    } elif (tag == LanguageQueryTag.ComparativeAnalysis) {
+        str_builder_add_cstr(sb, ":{\"languages\":");
+        _json_cstr_array(sb, load64(q + 8));
+        str_builder_add_cstr(sb, ",\"aspect\":");
+        ComparisonAspect_to_json(load64(q + 16), sb);
+    } else {
+        str_builder_add_cstr(sb, ":{\"word\":");
+        str_builder_add_json_cstr(sb, load64(q + 8));
+        str_builder_add_cstr(sb, ",\"source_language\":");
+        str_builder_add_json_cstr(sb, load64(q + 16));
+    }
+    str_builder_add_cstr(sb, "}}");
+    return 0;
+}
+
+fn _json_language_query(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    if (bayan_json_v_obj_len(v) != 1) { return 0; }
+    var nb[48];
+    if (_json_name_from_str(bayan_json_v_obj_key(v, 0), &nb) == 0) { return 0; }
+    var t, x = LanguageQueryTag_from_json_str(&nb);
+    if (is_ok(t) != 1) { return 0; }
+    var tag = result_unwrap(t, x);
+    # Every variant has a required field, so a body that is not an object refuses itself.
+    var body = bayan_json_v_obj_val(v, 0);
+
+    if (tag == LanguageQueryTag.ComparativeAnalysis) {
+        var langs = _json_cstr_vec(bayan_json_v_obj_get_by_cstr(body, "languages"));
+        var aspect = _json_enum(bayan_json_v_obj_get_by_cstr(body, "aspect"), &ComparisonAspect_from_json_str);
+        if (langs == 0 || aspect < 0) { return 0; }
+        var c = alloc(40);
+        store64(c, tag);
+        store64(c + 8, langs);
+        store64(c + 16, aspect);
+        return c;
+    }
+    if (tag == LanguageQueryTag.IdentifyLanguage) {
+        var text = _json_cstr(bayan_json_v_obj_get_by_cstr(body, "text"));
+        if (text == 0) { return 0; }
+        return hoosh_identify(text);
+    }
+    if (tag == LanguageQueryTag.ExplainPhonology) {
+        var lang = _json_cstr(bayan_json_v_obj_get_by_cstr(body, "language"));
+        var topic = _json_cstr(bayan_json_v_obj_get_by_cstr(body, "topic"));
+        if (lang == 0 || topic == 0) { return 0; }
+        return hoosh_explain_phonology(lang, topic);
+    }
+    if (tag == LanguageQueryTag.ExamplesForPhoneme) {
+        var lg = _json_cstr(bayan_json_v_obj_get_by_cstr(body, "language"));
+        var ipa = _json_cstr(bayan_json_v_obj_get_by_cstr(body, "ipa"));
+        var count = _json_u8(bayan_json_v_obj_get_by_cstr(body, "count"));
+        if (lg == 0 || ipa == 0 || count < 0) { return 0; }
+        return hoosh_examples_for_phoneme(lg, ipa, count);
+    }
+    var word = _json_cstr(bayan_json_v_obj_get_by_cstr(body, "word"));
+    var src = _json_cstr(bayan_json_v_obj_get_by_cstr(body, "source_language"));
+    if (word == 0 || src == 0) { return 0; }
+    return hoosh_etymology_lookup(word, src);
+}
+
+# A language query from NUL-terminated JSON text, or 0.
+#must_use
+fn language_query_from_json(text) {
+    return _json_language_query(_json_parse(text));
+}
+
+# Append per-mille `c` as the number v1.x wrote, or null for None: 1000 is 1.0, 875 is
+# 0.875. serde_json prints the shortest form, so trailing zeros go, but one digit always
+# follows the point, since 1.0 is a float and 1 is not.
+fn _json_confidence_write(sb, c) {
+    if (c < 0) { return str_builder_add_cstr(sb, "null"); }
+    str_builder_add_int(sb, c / 1000);
+    str_builder_putc(sb, '.');
+    var frac = c % 1000;
+    if (frac == 0) { return str_builder_putc(sb, '0'); }
+    str_builder_putc(sb, '0' + frac / 100);
+    frac = frac % 100;
+    if (frac == 0) { return 0; }
+    str_builder_putc(sb, '0' + frac / 10);
+    frac = frac % 10;
+    if (frac == 0) { return 0; }
+    return str_builder_putc(sb, '0' + frac);
+}
+
+# `confidence`: per-mille rounded to nearest, -1 for None (absent or null), or -2 for
+# anything else, including a number outside 0.0..1.0, the range v1.x documents. A
+# negative one could otherwise round onto the None sentinel. An integer reads too, as
+# serde reads 1 into an f64.
+fn _json_confidence(v) {
+    if (v == 0 || bayan_json_v_is_null(v)) { return 0 - 1; }
+    if (!bayan_json_v_is_float(v) && !bayan_json_v_is_int(v)) { return 0 - 2; }
+    var f = bayan_json_v_float(v);
+    if (f64_lt(f, 0.0) || f64_gt(f, 1.0)) { return 0 - 2; }
+    return f64_to(f64_round(f64_mul(f, f64_from(1000))));
+}
+
+# Append response `r`. Returns 0, or -1 (nothing written) for a null one.
+fn query_response_to_json(r, sb) {
+    if (r == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"query_id\":");
+    _json_opt_cstr_write(sb, hoosh_response_query_id(r));
+    str_builder_add_cstr(sb, ",\"source\":");
+    ResponseSource_to_json(hoosh_response_source(r), sb);
+    str_builder_add_cstr(sb, ",\"content\":");
+    str_builder_add_json_cstr(sb, hoosh_response_content(r));
+    str_builder_add_cstr(sb, ",\"confidence\":");
+    _json_confidence_write(sb, hoosh_response_confidence(r));
+    str_builder_add_cstr(sb, ",\"structured_data\":");
+    var data = hoosh_response_structured_data(r);
+    if (data == 0) {
+        str_builder_add_cstr(sb, "null");
+    } else {
+        str_builder_add_cstr(sb, data);
+    }
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_query_response(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var id = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "query_id"));
+    if (id < 0) { return 0; }
+    var source = _json_enum(bayan_json_v_obj_get_by_cstr(v, "source"), &ResponseSource_from_json_str);
+    if (source < 0) { return 0; }
+    var content = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "content"));
+    if (content == 0) { return 0; }
+    var conf = _json_confidence(bayan_json_v_obj_get_by_cstr(v, "confidence"));
+    if (conf < 0 - 1) { return 0; }
+    # Option<Value>: absent and null are both None, and any other JSON is held as text.
+    var data = 0;
+    var dv = bayan_json_v_obj_get_by_cstr(v, "structured_data");
+    if (dv != 0 && !bayan_json_v_is_null(dv)) { data = str_cstr(bayan_json_v_build(dv)); }
+    return _query_response_new(id, source, content, conf, data);
+}
+
+# A query response from NUL-terminated JSON text, or 0.
+#must_use
+fn query_response_from_json(text) {
+    return _json_query_response(_json_parse(text));
 }
 
 #endif

@@ -52,6 +52,7 @@ var _varna_all_codes = 0;    # cached vec of cstrings, lazily built
 # minority language whose last speakers died, and a classical language still taught,
 # read and used in worship. No language in this corpus is END_EXTINCT, which
 # `tests/vitality.tcyr` pins so the distinction stays visible.
+#derive(Serialize)
 enum EndangermentLevel {
     END_SAFE = 0;
     END_VULNERABLE = 1;
@@ -66,6 +67,7 @@ enum EndangermentLevel {
 # The six WALS macro-areas, unchanged. Mesoamerica is part of North America here
 # because WALS has no seventh area for it, and Hawaii is Papunesia rather than
 # North America, likewise following WALS.
+#derive(Serialize)
 enum MacroArea {
     AREA_AFRICA = 0;
     AREA_EURASIA = 1;

@@ -3,6 +3,25 @@
 **Status**: Accepted
 **Date**: 2026-11-05
 
+> **Amendment (2026-11-05, unreleased 2.5.2) — one enum's names are hand-written.** The
+> Decision says every enum takes its names from `#derive(Serialize)`. `PhonemeClass`
+> cannot: v1.x's variant names (`Vowel`, `Nasal`, ...) collide with existing global enum
+> constants, so its constants are `ClassVowel`, `ClassNasal`, ..., and the derive would
+> write the prefix. `#derive` also refuses any enum with a payload variant, which
+> `ClassSpecific(ipa)` is, and `ClassEnvironment`'s two variants are. So `src/json.cyr`
+> maps `PhonemeClass` to v1.x's names by hand, and writes `{"Before":..}` / `{"After":..}`
+> itself. `WordOrder::Free` and `VarietyKind::Historical` are the same case on a smaller
+> scale: the port dropped both because the name was taken, so each is restored under a
+> non-colliding constant, keeps its derive, and has that one value mapped by hand.
+>
+> Everything else holds the Decision: an enum varna added after v1.x has no v1.x name to
+> keep, so the wire carries its constants as they stand (`"ROLE_ALLOGRAPH"`,
+> `"ALIGN_NOMINATIVE_ACCUSATIVE"`).
+>
+> A reader also refuses any string holding U+0000, which the Decision did not cover.
+> serde accepts one, but varna's strings are NUL-terminated, so it would decode to a
+> different value.
+
 ## Context
 
 The v1.x Rust crate derived `Serialize` / `Deserialize` on its public types: 21 structs

@@ -30,6 +30,8 @@ fn translit_scheme(tt) { return load64(tt); }
 fn translit_source_script(tt) { return load64(tt + 8); }
 fn translit_target_script(tt) { return load64(tt + 16); }
 fn translit_forward(tt) { return load64(tt + 24); }
+fn translit_pair_source(pair) { return load64(pair); }
+fn translit_pair_target(pair) { return load64(pair + 8); }
 
 # Transliterate a single source grapheme — target cstr, or 0 if unmapped.
 fn translit_char(tt, ch) {

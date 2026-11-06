@@ -37,8 +37,14 @@ jobs:
       - name: Benchmarks
         run: cyrius bench tests/varna.bcyr
 
-      - name: Distlib bundle
-        run: cyrius distlib
+      - name: Fuzz the JSON decoders
+        run: cyrius fuzz
+
+      - name: Distlib bundles
+        run: |
+          cyrius distlib
+          cyrius distlib core
+          cyrius distlib json
 
   docs:
     name: Documentation

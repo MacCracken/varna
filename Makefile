@@ -43,6 +43,8 @@ build:
 # Bundle src/ into the consumer distfile
 distlib:
 	cyrius distlib
+	cyrius distlib core
+	cyrius distlib json
 
 # Generate / check documentation
 doc:

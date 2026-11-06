@@ -13,7 +13,7 @@
 # ignored, as serde ignores them. A field varna gained after v1.x is optional on
 # read and takes its constructor default, so a v1.x document still decodes.
 #
-# Enum names come from each enum's `#derive(Serialize)` codec (src/phoneme.cyr). A
+# Enum names come from each enum's `#derive(Serialize)` codec, on its declaration. A
 # struct derive cannot write an enum field by name, which is why the record writers
 # and readers are hand-written around those codecs. Readers parse with bayan's
 # value tree (`bayan_json_v_*`, from the dist/bayan-json.cyr profile).
@@ -22,9 +22,95 @@
 # 0. On -1 (a null record, or one whose kind is corrupt) nothing was written. A
 # reader takes NUL-terminated JSON text and returns a newly built record, or 0.
 #
-# Not in dist/ yet: see cyrius.cyml [lib] and roadmap 2.5.2's consumer-hazard bite.
+# In dist/varna-json.cyr only, the one bundle that calls bayan: cyrius.cyml [lib.json].
+
+include "lib/fnptr.cyr"
 
 # --- shared ---------------------------------------------------------
+
+# Length of the valid UTF-8 sequence at `p`, or 0 for none. RFC 3629's table: no overlong
+# forms, no surrogates, nothing past U+10FFFF. `p` is inside NUL-terminated text and NUL
+# is not a continuation byte, so a sequence cut by the end stops there rather than past it.
+fn _json_utf8_len(p) {
+    var b0 = load8(p);
+    if (b0 < 0x80) { return 1; }
+    var need = 0;
+    var lo = 0x80;
+    var hi = 0xBF;
+    if (b0 >= 0xC2 && b0 <= 0xDF) {
+        need = 1;
+    } elif (b0 == 0xE0) {
+        need = 2;
+        lo = 0xA0;
+    } elif (b0 == 0xED) {
+        need = 2;
+        hi = 0x9F;
+    } elif (b0 >= 0xE1 && b0 <= 0xEF) {
+        need = 2;
+    } elif (b0 == 0xF0) {
+        need = 3;
+        lo = 0x90;
+    } elif (b0 == 0xF4) {
+        need = 3;
+        hi = 0x8F;
+    } elif (b0 >= 0xF1 && b0 <= 0xF3) {
+        need = 3;
+    } else {
+        return 0;
+    }
+    var b1 = load8(p + 1);
+    if (b1 < lo || b1 > hi) { return 0; }
+    var i = 2;
+    while (i <= need) {
+        var b = load8(p + i);
+        if (b < 0x80 || b > 0xBF) { return 0; }
+        i = i + 1;
+    }
+    return need + 1;
+}
+
+# 1 when the `n` bytes at `text` are valid UTF-8 with no raw control byte inside a string,
+# which RFC 8259 requires and serde_json::from_str enforces. bayan's parser checks
+# neither, and neither can be checked later: a decoded `\n` and a raw newline are the
+# same byte by then, and invalid UTF-8 kept in a record would be written back out as a
+# document a strict reader refuses.
+fn _json_text_ok(text, n) {
+    var in_str = 0;
+    var i = 0;
+    while (i < n) {
+        var c = load8(text + i);
+        if (c >= 0x80) {
+            var w = _json_utf8_len(text + i);
+            if (w == 0) { return 0; }
+            i = i + w;
+        } elif (in_str == 0) {
+            # 34 is a quote.
+            if (c == 34) { in_str = 1; }
+            i = i + 1;
+        } elif (c == 34) {
+            in_str = 0;
+            i = i + 1;
+        } elif (c == 92) {
+            # A backslash hides the next byte. If that byte makes a bad escape, the
+            # parser refuses it.
+            i = i + 2;
+        } elif (c < 0x20) {
+            return 0;
+        } else {
+            i = i + 1;
+        }
+    }
+    return 1;
+}
+
+# Parse NUL-terminated JSON text into bayan's value tree, or 0. Every reader comes
+# through here, so `text` may be null: the is_obj test on 0 then refuses it.
+fn _json_parse(text) {
+    if (text == 0) { return 0; }
+    var n = strlen(text);
+    if (_json_text_ok(text, n) == 0) { return 0; }
+    return bayan_json_v_parse_buf(text, n);
+}
 
 # Longest enum variant name a reader accepts. The longest in the corpus is
 # "LateralApproximant" (18 bytes), so anything over this is not a name.
@@ -35,25 +121,31 @@ fn _json_bool(sb, b) {
     return str_builder_add_cstr(sb, "false");
 }
 
-# Copy Str `s` into `buf` (at least _JSON_NAME_MAX + 1 bytes) as a C string.
-# Returns 1, or 0 when `s` is null, empty or too long to be a variant name.
+# Copy Str `s` into `buf` (at least _JSON_NAME_MAX + 1 bytes) as a C string. Returns 1,
+# or 0 when `s` is null, empty, too long to be a variant name, or holds U+0000, which
+# would otherwise truncate "Plosive\u0000junk" into a name that matches.
 fn _json_name_from_str(s, buf) {
     if (s == 0) { return 0; }
     var n = str_len(s);
     if (n == 0 || n > _JSON_NAME_MAX) { return 0; }
     memcpy(buf, str_data(s), n);
     store8(buf + n, 0);
+    if (strlen(buf) != n) { return 0; }
     return 1;
 }
 
 # The JSON string `v` copied into `buf` as a C string; 0 if `v` is not a string.
 fn _json_name(v, buf) { return _json_name_from_str(bayan_json_v_str(v), buf); }
 
-# A string member as a fresh NUL-terminated copy, or 0 when absent or not a string.
+# A string member as a fresh NUL-terminated copy, or 0 when absent or not a string. Also
+# 0 for one holding U+0000: JSON can spell it, but a C string would stop there and hand
+# back a different value, so it is a value varna cannot hold.
 fn _json_cstr(v) {
     var s = bayan_json_v_str(v);
     if (s == 0) { return 0; }
-    return str_cstr(s);
+    var c = str_cstr(s);
+    if (strlen(c) != str_len(s)) { return 0; }
+    return c;
 }
 
 # A JSON bool as 0 / 1, or -1 when `v` is absent or not a bool (serde does not
@@ -64,63 +156,24 @@ fn _json_bool_from(v) {
 }
 
 # --- enum fields: name → value through each enum's derived codec -----
-# Each returns the value, or -1 for a value that is not a string naming a variant.
-# Every phoneme enum value is >= 0, so -1 cannot collide.
 
-fn _json_manner(v) {
+# The value `v` names, through a derived `E_from_json_str`; -1 for a value that is not a
+# string naming a variant. Every enum value is >= 0, so -1 cannot collide. The derived
+# decoder returns a Result pair, and fncall1 carries both halves.
+fn _json_enum(v, decode) {
     var nb[48];
     if (_json_name(v, &nb) == 0) { return 0 - 1; }
-    var t, x = Manner_from_json_str(&nb);
+    var t, x = fncall1(decode, &nb);
     if (is_ok(t) != 1) { return 0 - 1; }
     return result_unwrap(t, x);
 }
 
-fn _json_place(v) {
-    var nb[48];
-    if (_json_name(v, &nb) == 0) { return 0 - 1; }
-    var t, x = Place_from_json_str(&nb);
-    if (is_ok(t) != 1) { return 0 - 1; }
-    return result_unwrap(t, x);
-}
-
-fn _json_height(v) {
-    var nb[48];
-    if (_json_name(v, &nb) == 0) { return 0 - 1; }
-    var t, x = Height_from_json_str(&nb);
-    if (is_ok(t) != 1) { return 0 - 1; }
-    return result_unwrap(t, x);
-}
-
-fn _json_backness(v) {
-    var nb[48];
-    if (_json_name(v, &nb) == 0) { return 0 - 1; }
-    var t, x = Backness_from_json_str(&nb);
-    if (is_ok(t) != 1) { return 0 - 1; }
-    return result_unwrap(t, x);
-}
-
-fn _json_airstream(v) {
-    var nb[48];
-    if (_json_name(v, &nb) == 0) { return 0 - 1; }
-    var t, x = Airstream_from_json_str(&nb);
-    if (is_ok(t) != 1) { return 0 - 1; }
-    return result_unwrap(t, x);
-}
-
-fn _json_stress(v) {
-    var nb[48];
-    if (_json_name(v, &nb) == 0) { return 0 - 1; }
-    var t, x = StressPattern_from_json_str(&nb);
-    if (is_ok(t) != 1) { return 0 - 1; }
-    return result_unwrap(t, x);
-}
-
-fn _json_feature(v) {
-    var nb[48];
-    if (_json_name(v, &nb) == 0) { return 0 - 1; }
-    var t, x = PhonemeFeature_from_json_str(&nb);
-    if (is_ok(t) != 1) { return 0 - 1; }
-    return result_unwrap(t, x);
+# An enum field varna gained after v1.x, so optional on read: `dflt` when absent, else
+# as _json_enum, which refuses a null.
+fn _json_opt_enum(obj, key, decode, dflt) {
+    var m = bayan_json_v_obj_get_by_cstr(obj, key);
+    if (m == 0) { return dflt; }
+    return _json_enum(m, decode);
 }
 
 # The externally tagged variant key (a Str) as a PhonemeKind, or -1.
@@ -164,7 +217,7 @@ fn _json_features_from(v) {
     var n = bayan_json_v_arr_len(v);
     var i = 0;
     while (i < n) {
-        var f = _json_feature(bayan_json_v_arr_get(v, i));
+        var f = _json_enum(bayan_json_v_arr_get(v, i), &PhonemeFeature_from_json_str);
         if (f <= 0) { return 0 - 1; }
         mask = mask | f;
         i = i + 1;
@@ -230,18 +283,14 @@ fn _json_phoneme(v) {
     var body = bayan_json_v_obj_val(kv, 0);
     if (!bayan_json_v_is_obj(body)) { return 0; }
 
-    var air = Airstream.Pulmonic;
-    var av = bayan_json_v_obj_get_by_cstr(body, "airstream");
-    if (av != 0) {
-        air = _json_airstream(av);
-        if (air < 0) { return 0; }
-    }
+    var air = _json_opt_enum(body, "airstream", &Airstream_from_json_str, Airstream.Pulmonic);
+    if (air < 0) { return 0; }
     var feats = _json_features_from(bayan_json_v_obj_get_by_cstr(body, "features"));
     if (feats < 0) { return 0; }
 
     if (kind == PhonemeKind.Consonant) {
-        var manner = _json_manner(bayan_json_v_obj_get_by_cstr(body, "manner"));
-        var place = _json_place(bayan_json_v_obj_get_by_cstr(body, "place"));
+        var manner = _json_enum(bayan_json_v_obj_get_by_cstr(body, "manner"), &Manner_from_json_str);
+        var place = _json_enum(bayan_json_v_obj_get_by_cstr(body, "place"), &Place_from_json_str);
         var voiced = _json_bool_from(bayan_json_v_obj_get_by_cstr(body, "voiced"));
         if (manner < 0 || place < 0 || voiced < 0) { return 0; }
         return phoneme_consonant_full(ipa, manner, place, voiced, air, feats);
@@ -250,8 +299,8 @@ fn _json_phoneme(v) {
         # varna's vowels are pulmonic without exception (phoneme_vowel_full sets it),
         # so a vowel claiming another airstream is not a record varna can hold.
         if (air != Airstream.Pulmonic) { return 0; }
-        var height = _json_height(bayan_json_v_obj_get_by_cstr(body, "height"));
-        var backness = _json_backness(bayan_json_v_obj_get_by_cstr(body, "backness"));
+        var height = _json_enum(bayan_json_v_obj_get_by_cstr(body, "height"), &Height_from_json_str);
+        var backness = _json_enum(bayan_json_v_obj_get_by_cstr(body, "backness"), &Backness_from_json_str);
         var rounded = _json_bool_from(bayan_json_v_obj_get_by_cstr(body, "rounded"));
         if (height < 0 || backness < 0 || rounded < 0) { return 0; }
         return phoneme_vowel_full(ipa, height, backness, rounded, feats);
@@ -262,8 +311,7 @@ fn _json_phoneme(v) {
 # A phoneme from NUL-terminated JSON text, or 0.
 #must_use
 fn phoneme_from_json(text) {
-    if (text == 0) { return 0; }
-    return _json_phoneme(bayan_json_v_parse_buf(text, strlen(text)));
+    return _json_phoneme(_json_parse(text));
 }
 
 # --- PhonemeInventory --------------------------------------------------
@@ -328,7 +376,7 @@ fn _json_inventory(v) {
     if (code == 0 || name == 0) { return 0; }
     var pv = bayan_json_v_obj_get_by_cstr(v, "phonemes");
     if (!bayan_json_v_is_arr(pv)) { return 0; }
-    var stress = _json_stress(bayan_json_v_obj_get_by_cstr(v, "stress"));
+    var stress = _json_enum(bayan_json_v_obj_get_by_cstr(v, "stress"), &StressPattern_from_json_str);
     if (stress < 0) { return 0; }
 
     # `tones` is an Option: absent or null is none, an array of strings is some.
@@ -364,8 +412,7 @@ fn _json_inventory(v) {
 # An inventory from NUL-terminated JSON text, or 0.
 #must_use
 fn phoneme_inventory_from_json(text) {
-    if (text == 0) { return 0; }
-    return _json_inventory(bayan_json_v_parse_buf(text, strlen(text)));
+    return _json_inventory(_json_parse(text));
 }
 
 # --- shared: more field readers -------------------------------------
@@ -409,48 +456,122 @@ fn _json_cstr_array(sb, vs) {
     return 0;
 }
 
-# An Environment by name, or -1. v1.x's externally tagged {"Before":..} /
-# {"After":..} are objects, not names, and fail here on purpose: varna's port
-# deferred those two variants (src/allophone.cyr; roadmap 2.5.2), so it cannot
-# hold them.
+# The name v1.x gave a unit PhonemeClass, or 0. Hand-written where every other enum is
+# derived: these constants carry a `Class` prefix so as not to collide (src/allophone.cyr),
+# and the derive would write the prefix. See ADR 0003's amendment.
+fn _json_class_name(c) {
+    if (c == PhonemeClass.ClassVowel) { return "Vowel"; }
+    if (c == PhonemeClass.ClassConsonant) { return "Consonant"; }
+    if (c == PhonemeClass.ClassNasal) { return "Nasal"; }
+    if (c == PhonemeClass.ClassPlosive) { return "Plosive"; }
+    if (c == PhonemeClass.ClassFricative) { return "Fricative"; }
+    if (c == PhonemeClass.ClassVoiceless) { return "Voiceless"; }
+    if (c == PhonemeClass.ClassVoiced) { return "Voiced"; }
+    return 0;
+}
+
+# A PhonemeClass from a parsed value, or -1. A unit class is its name; `Specific` carries
+# a payload, so it is externally tagged, {"Specific":"k"}, and a bare "Specific" is not
+# one, as serde does not read it as one.
+fn _json_phoneme_class(v) {
+    if (bayan_json_v_is_obj(v)) {
+        if (bayan_json_v_obj_len(v) != 1) { return 0 - 1; }
+        var kb[48];
+        if (_json_name_from_str(bayan_json_v_obj_key(v, 0), &kb) == 0) { return 0 - 1; }
+        if (streq(&kb, "Specific") != 1) { return 0 - 1; }
+        var ipa = _json_cstr(bayan_json_v_obj_val(v, 0));
+        if (ipa == 0) { return 0 - 1; }
+        return ClassSpecific(ipa);
+    }
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    var c = PhonemeClass.ClassVowel;
+    while (c <= PhonemeClass.ClassVoiced) {
+        if (streq(&nb, _json_class_name(c)) == 1) { return c; }
+        c = c + 1;
+    }
+    return 0 - 1;
+}
+
+# An Environment value, or -1: a unit variant by name, or v1.x's externally tagged
+# {"Before":<class>} / {"After":<class>}.
 fn _json_environment(v) {
     var nb[48];
+    if (bayan_json_v_is_obj(v)) {
+        if (bayan_json_v_obj_len(v) != 1) { return 0 - 1; }
+        if (_json_name_from_str(bayan_json_v_obj_key(v, 0), &nb) == 0) { return 0 - 1; }
+        var before = streq(&nb, "Before");
+        if (before != 1 && streq(&nb, "After") != 1) { return 0 - 1; }
+        var cls = _json_phoneme_class(bayan_json_v_obj_val(v, 0));
+        if (cls < 0) { return 0 - 1; }
+        if (before == 1) { return EnvBefore(cls); }
+        return EnvAfter(cls);
+    }
     if (_json_name(v, &nb) == 0) { return 0 - 1; }
     var t, x = Environment_from_json_str(&nb);
     if (is_ok(t) != 1) { return 0 - 1; }
     return result_unwrap(t, x);
 }
 
-fn _json_constraint_kind(v) {
-    var nb[48];
-    if (_json_name(v, &nb) == 0) { return 0 - 1; }
-    var t, x = ConstraintKind_from_json_str(&nb);
-    if (is_ok(t) != 1) { return 0 - 1; }
-    return result_unwrap(t, x);
+# 1 when the writers can name environment `e`: a unit variant, or a side and a class
+# holding what v1.x's would.
+fn _json_environment_ok(e) {
+    if (environment_is_conditioned(e) == 0) {
+        if (e >= Environment.WordInitial && e <= Environment.Unstressed) { return 1; }
+        return 0;
+    }
+    var side = environment_side(e);
+    if (side != ClassEnvironment.EnvBefore && side != ClassEnvironment.EnvAfter) { return 0; }
+    var c = environment_class(e);
+    if (phoneme_class_is_specific(c) == 1) {
+        if (phoneme_class_ipa(c) != 0) { return 1; }
+        return 0;
+    }
+    if (_json_class_name(c) != 0) { return 1; }
+    return 0;
 }
 
-fn _json_position(v) {
-    var nb[48];
-    if (_json_name(v, &nb) == 0) { return 0 - 1; }
-    var t, x = SyllablePosition_from_json_str(&nb);
-    if (is_ok(t) != 1) { return 0 - 1; }
-    return result_unwrap(t, x);
+# Append environment `e`, which _json_environment_ok has passed.
+fn _json_environment_write(sb, e) {
+    if (environment_is_conditioned(e) == 0) { return Environment_to_json(e, sb); }
+    if (environment_side(e) == ClassEnvironment.EnvBefore) {
+        str_builder_add_cstr(sb, "{\"Before\":");
+    } else {
+        str_builder_add_cstr(sb, "{\"After\":");
+    }
+    var c = environment_class(e);
+    if (phoneme_class_is_specific(c) == 1) {
+        str_builder_add_cstr(sb, "{\"Specific\":");
+        str_builder_add_json_cstr(sb, phoneme_class_ipa(c));
+        str_builder_putc(sb, '}');
+    } else {
+        str_builder_add_json_cstr(sb, _json_class_name(c));
+    }
+    str_builder_putc(sb, '}');
+    return 0;
 }
 
 # --- AllophoneRule / AllophoneRuleSet -----------------------------------
 #
 # v1.x: {"phoneme":"t","allophone":"ɾ","environment":"Intervocalic","obligatory":false}
+#       {"phoneme":"n","allophone":"ŋ","environment":{"Before":{"Specific":"k"}},"obligatory":true}
 #       {"language_code":"en","rules":[ ..rules.. ]}
 
-# Append allophone rule `r`. Returns 0, or -1 (nothing written) for a null rule.
+fn _json_rule_ok(r) {
+    if (r == 0) { return 0; }
+    return _json_environment_ok(allophone_rule_environment(r));
+}
+
+# Append allophone rule `r`. Returns 0, or -1 (nothing written) for a null rule or one
+# whose environment is corrupt.
 fn allophone_rule_to_json(r, sb) {
-    if (r == 0) { return 0 - 1; }
+    if (_json_rule_ok(r) == 0) { return 0 - 1; }
     str_builder_add_cstr(sb, "{\"phoneme\":");
     str_builder_add_json_cstr(sb, allophone_rule_phoneme(r));
     str_builder_add_cstr(sb, ",\"allophone\":");
     str_builder_add_json_cstr(sb, allophone_rule_allophone(r));
     str_builder_add_cstr(sb, ",\"environment\":");
-    Environment_to_json(allophone_rule_environment(r), sb);
+    _json_environment_write(sb, allophone_rule_environment(r));
     str_builder_add_cstr(sb, ",\"obligatory\":");
     _json_bool(sb, allophone_rule_obligatory(r));
     str_builder_putc(sb, '}');
@@ -471,19 +592,18 @@ fn _json_allophone_rule(v) {
 # An allophone rule from NUL-terminated JSON text, or 0.
 #must_use
 fn allophone_rule_from_json(text) {
-    if (text == 0) { return 0; }
-    return _json_allophone_rule(bayan_json_v_parse_buf(text, strlen(text)));
+    return _json_allophone_rule(_json_parse(text));
 }
 
 # Append rule set `s`. Returns 0, or -1 (nothing written) for a null set or one
-# holding a null rule.
+# holding a rule allophone_rule_to_json would refuse.
 fn allophone_rule_set_to_json(s, sb) {
     if (s == 0) { return 0 - 1; }
     var rules = allophone_rules(s);
     var n = vec_len(rules);
     var i = 0;
     while (i < n) {
-        if (vec_get(rules, i) == 0) { return 0 - 1; }
+        if (_json_rule_ok(vec_get(rules, i)) == 0) { return 0 - 1; }
         i = i + 1;
     }
     str_builder_add_cstr(sb, "{\"language_code\":");
@@ -520,8 +640,7 @@ fn _json_allophone_rule_set(v) {
 # An allophone rule set from NUL-terminated JSON text, or 0.
 #must_use
 fn allophone_rule_set_from_json(text) {
-    if (text == 0) { return 0; }
-    return _json_allophone_rule_set(bayan_json_v_parse_buf(text, strlen(text)));
+    return _json_allophone_rule_set(_json_parse(text));
 }
 
 # --- SyllableTemplate / PhonotacticConstraint / Phonotactics ------------
@@ -558,8 +677,7 @@ fn _json_syllable_template(v) {
 # A syllable template from NUL-terminated JSON text, or 0.
 #must_use
 fn syllable_template_from_json(text) {
-    if (text == 0) { return 0; }
-    return _json_syllable_template(bayan_json_v_parse_buf(text, strlen(text)));
+    return _json_syllable_template(_json_parse(text));
 }
 
 # Append phonotactic constraint `c`. Returns 0, or -1 (nothing written) for a null one.
@@ -579,8 +697,8 @@ fn phonotactic_constraint_to_json(c, sb) {
 
 fn _json_phonotactic_constraint(v) {
     if (!bayan_json_v_is_obj(v)) { return 0; }
-    var kind = _json_constraint_kind(bayan_json_v_obj_get_by_cstr(v, "kind"));
-    var pos = _json_position(bayan_json_v_obj_get_by_cstr(v, "position"));
+    var kind = _json_enum(bayan_json_v_obj_get_by_cstr(v, "kind"), &ConstraintKind_from_json_str);
+    var pos = _json_enum(bayan_json_v_obj_get_by_cstr(v, "position"), &SyllablePosition_from_json_str);
     var seqs = _json_cstr_vec(bayan_json_v_obj_get_by_cstr(v, "sequences"));
     var desc = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "description"));
     if (kind < 0 || pos < 0 || seqs == 0 || desc == 0) { return 0; }
@@ -597,8 +715,7 @@ fn _json_phonotactic_constraint(v) {
 # A phonotactic constraint from NUL-terminated JSON text, or 0.
 #must_use
 fn phonotactic_constraint_from_json(text) {
-    if (text == 0) { return 0; }
-    return _json_phonotactic_constraint(bayan_json_v_parse_buf(text, strlen(text)));
+    return _json_phonotactic_constraint(_json_parse(text));
 }
 
 # Append phonotactic profile `p`. Returns 0, or -1 (nothing written) for a null
@@ -651,6 +768,813 @@ fn _json_phonotactics(v) {
 # A phonotactic profile from NUL-terminated JSON text, or 0.
 #must_use
 fn phonotactics_from_json(text) {
-    if (text == 0) { return 0; }
-    return _json_phonotactics(bayan_json_v_parse_buf(text, strlen(text)));
+    return _json_phonotactics(_json_parse(text));
+}
+
+# --- shared: still more field readers and writers -------------------
+
+# A JSON integer in 0..4294967295 (v1.x's u32 fields), or -1 for anything else.
+fn _json_u32(v) {
+    if (!bayan_json_v_is_int(v)) { return 0 - 1; }
+    var n = bayan_json_v_int(v);
+    if (n < 0 || n > 0xFFFFFFFF) { return 0 - 1; }
+    return n;
+}
+
+# An Option<String>: a fresh copy, 0 for None (absent or null), -1 for any other type.
+fn _json_opt_cstr(v) {
+    if (v == 0 || bayan_json_v_is_null(v)) { return 0; }
+    var s = _json_cstr(v);
+    if (s == 0) { return 0 - 1; }
+    return s;
+}
+
+# Append an Option<String>: the string, or null for 0.
+fn _json_opt_cstr_write(sb, s) {
+    if (s == 0) { return str_builder_add_cstr(sb, "null"); }
+    return str_builder_add_json_cstr(sb, s);
+}
+
+# --- Script --------------------------------------------------------------
+#
+# v1.x: {"code":"Latn","name":"Latin","script_type":"Alphabet","direction":"LeftToRight",
+#        "status":"Living","attestation":null,"unicode_ranges":[[65,90],..],"languages":["en",..]}
+# A (u32, u32) tuple is a two-element array.
+
+# Append script `s`. Returns 0, or -1 (nothing written) for a null script or one holding
+# a null range.
+fn script_to_json(s, sb) {
+    if (s == 0) { return 0 - 1; }
+    var ranges = script_unicode_ranges(s);
+    var n = vec_len(ranges);
+    var i = 0;
+    while (i < n) {
+        if (vec_get(ranges, i) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "{\"code\":");
+    str_builder_add_json_cstr(sb, script_code(s));
+    str_builder_add_cstr(sb, ",\"name\":");
+    str_builder_add_json_cstr(sb, script_name(s));
+    str_builder_add_cstr(sb, ",\"script_type\":");
+    ScriptType_to_json(script_type(s), sb);
+    str_builder_add_cstr(sb, ",\"direction\":");
+    Direction_to_json(script_direction(s), sb);
+    str_builder_add_cstr(sb, ",\"status\":");
+    ScriptStatus_to_json(script_status(s), sb);
+    str_builder_add_cstr(sb, ",\"attestation\":");
+    _json_opt_cstr_write(sb, script_attestation(s));
+    str_builder_add_cstr(sb, ",\"unicode_ranges\":[");
+    i = 0;
+    while (i < n) {
+        var r = vec_get(ranges, i);
+        if (i > 0) { str_builder_putc(sb, ','); }
+        str_builder_putc(sb, '[');
+        str_builder_add_int(sb, script_range_lo(r));
+        str_builder_putc(sb, ',');
+        str_builder_add_int(sb, script_range_hi(r));
+        str_builder_putc(sb, ']');
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "],\"languages\":");
+    _json_cstr_array(sb, script_languages(s));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_script(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var code = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "code"));
+    var name = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "name"));
+    if (code == 0 || name == 0) { return 0; }
+    var stype = _json_enum(bayan_json_v_obj_get_by_cstr(v, "script_type"), &ScriptType_from_json_str);
+    var dir = _json_enum(bayan_json_v_obj_get_by_cstr(v, "direction"), &Direction_from_json_str);
+    var status = _json_enum(bayan_json_v_obj_get_by_cstr(v, "status"), &ScriptStatus_from_json_str);
+    if (stype < 0 || dir < 0 || status < 0) { return 0; }
+    var att = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "attestation"));
+    if (att < 0) { return 0; }
+    var rv = bayan_json_v_obj_get_by_cstr(v, "unicode_ranges");
+    if (!bayan_json_v_is_arr(rv)) { return 0; }
+    var langs = _json_cstr_vec(bayan_json_v_obj_get_by_cstr(v, "languages"));
+    if (langs == 0) { return 0; }
+
+    var s = _script_new(code, name, stype, dir, status, att);
+    var n = bayan_json_v_arr_len(rv);
+    var i = 0;
+    while (i < n) {
+        var pair = bayan_json_v_arr_get(rv, i);
+        if (!bayan_json_v_is_arr(pair)) { return 0; }
+        if (bayan_json_v_arr_len(pair) != 2) { return 0; }
+        var lo = _json_u32(bayan_json_v_arr_get(pair, 0));
+        var hi = _json_u32(bayan_json_v_arr_get(pair, 1));
+        if (lo < 0 || hi < 0) { return 0; }
+        _script_add_range(s, lo, hi);
+        i = i + 1;
+    }
+    var nl = vec_len(langs);
+    i = 0;
+    while (i < nl) {
+        _script_add_lang(s, vec_get(langs, i));
+        i = i + 1;
+    }
+    return s;
+}
+
+# A script from NUL-terminated JSON text, or 0.
+#must_use
+fn script_from_json(text) {
+    return _json_script(_json_parse(text));
+}
+
+# --- NumeralMapping / NumeralSystem ---------------------------------------
+#
+# v1.x: {"character":"α","value":1}
+#       {"script_code":"Grek","name":"Greek Isopsephy","kind":"Alphabetic","mappings":[..]}
+# varna adds `role` and `base` (2.4.0) to a mapping:
+#   {"character":"ς","value":200,"role":"ROLE_ALLOGRAPH","base":"σ"}
+
+# Append numeral mapping `m`. Returns 0, or -1 (nothing written) for a null one.
+fn numeral_mapping_to_json(m, sb) {
+    if (m == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"character\":");
+    str_builder_add_json_cstr(sb, numerals_mapping_char(m));
+    str_builder_add_cstr(sb, ",\"value\":");
+    str_builder_add_int(sb, numerals_mapping_value(m));
+    str_builder_add_cstr(sb, ",\"role\":");
+    LetterRole_to_json(numerals_mapping_role(m), sb);
+    str_builder_add_cstr(sb, ",\"base\":");
+    _json_opt_cstr_write(sb, numerals_mapping_base(m));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_numeral_mapping(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var ch = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "character"));
+    if (ch == 0) { return 0; }
+    var value = _json_u32(bayan_json_v_obj_get_by_cstr(v, "value"));
+    if (value < 0) { return 0; }
+    var role = _json_opt_enum(v, "role", &LetterRole_from_json_str, LetterRole.ROLE_LETTER);
+    if (role < 0) { return 0; }
+    var base = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "base"));
+    if (base < 0) { return 0; }
+    # The constructors tie the two together: an allograph varies a letter, and nothing
+    # else has a base. The ordinal method reads `base` on that promise.
+    if (role == LetterRole.ROLE_ALLOGRAPH) {
+        if (base == 0) { return 0; }
+    } else {
+        if (base != 0) { return 0; }
+    }
+    return _nsys_mapping_new(ch, value, role, base);
+}
+
+# A numeral mapping from NUL-terminated JSON text, or 0.
+#must_use
+fn numeral_mapping_from_json(text) {
+    return _json_numeral_mapping(_json_parse(text));
+}
+
+# Append numeral system `sys`. Returns 0, or -1 (nothing written) for a null system or
+# one holding a null mapping.
+fn numeral_system_to_json(sys, sb) {
+    if (sys == 0) { return 0 - 1; }
+    var ms = numerals_mappings(sys);
+    var n = vec_len(ms);
+    var i = 0;
+    while (i < n) {
+        if (vec_get(ms, i) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "{\"script_code\":");
+    str_builder_add_json_cstr(sb, numerals_script_code(sys));
+    str_builder_add_cstr(sb, ",\"name\":");
+    str_builder_add_json_cstr(sb, numerals_name(sys));
+    str_builder_add_cstr(sb, ",\"kind\":");
+    NumeralSystemKind_to_json(numerals_kind(sys), sb);
+    str_builder_add_cstr(sb, ",\"mappings\":[");
+    i = 0;
+    while (i < n) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        numeral_mapping_to_json(vec_get(ms, i), sb);
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "]}");
+    return 0;
+}
+
+fn _json_numeral_system(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var code = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "script_code"));
+    var name = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "name"));
+    if (code == 0 || name == 0) { return 0; }
+    var kind = _json_enum(bayan_json_v_obj_get_by_cstr(v, "kind"), &NumeralSystemKind_from_json_str);
+    if (kind < 0) { return 0; }
+    var mv = bayan_json_v_obj_get_by_cstr(v, "mappings");
+    if (!bayan_json_v_is_arr(mv)) { return 0; }
+    var sys = _nsys_new(code, name, kind);
+    var n = bayan_json_v_arr_len(mv);
+    var i = 0;
+    while (i < n) {
+        var m = _json_numeral_mapping(bayan_json_v_arr_get(mv, i));
+        if (m == 0) { return 0; }
+        vec_push(numerals_mappings(sys), m);
+        i = i + 1;
+    }
+    return sys;
+}
+
+# A numeral system from NUL-terminated JSON text, or 0.
+#must_use
+fn numeral_system_from_json(text) {
+    return _json_numeral_system(_json_parse(text));
+}
+
+# --- TransliterationTable -------------------------------------------------
+#
+# v1.x: {"scheme":"IAST","source_script":"Deva","target_script":"Latn","forward":[["अ","a"],..]}
+
+# Append transliteration table `tt`. Returns 0, or -1 (nothing written) for a null table
+# or one holding a null pair.
+fn transliteration_table_to_json(tt, sb) {
+    if (tt == 0) { return 0 - 1; }
+    var fwd = translit_forward(tt);
+    var n = vec_len(fwd);
+    var i = 0;
+    while (i < n) {
+        if (vec_get(fwd, i) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "{\"scheme\":");
+    str_builder_add_json_cstr(sb, translit_scheme(tt));
+    str_builder_add_cstr(sb, ",\"source_script\":");
+    str_builder_add_json_cstr(sb, translit_source_script(tt));
+    str_builder_add_cstr(sb, ",\"target_script\":");
+    str_builder_add_json_cstr(sb, translit_target_script(tt));
+    str_builder_add_cstr(sb, ",\"forward\":[");
+    i = 0;
+    while (i < n) {
+        var pair = vec_get(fwd, i);
+        if (i > 0) { str_builder_putc(sb, ','); }
+        str_builder_putc(sb, '[');
+        str_builder_add_json_cstr(sb, translit_pair_source(pair));
+        str_builder_putc(sb, ',');
+        str_builder_add_json_cstr(sb, translit_pair_target(pair));
+        str_builder_putc(sb, ']');
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "]}");
+    return 0;
+}
+
+fn _json_transliteration_table(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var scheme = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "scheme"));
+    var src = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "source_script"));
+    var tgt = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "target_script"));
+    if (scheme == 0 || src == 0 || tgt == 0) { return 0; }
+    var fv = bayan_json_v_obj_get_by_cstr(v, "forward");
+    if (!bayan_json_v_is_arr(fv)) { return 0; }
+    var tt = _tt_new(scheme, src, tgt);
+    var n = bayan_json_v_arr_len(fv);
+    var i = 0;
+    while (i < n) {
+        var pair = bayan_json_v_arr_get(fv, i);
+        if (!bayan_json_v_is_arr(pair)) { return 0; }
+        if (bayan_json_v_arr_len(pair) != 2) { return 0; }
+        var a = _json_cstr(bayan_json_v_arr_get(pair, 0));
+        var b = _json_cstr(bayan_json_v_arr_get(pair, 1));
+        if (a == 0 || b == 0) { return 0; }
+        _tt_add(tt, a, b);
+        i = i + 1;
+    }
+    return tt;
+}
+
+# A transliteration table from NUL-terminated JSON text, or 0.
+#must_use
+fn transliteration_table_from_json(text) {
+    return _json_transliteration_table(_json_parse(text));
+}
+
+# --- GrammarProfile -------------------------------------------------------
+#
+# v1.x: {"language_code":"en","morphology":"Fusional","word_order":"SVO","case_count":2,
+#        "has_gender":false,"gender_count":0,"has_dual":false,"has_classifiers":false}
+# varna adds nine typology fields (2.3.0) after those. `has_future` is a tri-state, so it
+# is an Option<bool>: true, false, or null for disputed. All nine are optional on read
+# and take _gp_new's defaults, which state that a profile does not carry them.
+
+# WordOrder.FreeOrder is v1.x's `Free`, a name StressPattern.Free already holds, so that
+# one value is mapped by hand and the rest go through the derive (ADR 0003's amendment).
+fn _json_word_order(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    if (streq(&nb, "Free") == 1) { return WordOrder.FreeOrder; }
+    if (streq(&nb, "FreeOrder") == 1) { return 0 - 1; }
+    return _json_enum(v, &WordOrder_from_json_str);
+}
+
+fn _json_word_order_write(sb, w) {
+    if (w == WordOrder.FreeOrder) { return str_builder_add_cstr(sb, "\"Free\""); }
+    return WordOrder_to_json(w, sb);
+}
+
+# `has_future`: 1, 0 or -1 for true, false or null (absent reads as null), and -2 for
+# any other type.
+fn _json_future(v) {
+    if (v == 0 || bayan_json_v_is_null(v)) { return 0 - 1; }
+    if (!bayan_json_v_is_bool(v)) { return 0 - 2; }
+    return bayan_json_v_bool(v);
+}
+
+# Append grammar profile `g`. Returns 0, or -1 (nothing written) for a null profile.
+fn grammar_profile_to_json(g, sb) {
+    if (g == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"language_code\":");
+    str_builder_add_json_cstr(sb, grammar_language_code(g));
+    str_builder_add_cstr(sb, ",\"morphology\":");
+    Morphology_to_json(grammar_morphology(g), sb);
+    str_builder_add_cstr(sb, ",\"word_order\":");
+    _json_word_order_write(sb, grammar_word_order(g));
+    str_builder_add_cstr(sb, ",\"case_count\":");
+    str_builder_add_int(sb, grammar_case_count(g));
+    str_builder_add_cstr(sb, ",\"has_gender\":");
+    _json_bool(sb, grammar_has_gender(g));
+    str_builder_add_cstr(sb, ",\"gender_count\":");
+    str_builder_add_int(sb, grammar_gender_count(g));
+    str_builder_add_cstr(sb, ",\"has_dual\":");
+    _json_bool(sb, grammar_has_dual(g));
+    str_builder_add_cstr(sb, ",\"has_classifiers\":");
+    _json_bool(sb, grammar_has_classifiers(g));
+    str_builder_add_cstr(sb, ",\"alignment\":");
+    Alignment_to_json(grammar_alignment(g), sb);
+    str_builder_add_cstr(sb, ",\"adposition_order\":");
+    AdpositionOrder_to_json(grammar_adposition_order(g), sb);
+    str_builder_add_cstr(sb, ",\"tense_marking\":");
+    TenseMarking_to_json(grammar_tense_marking(g), sb);
+    str_builder_add_cstr(sb, ",\"has_future\":");
+    if (grammar_has_future(g) < 0) {
+        str_builder_add_cstr(sb, "null");
+    } else {
+        _json_bool(sb, grammar_has_future(g));
+    }
+    str_builder_add_cstr(sb, ",\"evidentiality\":");
+    Evidentiality_to_json(grammar_evidentiality(g), sb);
+    str_builder_add_cstr(sb, ",\"negation\":");
+    NegationStrategy_to_json(grammar_negation(g), sb);
+    str_builder_add_cstr(sb, ",\"article_type\":");
+    ArticleType_to_json(grammar_article_type(g), sb);
+    str_builder_add_cstr(sb, ",\"adjective_order\":");
+    AdjectiveOrder_to_json(grammar_adjective_order(g), sb);
+    str_builder_add_cstr(sb, ",\"relative_order\":");
+    RelativeClauseOrder_to_json(grammar_relative_order(g), sb);
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_grammar_profile(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var code = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "language_code"));
+    if (code == 0) { return 0; }
+    var morph = _json_enum(bayan_json_v_obj_get_by_cstr(v, "morphology"), &Morphology_from_json_str);
+    var order = _json_word_order(bayan_json_v_obj_get_by_cstr(v, "word_order"));
+    var cases = _json_u8(bayan_json_v_obj_get_by_cstr(v, "case_count"));
+    var gender = _json_bool_from(bayan_json_v_obj_get_by_cstr(v, "has_gender"));
+    var genders = _json_u8(bayan_json_v_obj_get_by_cstr(v, "gender_count"));
+    var dual = _json_bool_from(bayan_json_v_obj_get_by_cstr(v, "has_dual"));
+    var classifiers = _json_bool_from(bayan_json_v_obj_get_by_cstr(v, "has_classifiers"));
+    if (morph < 0 || order < 0 || cases < 0 || gender < 0) { return 0; }
+    if (genders < 0 || dual < 0 || classifiers < 0) { return 0; }
+
+    var align = _json_opt_enum(v, "alignment", &Alignment_from_json_str, Alignment.ALIGN_NO_DOMINANT);
+    var adp = _json_opt_enum(v, "adposition_order", &AdpositionOrder_from_json_str, AdpositionOrder.ADP_NO_DOMINANT);
+    var tense = _json_opt_enum(v, "tense_marking", &TenseMarking_from_json_str, TenseMarking.TENSE_NO_DOMINANT);
+    var future = _json_future(bayan_json_v_obj_get_by_cstr(v, "has_future"));
+    var evid = _json_opt_enum(v, "evidentiality", &Evidentiality_from_json_str, Evidentiality.EVID_NONE);
+    var neg = _json_opt_enum(v, "negation", &NegationStrategy_from_json_str, NegationStrategy.NEG_NO_DOMINANT);
+    var art = _json_opt_enum(v, "article_type", &ArticleType_from_json_str, ArticleType.ART_NONE);
+    var adj = _json_opt_enum(v, "adjective_order", &AdjectiveOrder_from_json_str, AdjectiveOrder.ADJ_NO_DOMINANT);
+    var rel = _json_opt_enum(v, "relative_order", &RelativeClauseOrder_from_json_str,
+        RelativeClauseOrder.REL_AFTER_NOUN);
+    if (align < 0 || adp < 0 || tense < 0 || future < 0 - 1) { return 0; }
+    if (evid < 0 || neg < 0 || art < 0 || adj < 0 || rel < 0) { return 0; }
+    return _gp_new_full(code, morph, order, cases, gender, genders, dual, classifiers,
+        align, adp, tense, future, evid, neg, art, adj, rel);
+}
+
+# A grammar profile from NUL-terminated JSON text, or 0.
+#must_use
+fn grammar_profile_from_json(text) {
+    return _json_grammar_profile(_json_parse(text));
+}
+
+# --- LexEntry / Lexicon ---------------------------------------------------
+#
+# v1.x: {"word":"water","ipa":"ˈwɔːtər","gloss":"water","pos":"Noun",
+#        "frequency_rank":250,"swadesh_index":23}
+#       {"language_code":"en","entries":[ ..entries.. ]}
+# A Swadesh list is a Lexicon, so it needs nothing of its own.
+
+# An Option of an unsigned integer up to `max`: the value, -1 for None (absent or null,
+# which is also how the record holds None), or -2 for anything else.
+fn _json_opt_uint(v, max) {
+    if (v == 0 || bayan_json_v_is_null(v)) { return 0 - 1; }
+    if (!bayan_json_v_is_int(v)) { return 0 - 2; }
+    var n = bayan_json_v_int(v);
+    if (n < 0 || n > max) { return 0 - 2; }
+    return n;
+}
+
+# Append an Option of an unsigned integer held as n, or -1 for None.
+fn _json_opt_uint_write(sb, n) {
+    if (n < 0) { return str_builder_add_cstr(sb, "null"); }
+    return str_builder_add_int(sb, n);
+}
+
+# Append lexical entry `e`. Returns 0, or -1 (nothing written) for a null entry.
+fn lex_entry_to_json(e, sb) {
+    if (e == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"word\":");
+    str_builder_add_json_cstr(sb, lex_word(e));
+    str_builder_add_cstr(sb, ",\"ipa\":");
+    str_builder_add_json_cstr(sb, lex_ipa(e));
+    str_builder_add_cstr(sb, ",\"gloss\":");
+    str_builder_add_json_cstr(sb, lex_gloss(e));
+    str_builder_add_cstr(sb, ",\"pos\":");
+    PartOfSpeech_to_json(lex_pos(e), sb);
+    str_builder_add_cstr(sb, ",\"frequency_rank\":");
+    _json_opt_uint_write(sb, lex_frequency_rank(e));
+    str_builder_add_cstr(sb, ",\"swadesh_index\":");
+    _json_opt_uint_write(sb, lex_swadesh_index(e));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_lex_entry(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var word = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "word"));
+    var ipa = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "ipa"));
+    var gloss = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "gloss"));
+    if (word == 0 || ipa == 0 || gloss == 0) { return 0; }
+    var pos = _json_enum(bayan_json_v_obj_get_by_cstr(v, "pos"), &PartOfSpeech_from_json_str);
+    if (pos < 0) { return 0; }
+    var rank = _json_opt_uint(bayan_json_v_obj_get_by_cstr(v, "frequency_rank"), 0xFFFFFFFF);
+    var idx = _json_opt_uint(bayan_json_v_obj_get_by_cstr(v, "swadesh_index"), 0xFFFF);
+    if (rank < 0 - 1 || idx < 0 - 1) { return 0; }
+    return _lex_entry_new(word, ipa, gloss, pos, rank, idx);
+}
+
+# A lexical entry from NUL-terminated JSON text, or 0.
+#must_use
+fn lex_entry_from_json(text) {
+    return _json_lex_entry(_json_parse(text));
+}
+
+# Append lexicon `lex`. Returns 0, or -1 (nothing written) for a null lexicon or one
+# holding a null entry.
+fn lexicon_to_json(lex, sb) {
+    if (lex == 0) { return 0 - 1; }
+    var es = lexicon_entries(lex);
+    var n = vec_len(es);
+    var i = 0;
+    while (i < n) {
+        if (vec_get(es, i) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "{\"language_code\":");
+    str_builder_add_json_cstr(sb, lexicon_language_code(lex));
+    str_builder_add_cstr(sb, ",\"entries\":[");
+    i = 0;
+    while (i < n) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        lex_entry_to_json(vec_get(es, i), sb);
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "]}");
+    return 0;
+}
+
+fn _json_lexicon(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var code = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "language_code"));
+    if (code == 0) { return 0; }
+    var ev = bayan_json_v_obj_get_by_cstr(v, "entries");
+    if (!bayan_json_v_is_arr(ev)) { return 0; }
+    var lex = _lexicon_new(code);
+    var n = bayan_json_v_arr_len(ev);
+    var i = 0;
+    while (i < n) {
+        var e = _json_lex_entry(bayan_json_v_arr_get(ev, i));
+        if (e == 0) { return 0; }
+        _lexicon_add(lex, e);
+        i = i + 1;
+    }
+    return lex;
+}
+
+# A lexicon from NUL-terminated JSON text, or 0.
+#must_use
+fn lexicon_from_json(text) {
+    return _json_lexicon(_json_parse(text));
+}
+
+# --- CognateEntry / CognateSet / Etymology --------------------------------
+#
+# v1.x: {"language":"en","word":"water","ipa":"ˈwɔːtər"}
+#       {"proto_form":"*wódr̥","proto_language":"Proto-Indo-European","gloss":"water","entries":[..]}
+#       {"source_language":"fr","source_form":"café","borrowing_type":"Loanword","period":null}
+
+# Append cognate entry `e`. Returns 0, or -1 (nothing written) for a null entry.
+fn cognate_entry_to_json(e, sb) {
+    if (e == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"language\":");
+    str_builder_add_json_cstr(sb, cognate_entry_language(e));
+    str_builder_add_cstr(sb, ",\"word\":");
+    str_builder_add_json_cstr(sb, cognate_word(e));
+    str_builder_add_cstr(sb, ",\"ipa\":");
+    str_builder_add_json_cstr(sb, cognate_ipa(e));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_cognate_entry(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var lang = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "language"));
+    var word = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "word"));
+    var ipa = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "ipa"));
+    if (lang == 0 || word == 0 || ipa == 0) { return 0; }
+    return _cognate_entry_new(lang, word, ipa);
+}
+
+# A cognate entry from NUL-terminated JSON text, or 0.
+#must_use
+fn cognate_entry_from_json(text) {
+    return _json_cognate_entry(_json_parse(text));
+}
+
+# Append cognate set `s`. Returns 0, or -1 (nothing written) for a null set or one
+# holding a null entry.
+fn cognate_set_to_json(s, sb) {
+    if (s == 0) { return 0 - 1; }
+    var es = cognate_entries(s);
+    var n = vec_len(es);
+    var i = 0;
+    while (i < n) {
+        if (vec_get(es, i) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "{\"proto_form\":");
+    _json_opt_cstr_write(sb, cognate_proto_form(s));
+    str_builder_add_cstr(sb, ",\"proto_language\":");
+    _json_opt_cstr_write(sb, cognate_proto_language(s));
+    str_builder_add_cstr(sb, ",\"gloss\":");
+    str_builder_add_json_cstr(sb, cognate_gloss(s));
+    str_builder_add_cstr(sb, ",\"entries\":[");
+    i = 0;
+    while (i < n) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        cognate_entry_to_json(vec_get(es, i), sb);
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "]}");
+    return 0;
+}
+
+fn _json_cognate_set(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var form = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "proto_form"));
+    var lang = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "proto_language"));
+    if (form < 0 || lang < 0) { return 0; }
+    var gloss = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "gloss"));
+    if (gloss == 0) { return 0; }
+    var ev = bayan_json_v_obj_get_by_cstr(v, "entries");
+    if (!bayan_json_v_is_arr(ev)) { return 0; }
+    var s = _cognate_set_new(form, lang, gloss);
+    var n = bayan_json_v_arr_len(ev);
+    var i = 0;
+    while (i < n) {
+        var e = _json_cognate_entry(bayan_json_v_arr_get(ev, i));
+        if (e == 0) { return 0; }
+        vec_push(cognate_entries(s), e);
+        i = i + 1;
+    }
+    return s;
+}
+
+# A cognate set from NUL-terminated JSON text, or 0.
+#must_use
+fn cognate_set_from_json(text) {
+    return _json_cognate_set(_json_parse(text));
+}
+
+# Append etymology `e`. Returns 0, or -1 (nothing written) for a null one.
+fn etymology_to_json(e, sb) {
+    if (e == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"source_language\":");
+    str_builder_add_json_cstr(sb, etymology_source_language(e));
+    str_builder_add_cstr(sb, ",\"source_form\":");
+    str_builder_add_json_cstr(sb, etymology_source_form(e));
+    str_builder_add_cstr(sb, ",\"borrowing_type\":");
+    BorrowingType_to_json(etymology_borrowing_type(e), sb);
+    str_builder_add_cstr(sb, ",\"period\":");
+    _json_opt_cstr_write(sb, etymology_period(e));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_etymology(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var lang = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "source_language"));
+    var form = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "source_form"));
+    if (lang == 0 || form == 0) { return 0; }
+    var kind = _json_enum(bayan_json_v_obj_get_by_cstr(v, "borrowing_type"), &BorrowingType_from_json_str);
+    if (kind < 0) { return 0; }
+    var period = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "period"));
+    if (period < 0) { return 0; }
+    return etymology_new(lang, form, kind, period);
+}
+
+# An etymology from NUL-terminated JSON text, or 0.
+#must_use
+fn etymology_from_json(text) {
+    return _json_etymology(_json_parse(text));
+}
+
+# --- LanguageVariety ------------------------------------------------------
+#
+# v1.x: {"code":"en-GB","name":"British English (RP)","parent":"en","kind":"NationalStandard",
+#        "added_phonemes":["ɒ"],"removed_phonemes":["ɹ"],"allophone_overrides":[ ..rules.. ]}
+
+# VarietyKind.HistoricalVariety is v1.x's `Historical`, a name ScriptStatus already
+# holds, so that one value is mapped by hand (ADR 0003's amendment).
+fn _json_variety_kind(v) {
+    var nb[48];
+    if (_json_name(v, &nb) == 0) { return 0 - 1; }
+    if (streq(&nb, "Historical") == 1) { return VarietyKind.HistoricalVariety; }
+    if (streq(&nb, "HistoricalVariety") == 1) { return 0 - 1; }
+    return _json_enum(v, &VarietyKind_from_json_str);
+}
+
+fn _json_variety_kind_write(sb, k) {
+    if (k == VarietyKind.HistoricalVariety) { return str_builder_add_cstr(sb, "\"Historical\""); }
+    return VarietyKind_to_json(k, sb);
+}
+
+# Append language variety `lv`. Returns 0, or -1 (nothing written) for a null variety
+# or one holding a rule allophone_rule_to_json would refuse.
+fn language_variety_to_json(lv, sb) {
+    if (lv == 0) { return 0 - 1; }
+    var rules = dialect_overrides(lv);
+    var n = vec_len(rules);
+    var i = 0;
+    while (i < n) {
+        if (_json_rule_ok(vec_get(rules, i)) == 0) { return 0 - 1; }
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "{\"code\":");
+    str_builder_add_json_cstr(sb, dialect_code(lv));
+    str_builder_add_cstr(sb, ",\"name\":");
+    str_builder_add_json_cstr(sb, dialect_name(lv));
+    str_builder_add_cstr(sb, ",\"parent\":");
+    str_builder_add_json_cstr(sb, dialect_parent(lv));
+    str_builder_add_cstr(sb, ",\"kind\":");
+    _json_variety_kind_write(sb, dialect_kind(lv));
+    str_builder_add_cstr(sb, ",\"added_phonemes\":");
+    _json_cstr_array(sb, dialect_added(lv));
+    str_builder_add_cstr(sb, ",\"removed_phonemes\":");
+    _json_cstr_array(sb, dialect_removed(lv));
+    str_builder_add_cstr(sb, ",\"allophone_overrides\":[");
+    i = 0;
+    while (i < n) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        allophone_rule_to_json(vec_get(rules, i), sb);
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "]}");
+    return 0;
+}
+
+fn _json_language_variety(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var code = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "code"));
+    var name = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "name"));
+    var parent = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "parent"));
+    if (code == 0 || name == 0 || parent == 0) { return 0; }
+    var kind = _json_variety_kind(bayan_json_v_obj_get_by_cstr(v, "kind"));
+    if (kind < 0) { return 0; }
+    var added = _json_cstr_vec(bayan_json_v_obj_get_by_cstr(v, "added_phonemes"));
+    var removed = _json_cstr_vec(bayan_json_v_obj_get_by_cstr(v, "removed_phonemes"));
+    if (added == 0 || removed == 0) { return 0; }
+    var rv = bayan_json_v_obj_get_by_cstr(v, "allophone_overrides");
+    if (!bayan_json_v_is_arr(rv)) { return 0; }
+    var lv = _variety_new(code, name, parent, kind);
+    var n = vec_len(added);
+    var i = 0;
+    while (i < n) {
+        _variety_add_added(lv, vec_get(added, i));
+        i = i + 1;
+    }
+    n = vec_len(removed);
+    i = 0;
+    while (i < n) {
+        _variety_add_removed(lv, vec_get(removed, i));
+        i = i + 1;
+    }
+    n = bayan_json_v_arr_len(rv);
+    i = 0;
+    while (i < n) {
+        var r = _json_allophone_rule(bayan_json_v_arr_get(rv, i));
+        if (r == 0) { return 0; }
+        _variety_add_override(lv, r);
+        i = i + 1;
+    }
+    return lv;
+}
+
+# A language variety from NUL-terminated JSON text, or 0.
+#must_use
+fn language_variety_from_json(text) {
+    return _json_language_variety(_json_parse(text));
+}
+
+# --- LanguageInfo ---------------------------------------------------------
+#
+# New at 2.5.2, not a restoration: v1.x's LanguageInfo did not derive Serialize. So there
+# is no v1.x document to accept, and every field is required but the three Options.
+# `script_codes` keeps v1.x's field name, and everything after it is post-v1.x.
+#   {"code":"en","name":"English","script_codes":["Latn"],"family":"Indo-European",
+#    "subfamily":"Germanic","genus":"West Germanic","endangerment":"END_SAFE",
+#    "macroarea":"AREA_EURASIA","latitude_mdeg":52500,"longitude_mdeg":-1000}
+
+# 1 when `v` is a JSON integer in lo..hi. A latitude can be negative, so no value here
+# can stand for failure the way -1 does in the unsigned readers.
+fn _json_int_in(v, lo, hi) {
+    if (!bayan_json_v_is_int(v)) { return 0; }
+    var n = bayan_json_v_int(v);
+    if (n < lo || n > hi) { return 0; }
+    return 1;
+}
+
+# Append registry entry `li`. Returns 0, or -1 (nothing written) for a null entry.
+fn registry_info_to_json(li, sb) {
+    if (li == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"code\":");
+    str_builder_add_json_cstr(sb, registry_info_code(li));
+    str_builder_add_cstr(sb, ",\"name\":");
+    str_builder_add_json_cstr(sb, registry_info_name(li));
+    str_builder_add_cstr(sb, ",\"script_codes\":");
+    _json_cstr_array(sb, registry_info_scripts(li));
+    str_builder_add_cstr(sb, ",\"family\":");
+    _json_opt_cstr_write(sb, registry_info_family(li));
+    str_builder_add_cstr(sb, ",\"subfamily\":");
+    _json_opt_cstr_write(sb, registry_info_subfamily(li));
+    str_builder_add_cstr(sb, ",\"genus\":");
+    _json_opt_cstr_write(sb, registry_info_genus(li));
+    str_builder_add_cstr(sb, ",\"endangerment\":");
+    EndangermentLevel_to_json(registry_info_endangerment(li), sb);
+    str_builder_add_cstr(sb, ",\"macroarea\":");
+    MacroArea_to_json(registry_info_macroarea(li), sb);
+    str_builder_add_cstr(sb, ",\"latitude_mdeg\":");
+    str_builder_add_int(sb, registry_info_latitude_mdeg(li));
+    str_builder_add_cstr(sb, ",\"longitude_mdeg\":");
+    str_builder_add_int(sb, registry_info_longitude_mdeg(li));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_registry_info(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var code = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "code"));
+    var name = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "name"));
+    if (code == 0 || name == 0) { return 0; }
+    # Every entry names a primary script, the first: _li_new_geo requires one.
+    var scripts = _json_cstr_vec(bayan_json_v_obj_get_by_cstr(v, "script_codes"));
+    if (scripts == 0) { return 0; }
+    if (vec_len(scripts) == 0) { return 0; }
+    var family = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "family"));
+    var subfamily = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "subfamily"));
+    var genus = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "genus"));
+    if (family < 0 || subfamily < 0 || genus < 0) { return 0; }
+    var level = _json_enum(bayan_json_v_obj_get_by_cstr(v, "endangerment"), &EndangermentLevel_from_json_str);
+    var area = _json_enum(bayan_json_v_obj_get_by_cstr(v, "macroarea"), &MacroArea_from_json_str);
+    if (level < 0 || area < 0) { return 0; }
+    var lat = bayan_json_v_obj_get_by_cstr(v, "latitude_mdeg");
+    var lon = bayan_json_v_obj_get_by_cstr(v, "longitude_mdeg");
+    if (_json_int_in(lat, 0 - 90000, 90000) == 0) { return 0; }
+    if (_json_int_in(lon, 0 - 180000, 180000) == 0) { return 0; }
+    var li = _li_new_geo(code, name, vec_get(scripts, 0), family, subfamily, genus, level,
+        area, bayan_json_v_int(lat), bayan_json_v_int(lon));
+    var n = vec_len(scripts);
+    var i = 1;
+    while (i < n) {
+        vec_push(registry_info_scripts(li), vec_get(scripts, i));
+        i = i + 1;
+    }
+    return li;
+}
+
+# A registry entry from NUL-terminated JSON text, or 0.
+#must_use
+fn registry_info_from_json(text) {
+    return _json_registry_info(_json_parse(text));
 }

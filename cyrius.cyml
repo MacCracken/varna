@@ -15,12 +15,10 @@ output = "build/varna"
 # dist/varna.cyr bundle for downstream consumers (shabda, shabdakosh,
 # svara, sankhya, jnana) that fold the language engine in as one
 # file. Order mirrors the include order in src/main.cyr — load-bearing
-# for Cyrius single-pass forward-reference resolution. One deliberate gap:
-# src/json.cyr (2.5.2, ADR 0003) is in src/main.cyr but in neither list
-# until roadmap 2.5.2's consumer-hazard bite settles how bayan reaches
-# consumers (shabda / shabdakosh declare the bayan monolith themselves).
+# for Cyrius single-pass forward-reference resolution.
 #   cyrius distlib       → dist/varna.cyr       (full data engine)
 #   cyrius distlib core  → dist/varna-core.cyr  ([lib.core], no AI surfaces)
+#   cyrius distlib json  → dist/varna-json.cyr  ([lib.json], the engine + JSON)
 [lib]
 modules = [
     "src/error.cyr",
@@ -67,6 +65,39 @@ modules = [
     "src/transliteration.cyr",
 ]
 
+# The engine plus src/json.cyr. A superset of dist/varna.cyr, so a consumer folds one or
+# the other. JSON calls bayan, and this is the only bundle that does, so the choice of
+# bayan stays the consumer's and dist/varna.cyr keeps working with no bayan in scope.
+# A consumer folding this one declares either bayan's thin profile:
+#   [deps.bayan]
+#   git = "https://github.com/MacCracken/bayan.git"
+#   tag = "1.11.1"
+#   modules = ["dist/bayan-json.cyr"]
+# or the "bayan" stdlib monolith, as shabda and shabdakosh do, but never both: that
+# defines 27 JSON symbols twice. With neither, the build refuses, naming the bayan_json_*
+# calls. The sidecar lists neither, because which one is the consumer's choice.
+[lib.json]
+modules = [
+    "src/error.cyr",
+    "src/util.cyr",
+    "src/tone.cyr",
+    "src/phoneme.cyr",
+    "src/features.cyr",
+    "src/inventories.cyr",
+    "src/allophone.cyr",
+    "src/syllable.cyr",
+    "src/grammar.cyr",
+    "src/lexicon.cyr",
+    "src/swadesh.cyr",
+    "src/cognate.cyr",
+    "src/dialect.cyr",
+    "src/script.cyr",
+    "src/registry.cyr",
+    "src/numerals.cyr",
+    "src/transliteration.cyr",
+    "src/json.cyr",
+]
+
 # ── Dependencies ─────────────────────────────────────────────────
 # Cyrius-stdlib modules. `cyrius deps` copies these from the version-
 # pinned toolchain snapshot into ./lib/ (gitignored). The list mirrors
@@ -74,8 +105,7 @@ modules = [
 # load-bearing.
 #
 # Rust → Cyrius dependency map (the v1.x crate's Cargo deps):
-#   serde + serde_json  →  bayan-json      ([deps.bayan] below — NOT YET PORTED: no varna
-#                                           type serializes today; roadmap 2.5.2 (P0))
+#   serde + serde_json  →  bayan-json      ([deps.bayan] below, called by src/json.cyr)
 #   thiserror           →  result + tagged (native enum + Result<T,E>, lib/result.cyr)
 #   tracing             →  sakshi          (structured logging/audit — added with -D LOGGING)
 #   tracing-subscriber  →  sakshi          (no separate subscriber; env-filter wired by hand)
@@ -124,10 +154,8 @@ stdlib = [
 # only, so varna's own builds and tests get it and downstream consumers
 # do not. That matters because shabda and shabdakosh declare the bayan
 # monolith in their own [deps].stdlib; pulling the profile into them
-# too would hit that double definition. No varna code calls bayan yet:
-# serialization was lost in the Rust → Cyrius port and returns as
-# roadmap 2.5.2 (P0), which decides whether the dep stays optional once
-# the serializers enter dist/varna.cyr.
+# too would hit that double definition. So it stays optional, and only
+# dist/varna-json.cyr calls bayan ([lib.json] above).
 [features]
 default = ["bayan"]
 
@@ -161,15 +189,15 @@ modules = ["dist/bayan-json.cyr"]
 # only in local mode (`--local` / CYRIUS_LOCAL=1). A default build always
 # builds the tag and checks its commit pin in cyrius.lock.
 #
-# Kept commented on purpose: src/mcp.cyr hand-builds its JSON today and
-# links nothing from bote, so the recipe is documentation of how to wire
-# it, not an active dependency. bote 3.8.14 is bote's latest release and
+# Kept commented on purpose: src/mcp.cyr builds its JSON with src/json.cyr
+# and links nothing from bote, so the recipe is documentation of how to
+# wire it, not an active dependency. bote 3.8.14 is bote's latest release and
 # pins Cyrius 6.7.18, the same pin as varna 2.5.1.
 #
 # NOTE: the v1.x `daimon` and `hoosh` Cargo features did NOT link those
 # crates — they only flipped on serde_json. Their Cyrius equivalents are
-# pure -D DAIMON / -D HOOSH build defines (JSON via the [deps.bayan]
-# profile above, from 2.5.2), so neither needs a [deps.*] entry of its
+# pure -D DAIMON / -D HOOSH build defines (JSON via src/json.cyr and the
+# [deps.bayan] profile above), so neither needs a [deps.*] entry of its
 # own. daimon and hoosh ship
 # as Cyrius binaries today with no consumable [lib]/dist bundle.
 #

@@ -1,13 +1,186 @@
-# varna fuzz harness
+# tests/varna.fcyr — the JSON decoders against mutated documents (roadmap 2.5.2).
+#
+# Every decoder reads text a consumer did not write, so this is where a crash would
+# matter. A seed document per decoder is mutated at random and decoded. Two properties:
+#   - nothing crashes, whatever the bytes;
+#   - anything that decodes re-encodes, and that text decodes to itself. A writer that
+#     loses an escape, or a reader that keeps what a writer cannot say, fails here.
+# Deterministic: a fixed seed, so a failure reproduces.
 
-fn fuzz_main(data, len) {
-    if (len == 0) { return 0; }
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
+include "src/json.cyr"
+#define MCP
+#define DAIMON
+#define HOOSH
+include "src/daimon.cyr"
+include "src/hoosh.cyr"
+include "src/mcp.cyr"
+
+var _rng = 88172645463325252;
+var _seeds = 0;
+var _decoded = 0;
+var _failures = 0;
+
+fn _rnd(n) {
+    _rng = _rng * 6364136223846793005 + 1442695040888963407;
+    return ((_rng >> 33) & 0x7FFFFFFF) % n;
+}
+
+fn _seed(read, write, doc) {
+    var e = alloc(24);
+    store64(e, read);
+    store64(e + 8, write);
+    store64(e + 16, doc);
+    vec_push(_seeds, e);
+    return 0;
+}
+
+# A byte a parser treats as structure, one that opens or breaks UTF-8, or anything.
+fn _rnd_byte() {
+    var pick = _rnd(16);
+    if (pick == 0) { return 34; }
+    if (pick == 1) { return 92; }
+    if (pick == 2) { return 123; }
+    if (pick == 3) { return 125; }
+    if (pick == 4) { return 91; }
+    if (pick == 5) { return 93; }
+    if (pick == 6) { return 44; }
+    if (pick == 7) { return 58; }
+    if (pick == 8) { return 48 + _rnd(10); }
+    if (pick == 9) { return 0x80 + _rnd(0x80); }
+    if (pick == 10) { return 1 + _rnd(0x1F); }
+    return 1 + _rnd(0xFF);
+}
+
+# `n` bytes at `doc`, changed 1..4 times, in a new NUL-terminated buffer of 2n + 16.
+fn _mutate(doc, n) {
+    var buf = alloc(n * 2 + 16);
+    memcpy(buf, doc, n);
+    var len = n;
+    var k = 1 + _rnd(4);
+    while (k > 0) {
+        var at = _rnd(len + 1);
+        var op = _rnd(4);
+        if (op == 0 && at < len) {
+            store8(buf + at, _rnd_byte());
+        } elif (op == 1 && at < len) {
+            memcpy(buf + at, buf + at + 1, len - at - 1);
+            len = len - 1;
+        } elif (op == 2 && len < n * 2) {
+            var j = len;
+            while (j > at) {
+                store8(buf + j, load8(buf + j - 1));
+                j = j - 1;
+            }
+            store8(buf + at, _rnd_byte());
+            len = len + 1;
+        } elif (op == 3 && at < len && _rnd(8) == 0) {
+            len = at;
+        }
+        k = k - 1;
+    }
+    store8(buf + len, 0);
+    return buf;
+}
+
+fn _encode(write, rec) {
+    var sb = str_builder_new();
+    if (fncall2(write, rec, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _round(e) {
+    var doc = load64(e + 16);
+    var mutated = _mutate(doc, strlen(doc));
+    var rec = fncall1(load64(e), mutated);
+    if (rec == 0) { return 0; }
+    _decoded = _decoded + 1;
+    var once = _encode(load64(e + 8), rec);
+    if (once == 0) {
+        println(mutated);
+        println("  decoded, but the writer refused it");
+        _failures = _failures + 1;
+        return 0;
+    }
+    var again = fncall1(load64(e), once);
+    if (again == 0) {
+        println(once);
+        println("  written, but the reader refused it");
+        _failures = _failures + 1;
+        return 0;
+    }
+    if (streq(once, _encode(load64(e + 8), again)) != 1) {
+        println(once);
+        println("  did not decode to itself");
+        _failures = _failures + 1;
+    }
+    return 0;
+}
+
+fn fuzz_main(rounds) {
+    var n = vec_len(_seeds);
+    var i = 0;
+    while (i < rounds) {
+        _round(vec_get(_seeds, i % n));
+        i = i + 1;
+    }
     return 0;
 }
 
 fn main() {
     alloc_init();
-    fuzz_main("test", 4);
+    _seeds = vec_new();
+    _seed(&phoneme_from_json, &phoneme_to_json, "{\"ipa\":\"pʰ\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false,\"airstream\":\"Pulmonic\",\"features\":[\"Aspirated\"]}}}");  #skip-lint
+    _seed(&phoneme_from_json, &phoneme_to_json, "{\"ipa\":\"i\",\"kind\":{\"Vowel\":{\"height\":\"Close\",\"backness\":\"Front\",\"rounded\":false}}}");  #skip-lint
+    _seed(&phoneme_inventory_from_json, &phoneme_inventory_to_json, "{\"language_code\":\"zh\",\"language_name\":\"Mandarin\",\"phonemes\":[{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false}}}],\"tones\":[\"˥\",\"˧˥\"],\"stress\":\"Free\"}");  #skip-lint
+    _seed(&allophone_rule_from_json, &allophone_rule_to_json, "{\"phoneme\":\"n\",\"allophone\":\"ŋ\",\"environment\":{\"Before\":{\"Specific\":\"k\"}},\"obligatory\":true}");  #skip-lint
+    _seed(&allophone_rule_set_from_json, &allophone_rule_set_to_json, "{\"language_code\":\"xx\",\"rules\":[{\"phoneme\":\"t\",\"allophone\":\"ɾ\",\"environment\":{\"After\":\"Vowel\"},\"obligatory\":false},{\"phoneme\":\"t\",\"allophone\":\"t\",\"environment\":\"WordFinal\",\"obligatory\":true}]}");  #skip-lint
+    _seed(&syllable_template_from_json, &syllable_template_to_json, "{\"max_onset\":3,\"max_coda\":4,\"complex_nucleus\":true,\"pattern\":\"(C)V(C)\"}");  #skip-lint
+    _seed(&phonotactic_constraint_from_json, &phonotactic_constraint_to_json, "{\"kind\":\"Permitted\",\"position\":\"Onset\",\"sequences\":[\"str\",\"spr\"],\"description\":\"d\"}");  #skip-lint
+    _seed(&phonotactics_from_json, &phonotactics_to_json, "{\"language_code\":\"en\",\"syllable\":{\"max_onset\":3,\"max_coda\":4,\"complex_nucleus\":true,\"pattern\":\"p\"},\"constraints\":[{\"kind\":\"Forbidden\",\"position\":\"Coda\",\"sequences\":[\"h\"],\"description\":\"\"}]}");  #skip-lint
+    _seed(&script_from_json, &script_to_json, "{\"code\":\"Latn\",\"name\":\"Latin\",\"script_type\":\"Alphabet\",\"direction\":\"LeftToRight\",\"status\":\"Living\",\"attestation\":\"c. \\\"7th\\\" BCE\",\"unicode_ranges\":[[65,90],[97,122]],\"languages\":[\"en\",\"fr\"]}");  #skip-lint
+    _seed(&numeral_mapping_from_json, &numeral_mapping_to_json, "{\"character\":\"ς\",\"value\":200,\"role\":\"ROLE_ALLOGRAPH\",\"base\":\"σ\"}");  #skip-lint
+    _seed(&numeral_system_from_json, &numeral_system_to_json, "{\"script_code\":\"Grek\",\"name\":\"n\",\"kind\":\"Alphabetic\",\"mappings\":[{\"character\":\"α\",\"value\":1},{\"character\":\"ϛ\",\"value\":6,\"role\":\"ROLE_NUMERAL_SIGN\",\"base\":null}]}");  #skip-lint
+    _seed(&transliteration_table_from_json, &transliteration_table_to_json, "{\"scheme\":\"IAST\",\"source_script\":\"Deva\",\"target_script\":\"Latn\",\"forward\":[[\"अ\",\"a\"],[\"\\\\\",\"\\\"\"]]}");  #skip-lint
+    _seed(&grammar_profile_from_json, &grammar_profile_to_json, "{\"language_code\":\"en\",\"morphology\":\"Fusional\",\"word_order\":\"Free\",\"case_count\":2,\"has_gender\":false,\"gender_count\":0,\"has_dual\":false,\"has_classifiers\":false,\"alignment\":\"ALIGN_SPLIT_ERGATIVE\",\"has_future\":null}");  #skip-lint
+    _seed(&lex_entry_from_json, &lex_entry_to_json, "{\"word\":\"water\",\"ipa\":\"ˈwɔːtər\",\"gloss\":\"water\",\"pos\":\"Noun\",\"frequency_rank\":250,\"swadesh_index\":null}");  #skip-lint
+    _seed(&lexicon_from_json, &lexicon_to_json, "{\"language_code\":\"en\",\"entries\":[{\"word\":\"w\",\"ipa\":\"i\",\"gloss\":\"g\",\"pos\":\"Verb\",\"frequency_rank\":null,\"swadesh_index\":23}]}");  #skip-lint
+    _seed(&cognate_entry_from_json, &cognate_entry_to_json, "{\"language\":\"en\",\"word\":\"water\",\"ipa\":\"i\"}");  #skip-lint
+    _seed(&cognate_set_from_json, &cognate_set_to_json, "{\"proto_form\":\"*wódr̥\",\"proto_language\":null,\"gloss\":\"water\",\"entries\":[{\"language\":\"en\",\"word\":\"w\",\"ipa\":\"i\"}]}");  #skip-lint
+    _seed(&etymology_from_json, &etymology_to_json, "{\"source_language\":\"fr\",\"source_form\":\"café\",\"borrowing_type\":\"Loanword\",\"period\":\"18th century\"}");  #skip-lint
+    _seed(&language_variety_from_json, &language_variety_to_json, "{\"code\":\"en-ME\",\"name\":\"n\",\"parent\":\"en\",\"kind\":\"Historical\",\"added_phonemes\":[\"ɒ\"],\"removed_phonemes\":[],\"allophone_overrides\":[{\"phoneme\":\"t\",\"allophone\":\"t\",\"environment\":\"Intervocalic\",\"obligatory\":true}]}");  #skip-lint
+    _seed(&registry_info_from_json, &registry_info_to_json, "{\"code\":\"xx\",\"name\":\"X\",\"script_codes\":[\"Latn\",\"Grek\"],\"family\":\"F\",\"subfamily\":null,\"genus\":null,\"endangerment\":\"END_SAFE\",\"macroarea\":\"AREA_AFRICA\",\"latitude_mdeg\":-33500,\"longitude_mdeg\":151000}");  #skip-lint
+    _seed(&capability_from_json, &capability_to_json, "{\"name\":\"n\",\"description\":\"d\",\"inputs\":[\"a\",\"b\"],\"output\":\"o\"}");  #skip-lint
+    _seed(&agent_registration_from_json, &agent_registration_to_json, "{\"name\":\"n\",\"version\":\"1\",\"description\":\"d\",\"capabilities\":[{\"name\":\"n\",\"description\":\"d\",\"inputs\":[],\"output\":\"o\"}],\"supported_languages\":[\"en\"],\"supported_scripts\":[\"Latn\"]}");  #skip-lint
+    _seed(&language_query_from_json, &language_query_to_json, "{\"IdentifyLanguage\":{\"text\":\"hello\"}}");  #skip-lint
+    _seed(&language_query_from_json, &language_query_to_json, "{\"ExamplesForPhoneme\":{\"language\":\"en\",\"ipa\":\"θ\",\"count\":3}}");  #skip-lint
+    _seed(&language_query_from_json, &language_query_to_json, "{\"ComparativeAnalysis\":{\"languages\":[\"en\",\"de\"],\"aspect\":\"Phonology\"}}");  #skip-lint
+    _seed(&query_response_from_json, &query_response_to_json, "{\"query_id\":\"q\",\"source\":\"Hybrid\",\"content\":\"c\",\"confidence\":0.875,\"structured_data\":{\"a\":[1,2.5,\"x\",null,true]}}");  #skip-lint
+    _seed(&tool_result_from_json, &tool_result_to_json, "{\"Success\":{\"a\":[1,2.5,\"x\\n\",null,false]}}");  #skip-lint
+    _seed(&tool_result_from_json, &tool_result_to_json, "{\"Error\":\"unknown tool: x\"}");  #skip-lint
+    fuzz_main(300000);
+    fmt_int(_decoded);
+    println(" of 300000 mutated documents decoded");
+    if (_failures != 0) {
+        fmt_int(_failures);
+        println(" FAILED");
+        return 1;
+    }
     println("fuzz: ok");
     return 0;
 }

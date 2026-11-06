@@ -1,24 +1,28 @@
-# tests/mcp_json.tcyr — well-formedness of the hand-built MCP JSON.
+# tests/mcp_json.tcyr — well-formedness of the MCP payloads.
 #
-# Stands in for v1.x Rust tests/serde_roundtrip.rs (27 tests), the fourth of the
-# standalone Rust suites and the one that does not port directly: the Cyrius port
-# has no serde (ADR 0001), records are raw heap structs, and `src/mcp.cyr` builds
-# its JSON by appending into a fixed buffer.
-#
-# A roundtrip is not available — there is no deserializer to feed. What replaces
-# it is the property the roundtrip was really protecting: that every payload the
-# library emits is structurally valid JSON. That is checked here across the whole
-# data set (5 tools x 51 languages x 10 scripts), not on a handful of samples,
-# because the buffers are fixed-size and the append path is manual.
+# Every payload the library emits must be structurally valid JSON, across the whole data
+# set (5 tools x 51 languages x every script), not on a handful of samples. The small
+# validator below stands apart from the parser the readers use, so the two check each
+# other. Since 2.5.2 the payloads come from src/json.cyr, and the whole-record tools are
+# also decoded here, which tests/json_surfaces.tcyr takes further.
 
+include "src/error.cyr"
 include "src/util.cyr"
 include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
-include "src/script.cyr"
+include "src/allophone.cyr"
+include "src/syllable.cyr"
 include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/script.cyr"
 include "src/registry.cyr"
+include "src/numerals.cyr"
 include "src/transliteration.cyr"
+include "src/json.cyr"
 #define MCP
 include "src/mcp.cyr"
 
@@ -220,8 +224,12 @@ fn main() {
     assert_eq(json_fault(payload), 0, "English payload is well-formed");
     assert(_contains(payload, "\"language_code\":\"en\""), "language_code present and correct");
     assert(_contains(payload, "\"language_name\":\"English\""), "language_name present and correct");
-    assert(_contains(payload, "\"consonant_count\":24"), "consonant_count matches the inventory");
-    assert(_contains(payload, "\"vowel_count\":12"), "vowel_count matches the inventory");
+    var decoded = phoneme_inventory_from_json(payload);
+    assert(decoded != 0, "the payload decodes");
+    if (decoded != 0) {
+        assert_eq(phoneme_consonant_count(decoded), 24, "every consonant is in it");
+        assert_eq(phoneme_vowel_count(decoded), 12, "every vowel is in it");
+    }
 
     var dp = map_new();
     map_set(dp, "code", "Deva");

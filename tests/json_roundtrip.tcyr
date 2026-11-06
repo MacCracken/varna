@@ -2,13 +2,21 @@
 #
 # Ports v1.x tests/serde_roundtrip.rs, module by module as the serializers land: phoneme
 # (serde_phoneme_consonant, serde_phoneme_vowel, serde_phoneme_inventory_all_languages,
-# _with_tones, _without_tones) and phonology (serde_allophone_rule_set,
-# serde_allophone_rule, serde_phonotactics_all, serde_syllable_template). v1.x compared with
+# _with_tones, _without_tones), phonology (serde_allophone_rule_set,
+# serde_allophone_rule, serde_phonotactics_all, serde_syllable_template) and script
+# (serde_script_all, _with_attestation, _without_attestation,
+# serde_transliteration_devanagari_iast, _greek_beta_code, serde_numeral_system_all,
+# serde_numeral_mapping), grammar (serde_grammar_profile_all), lexicon (serde_lex_entry,
+# _no_optionals, serde_lexicon, serde_swadesh_all), cognate (serde_cognate_set,
+# serde_cognate_entry, serde_etymology, _no_period) and dialect
+# (serde_language_variety). That is all 26 serde tests; the file's 27th,
+# error_debug_format, is not about serialization. v1.x compared with
 # PartialEq; varna has no record equality, so the field-by-field helpers below stand in
 # for it. Beyond the port: exact text against what serde wrote, v1.x documents (which
 # lack `airstream` / `features`) decoding, every enum variant by name, and malformed
 # input.
 
+include "src/util.cyr"
 include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
@@ -16,6 +24,13 @@ include "src/script.cyr"
 include "src/registry.cyr"
 include "src/allophone.cyr"
 include "src/syllable.cyr"
+include "src/grammar.cyr"
+include "src/lexicon.cyr"
+include "src/swadesh.cyr"
+include "src/cognate.cyr"
+include "src/dialect.cyr"
+include "src/numerals.cyr"
+include "src/transliteration.cyr"
 include "src/json.cyr"
 
 # --- equality (v1.x derived PartialEq) ---
@@ -344,7 +359,7 @@ fn _rule_eq(a, b) {
     if (a == 0 || b == 0) { return 0; }
     if (streq(allophone_rule_phoneme(a), allophone_rule_phoneme(b)) != 1) { return 0; }
     if (streq(allophone_rule_allophone(a), allophone_rule_allophone(b)) != 1) { return 0; }
-    if (allophone_rule_environment(a) != allophone_rule_environment(b)) { return 0; }
+    if (environment_eq(allophone_rule_environment(a), allophone_rule_environment(b)) != 1) { return 0; }
     return allophone_rule_obligatory(a) == allophone_rule_obligatory(b);
 }
 
@@ -513,10 +528,147 @@ fn test_enum_names_phonology() {
     return 0;
 }
 
-fn test_v1x_before_after_refused() {
-    assert_eq(allophone_rule_from_json("{\"phoneme\":\"n\",\"allophone\":\"ŋ\",\"environment\":{\"Before\":{\"Specific\":\"k\"}},\"obligatory\":true}"), 0, "Before(Specific) refused: varna cannot hold it");  #skip-lint
-    assert_eq(allophone_rule_from_json("{\"phoneme\":\"l\",\"allophone\":\"ɫ\",\"environment\":{\"After\":\"Vowel\"},\"obligatory\":false}"), 0, "After(Vowel) refused");  #skip-lint
-    assert_eq(allophone_rule_set_from_json("{\"language_code\":\"xx\",\"rules\":[{\"phoneme\":\"n\",\"allophone\":\"ŋ\",\"environment\":{\"Before\":\"Plosive\"},\"obligatory\":true}]}"), 0, "a set holding one is refused whole");  #skip-lint
+# v1.x wrote a class environment externally tagged, and a unit class by name: the prefix
+# on the varna constants must never reach the document.
+fn _env_rule_text(env) {
+    return _rule_text(_arule_new("n", "ŋ", env, 1));
+}
+
+fn _env_rule_doc(env_text) {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "{\"phoneme\":\"n\",\"allophone\":\"ŋ\",\"environment\":");  #skip-lint
+    str_builder_add_cstr(sb, env_text);
+    str_builder_add_cstr(sb, ",\"obligatory\":true}");
+    return str_cstr(str_builder_build(sb));
+}
+
+fn test_v1x_before_after_text() {
+    var classes = vec_new();
+    vec_push(classes, PhonemeClass.ClassVowel);
+    vec_push(classes, PhonemeClass.ClassConsonant);
+    vec_push(classes, PhonemeClass.ClassNasal);
+    vec_push(classes, PhonemeClass.ClassPlosive);
+    vec_push(classes, PhonemeClass.ClassFricative);
+    vec_push(classes, PhonemeClass.ClassVoiceless);
+    vec_push(classes, PhonemeClass.ClassVoiced);
+    var names = vec_new();
+    vec_push(names, "Vowel");
+    vec_push(names, "Consonant");
+    vec_push(names, "Nasal");
+    vec_push(names, "Plosive");
+    vec_push(names, "Fricative");
+    vec_push(names, "Voiceless");
+    vec_push(names, "Voiced");
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(classes)) {
+        var c = vec_get(classes, i);
+        var sb = str_builder_new();
+        str_builder_add_cstr(sb, "{\"Before\":\"");
+        str_builder_add_cstr(sb, vec_get(names, i));
+        str_builder_add_cstr(sb, "\"}");
+        var want = _env_rule_doc(str_cstr(str_builder_build(sb)));
+        var r = _arule_new("n", "ŋ", EnvBefore(c), 1);
+        if (streq(_rule_text(r), want) != 1) { bad = bad + 1; }
+        if (_rule_eq(r, allophone_rule_from_json(want)) != 1) { bad = bad + 1; }
+        var sb2 = str_builder_new();
+        str_builder_add_cstr(sb2, "{\"After\":\"");
+        str_builder_add_cstr(sb2, vec_get(names, i));
+        str_builder_add_cstr(sb2, "\"}");
+        var want2 = _env_rule_doc(str_cstr(str_builder_build(sb2)));
+        var r2 = _arule_new("n", "ŋ", EnvAfter(c), 1);
+        if (streq(_rule_text(r2), want2) != 1) { bad = bad + 1; }
+        if (_rule_eq(r2, allophone_rule_from_json(want2)) != 1) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "all seven unit classes, both sides: serde's text, and back");
+
+    var t = _env_rule_text(EnvBefore(ClassSpecific("k")));
+    assert(streq(t, "{\"phoneme\":\"n\",\"allophone\":\"ŋ\",\"environment\":{\"Before\":{\"Specific\":\"k\"}},\"obligatory\":true}"), "Before(Specific): serde's text");  #skip-lint
+    assert(streq(_env_rule_text(EnvAfter(ClassSpecific("ŋ"))), _env_rule_doc("{\"After\":{\"Specific\":\"ŋ\"}}")), "After(Specific): serde's text, non-ASCII");  #skip-lint
+    return 0;
+}
+
+fn test_v1x_before_after_decode() {
+    var r = allophone_rule_from_json(_env_rule_doc("{\"Before\":{\"Specific\":\"k\"}}"));
+    assert(r != 0, "v1.x Before(Specific) decodes");
+    var e = allophone_rule_environment(r);
+    assert_eq(environment_side(e), ClassEnvironment.EnvBefore, "decoded side");
+    assert(streq(phoneme_class_ipa(environment_class(e)), "k"), "decoded symbol");
+    assert(environment_eq(e, EnvBefore(ClassSpecific("k"))), "equal to one built in code");
+
+    var r2 = allophone_rule_from_json(_env_rule_doc("{\"After\":\"Vowel\"}"));
+    assert(r2 != 0, "v1.x After(Vowel) decodes");
+    var e2 = allophone_rule_environment(r2);
+    assert_eq(environment_side(e2), ClassEnvironment.EnvAfter, "decoded side, After");
+    assert_eq(environment_class(e2), PhonemeClass.ClassVowel, "decoded class");
+
+    # An escape in the key decodes before the name is read, as serde's does.
+    assert(allophone_rule_from_json(_env_rule_doc("{\"Bef\\u006fre\":\"Vowel\"}")) != 0, "escaped key decodes");  #skip-lint
+
+    # A whole set: a mix of unit and class environments round-trips and still realizes.
+    var doc = "{\"language_code\":\"xx\",\"rules\":[{\"phoneme\":\"n\",\"allophone\":\"ŋ\",\"environment\":{\"Before\":\"Plosive\"},\"obligatory\":true},{\"phoneme\":\"t\",\"allophone\":\"ɾ\",\"environment\":\"Intervocalic\",\"obligatory\":false}]}";  #skip-lint
+    var rs = allophone_rule_set_from_json(doc);
+    assert(rs != 0, "a set holding one decodes");
+    assert(streq(_rset_text(rs), doc), "and writes back byte for byte");
+    assert(streq(allophone_realize(rs, "n", EnvBefore(PhonemeClass.ClassPlosive)), "ŋ"), "a decoded rule realizes");
+    assert(streq(allophone_realize(rs, "n", EnvAfter(PhonemeClass.ClassPlosive)), "n"), "the other side does not");
+    assert(streq(allophone_realize(rs, "t", Environment.Intervocalic), "ɾ"), "a unit rule beside it still does");
+    return 0;
+}
+
+fn test_malformed_environment() {
+    var bad = vec_new();
+    vec_push(bad, "\"Before\"");
+    vec_push(bad, "\"After\"");
+    vec_push(bad, "null");
+    vec_push(bad, "{}");
+    vec_push(bad, "[]");
+    vec_push(bad, "9");
+    vec_push(bad, "{\"Before\":null}");
+    vec_push(bad, "{\"Before\":7}");
+    vec_push(bad, "{\"Before\":true}");
+    vec_push(bad, "{\"Before\":[\"Vowel\"]}");
+    vec_push(bad, "{\"Before\":\"\"}");
+    vec_push(bad, "{\"Before\":\"Bilabial\"}");
+    vec_push(bad, "{\"Before\":\"vowel\"}");
+    vec_push(bad, "{\"Before\":\"ClassVowel\"}");
+    vec_push(bad, "{\"Before\":\"Specific\"}");
+    vec_push(bad, "{\"Before\":{}}");
+    vec_push(bad, "{\"Before\":{\"Specific\":7}}");
+    vec_push(bad, "{\"Before\":{\"Specific\":null}}");
+    vec_push(bad, "{\"Before\":{\"Specific\":\"k\",\"x\":1}}");
+    vec_push(bad, "{\"Before\":{\"Nasal\":\"k\"}}");
+    vec_push(bad, "{\"Before\":\"Vowel\",\"After\":\"Vowel\"}");
+    vec_push(bad, "{\"before\":\"Vowel\"}");
+    vec_push(bad, "{\"Inside\":\"Vowel\"}");
+    vec_push(bad, "{\"Intervocalic\":\"Vowel\"}");
+    vec_push(bad, "{\"\":\"Vowel\"}");
+    var passed = 0;
+    var i = 0;
+    while (i < vec_len(bad)) {
+        if (allophone_rule_from_json(_env_rule_doc(vec_get(bad, i))) != 0) { passed = passed + 1; }
+        i = i + 1;
+    }
+    assert_eq(passed, 0, "every malformed environment is refused");
+    assert_eq(vec_len(bad), 25, "the list above ran");
+    return 0;
+}
+
+fn test_writer_refusals_environment() {
+    var sb = str_builder_new();
+    assert_eq(allophone_rule_to_json(_arule_new("n", "ŋ", 99, 1), sb), 0 - 1, "a unit environment out of range");
+    assert_eq(allophone_rule_to_json(_arule_new("n", "ŋ", 0 - 1, 1), sb), 0 - 1, "a negative one");
+    assert_eq(allophone_rule_to_json(_arule_new("n", "ŋ", EnvBefore(99), 1), sb), 0 - 1, "a class out of range");
+    assert_eq(allophone_rule_to_json(_arule_new("n", "ŋ", EnvAfter(ClassSpecific(0)), 1), sb), 0 - 1, "a Specific holding null");
+    var forged = EnvBefore(PhonemeClass.ClassVowel);
+    store64(forged, 7);
+    assert_eq(allophone_rule_to_json(_arule_new("n", "ŋ", forged, 1), sb), 0 - 1, "a side no variant names");
+    var s = _aset_new("xx");
+    _aset_add(s, "t", "ɾ", Environment.Intervocalic, 0);
+    _aset_add(s, "n", "ŋ", 99, 1);
+    assert_eq(allophone_rule_set_to_json(s, sb), 0 - 1, "a set holding such a rule");
+    assert_eq(str_len(str_builder_build(sb)), 0, "and nothing was written by any of them");
     return 0;
 }
 
@@ -558,6 +710,1308 @@ fn test_writer_refusals_phonology() {
     return 0;
 }
 
+# --- script, numerals, transliteration ---
+
+# `n` copies of `s`.
+fn _rep(s, n) {
+    var sb = str_builder_new();
+    var i = 0;
+    while (i < n) {
+        str_builder_add_cstr(sb, s);
+        i = i + 1;
+    }
+    return str_cstr(str_builder_build(sb));
+}
+
+# `doc` with its first `old` replaced by `new`. A malformed document is written as the
+# one thing wrong with a good one, and a typo in `old` fails rather than passing as a
+# refusal of the unchanged text.
+fn _with(doc, old, new) {
+    var at = strstr(doc, old);
+    if (at < 0) {
+        println(old);
+        assert(0, "_with: the text above is not in the document");
+        return doc;
+    }
+    var sb = str_builder_new();
+    var i = 0;
+    while (i < at) {
+        str_builder_putc(sb, load8(doc + i));
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, new);
+    str_builder_add_cstr(sb, doc + at + strlen(old));
+    return str_cstr(str_builder_build(sb));
+}
+
+# Assert the reader at `fp` refuses every document in `docs`, naming any that gets through.
+fn _refuses_all(fp, docs, label) {
+    var through = 0;
+    var i = 0;
+    while (i < vec_len(docs)) {
+        if (fncall1(fp, vec_get(docs, i)) != 0) {
+            println(vec_get(docs, i));
+            through = through + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(through, 0, label);
+    assert(vec_len(docs) > 0, "the refusal list is not empty");
+    return 0;
+}
+
+fn _script_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(script_code(a), script_code(b)) != 1) { return 0; }
+    if (streq(script_name(a), script_name(b)) != 1) { return 0; }
+    if (script_type(a) != script_type(b)) { return 0; }
+    if (script_direction(a) != script_direction(b)) { return 0; }
+    if (script_status(a) != script_status(b)) { return 0; }
+    var aa = script_attestation(a);
+    var ab = script_attestation(b);
+    if (aa == 0 || ab == 0) {
+        if (aa != ab) { return 0; }
+    } else {
+        if (streq(aa, ab) != 1) { return 0; }
+    }
+    var ra = script_unicode_ranges(a);
+    var rb = script_unicode_ranges(b);
+    var n = vec_len(ra);
+    if (n != vec_len(rb)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (script_range_lo(vec_get(ra, i)) != script_range_lo(vec_get(rb, i))) { return 0; }
+        if (script_range_hi(vec_get(ra, i)) != script_range_hi(vec_get(rb, i))) { return 0; }
+        i = i + 1;
+    }
+    var la = script_languages(a);
+    var lb = script_languages(b);
+    n = vec_len(la);
+    if (n != vec_len(lb)) { return 0; }
+    i = 0;
+    while (i < n) {
+        if (streq(vec_get(la, i), vec_get(lb, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _map_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(numerals_mapping_char(a), numerals_mapping_char(b)) != 1) { return 0; }
+    if (numerals_mapping_len(a) != numerals_mapping_len(b)) { return 0; }
+    if (numerals_mapping_value(a) != numerals_mapping_value(b)) { return 0; }
+    if (numerals_mapping_role(a) != numerals_mapping_role(b)) { return 0; }
+    var ba = numerals_mapping_base(a);
+    var bb = numerals_mapping_base(b);
+    if (ba == 0 || bb == 0) { return ba == bb; }
+    return streq(ba, bb);
+}
+
+fn _nsys_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(numerals_script_code(a), numerals_script_code(b)) != 1) { return 0; }
+    if (streq(numerals_name(a), numerals_name(b)) != 1) { return 0; }
+    if (numerals_kind(a) != numerals_kind(b)) { return 0; }
+    var ma = numerals_mappings(a);
+    var mb = numerals_mappings(b);
+    var n = vec_len(ma);
+    if (n != vec_len(mb)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (_map_eq(vec_get(ma, i), vec_get(mb, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _tt_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(translit_scheme(a), translit_scheme(b)) != 1) { return 0; }
+    if (streq(translit_source_script(a), translit_source_script(b)) != 1) { return 0; }
+    if (streq(translit_target_script(a), translit_target_script(b)) != 1) { return 0; }
+    var fa = translit_forward(a);
+    var fb = translit_forward(b);
+    var n = vec_len(fa);
+    if (n != vec_len(fb)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        var pa = vec_get(fa, i);
+        var pb = vec_get(fb, i);
+        if (streq(translit_pair_source(pa), translit_pair_source(pb)) != 1) { return 0; }
+        if (streq(translit_pair_target(pa), translit_pair_target(pb)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _script_text(s) {
+    var sb = str_builder_new();
+    if (script_to_json(s, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _map_text(m) {
+    var sb = str_builder_new();
+    if (numeral_mapping_to_json(m, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _nsys_text(sys) {
+    var sb = str_builder_new();
+    if (numeral_system_to_json(sys, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+fn _tt_text(tt) {
+    var sb = str_builder_new();
+    if (transliteration_table_to_json(tt, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+# script_latin() as v1.x's serde wrote it: worked out by hand from the v1.x latin()
+# source, not produced by this writer. So it pins the format and not just self-consistency.
+var _V1X_LATIN = "{\"code\":\"Latn\",\"name\":\"Latin\",\"script_type\":\"Alphabet\",\"direction\":\"LeftToRight\",\"status\":\"Living\",\"attestation\":null,\"unicode_ranges\":[[65,90],[97,122],[192,255],[256,591]],\"languages\":[\"en\",\"fr\",\"es\",\"de\",\"pt\",\"it\"]}";  #skip-lint
+
+fn test_serde_script_all() {
+    var codes = script_all_codes();
+    assert(vec_len(codes) >= 19, "every registered script");
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var s = script_by_code(vec_get(codes, i));
+        if (_script_eq(s, script_from_json(_script_text(s))) != 1) {
+            println(vec_get(codes, i));
+            bad = bad + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "serde_script_all: round trip");
+    return 0;
+}
+
+fn test_serde_script_attestation() {
+    var with = script_cuneiform();
+    assert(script_attestation(with) != 0, "cuneiform has an attestation");
+    var back = script_from_json(_script_text(with));
+    assert(back != 0, "cuneiform decodes");
+    if (back == 0) { return 0; }
+    assert(_script_eq(with, back), "serde_script_with_attestation");
+    var without = script_latin();
+    assert_eq(script_attestation(without), 0, "latin has none");
+    var back2 = script_from_json(_script_text(without));
+    assert(back2 != 0, "latin decodes");
+    if (back2 == 0) { return 0; }
+    assert_eq(script_attestation(back2), 0, "serde_script_without_attestation");
+    return 0;
+}
+
+fn test_script_text() {
+    assert(streq(_script_text(script_latin()), _V1X_LATIN), "latin is byte for byte what v1.x wrote");
+    assert(_script_eq(script_latin(), script_from_json(_V1X_LATIN)), "and that document decodes to latin");
+
+    # `attestation` is an Option: absent reads as None, as serde reads it.
+    var absent = _with(_V1X_LATIN, "\"attestation\":null,", "");
+    assert(_script_eq(script_latin(), script_from_json(absent)), "an absent Option is None");
+    var extra = _with(_V1X_LATIN, "\"code\"", "\"later_field\":[1,{\"a\":2}],\"code\"");
+    assert(_script_eq(script_latin(), script_from_json(extra)), "unknown keys are ignored");
+
+    var t = _script_new("Xq\"z", "a\\b", ScriptType.Mixed, Direction.Bidirectional, ScriptStatus.Historical, "c. \"300\" BCE");
+    var text = _script_text(t);
+    assert(streq(text, "{\"code\":\"Xq\\\"z\",\"name\":\"a\\\\b\",\"script_type\":\"Mixed\",\"direction\":\"Bidirectional\",\"status\":\"Historical\",\"attestation\":\"c. \\\"300\\\" BCE\",\"unicode_ranges\":[],\"languages\":[]}"), "quotes and backslashes are escaped");  #skip-lint
+    assert(_script_eq(t, script_from_json(text)), "and come back");
+
+    # u32 is the whole range, and 4294967295 is in it.
+    var top = _with(_V1X_LATIN, "[256,591]", "[0,4294967295]");
+    var back = script_from_json(top);
+    assert(back != 0, "u32 max is accepted");
+    if (back == 0) { return 0; }
+    assert_eq(script_range_hi(vec_get(script_unicode_ranges(back), 3)), 4294967295, "u32 max survives");
+    return 0;
+}
+
+fn test_malformed_script() {
+    var g = _V1X_LATIN;
+    var d = vec_new();
+    vec_push(d, _with(g, "\"code\":\"Latn\",", ""));
+    vec_push(d, _with(g, "\"code\":\"Latn\"", "\"code\":7"));
+    vec_push(d, _with(g, "\"name\":\"Latin\",", ""));
+    vec_push(d, _with(g, "\"name\":\"Latin\"", "\"name\":null"));
+    vec_push(d, _with(g, "\"script_type\":\"Alphabet\",", ""));
+    vec_push(d, _with(g, "\"Alphabet\"", "\"Runes\""));
+    vec_push(d, _with(g, "\"Alphabet\"", "0"));
+    vec_push(d, _with(g, "\"direction\":\"LeftToRight\",", ""));
+    vec_push(d, _with(g, "\"LeftToRight\"", "\"leftToRight\""));
+    vec_push(d, _with(g, "\"status\":\"Living\",", ""));
+    vec_push(d, _with(g, "\"Living\"", "true"));
+    vec_push(d, _with(g, "\"attestation\":null", "\"attestation\":7"));
+    vec_push(d, _with(g, "\"attestation\":null", "\"attestation\":[]"));
+    vec_push(d, _with(g, "\"unicode_ranges\":[[65,90],[97,122],[192,255],[256,591]],", ""));
+    vec_push(d, _with(g, "\"unicode_ranges\":[[65,90]", "\"unicode_ranges\":{\"a\":[65,90]}"));
+    vec_push(d, _with(g, "[65,90]", "[65]"));
+    vec_push(d, _with(g, "[65,90]", "[]"));
+    vec_push(d, _with(g, "[65,90]", "[65,90,91]"));
+    vec_push(d, _with(g, "[65,90]", "65"));
+    vec_push(d, _with(g, "[65,90]", "{\"lo\":65,\"hi\":90}"));
+    vec_push(d, _with(g, "[65,90]", "[-1,90]"));
+    vec_push(d, _with(g, "[65,90]", "[65,4294967296]"));
+    vec_push(d, _with(g, "[65,90]", "[65,90.5]"));
+    vec_push(d, _with(g, "[65,90]", "[65,9e1]"));
+    vec_push(d, _with(g, "[65,90]", "[\"65\",90]"));
+    vec_push(d, _with(g, "[65,90]", "[null,90]"));
+    vec_push(d, _with(g, ",\"languages\":[\"en\",\"fr\",\"es\",\"de\",\"pt\",\"it\"]", ""));
+    vec_push(d, _with(g, "\"languages\":[\"en\"", "\"languages\":[7"));
+    vec_push(d, _with(g, "\"languages\":[\"en\",\"fr\",\"es\",\"de\",\"pt\",\"it\"]", "\"languages\":\"en\""));
+    vec_push(d, "[]");
+    vec_push(d, "null");
+    vec_push(d, "");
+    vec_push(d, "{");
+    _refuses_all(&script_from_json, d, "every malformed script is refused");
+    assert_eq(script_from_json(0), 0, "script: null text");
+    return 0;
+}
+
+fn test_serde_numeral_system_all() {
+    var systems = vec_new();
+    vec_push(systems, numerals_devanagari_digits());
+    vec_push(systems, numerals_greek_isopsephy());
+    vec_push(systems, numerals_babylonian_sexagesimal());
+    vec_push(systems, numerals_egyptian_hieroglyphic());
+    vec_push(systems, numerals_chinese_rod_numerals());
+    vec_push(systems, gematria_hebrew());
+    vec_push(systems, gematria_arabic_abjad());
+    vec_push(systems, gematria_latin());
+    vec_push(systems, gematria_cyrillic());
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(systems)) {
+        var s = vec_get(systems, i);
+        if (_nsys_eq(s, numeral_system_from_json(_nsys_text(s))) != 1) {
+            println(numerals_name(s));
+            bad = bad + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "serde_numeral_system_all: nine systems, round trip");
+    return 0;
+}
+
+# What `role` and `base` are for: the ordinal method reads them, so a system that lost
+# them would decode, compare equal in value, and then score a different total.
+fn test_numerals_behave_after_decoding() {
+    var h = gematria_hebrew();
+    var back = numeral_system_from_json(_nsys_text(h));
+    assert(back != 0, "Hebrew decodes");
+    if (back == 0) { return 0; }
+    var a = numerals_mappings(h);
+    var b = numerals_mappings(back);
+    var n = vec_len(a);
+    assert_eq(vec_len(b), n, "same length");
+    if (vec_len(b) != n) { return 0; }
+    var bad = 0;
+    var finals = 0;
+    var i = 0;
+    while (i < n) {
+        if (_ordinal_at(a, i) != _ordinal_at(b, i)) { bad = bad + 1; }
+        if (numerals_mapping_role(vec_get(b, i)) == LetterRole.ROLE_ALLOGRAPH) { finals = finals + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "every ordinal survives the round trip");
+    assert(finals > 0, "Hebrew's final forms stayed allographs");
+    assert_eq(numerals_value_of(back, "מ"), numerals_value_of(h, "מ"), "a value survives");
+    return 0;
+}
+
+fn test_serde_numeral_mapping() {
+    var v1x = "{\"character\":\"α\",\"value\":1}";
+    var m = numeral_mapping_from_json(v1x);
+    assert(m != 0, "serde_numeral_mapping: a v1.x document decodes");
+    if (m == 0) { return 0; }
+    assert(streq(numerals_mapping_char(m), "α"), "its character");
+    assert_eq(numerals_mapping_len(m), 2, "the cached length is rebuilt");
+    assert_eq(numerals_mapping_value(m), 1, "its value");
+    assert_eq(numerals_mapping_role(m), LetterRole.ROLE_LETTER, "role defaults to a letter");
+    assert_eq(numerals_mapping_base(m), 0, "and no base");
+    assert(streq(_map_text(m), "{\"character\":\"α\",\"value\":1,\"role\":\"ROLE_LETTER\",\"base\":null}"), "text");  #skip-lint
+
+    var ms = numerals_mappings(numerals_greek_isopsephy());
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(ms)) {
+        var e = vec_get(ms, i);
+        if (_map_eq(e, numeral_mapping_from_json(_map_text(e))) != 1) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "every Greek mapping round-trips alone");
+
+    var sigma = _nsys_mapping_new("ς", 200, LetterRole.ROLE_ALLOGRAPH, "σ");
+    assert(streq(_map_text(sigma), "{\"character\":\"ς\",\"value\":200,\"role\":\"ROLE_ALLOGRAPH\",\"base\":\"σ\"}"), "allograph text");  #skip-lint
+    var sign = _nsys_mapping_new("ϛ", 6, LetterRole.ROLE_NUMERAL_SIGN, 0);
+    assert(streq(_map_text(sign), "{\"character\":\"ϛ\",\"value\":6,\"role\":\"ROLE_NUMERAL_SIGN\",\"base\":null}"), "numeral sign text");  #skip-lint
+    return 0;
+}
+
+fn test_malformed_numerals() {
+    var g = "{\"character\":\"ς\",\"value\":200,\"role\":\"ROLE_ALLOGRAPH\",\"base\":\"σ\"}";  #skip-lint
+    assert(numeral_mapping_from_json(g) != 0, "the good mapping is good");
+    var d = vec_new();
+    vec_push(d, _with(g, "\"character\":\"ς\",", ""));
+    vec_push(d, _with(g, "\"ς\"", "7"));
+    vec_push(d, _with(g, "\"value\":200,", ""));
+    vec_push(d, _with(g, "200", "-1"));
+    vec_push(d, _with(g, "200", "4294967296"));
+    vec_push(d, _with(g, "200", "200.5"));
+    vec_push(d, _with(g, "200", "\"200\""));
+    vec_push(d, _with(g, "200", "null"));
+    vec_push(d, _with(g, "\"ROLE_ALLOGRAPH\"", "\"Digit\""));
+    vec_push(d, _with(g, "\"ROLE_ALLOGRAPH\"", "\"Allograph\""));
+    vec_push(d, _with(g, "\"ROLE_ALLOGRAPH\"", "1"));
+    vec_push(d, _with(g, "\"ROLE_ALLOGRAPH\"", "null"));
+    vec_push(d, _with(g, "\"σ\"", "7"));
+    vec_push(d, _with(g, ",\"base\":\"σ\"", ""));
+    vec_push(d, _with(g, "\"base\":\"σ\"", "\"base\":null"));
+    vec_push(d, _with(g, "\"ROLE_ALLOGRAPH\"", "\"ROLE_LETTER\""));
+    vec_push(d, _with(g, "\"ROLE_ALLOGRAPH\"", "\"ROLE_NUMERAL_SIGN\""));
+    vec_push(d, "[]");
+    vec_push(d, "7");
+    _refuses_all(&numeral_mapping_from_json, d, "every malformed mapping is refused");
+    assert_eq(numeral_mapping_from_json(0), 0, "mapping: null text");
+
+    var sg = "{\"script_code\":\"Grek\",\"name\":\"n\",\"kind\":\"Alphabetic\",\"mappings\":[{\"character\":\"α\",\"value\":1}]}";  #skip-lint
+    assert(numeral_system_from_json(sg) != 0, "the good system is good");
+    var s = vec_new();
+    vec_push(s, _with(sg, "\"script_code\":\"Grek\",", ""));
+    vec_push(s, _with(sg, "\"Grek\"", "7"));
+    vec_push(s, _with(sg, "\"name\":\"n\",", ""));
+    vec_push(s, _with(sg, "\"kind\":\"Alphabetic\",", ""));
+    vec_push(s, _with(sg, "\"Alphabetic\"", "\"Roman\""));
+    vec_push(s, _with(sg, "\"Alphabetic\"", "1"));
+    vec_push(s, _with(sg, ",\"mappings\":[{\"character\":\"α\",\"value\":1}]", ""));
+    vec_push(s, _with(sg, "[{\"character\":\"α\",\"value\":1}]", "{}"));
+    vec_push(s, _with(sg, "\"value\":1", "\"value\":-1"));
+    vec_push(s, _with(sg, "{\"character\":\"α\",\"value\":1}", "null"));
+    _refuses_all(&numeral_system_from_json, s, "every malformed system is refused");
+    assert_eq(numeral_system_from_json(0), 0, "system: null text");
+    return 0;
+}
+
+fn test_serde_transliteration() {
+    var iast = translit_devanagari_iast();
+    var beta = translit_greek_beta_code();
+    var bi = transliteration_table_from_json(_tt_text(iast));
+    var bb = transliteration_table_from_json(_tt_text(beta));
+    assert(_tt_eq(iast, bi), "serde_transliteration_devanagari_iast");
+    assert(_tt_eq(beta, bb), "serde_transliteration_greek_beta_code");
+    if (bi == 0 || bb == 0) { return 0; }
+    assert(streq(translit_apply(iast, "नमस्ते"), translit_apply(bi, "नमस्ते")), "a decoded table transliterates the same");
+    assert(streq(translit_apply(beta, "λόγος"), translit_apply(bb, "λόγος")), "and the Beta Code one");
+
+    var t = _tt_new("IAST", "Deva", "Latn");
+    _tt_add(t, "अ", "a");
+    _tt_add(t, "आ", "ā");
+    assert(streq(_tt_text(t), "{\"scheme\":\"IAST\",\"source_script\":\"Deva\",\"target_script\":\"Latn\",\"forward\":[[\"अ\",\"a\"],[\"आ\",\"ā\"]]}"), "table text is serde's shape");  #skip-lint
+    return 0;
+}
+
+fn test_malformed_transliteration() {
+    var g = "{\"scheme\":\"IAST\",\"source_script\":\"Deva\",\"target_script\":\"Latn\",\"forward\":[[\"अ\",\"a\"]]}";  #skip-lint
+    assert(transliteration_table_from_json(g) != 0, "the good table is good");
+    var d = vec_new();
+    vec_push(d, _with(g, "\"scheme\":\"IAST\",", ""));
+    vec_push(d, _with(g, "\"IAST\"", "7"));
+    vec_push(d, _with(g, "\"source_script\":\"Deva\",", ""));
+    vec_push(d, _with(g, "\"target_script\":\"Latn\",", ""));
+    vec_push(d, _with(g, "\"Latn\"", "null"));
+    vec_push(d, _with(g, ",\"forward\":[[\"अ\",\"a\"]]", ""));
+    vec_push(d, _with(g, "\"forward\":[[\"अ\",\"a\"]]", "\"forward\":{\"अ\":\"a\"}"));
+    vec_push(d, _with(g, "[\"अ\",\"a\"]", "[\"अ\"]"));
+    vec_push(d, _with(g, "[\"अ\",\"a\"]", "[]"));
+    vec_push(d, _with(g, "[\"अ\",\"a\"]", "[\"अ\",\"a\",\"x\"]"));
+    vec_push(d, _with(g, "[\"अ\",\"a\"]", "\"अ\""));
+    vec_push(d, _with(g, "[\"अ\",\"a\"]", "[\"अ\",7]"));
+    vec_push(d, _with(g, "[\"अ\",\"a\"]", "[null,\"a\"]"));
+    vec_push(d, "[]");
+    _refuses_all(&transliteration_table_from_json, d, "every malformed table is refused");
+    assert_eq(transliteration_table_from_json(0), 0, "table: null text");
+    return 0;
+}
+
+# U+0000 is legal JSON and a C string stops at it, so without a refusal these would
+# decode to a different value, or to a name that was never written.
+fn test_embedded_nul_refused() {
+    var bad = 0;
+    var p = "{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false}}}";  #skip-lint
+    assert(phoneme_from_json(p) != 0, "the good phoneme is good");
+    if (phoneme_from_json(_with(p, "Plosive", "Plosive\\u0000junk")) != 0) { bad = bad + 1; }
+    if (phoneme_from_json(_with(p, "\"ipa\":\"p\"", "\"ipa\":\"p\\u0000q\"")) != 0) { bad = bad + 1; }
+    if (phoneme_from_json(_with(p, "\"Consonant\":", "\"Consonant\\u0000x\":")) != 0) { bad = bad + 1; }
+    assert_eq(bad, 0, "NUL in an enum name, a string and a variant key");
+    assert(script_from_json(_with(_V1X_LATIN, "\"Latn\"", "\"La\\u0000tn\"")) == 0, "NUL in a script code");
+    assert(script_from_json(_with(_V1X_LATIN, "\"fr\"", "\"f\\u0000r\"")) == 0, "NUL in a list element");
+    assert(script_from_json(_with(_V1X_LATIN, "\"attestation\":null", "\"attestation\":\"a\\u0000b\"")) == 0, "NUL in an Option");
+    assert(allophone_rule_from_json(_env_rule_doc("{\"Before\":{\"Specific\":\"k\\u0000g\"}}")) == 0, "NUL in a Specific");  #skip-lint
+    assert(allophone_rule_from_json(_env_rule_doc("{\"Before\\u0000x\":\"Vowel\"}")) == 0, "NUL in a side key");  #skip-lint
+    return 0;
+}
+
+fn test_enum_names_script() {
+    var bad = 0;
+    var i = 0;
+    while (i <= 5) {
+        var sb = str_builder_new();
+        ScriptType_to_json(i, sb);
+        var t, x = ScriptType_from_json_str(str_cstr(str_builder_build(sb)));
+        if (is_ok(t) != 1 || result_unwrap(t, x) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    i = 0;
+    while (i <= 3) {
+        var sb2 = str_builder_new();
+        Direction_to_json(i, sb2);
+        var t2, x2 = Direction_from_json_str(str_cstr(str_builder_build(sb2)));
+        if (is_ok(t2) != 1 || result_unwrap(t2, x2) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    i = 0;
+    while (i <= 2) {
+        var sb3 = str_builder_new();
+        ScriptStatus_to_json(i, sb3);
+        var t3, x3 = ScriptStatus_from_json_str(str_cstr(str_builder_build(sb3)));
+        if (is_ok(t3) != 1 || result_unwrap(t3, x3) != i) { bad = bad + 1; }
+        var sb4 = str_builder_new();
+        NumeralSystemKind_to_json(i, sb4);
+        var t4, x4 = NumeralSystemKind_from_json_str(str_cstr(str_builder_build(sb4)));
+        if (is_ok(t4) != 1 || result_unwrap(t4, x4) != i) { bad = bad + 1; }
+        var sb5 = str_builder_new();
+        LetterRole_to_json(i, sb5);
+        var t5, x5 = LetterRole_from_json_str(str_cstr(str_builder_build(sb5)));
+        if (is_ok(t5) != 1 || result_unwrap(t5, x5) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "every script and numeral enum variant round-trips by name");
+    return 0;
+}
+
+fn test_writer_refusals_script() {
+    var sb = str_builder_new();
+    assert_eq(script_to_json(0, sb), 0 - 1, "null script refused");
+    var s = _script_new("X", "X", ScriptType.Mixed, Direction.LeftToRight, ScriptStatus.Living, 0);
+    vec_push(script_unicode_ranges(s), 0);
+    assert_eq(script_to_json(s, sb), 0 - 1, "script with a null range refused");
+    assert_eq(numeral_mapping_to_json(0, sb), 0 - 1, "null mapping refused");
+    assert_eq(numeral_system_to_json(0, sb), 0 - 1, "null system refused");
+    var n = _nsys_new("X", "X", NumeralSystemKind.Other);
+    vec_push(numerals_mappings(n), 0);
+    assert_eq(numeral_system_to_json(n, sb), 0 - 1, "system with a null mapping refused");
+    assert_eq(transliteration_table_to_json(0, sb), 0 - 1, "null table refused");
+    var t = _tt_new("a", "b", "c");
+    vec_push(translit_forward(t), 0);
+    assert_eq(transliteration_table_to_json(t, sb), 0 - 1, "table with a null pair refused");
+    assert_eq(str_len(str_builder_build(sb)), 0, "nothing was written by any refusal");
+    return 0;
+}
+
+# --- grammar, lexicon, cognate, dialect, registry ---
+
+fn _text_of(fp, rec) {
+    var sb = str_builder_new();
+    if (fncall2(fp, rec, sb) != 0) { return 0; }
+    return str_cstr(str_builder_build(sb));
+}
+
+# Every value 0..last round-trips through a derived codec by name, and no two values
+# share a name. `to` is E_to_json, `from` is E_from_json_str.
+fn _enum_round_trips(to, from, last) {
+    var bad = 0;
+    var i = 0;
+    while (i <= last) {
+        var sb = str_builder_new();
+        fncall2(to, i, sb);
+        var t, x = fncall1(from, str_cstr(str_builder_build(sb)));
+        if (is_ok(t) != 1 || result_unwrap(t, x) != i) { bad = bad + 1; }
+        i = i + 1;
+    }
+    return bad;
+}
+
+fn _gp_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(grammar_language_code(a), grammar_language_code(b)) != 1) { return 0; }
+    # Slots 8..128 are every enum, count and flag of the record.
+    var off = 8;
+    while (off <= 128) {
+        if (load64(a + off) != load64(b + off)) { return 0; }
+        off = off + 8;
+    }
+    return 1;
+}
+
+fn _lex_entry_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(lex_word(a), lex_word(b)) != 1) { return 0; }
+    if (streq(lex_ipa(a), lex_ipa(b)) != 1) { return 0; }
+    if (streq(lex_gloss(a), lex_gloss(b)) != 1) { return 0; }
+    if (lex_pos(a) != lex_pos(b)) { return 0; }
+    if (lex_frequency_rank(a) != lex_frequency_rank(b)) { return 0; }
+    return lex_swadesh_index(a) == lex_swadesh_index(b);
+}
+
+fn _lex_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(lexicon_language_code(a), lexicon_language_code(b)) != 1) { return 0; }
+    var ea = lexicon_entries(a);
+    var eb = lexicon_entries(b);
+    var n = vec_len(ea);
+    if (n != vec_len(eb)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (_lex_entry_eq(vec_get(ea, i), vec_get(eb, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _opt_eq(a, b) {
+    if (a == 0 || b == 0) { return a == b; }
+    return streq(a, b);
+}
+
+fn _cog_entry_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(cognate_entry_language(a), cognate_entry_language(b)) != 1) { return 0; }
+    if (streq(cognate_word(a), cognate_word(b)) != 1) { return 0; }
+    return streq(cognate_ipa(a), cognate_ipa(b));
+}
+
+fn _cog_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (_opt_eq(cognate_proto_form(a), cognate_proto_form(b)) != 1) { return 0; }
+    if (_opt_eq(cognate_proto_language(a), cognate_proto_language(b)) != 1) { return 0; }
+    if (streq(cognate_gloss(a), cognate_gloss(b)) != 1) { return 0; }
+    var ea = cognate_entries(a);
+    var eb = cognate_entries(b);
+    var n = vec_len(ea);
+    if (n != vec_len(eb)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (_cog_entry_eq(vec_get(ea, i), vec_get(eb, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _etym_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(etymology_source_language(a), etymology_source_language(b)) != 1) { return 0; }
+    if (streq(etymology_source_form(a), etymology_source_form(b)) != 1) { return 0; }
+    if (etymology_borrowing_type(a) != etymology_borrowing_type(b)) { return 0; }
+    return _opt_eq(etymology_period(a), etymology_period(b));
+}
+
+fn _strs_eq(a, b) {
+    var n = vec_len(a);
+    if (n != vec_len(b)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (streq(vec_get(a, i), vec_get(b, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _variety_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(dialect_code(a), dialect_code(b)) != 1) { return 0; }
+    if (streq(dialect_name(a), dialect_name(b)) != 1) { return 0; }
+    if (streq(dialect_parent(a), dialect_parent(b)) != 1) { return 0; }
+    if (dialect_kind(a) != dialect_kind(b)) { return 0; }
+    if (_strs_eq(dialect_added(a), dialect_added(b)) != 1) { return 0; }
+    if (_strs_eq(dialect_removed(a), dialect_removed(b)) != 1) { return 0; }
+    var ra = dialect_overrides(a);
+    var rb = dialect_overrides(b);
+    var n = vec_len(ra);
+    if (n != vec_len(rb)) { return 0; }
+    var i = 0;
+    while (i < n) {
+        if (_rule_eq(vec_get(ra, i), vec_get(rb, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
+fn _li_eq(a, b) {
+    if (a == 0 || b == 0) { return 0; }
+    if (streq(registry_info_code(a), registry_info_code(b)) != 1) { return 0; }
+    if (streq(registry_info_name(a), registry_info_name(b)) != 1) { return 0; }
+    if (_strs_eq(registry_info_scripts(a), registry_info_scripts(b)) != 1) { return 0; }
+    if (_opt_eq(registry_info_family(a), registry_info_family(b)) != 1) { return 0; }
+    if (_opt_eq(registry_info_subfamily(a), registry_info_subfamily(b)) != 1) { return 0; }
+    if (_opt_eq(registry_info_genus(a), registry_info_genus(b)) != 1) { return 0; }
+    if (registry_info_endangerment(a) != registry_info_endangerment(b)) { return 0; }
+    if (registry_info_macroarea(a) != registry_info_macroarea(b)) { return 0; }
+    if (registry_info_latitude_mdeg(a) != registry_info_latitude_mdeg(b)) { return 0; }
+    return registry_info_longitude_mdeg(a) == registry_info_longitude_mdeg(b);
+}
+
+# grammar's english() as v1.x's serde wrote it, by hand from the v1.x source.
+var _V1X_GRAMMAR_EN = "{\"language_code\":\"en\",\"morphology\":\"Fusional\",\"word_order\":\"SVO\",\"case_count\":2,\"has_gender\":false,\"gender_count\":0,\"has_dual\":false,\"has_classifiers\":false}";  #skip-lint
+
+fn test_serde_grammar_profile_all() {
+    var codes = grammar_all_codes();
+    assert(vec_len(codes) >= 11, "every grammar profile");
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var g = grammar_by_code(vec_get(codes, i));
+        if (_gp_eq(g, grammar_profile_from_json(_text_of(&grammar_profile_to_json, g))) != 1) {
+            println(vec_get(codes, i));
+            bad = bad + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "serde_grammar_profile_all: round trip");
+    return 0;
+}
+
+fn test_grammar_text() {
+    # A v1.x document has none of the nine typology fields: each takes _gp_new's default.
+    var g = grammar_profile_from_json(_V1X_GRAMMAR_EN);
+    assert(_gp_eq(g, _gp_new("en", Morphology.Fusional, WordOrder.SVO, 2, 0, 0, 0, 0)), "a v1.x document decodes, with _gp_new's defaults");
+
+    var f = _gp_new_full("xx", Morphology.Polysynthetic, WordOrder.OSV, 255, 1, 3, 1, 1,
+        Alignment.ALIGN_SPLIT_ERGATIVE, AdpositionOrder.ADP_INPOSITIONAL, TenseMarking.TENSE_NONE, 1,
+        Evidentiality.EVID_BORDERLINE, NegationStrategy.NEG_DOUBLE, ArticleType.ART_DEFINITE_ONLY,
+        AdjectiveOrder.ADJ_AFTER_NOUN, RelativeClauseOrder.REL_CORRELATIVE);
+    var t = _text_of(&grammar_profile_to_json, f);
+    assert(streq(t, "{\"language_code\":\"xx\",\"morphology\":\"Polysynthetic\",\"word_order\":\"OSV\",\"case_count\":255,\"has_gender\":true,\"gender_count\":3,\"has_dual\":true,\"has_classifiers\":true,\"alignment\":\"ALIGN_SPLIT_ERGATIVE\",\"adposition_order\":\"ADP_INPOSITIONAL\",\"tense_marking\":\"TENSE_NONE\",\"has_future\":true,\"evidentiality\":\"EVID_BORDERLINE\",\"negation\":\"NEG_DOUBLE\",\"article_type\":\"ART_DEFINITE_ONLY\",\"adjective_order\":\"ADJ_AFTER_NOUN\",\"relative_order\":\"REL_CORRELATIVE\"}"), "profile text: v1.x's fields, then the nine");  #skip-lint
+    assert(_gp_eq(f, grammar_profile_from_json(t)), "and back");
+
+    # The tri-state: true, false, and null for disputed.
+    var no = grammar_profile_from_json(_with(t, "\"has_future\":true", "\"has_future\":false"));
+    var dis = grammar_profile_from_json(_with(t, "\"has_future\":true", "\"has_future\":null"));
+    assert(no != 0 && dis != 0, "false and null are read");
+    if (no == 0 || dis == 0) { return 0; }
+    assert_eq(grammar_has_future(no), 0, "false is 0");
+    assert_eq(grammar_has_future(dis), 0 - 1, "null is disputed");
+    assert(_contains(_text_of(&grammar_profile_to_json, dis), "\"has_future\":null"), "disputed writes as null");
+    assert(_contains(_text_of(&grammar_profile_to_json, no), "\"has_future\":false"), "false writes as false");
+    return 0;
+}
+
+# v1.x's WordOrder::Free and VarietyKind::Historical, restored under other constants: the
+# wire keeps v1.x's name, and the constant's own spelling must not be accepted or leak.
+fn test_restored_variants() {
+    var g = _gp_new("xx", Morphology.Fusional, WordOrder.FreeOrder, 0, 0, 0, 0, 0);
+    var t = _text_of(&grammar_profile_to_json, g);
+    assert(_contains(t, "\"word_order\":\"Free\""), "FreeOrder writes as v1.x's Free");
+    assert(_gp_eq(g, grammar_profile_from_json(t)), "and reads back");
+    assert(_gp_eq(g, grammar_profile_from_json(_with(_V1X_GRAMMAR_EN, "\"language_code\":\"en\",\"morphology\":\"Fusional\",\"word_order\":\"SVO\",\"case_count\":2", "\"language_code\":\"xx\",\"morphology\":\"Fusional\",\"word_order\":\"Free\",\"case_count\":0"))), "a v1.x document holding Free decodes");  #skip-lint
+    assert_eq(grammar_profile_from_json(_with(_V1X_GRAMMAR_EN, "\"SVO\"", "\"FreeOrder\"")), 0, "the constant's spelling is not a name");
+
+    var v = _variety_new("en-ME", "Middle English", "en", VarietyKind.HistoricalVariety);
+    var vt = _text_of(&language_variety_to_json, v);
+    assert(_contains(vt, "\"kind\":\"Historical\""), "HistoricalVariety writes as v1.x's Historical");
+    assert(_variety_eq(v, language_variety_from_json(vt)), "and reads back");
+    assert_eq(language_variety_from_json(_with(vt, "\"Historical\"", "\"HistoricalVariety\"")), 0, "the constant's spelling is not a name");
+    return 0;
+}
+
+fn test_enum_names_rest() {
+    var bad = 0;
+    bad = bad + _enum_round_trips(&Morphology_to_json, &Morphology_from_json_str, 3);
+    bad = bad + _enum_round_trips(&WordOrder_to_json, &WordOrder_from_json_str, 5);
+    bad = bad + _enum_round_trips(&Alignment_to_json, &Alignment_from_json_str, 4);
+    bad = bad + _enum_round_trips(&AdpositionOrder_to_json, &AdpositionOrder_from_json_str, 3);
+    bad = bad + _enum_round_trips(&TenseMarking_to_json, &TenseMarking_from_json_str, 2);
+    bad = bad + _enum_round_trips(&Evidentiality_to_json, &Evidentiality_from_json_str, 2);
+    bad = bad + _enum_round_trips(&NegationStrategy_to_json, &NegationStrategy_from_json_str, 4);
+    bad = bad + _enum_round_trips(&ArticleType_to_json, &ArticleType_from_json_str, 3);
+    bad = bad + _enum_round_trips(&AdjectiveOrder_to_json, &AdjectiveOrder_from_json_str, 2);
+    bad = bad + _enum_round_trips(&RelativeClauseOrder_to_json, &RelativeClauseOrder_from_json_str, 3);
+    bad = bad + _enum_round_trips(&PartOfSpeech_to_json, &PartOfSpeech_from_json_str, 10);
+    bad = bad + _enum_round_trips(&BorrowingType_to_json, &BorrowingType_from_json_str, 3);
+    bad = bad + _enum_round_trips(&VarietyKind_to_json, &VarietyKind_from_json_str, 3);
+    bad = bad + _enum_round_trips(&EndangermentLevel_to_json, &EndangermentLevel_from_json_str, 7);
+    bad = bad + _enum_round_trips(&MacroArea_to_json, &MacroArea_from_json_str, 5);
+    assert_eq(bad, 0, "every grammar, lexicon, dialect and registry enum round-trips by name");
+    return 0;
+}
+
+fn test_malformed_grammar() {
+    var g = _V1X_GRAMMAR_EN;
+    var d = vec_new();
+    vec_push(d, _with(g, "\"language_code\":\"en\",", ""));
+    vec_push(d, _with(g, "\"en\"", "7"));
+    vec_push(d, _with(g, "\"morphology\":\"Fusional\",", ""));
+    vec_push(d, _with(g, "\"Fusional\"", "\"Inflecting\""));
+    vec_push(d, _with(g, "\"Fusional\"", "2"));
+    vec_push(d, _with(g, "\"word_order\":\"SVO\",", ""));
+    vec_push(d, _with(g, "\"SVO\"", "\"svo\""));
+    vec_push(d, _with(g, "\"SVO\"", "0"));
+    vec_push(d, _with(g, "\"SVO\"", "null"));
+    vec_push(d, _with(g, "\"case_count\":2,", ""));
+    vec_push(d, _with(g, "\"case_count\":2", "\"case_count\":256"));
+    vec_push(d, _with(g, "\"case_count\":2", "\"case_count\":-1"));
+    vec_push(d, _with(g, "\"case_count\":2", "\"case_count\":2.5"));
+    vec_push(d, _with(g, "\"case_count\":2", "\"case_count\":\"2\""));
+    vec_push(d, _with(g, "\"has_gender\":false,", ""));
+    vec_push(d, _with(g, "\"has_gender\":false", "\"has_gender\":0"));
+    vec_push(d, _with(g, "\"gender_count\":0,", ""));
+    vec_push(d, _with(g, "\"gender_count\":0", "\"gender_count\":300"));
+    vec_push(d, _with(g, "\"has_dual\":false,", ""));
+    vec_push(d, _with(g, "\"has_dual\":false", "\"has_dual\":\"no\""));
+    vec_push(d, _with(g, ",\"has_classifiers\":false", ""));
+    vec_push(d, _with(g, "\"has_classifiers\":false", "\"has_classifiers\":null"));
+    var opt = _with(g, "\"has_classifiers\":false", "\"has_classifiers\":false,\"XX\":YY");
+    vec_push(d, _with(_with(opt, "XX", "alignment"), "YY", "\"NominativeAccusative\""));
+    vec_push(d, _with(_with(opt, "XX", "alignment"), "YY", "null"));
+    vec_push(d, _with(_with(opt, "XX", "alignment"), "YY", "0"));
+    vec_push(d, _with(_with(opt, "XX", "adposition_order"), "YY", "\"ALIGN_NO_DOMINANT\""));
+    vec_push(d, _with(_with(opt, "XX", "tense_marking"), "YY", "\"NOPE\""));
+    vec_push(d, _with(_with(opt, "XX", "has_future"), "YY", "1"));
+    vec_push(d, _with(_with(opt, "XX", "has_future"), "YY", "\"true\""));
+    vec_push(d, _with(_with(opt, "XX", "evidentiality"), "YY", "\"NOPE\""));
+    vec_push(d, _with(_with(opt, "XX", "negation"), "YY", "\"NOPE\""));
+    vec_push(d, _with(_with(opt, "XX", "article_type"), "YY", "\"NOPE\""));
+    vec_push(d, _with(_with(opt, "XX", "adjective_order"), "YY", "\"NOPE\""));
+    vec_push(d, _with(_with(opt, "XX", "relative_order"), "YY", "\"NOPE\""));
+    vec_push(d, "[]");
+    _refuses_all(&grammar_profile_from_json, d, "every malformed grammar profile is refused");
+    assert_eq(grammar_profile_from_json(0), 0, "grammar: null text");
+    return 0;
+}
+
+fn test_serde_lex_entry() {
+    var v1x = "{\"word\":\"water\",\"ipa\":\"ˈwɔːtər\",\"gloss\":\"water\",\"pos\":\"Noun\",\"frequency_rank\":250,\"swadesh_index\":23}";  #skip-lint
+    var e = _lex_entry_new("water", "ˈwɔːtər", "water", PartOfSpeech.Noun, 250, 23);
+    assert(streq(_text_of(&lex_entry_to_json, e), v1x), "serde_lex_entry: serde's text");
+    assert(_lex_entry_eq(e, lex_entry_from_json(v1x)), "serde_lex_entry: round trip");
+
+    var none = "{\"word\":\"xyz\",\"ipa\":\"xyz\",\"gloss\":\"test\",\"pos\":\"Verb\",\"frequency_rank\":null,\"swadesh_index\":null}";  #skip-lint
+    var ne = _lex_entry_new("xyz", "xyz", "test", PartOfSpeech.Verb, 0 - 1, 0 - 1);
+    assert(streq(_text_of(&lex_entry_to_json, ne), none), "serde_lex_entry_no_optionals: serde's text");
+    assert(_lex_entry_eq(ne, lex_entry_from_json(none)), "serde_lex_entry_no_optionals: round trip");
+    assert(_lex_entry_eq(ne, lex_entry_from_json(_with(none, ",\"frequency_rank\":null,\"swadesh_index\":null", ""))), "absent Options are None");
+
+    # Zero is a value, not None, and each Option goes to the top of its own type.
+    var zero = _with(_with(v1x, "250", "0"), "23", "0");
+    var z = lex_entry_from_json(zero);
+    assert(z != 0, "Some(0) decodes");
+    if (z == 0) { return 0; }
+    assert_eq(lex_frequency_rank(z), 0, "Some(0) rank stays 0");
+    assert_eq(lex_swadesh_index(z), 0, "Some(0) index stays 0");
+    assert(streq(_text_of(&lex_entry_to_json, z), zero), "and writes as 0, not null");
+    var top = lex_entry_from_json(_with(_with(v1x, "250", "4294967295"), "23", "65535"));
+    assert(top != 0, "u32 and u16 maxima decode");
+    if (top == 0) { return 0; }
+    assert_eq(lex_frequency_rank(top), 4294967295, "u32 max rank");
+    assert_eq(lex_swadesh_index(top), 65535, "u16 max index");
+    return 0;
+}
+
+fn test_serde_lexicon() {
+    var lex = _lexicon_new("en");
+    _lexicon_add(lex, _lex_entry_new("fire", "ˈfaɪər", "fire", PartOfSpeech.Noun, 800, 24));
+    var t = _text_of(&lexicon_to_json, lex);
+    assert(streq(t, "{\"language_code\":\"en\",\"entries\":[{\"word\":\"fire\",\"ipa\":\"ˈfaɪər\",\"gloss\":\"fire\",\"pos\":\"Noun\",\"frequency_rank\":800,\"swadesh_index\":24}]}"), "lexicon text is serde's shape");  #skip-lint
+    assert(_lex_eq(lex, lexicon_from_json(t)), "serde_lexicon: round trip");
+
+    var codes = swadesh_all_codes();
+    assert_eq(vec_len(codes), 10, "ten Swadesh lists");
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var l = swadesh_by_code(vec_get(codes, i));
+        if (_lex_eq(l, lexicon_from_json(_text_of(&lexicon_to_json, l))) != 1) {
+            println(vec_get(codes, i));
+            bad = bad + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "serde_swadesh_all: round trip");
+    return 0;
+}
+
+fn test_malformed_lexicon() {
+    var g = "{\"word\":\"w\",\"ipa\":\"i\",\"gloss\":\"g\",\"pos\":\"Noun\",\"frequency_rank\":1,\"swadesh_index\":2}";  #skip-lint
+    assert(lex_entry_from_json(g) != 0, "the good entry is good");
+    var d = vec_new();
+    vec_push(d, _with(g, "\"word\":\"w\",", ""));
+    vec_push(d, _with(g, "\"w\"", "7"));
+    vec_push(d, _with(g, "\"ipa\":\"i\",", ""));
+    vec_push(d, _with(g, "\"gloss\":\"g\",", ""));
+    vec_push(d, _with(g, "\"pos\":\"Noun\",", ""));
+    vec_push(d, _with(g, "\"Noun\"", "\"Gerund\""));
+    vec_push(d, _with(g, "\"Noun\"", "0"));
+    vec_push(d, _with(g, "\"frequency_rank\":1", "\"frequency_rank\":-1"));
+    vec_push(d, _with(g, "\"frequency_rank\":1", "\"frequency_rank\":4294967296"));
+    vec_push(d, _with(g, "\"frequency_rank\":1", "\"frequency_rank\":1.5"));
+    vec_push(d, _with(g, "\"frequency_rank\":1", "\"frequency_rank\":\"1\""));
+    vec_push(d, _with(g, "\"frequency_rank\":1", "\"frequency_rank\":false"));
+    vec_push(d, _with(g, "\"swadesh_index\":2", "\"swadesh_index\":-1"));
+    vec_push(d, _with(g, "\"swadesh_index\":2", "\"swadesh_index\":65536"));
+    vec_push(d, _with(g, "\"swadesh_index\":2", "\"swadesh_index\":[2]"));
+    _refuses_all(&lex_entry_from_json, d, "every malformed entry is refused");
+    assert_eq(lex_entry_from_json(0), 0, "entry: null text");
+
+    var lg = "{\"language_code\":\"en\",\"entries\":[]}";
+    assert(lexicon_from_json(lg) != 0, "an empty lexicon is good");
+    var l = vec_new();
+    vec_push(l, _with(lg, "\"language_code\":\"en\",", ""));
+    vec_push(l, _with(lg, "\"en\"", "null"));
+    vec_push(l, _with(lg, ",\"entries\":[]", ""));
+    vec_push(l, _with(lg, "[]", "{}"));
+    vec_push(l, _with(lg, "[]", "[7]"));
+    vec_push(l, _with(lg, "[]", "[{\"word\":\"w\"}]"));
+    _refuses_all(&lexicon_from_json, l, "every malformed lexicon is refused");
+    assert_eq(lexicon_from_json(0), 0, "lexicon: null text");
+    return 0;
+}
+
+fn test_serde_cognate() {
+    var cog = cognate_water();
+    var t = _text_of(&cognate_set_to_json, cog);
+    assert(_cog_eq(cog, cognate_set_from_json(t)), "serde_cognate_set: round trip");
+    assert(_starts_with(t, "{\"proto_form\":\"*wódr̥\",\"proto_language\":\"Proto-Indo-European\",\"gloss\":\"water\",\"entries\":[{\"language\":\"en\",\"word\":\"water\",\"ipa\":\"ˈwɔːtər\"},"), "set text is serde's shape");  #skip-lint
+
+    var e = cognate_entry_from_json("{\"language\":\"en\",\"word\":\"water\",\"ipa\":\"ˈwɔːtər\"}");
+    assert(_cog_entry_eq(e, _cognate_entry_new("en", "water", "ˈwɔːtər")), "serde_cognate_entry: round trip");
+    assert(streq(_text_of(&cognate_entry_to_json, e), "{\"language\":\"en\",\"word\":\"water\",\"ipa\":\"ˈwɔːtər\"}"), "entry text");  #skip-lint
+
+    var none = _cognate_set_new(0, 0, "fire");
+    var nt = _text_of(&cognate_set_to_json, none);
+    assert(streq(nt, "{\"proto_form\":null,\"proto_language\":null,\"gloss\":\"fire\",\"entries\":[]}"), "Options write as null");  #skip-lint
+    assert(_cog_eq(none, cognate_set_from_json(nt)), "and read back as None");
+    assert(_cog_eq(none, cognate_set_from_json("{\"gloss\":\"fire\",\"entries\":[]}")), "absent Options are None");
+
+    var et = etymology_new("fr", "café", BorrowingType.Loanword, "18th century");
+    var etxt = "{\"source_language\":\"fr\",\"source_form\":\"café\",\"borrowing_type\":\"Loanword\",\"period\":\"18th century\"}";  #skip-lint
+    assert(streq(_text_of(&etymology_to_json, et), etxt), "etymology text");
+    assert(_etym_eq(et, etymology_from_json(etxt)), "serde_etymology: round trip");
+    var np = etymology_new("la", "aqua", BorrowingType.Inherited, 0);
+    var nptxt = "{\"source_language\":\"la\",\"source_form\":\"aqua\",\"borrowing_type\":\"Inherited\",\"period\":null}";  #skip-lint
+    assert(streq(_text_of(&etymology_to_json, np), nptxt), "no-period text");
+    assert(_etym_eq(np, etymology_from_json(nptxt)), "serde_etymology_no_period: round trip");
+    return 0;
+}
+
+fn test_malformed_cognate() {
+    var e = "{\"language\":\"en\",\"word\":\"w\",\"ipa\":\"i\"}";
+    var d = vec_new();
+    vec_push(d, _with(e, "\"language\":\"en\",", ""));
+    vec_push(d, _with(e, "\"en\"", "7"));
+    vec_push(d, _with(e, "\"word\":\"w\",", ""));
+    vec_push(d, _with(e, ",\"ipa\":\"i\"", ""));
+    _refuses_all(&cognate_entry_from_json, d, "every malformed cognate entry is refused");
+    assert_eq(cognate_entry_from_json(0), 0, "cognate entry: null text");
+
+    var s = "{\"proto_form\":\"p\",\"proto_language\":\"l\",\"gloss\":\"g\",\"entries\":[]}";  #skip-lint
+    assert(cognate_set_from_json(s) != 0, "the good set is good");
+    var c = vec_new();
+    vec_push(c, _with(s, "\"p\"", "7"));
+    vec_push(c, _with(s, "\"l\"", "[]"));
+    vec_push(c, _with(s, "\"gloss\":\"g\",", ""));
+    vec_push(c, _with(s, "\"g\"", "null"));
+    vec_push(c, _with(s, ",\"entries\":[]", ""));
+    vec_push(c, _with(s, "[]", "{}"));
+    vec_push(c, _with(s, "[]", "[{\"language\":\"en\"}]"));
+    _refuses_all(&cognate_set_from_json, c, "every malformed cognate set is refused");
+    assert_eq(cognate_set_from_json(0), 0, "cognate set: null text");
+
+    var t = "{\"source_language\":\"l\",\"source_form\":\"f\",\"borrowing_type\":\"Calque\",\"period\":null}";  #skip-lint
+    assert(etymology_from_json(t) != 0, "the good etymology is good");
+    var m = vec_new();
+    vec_push(m, _with(t, "\"source_language\":\"l\",", ""));
+    vec_push(m, _with(t, "\"source_form\":\"f\",", ""));
+    vec_push(m, _with(t, "\"borrowing_type\":\"Calque\",", ""));
+    vec_push(m, _with(t, "\"Calque\"", "\"Copy\""));
+    vec_push(m, _with(t, "\"Calque\"", "1"));
+    vec_push(m, _with(t, "\"period\":null", "\"period\":7"));
+    _refuses_all(&etymology_from_json, m, "every malformed etymology is refused");
+    assert_eq(etymology_from_json(0), 0, "etymology: null text");
+    return 0;
+}
+
+fn test_serde_language_variety() {
+    # By hand from v1.x's british_english().
+    var v1x = "{\"code\":\"en-GB\",\"name\":\"British English (RP)\",\"parent\":\"en\",\"kind\":\"NationalStandard\",\"added_phonemes\":[\"ɒ\"],\"removed_phonemes\":[\"ɹ\"],\"allophone_overrides\":[{\"phoneme\":\"t\",\"allophone\":\"t\",\"environment\":\"Intervocalic\",\"obligatory\":true}]}";  #skip-lint
+    var rp = dialect_british_english();
+    assert(streq(_text_of(&language_variety_to_json, rp), v1x), "serde_language_variety: byte for byte what v1.x wrote");
+    assert(_variety_eq(rp, language_variety_from_json(v1x)), "serde_language_variety: round trip");
+
+    # A class environment inside a variety's overrides.
+    var v = _variety_new("xx", "X", "en", VarietyKind.Creole);
+    _variety_add_override(v, _arule_new("n", "ŋ", EnvBefore(ClassSpecific("k")), 1));
+    var t = _text_of(&language_variety_to_json, v);
+    assert(_contains(t, "\"environment\":{\"Before\":{\"Specific\":\"k\"}}"), "an override keeps its class environment");
+    assert(_variety_eq(v, language_variety_from_json(t)), "and reads back");
+    return 0;
+}
+
+fn test_malformed_variety() {
+    var g = "{\"code\":\"c\",\"name\":\"n\",\"parent\":\"p\",\"kind\":\"Regional\",\"added_phonemes\":[],\"removed_phonemes\":[],\"allophone_overrides\":[]}";  #skip-lint
+    assert(language_variety_from_json(g) != 0, "the good variety is good");
+    var d = vec_new();
+    vec_push(d, _with(g, "\"code\":\"c\",", ""));
+    vec_push(d, _with(g, "\"name\":\"n\",", ""));
+    vec_push(d, _with(g, "\"parent\":\"p\",", ""));
+    vec_push(d, _with(g, "\"p\"", "null"));
+    vec_push(d, _with(g, "\"kind\":\"Regional\",", ""));
+    vec_push(d, _with(g, "\"Regional\"", "\"Dialect\""));
+    vec_push(d, _with(g, "\"Regional\"", "0"));
+    vec_push(d, _with(g, "\"added_phonemes\":[],", ""));
+    vec_push(d, _with(g, "\"added_phonemes\":[]", "\"added_phonemes\":\"x\""));
+    vec_push(d, _with(g, "\"added_phonemes\":[]", "\"added_phonemes\":[7]"));
+    vec_push(d, _with(g, "\"removed_phonemes\":[],", ""));
+    vec_push(d, _with(g, "\"removed_phonemes\":[]", "\"removed_phonemes\":[null]"));
+    vec_push(d, _with(g, ",\"allophone_overrides\":[]", ""));
+    vec_push(d, _with(g, "\"allophone_overrides\":[]", "\"allophone_overrides\":{}"));
+    vec_push(d, _with(g, "\"allophone_overrides\":[]", "\"allophone_overrides\":[7]"));
+    _refuses_all(&language_variety_from_json, d, "every malformed variety is refused");
+    assert_eq(language_variety_from_json(0), 0, "variety: null text");
+    return 0;
+}
+
+fn test_registry_info() {
+    var codes = registry_all_codes();
+    assert_eq(vec_len(codes), 51, "every registered language");
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var li = registry_info(vec_get(codes, i));
+        if (_li_eq(li, registry_info_from_json(_text_of(&registry_info_to_json, li))) != 1) {
+            println(vec_get(codes, i));
+            bad = bad + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "all 51 registry entries round-trip");
+
+    var r = _li_new_geo("xx", "Xish", "Latn", "Fam", 0, "Gen", EndangermentLevel.END_MORIBUND, MacroArea.AREA_PAPUNESIA, 0 - 33500, 0 - 151000);
+    vec_push(registry_info_scripts(r), "Grek");
+    var t = _text_of(&registry_info_to_json, r);
+    assert(streq(t, "{\"code\":\"xx\",\"name\":\"Xish\",\"script_codes\":[\"Latn\",\"Grek\"],\"family\":\"Fam\",\"subfamily\":null,\"genus\":\"Gen\",\"endangerment\":\"END_MORIBUND\",\"macroarea\":\"AREA_PAPUNESIA\",\"latitude_mdeg\":-33500,\"longitude_mdeg\":-151000}"), "entry text, negative coordinates");  #skip-lint
+    assert(_li_eq(r, registry_info_from_json(t)), "and back");
+
+    var edge = _with(_with(t, "-33500", "-90000"), "-151000", "180000");
+    assert(registry_info_from_json(edge) != 0, "the coordinate limits are in range");
+    return 0;
+}
+
+fn test_malformed_registry() {
+    var g = "{\"code\":\"c\",\"name\":\"n\",\"script_codes\":[\"Latn\"],\"family\":null,\"subfamily\":null,\"genus\":null,\"endangerment\":\"END_SAFE\",\"macroarea\":\"AREA_AFRICA\",\"latitude_mdeg\":0,\"longitude_mdeg\":0}";  #skip-lint
+    assert(registry_info_from_json(g) != 0, "the good entry is good");
+    var d = vec_new();
+    vec_push(d, _with(g, "\"code\":\"c\",", ""));
+    vec_push(d, _with(g, "\"name\":\"n\",", ""));
+    vec_push(d, _with(g, "\"script_codes\":[\"Latn\"],", ""));
+    vec_push(d, _with(g, "[\"Latn\"]", "[]"));
+    vec_push(d, _with(g, "[\"Latn\"]", "[7]"));
+    vec_push(d, _with(g, "[\"Latn\"]", "\"Latn\""));
+    vec_push(d, _with(g, "\"family\":null", "\"family\":7"));
+    vec_push(d, _with(g, "\"subfamily\":null", "\"subfamily\":[]"));
+    vec_push(d, _with(g, "\"genus\":null", "\"genus\":false"));
+    vec_push(d, _with(g, "\"endangerment\":\"END_SAFE\",", ""));
+    vec_push(d, _with(g, "\"END_SAFE\"", "\"Safe\""));
+    vec_push(d, _with(g, "\"END_SAFE\"", "0"));
+    vec_push(d, _with(g, "\"macroarea\":\"AREA_AFRICA\",", ""));
+    vec_push(d, _with(g, "\"AREA_AFRICA\"", "\"Africa\""));
+    vec_push(d, _with(g, "\"latitude_mdeg\":0,", ""));
+    vec_push(d, _with(g, "\"latitude_mdeg\":0", "\"latitude_mdeg\":90001"));
+    vec_push(d, _with(g, "\"latitude_mdeg\":0", "\"latitude_mdeg\":-90001"));
+    vec_push(d, _with(g, "\"latitude_mdeg\":0", "\"latitude_mdeg\":52.5"));
+    vec_push(d, _with(g, "\"latitude_mdeg\":0", "\"latitude_mdeg\":\"0\""));
+    vec_push(d, _with(g, ",\"longitude_mdeg\":0", ""));
+    vec_push(d, _with(g, "\"longitude_mdeg\":0", "\"longitude_mdeg\":180001"));
+    vec_push(d, _with(g, "\"longitude_mdeg\":0", "\"longitude_mdeg\":-180001"));
+    _refuses_all(&registry_info_from_json, d, "every malformed registry entry is refused");
+    assert_eq(registry_info_from_json(0), 0, "registry: null text");
+    return 0;
+}
+
+fn test_writer_refusals_rest() {
+    var sb = str_builder_new();
+    assert_eq(grammar_profile_to_json(0, sb), 0 - 1, "null profile refused");
+    assert_eq(lex_entry_to_json(0, sb), 0 - 1, "null entry refused");
+    assert_eq(lexicon_to_json(0, sb), 0 - 1, "null lexicon refused");
+    var l = _lexicon_new("xx");
+    _lexicon_add(l, 0);
+    assert_eq(lexicon_to_json(l, sb), 0 - 1, "lexicon with a null entry refused");
+    assert_eq(cognate_entry_to_json(0, sb), 0 - 1, "null cognate entry refused");
+    assert_eq(cognate_set_to_json(0, sb), 0 - 1, "null cognate set refused");
+    var c = _cognate_set_new(0, 0, "g");
+    vec_push(cognate_entries(c), 0);
+    assert_eq(cognate_set_to_json(c, sb), 0 - 1, "cognate set with a null entry refused");
+    assert_eq(etymology_to_json(0, sb), 0 - 1, "null etymology refused");
+    assert_eq(language_variety_to_json(0, sb), 0 - 1, "null variety refused");
+    var v = _variety_new("c", "n", "p", VarietyKind.Regional);
+    _variety_add_override(v, _arule_new("n", "ŋ", 99, 1));
+    assert_eq(language_variety_to_json(v, sb), 0 - 1, "variety with a corrupt rule refused");
+    assert_eq(registry_info_to_json(0, sb), 0 - 1, "null registry entry refused");
+    assert_eq(str_len(str_builder_build(sb)), 0, "nothing was written by any refusal");
+    return 0;
+}
+
+# --- hostile input against every decoder (the JSON half of v1.x's adversarial.rs) ---
+
+var _hostile = 0;
+
+# One small, valid document per decoder. A check in the shared gateway proves nothing
+# about a reader that does not come through it, so each transform below runs on all 19.
+fn _add_decoder(fp, doc) {
+    var e = alloc(16);
+    store64(e, fp);
+    store64(e + 8, doc);
+    vec_push(_hostile, e);
+    return 0;
+}
+
+fn _build_hostile() {
+    _hostile = vec_new();
+    var bad = 0;
+    _add_decoder(&phoneme_from_json, _text_of(&phoneme_to_json, phoneme_consonant("n", Manner.Nasal, Place.Alveolar, 1)));
+    var inv = phoneme_builder_new("xx", "X");
+    phoneme_builder_stress(inv, StressPattern.Free);
+    _add_decoder(&phoneme_inventory_from_json, _text_of(&phoneme_inventory_to_json, phoneme_builder_build(inv)));
+    _add_decoder(&allophone_rule_from_json, _env_rule_doc("{\"Before\":{\"Specific\":\"k\"}}"));
+    _add_decoder(&allophone_rule_set_from_json, _text_of(&allophone_rule_set_to_json, allophone_english()));
+    _add_decoder(&syllable_template_from_json, _text_of(&syllable_template_to_json, _syllable_new(1, 2, 0, "CVC")));
+    _add_decoder(&phonotactic_constraint_from_json, _text_of(&phonotactic_constraint_to_json, _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset, "d")));
+    _add_decoder(&phonotactics_from_json, _text_of(&phonotactics_to_json, _phonotactics_new("xx", _syllable_new(1, 2, 0, "CVC"))));
+    _add_decoder(&script_from_json, _V1X_LATIN);
+    _add_decoder(&numeral_mapping_from_json, "{\"character\":\"α\",\"value\":1}");
+    _add_decoder(&numeral_system_from_json, _text_of(&numeral_system_to_json, _nsys_new("Grek", "n", NumeralSystemKind.Other)));
+    _add_decoder(&transliteration_table_from_json, _text_of(&transliteration_table_to_json, _tt_new("a", "b", "c")));
+    _add_decoder(&grammar_profile_from_json, _V1X_GRAMMAR_EN);
+    _add_decoder(&lex_entry_from_json, _text_of(&lex_entry_to_json, _lex_entry_new("w", "i", "g", PartOfSpeech.Noun, 1, 2)));
+    _add_decoder(&lexicon_from_json, "{\"language_code\":\"en\",\"entries\":[]}");
+    _add_decoder(&cognate_entry_from_json, "{\"language\":\"en\",\"word\":\"w\",\"ipa\":\"i\"}");
+    _add_decoder(&cognate_set_from_json, _text_of(&cognate_set_to_json, _cognate_set_new(0, 0, "g")));
+    _add_decoder(&etymology_from_json, _text_of(&etymology_to_json, etymology_new("l", "f", BorrowingType.Calque, 0)));
+    _add_decoder(&language_variety_from_json, _text_of(&language_variety_to_json, _variety_new("c", "n", "p", VarietyKind.Regional)));
+    _add_decoder(&registry_info_from_json, _text_of(&registry_info_to_json, _li_new_geo("c", "n", "Latn", 0, 0, 0, EndangermentLevel.END_SAFE, MacroArea.AREA_AFRICA, 0, 0)));
+
+    # The list above only means something if each document is good to start with.
+    var i = 0;
+    while (i < vec_len(_hostile)) {
+        var e = vec_get(_hostile, i);
+        if (fncall1(load64(e), load64(e + 8)) == 0) {
+            println(load64(e + 8));
+            bad = bad + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(vec_len(_hostile), 19, "all 19 decoders");
+    assert_eq(bad, 0, "every hostile-test document starts out good");
+    return 0;
+}
+
+fn _cat(a, b) {
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, a);
+    str_builder_add_cstr(sb, b);
+    return str_cstr(str_builder_build(sb));
+}
+
+# How many decoders accept `prefix` + their good document + `suffix`.
+fn _accepted_wrapped(prefix, suffix) {
+    var through = 0;
+    var i = 0;
+    while (i < vec_len(_hostile)) {
+        var e = vec_get(_hostile, i);
+        if (fncall1(load64(e), _cat(_cat(prefix, load64(e + 8)), suffix)) != 0) { through = through + 1; }
+        i = i + 1;
+    }
+    return through;
+}
+
+# How many decoders accept their good document with `extra` spliced in after the opening
+# brace. `extra` is an unknown key, which a reader ignores, so only the check under test
+# can refuse the document.
+fn _accepted_spliced(extra) {
+    var through = 0;
+    var i = 0;
+    while (i < vec_len(_hostile)) {
+        var e = vec_get(_hostile, i);
+        var doc = load64(e + 8);
+        if (fncall1(load64(e), _cat(_cat("{", extra), doc + 1)) != 0) { through = through + 1; }
+        i = i + 1;
+    }
+    return through;
+}
+
+fn test_hostile_decoders() {
+    _build_hostile();
+    var n = vec_len(_hostile);
+
+    # Legal: whitespace around the document, and an unknown key.
+    assert_eq(_accepted_wrapped(" \t\n", " \r\n"), n, "whitespace around a document is legal");
+    assert_eq(_accepted_spliced("\"zz\":[1,{\"a\":null}],"), n, "an unknown key is ignored");
+    assert_eq(_accepted_spliced("\"z\\nz\":1,"), n, "an escaped control character is legal");
+    assert_eq(_accepted_spliced("\"é😀\":1,"), n, "valid multibyte text is legal");
+
+    # After the document.
+    assert_eq(_accepted_wrapped("", " x"), 0, "trailing garbage");
+    assert_eq(_accepted_wrapped("", "}"), 0, "a trailing brace");
+    assert_eq(_accepted_wrapped("", ","), 0, "a trailing comma");
+    assert_eq(_accepted_wrapped("\xEF\xBB\xBF", ""), 0, "a byte order mark");
+    assert_eq(_accepted_wrapped("[", "]"), 0, "wrapped in an array");
+
+    # Duplicate keys, which bayan refuses and serde's derive refuses.
+    assert_eq(_accepted_spliced("\"a\":1,\"a\":2,"), 0, "a duplicate key");
+
+    # Raw control bytes in a string, and bad UTF-8 anywhere.
+    assert_eq(_accepted_spliced("\"z\nz\":1,"), 0, "a raw newline in a string");
+    assert_eq(_accepted_spliced("\"z\tz\":1,"), 0, "a raw tab in a string");
+    assert_eq(_accepted_spliced("\"z\x01z\":1,"), 0, "a raw control byte in a string");
+    assert_eq(_accepted_spliced("\"z\xFFz\":1,"), 0, "an invalid UTF-8 byte in a string");
+
+    # An escaped quote does not end a string, and an escaped backslash does not hide the
+    # quote after it. Getting either wrong inverts what counts as inside a string, so
+    # legal whitespace is refused and a raw newline gets through.
+    assert_eq(_accepted_spliced("\"z\\\"z\":\n1,"), n, "whitespace after a string holding \\\"");
+    assert_eq(_accepted_spliced("\"z\\\\\":\n1,"), n, "whitespace after a string ending in \\\\");
+    assert_eq(_accepted_spliced("\"z\\\"\nz\":1,"), 0, "a raw newline after \\\" is still in the string");
+
+    # Every proper prefix of every document is a truncated document.
+    var through = 0;
+    var i = 0;
+    while (i < n) {
+        var e = vec_get(_hostile, i);
+        var doc = load64(e + 8);
+        var len = strlen(doc);
+        var cut = 0;
+        while (cut < len) {
+            var buf = alloc(cut + 1);
+            memcpy(buf, doc, cut);
+            store8(buf + cut, 0);
+            if (fncall1(load64(e), buf) != 0) {
+                println(buf);
+                through = through + 1;
+            }
+            cut = cut + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(through, 0, "every truncation of every document is refused");
+
+    # Documents that are nothing like the type asked for.
+    var junk = vec_new();
+    vec_push(junk, "");
+    vec_push(junk, " ");
+    vec_push(junk, "null");
+    vec_push(junk, "true");
+    vec_push(junk, "0");
+    vec_push(junk, "-1");
+    vec_push(junk, "1e400");
+    vec_push(junk, "\"x\"");
+    vec_push(junk, "[]");
+    vec_push(junk, "{}");
+    vec_push(junk, "{\"a\":1}");
+    vec_push(junk, "[{}]");
+    vec_push(junk, "{'a':1}");
+    vec_push(junk, "{a:1}");
+    vec_push(junk, "{/*c*/}");
+    vec_push(junk, "NaN");
+    through = 0;
+    i = 0;
+    while (i < n) {
+        var fp = load64(vec_get(_hostile, i));
+        var j = 0;
+        while (j < vec_len(junk)) {
+            if (fncall1(fp, vec_get(junk, j)) != 0) { through = through + 1; }
+            j = j + 1;
+        }
+        through = through + (fncall1(fp, 0) != 0);
+        i = i + 1;
+    }
+    assert_eq(through, 0, "no decoder accepts junk, or null text");
+    return 0;
+}
+
+fn test_hostile_sizes() {
+    # Deep nesting is what overruns a recursive parser's stack.
+    assert_eq(phoneme_from_json(_rep("[", 200000)), 0, "200,000 open brackets");
+    assert_eq(phoneme_from_json(_rep("{\"a\":", 100000)), 0, "100,000 nested objects");
+    assert_eq(allophone_rule_from_json(_env_rule_doc(_cat(_rep("{\"Before\":", 50000), "\"Vowel\""))), 0, "deeply nested environments");
+
+    # A name past the stack buffer must not reach it, and a long value is fine.
+    var name = _rep("a", 100000);
+    var p = "{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false}}}";  #skip-lint
+    assert_eq(phoneme_from_json(_with(p, "Plosive", name)), 0, "a 100 KB enum name");
+    assert_eq(phoneme_from_json(_with(p, "Consonant", name)), 0, "a 100 KB variant key");
+    assert_eq(allophone_rule_from_json(_env_rule_doc(_cat(_cat("{\"", name), "\":\"Vowel\"}"))), 0, "a 100 KB side key");
+    assert_eq(allophone_rule_from_json(_env_rule_doc(_cat(_cat("{\"Before\":\"", name), "\"}"))), 0, "a 100 KB class name");
+    assert_eq(phoneme_from_json(_with(p, "Plosive", _rep("a", 47))), 0, "a name of exactly the buffer's limit");
+    assert_eq(phoneme_from_json(_with(p, "Plosive", _rep("a", 48))), 0, "one past it");
+    var long = phoneme_from_json(_with(p, "\"ipa\":\"p\"", _cat(_cat("\"ipa\":\"", name), "\"")));
+    assert(long != 0, "a 100 KB string value decodes");
+    if (long != 0) { assert_eq(strlen(phoneme_ipa(long)), 100000, "whole"); }
+
+    # A whole inventory's worth of phonemes, far past any one fixed buffer.
+    var sb = str_builder_new();
+    str_builder_add_cstr(sb, "{\"language_code\":\"xx\",\"language_name\":\"X\",\"phonemes\":[");
+    var i = 0;
+    while (i < 5000) {
+        if (i > 0) { str_builder_putc(sb, ','); }
+        str_builder_add_cstr(sb, p);
+        i = i + 1;
+    }
+    str_builder_add_cstr(sb, "],\"tones\":null,\"stress\":\"Free\"}");
+    var big = phoneme_inventory_from_json(str_cstr(str_builder_build(sb)));
+    assert(big != 0, "5,000 phonemes decode");
+    if (big != 0) { assert_eq(vec_len(phoneme_list(big)), 5000, "and all are there"); }
+    return 0;
+}
+
+# RFC 3629's boundaries: each value at the edge of a range, and the first past it.
+fn test_utf8_boundaries() {
+    var good = vec_new();
+    vec_push(good, "\xC2\x80");
+    vec_push(good, "\xDF\xBF");
+    vec_push(good, "\xE0\xA0\x80");
+    vec_push(good, "\xED\x9F\xBF");
+    vec_push(good, "\xEE\x80\x80");
+    vec_push(good, "\xEF\xBF\xBF");
+    vec_push(good, "\xF0\x90\x80\x80");
+    vec_push(good, "\xF4\x8F\xBF\xBF");
+    var bad = vec_new();
+    vec_push(bad, "\x80");
+    vec_push(bad, "\xBF");
+    vec_push(bad, "\xC0\xAF");
+    vec_push(bad, "\xC1\xBF");
+    vec_push(bad, "\xC2");
+    vec_push(bad, "\xE0\x9F\xBF");
+    vec_push(bad, "\xE0\xA0");
+    vec_push(bad, "\xED\xA0\x80");
+    vec_push(bad, "\xED\xBF\xBF");
+    vec_push(bad, "\xF0\x8F\xBF\xBF");
+    vec_push(bad, "\xF0\x90\x80");
+    vec_push(bad, "\xF4\x90\x80\x80");
+    vec_push(bad, "\xF5\x80\x80\x80");
+    vec_push(bad, "\xFE");
+    var e = "{\"language\":\"XX\",\"word\":\"w\",\"ipa\":\"i\"}";
+    var i = 0;
+    var wrong = 0;
+    while (i < vec_len(good)) {
+        var c = cognate_entry_from_json(_with(e, "XX", vec_get(good, i)));
+        if (c == 0) { wrong = wrong + 1; }
+        elif (streq(cognate_entry_language(c), vec_get(good, i)) != 1) { wrong = wrong + 1; }
+        i = i + 1;
+    }
+    assert_eq(wrong, 0, "every range's edge is accepted, unchanged");
+    wrong = 0;
+    i = 0;
+    while (i < vec_len(bad)) {
+        if (cognate_entry_from_json(_with(e, "XX", vec_get(bad, i))) != 0) { wrong = wrong + 1; }
+        i = i + 1;
+    }
+    assert_eq(wrong, 0, "everything past one is refused");
+    # A cut sequence at the very end of the text cannot read past it.
+    assert_eq(cognate_entry_from_json("{\"language\":\"\xF0\x90"), 0, "a sequence cut by the end of the text");
+    return 0;
+}
+
 fn main() {
     alloc_init();
     test_group("json_roundtrip");
@@ -582,9 +2036,43 @@ fn main() {
     test_serde_syllable_template();
     test_text_constraint();
     test_enum_names_phonology();
-    test_v1x_before_after_refused();
+    test_v1x_before_after_text();
+    test_v1x_before_after_decode();
+    test_malformed_environment();
+    test_writer_refusals_environment();
     test_malformed_phonology();
     test_writer_refusals_phonology();
+    test_serde_script_all();
+    test_serde_script_attestation();
+    test_script_text();
+    test_malformed_script();
+    test_serde_numeral_system_all();
+    test_numerals_behave_after_decoding();
+    test_serde_numeral_mapping();
+    test_malformed_numerals();
+    test_serde_transliteration();
+    test_malformed_transliteration();
+    test_embedded_nul_refused();
+    test_enum_names_script();
+    test_writer_refusals_script();
+    test_serde_grammar_profile_all();
+    test_grammar_text();
+    test_restored_variants();
+    test_enum_names_rest();
+    test_malformed_grammar();
+    test_serde_lex_entry();
+    test_serde_lexicon();
+    test_malformed_lexicon();
+    test_serde_cognate();
+    test_malformed_cognate();
+    test_serde_language_variety();
+    test_malformed_variety();
+    test_registry_info();
+    test_malformed_registry();
+    test_writer_refusals_rest();
+    test_hostile_decoders();
+    test_hostile_sizes();
+    test_utf8_boundaries();
     return assert_summary();
 }
 
