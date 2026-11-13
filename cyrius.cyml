@@ -111,10 +111,14 @@ modules = [
 #   tracing-subscriber  →  sakshi          (no separate subscriber; env-filter wired by hand)
 #   criterion (dev)     →  cyrius bench    (lib/bench.cyr; benches/*.bcyr)
 #
-# Core data-engine deps ONLY. The optional surfaces add their own deps
-# WITH their module, so the core build stays lean (no crypto/thread/log
-# closure dragged in):
-#   -D LOGGING (src/logging.cyr) → add "sakshi"
+# Core data-engine deps, plus sakshi for -D LOGGING (2.5.4). The other
+# optional surfaces add their own deps WITH their module:
+#   -D LOGGING (src/logging.cyr) → "sakshi", declared above since 2.5.4. It is
+#                                  prepended to every varna build (+29.8 KB
+#                                  default, +9.3 KB under CYRIUS_DCE=1), and does
+#                                  not reach dist/*.deps: a consumer that folds
+#                                  dist/varna.cyr with -D LOGGING declares
+#                                  "sakshi" itself.
 #   -D MCP     (src/mcp.cyr)     → add [deps.bote]; its sidecar brings
 #                                  the leaves it needs (see the recipe
 #                                  at the bottom of this file)
@@ -129,13 +133,19 @@ stdlib = [
     "syscalls",
     "io",
     "args",
-    "assert",
     "hashmap",
     "fnptr",
     "tagged",
     "result",
-    "bench",
+    "sakshi",
 ]
+
+# Test / bench / fuzz compiles only (cyrius 6.7.6+). `assert` and `bench` were in
+# [deps].stdlib until 2.5.4, which prepended them to every library build as well;
+# no file under src/ calls either. They are still vendored and locked by every
+# resolve, so cyrius.lock keeps them.
+[test]
+stdlib = ["assert", "bench"]
 
 # --- bayan: the serde / serde_json replacement --------------------
 # bayan ships one profile per format. varna needs JSON only, so it takes

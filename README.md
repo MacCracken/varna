@@ -56,7 +56,7 @@ Depend on varna from another Cyrius project by adding it to `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.5.3"
+tag = "2.5.4"
 modules = ["dist/varna.cyr"]
 ```
 
@@ -79,7 +79,7 @@ keeps out the monolith's Unicode tables:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.5.3"
+tag = "2.5.4"
 modules = ["dist/varna-json.cyr"]
 
 [deps.bayan]

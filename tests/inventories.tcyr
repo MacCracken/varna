@@ -21,7 +21,8 @@ fn main() {
     iv = phoneme_yoruba();
     assert(streq(phoneme_language_code(iv), "yo"), "yo code");
     assert_eq(phoneme_consonant_count(iv), 18, "yo consonants");
-    assert_eq(phoneme_vowel_count(iv), 7, "yo vowels");
+    # 7 oral + 3 nasal (2.5.4).
+    assert_eq(phoneme_vowel_count(iv), 10, "yo vowels");
     iv = phoneme_zulu();
     assert(streq(phoneme_language_code(iv), "zu"), "zu code");
     assert_eq(phoneme_consonant_count(iv), 42, "zu consonants");
@@ -29,7 +30,12 @@ fn main() {
     iv = phoneme_thai();
     assert(streq(phoneme_language_code(iv), "th"), "th code");
     assert_eq(phoneme_consonant_count(iv), 21, "th consonants");
-    assert_eq(phoneme_vowel_count(iv), 9, "th vowels");
+    # 9 short + 9 long + 3 diphthongs, Tingsabadh & Abramson (1993) p. 25. 2.5.3 had
+    # the nine qualities only.
+    assert_eq(phoneme_vowel_count(iv), 21, "th vowels");
+    assert(phoneme_has(iv, "aː"), "th has /aː/");
+    assert(phoneme_has(iv, "ɯː"), "th has /ɯː/");
+    assert(phoneme_has(iv, "ɯa"), "th has the diphthong ɯa");
     iv = phoneme_vietnamese();
     assert(streq(phoneme_language_code(iv), "vi"), "vi code");
     assert_eq(phoneme_consonant_count(iv), 22, "vi consonants");

@@ -7,14 +7,16 @@
 
 ## Version
 
-**2.5.3** (2026-11-13) — **data accuracy.** Every registry entry carries a Glottocode,
-obtained from Glottolog itself. Burmese tones are re-sourced to Watkins (2001), Lao is
-rebuilt from Enfield (2007) (five tones, and the vowel block that had no /a/), and
-Somali's consonants are corrected and its vowels re-cited. Vowels gain a tongue-root
-([ATR]) value, set for Yoruba and Wolof. Checking the sources found two citations that
-were Wikipedia's text credited to a primary author, and a third that over-claimed.
+**2.5.4** (2026-11-13) — **hygiene and follow-ons.** `-D LOGGING` goes through sakshi,
+with v1.x's `VARNA_LOG` override. `assert` and `bench` are test-only, and
+`script_alphabet_values` is cached. Thai gains vowel length and diphthongs, and Yoruba
+three nasal vowels. Portuguese's and Guarani's nasal vowels, which read as [−nasal],
+are corrected and respelled with the combining tilde. Benchmark rows that move with no
+code change were traced to per-run CPU state, not code layout.
 
-Previous: **2.5.2** varna serializes again: every type v1.x serialized has JSON in v1.x's
+Previous: **2.5.3** data accuracy: Glottocodes, Burmese and Lao re-sourced, Somali
+corrected, and a tongue-root ([ATR]) value for Yoruba and Wolof.
+**2.5.2** varna serializes again: every type v1.x serialized has JSON in v1.x's
 format ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)), and
 `dist/varna-json.cyr` is how a consumer opts in.
 **2.5.1** toolchain `6.7.9` → `6.7.18`, bayan moved to its thin
@@ -39,14 +41,14 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | Numeral systems | 9 — five of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek) |
 | Grammar profiles | 11 |
 | Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 38 files, **3,295 assertions**, 0 failing, plus a fuzz harness (2.5.2 shipped 37 / 2,964) |
+| Tests | 38 files, **3,373 assertions**, 0 failing, plus a fuzz harness (2.5.3 shipped 38 / 3,295) |
 | Benchmarks | 42, covering every domain and every module's JSON |
 | Reference coverage | 411/417 functions (98%) — a floor, not a correctness proof |
 
 ## Toolchain
 
 - **Cyrius pin**: `6.7.18` (in `cyrius.cyml [package].cyrius`)
-- **Lock**: `cyrius deps --verify` clean — 35 verified, 0 failed. The lock also
+- **Lock**: `cyrius deps --verify` clean — 36 verified, 0 failed (sakshi joined at 2.5.4). The lock also
   records the toolchain (`cyrius 6.7.18`) as its last row, and a `commit` row pinning
   bayan 1.11.1 (`965298d`). `cyrius deps --locked`
   (6.7.6+) checks lib/ and the lock against the tags without writing anything.
@@ -97,7 +99,7 @@ all four. Default `cyrius build` excludes them.
 |---|---|---|
 | `-D DAIMON` | `daimon` | agent registration payload (6 capabilities, 51 languages, 19 scripts), with JSON |
 | `-D HOOSH` | `hoosh` | `LanguageQuery` + `answer_from_data`, with JSON |
-| `-D LOGGING` | `logging` | level-gated stderr logger; `sakshi` audit still deferred |
+| `-D LOGGING` | `logging` | through sakshi (2.5.4), `VARNA_LOG` overrides the level as in v1.x |
 | `-D MCP` | `mcp` | 5 tools with v1.x's input schemas + `invoke`; payloads from `src/json.cyr`, as v1.x's `to_value` gave them; no bote |
 
 ## Dependencies
@@ -158,10 +160,9 @@ Two verification habits are load-bearing here and worth keeping:
 
 The [roadmap](roadmap.md) is organized into releases (reorganized at 2.5.1). In brief:
 
-- **2.5.4, hygiene and data follow-ons:** caching `script_alphabet_values`; rows that
-  move with code layout; `assert` / `bench` into `[test] stdlib`; `-D LOGGING` through
-  sakshi. And four data items from 2.5.3: Thai vowel length, Yoruba's nasal vowels,
-  Osatananda's Lao tone values, and re-checking the older source comments against
+- **Carried over from 2.5.4, not yet assigned to a release:** dropping
+  `_json_text_ok` once bayan refuses raw control bytes (filed in bayan); Osatananda's
+  Lao tone values (source unreachable); re-checking the older source comments against
   their primary texts.
 - **2.6.0+** is feature work: coverage scale, typology and interchange, linguistic
   depth.

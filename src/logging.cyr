@@ -1,45 +1,86 @@
-# src/logging.cyr — optional logging init (-D LOGGING).
+# src/logging.cyr — optional logging (-D LOGGING), through sakshi.
 #
-# Ported from v1.x Rust src/logging.rs. The v1.x tracing-subscriber + VARNA_LOG
-# env-filter is approximated by a level-gated stderr writer (lib/io.cyr). Reading
-# the VARNA_LOG env var and routing through sakshi are future enhancements (see
-# ADR 0001's logging note) — kept dependency-light here to stay warning-free.
+# Ported from v1.x Rust src/logging.rs, which built a tracing-subscriber with
+#   EnvFilter::try_from_env("VARNA_LOG").unwrap_or_else(|_| EnvFilter::new(default))
+# so the VARNA_LOG environment variable, when set and valid, overrides the level the
+# caller asked for, and an invalid one falls back to it.
 #
-# Levels: 0=trace 1=debug 2=info 3=warn 4=error.
+# Since 2.5.4 the output goes through sakshi (lib/sakshi.cyr, declared in
+# cyrius.cyml), the AGNOS tracing library, instead of a bare stderr writer. sakshi
+# timestamps and levels each event, and its output target can be switched to a file,
+# a ring buffer, UDP or a hook (sakshi_set_output), which is the audit trail CLAUDE.md
+# asks for. Its default target is stderr, as before.
+#
+# Levels, varna's scale: 0=trace 1=debug 2=info 3=warn 4=error 5=off. A message is
+# emitted when its level is at or above the threshold. VARNA_LOG takes the same
+# names. A tracing directive such as "varna=debug" is not parsed; it reads as invalid
+# and falls back to the caller's level.
 
 #ifdef LOGGING
 
 var _varna_log_level = 2;
 
-fn _varna_level_from_str(level) {
+# A level name to varna's scale, or (0-1) for a name it does not know.
+fn _varna_level_parse(level) {
+    if (level == 0) { return 0 - 1; }
     if (streq(level, "trace") == 1) { return 0; }
     if (streq(level, "debug") == 1) { return 1; }
     if (streq(level, "info") == 1) { return 2; }
     if (streq(level, "warn") == 1) { return 3; }
     if (streq(level, "error") == 1) { return 4; }
-    return 2;
+    if (streq(level, "off") == 1) { return 5; }
+    return 0 - 1;
 }
 
-# Initialise logging at a custom default level (VARNA_LOG would override here).
+fn _varna_level_from_str(level) {
+    var v = _varna_level_parse(level);
+    if (v < 0) { return 2; }
+    return v;
+}
+
+# The threshold for a VARNA_LOG value and the caller's default level, as v1.x chose
+# it: a valid VARNA_LOG wins, and an absent (0) or invalid one falls back to the
+# default. An unknown default reads as info.
+fn _varna_log_resolve(env_value, default_level) {
+    var e = _varna_level_parse(env_value);
+    if (e >= 0) { return e; }
+    return _varna_level_from_str(default_level);
+}
+
+# varna's scale to sakshi's (SK_ERROR=1 .. SK_TRACE=5). Off maps to SK_FATAL, the
+# one level sakshi always emits, which varna never logs at.
+fn _varna_to_sakshi(level) {
+    if (level <= 0) { return LogLevel.SK_TRACE; }
+    if (level == 1) { return LogLevel.SK_DEBUG; }
+    if (level == 2) { return LogLevel.SK_INFO; }
+    if (level == 3) { return LogLevel.SK_WARN; }
+    if (level == 4) { return LogLevel.SK_ERROR; }
+    return LogLevel.SK_FATAL;
+}
+
+# Initialise logging at `level`, unless VARNA_LOG names a valid level, which wins.
 fn varna_log_init_with_level(level) {
-    _varna_log_level = _varna_level_from_str(level);
+    _varna_log_level = _varna_log_resolve(getenv("VARNA_LOG"), level);
+    sakshi_set_level(_varna_to_sakshi(_varna_log_level));
     return 0;
 }
 
-# Initialise logging with default level `info`.
+# Initialise logging with default level `info`; VARNA_LOG overrides it.
 fn varna_log_init() {
     return varna_log_init_with_level("info");
 }
 
 fn varna_log_level() { return _varna_log_level; }
 
-# Emit `msg` at `level` to stderr if at or above the configured threshold.
+# Emit `msg` at `level` through sakshi if it is at or above the threshold.
 fn varna_log(level, msg) {
-    if (level >= _varna_log_level) {
-        eprint(msg, strlen(msg));
-        eprint("\n", 1);
-    }
-    return 0;
+    if (level < _varna_log_level) { return 0; }
+    var n = strlen(msg);
+    if (level <= 0) { return sakshi_trace(msg, n); }
+    if (level == 1) { return sakshi_debug(msg, n); }
+    if (level == 2) { return sakshi_info(msg, n); }
+    if (level == 3) { return sakshi_warn(msg, n); }
+    return sakshi_error(msg, n);
 }
 
 #endif

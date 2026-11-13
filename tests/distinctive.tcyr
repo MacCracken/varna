@@ -278,7 +278,7 @@ fn main() {
     assert_eq(son_obstruent, 0, "no obstruent is [+sonorant]");
     assert_eq(nasal_not_sonorant, 0, "every nasal is [+sonorant]");
     assert_eq(syllabic_consonant, 0, "every consonant is [-syllabic]");
-    assert_eq(atr_specified, 22, "[ATR] is specified for exactly the 22 Yoruba and Wolof vowels");
+    assert_eq(atr_specified, 25, "[ATR] is specified for exactly the 25 Yoruba and Wolof vowels");
 
     # ---------------------------------------------------------------
     test_group("derivation_does_not_allocate");

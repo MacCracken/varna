@@ -7,6 +7,134 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.4] - 2026-11-13
+
+Roadmap 2.5.4, hygiene and follow-ons: a cached numerals table, test-only deps,
+logging through sakshi, Thai vowel length, Yoruba nasal vowels, a nasal-vowel defect
+in Portuguese and Guarani, and an investigation of why benchmark rows move. Three items
+carry over (see the roadmap): the bayan scan waits on a bayan release, filed there as
+an issue; Osatananda's Lao values, whose source is unreachable; and the full
+citation re-check.
+
+### Breaking
+
+- **Portuguese and Guarani nasal vowels are respelled** with the combining tilde
+  (U+0303): `"ã"` (U+00E3) is now `"a"` + U+0303, and likewise ẽ ĩ õ ũ. A caller passing
+  the precomposed form, which NFC text produces, must decompose it (NFD) first, or
+  `phoneme_find(pt, "ã")` returns 0. The same holds for six Swadesh transcriptions
+  (Portuguese, and Hindi नहीं), whose IPA was respelled to match.
+- **`script_alphabet_values` returns a shared table** (see *Changed*).
+
+### Changed
+
+- **numerals: `script_alphabet_values` is cached.** It was the only table builder in
+  `numerals.cyr` without a cache. Every call built a fresh table of about 856 B, and the
+  bump allocator never frees, so a caller in a loop grew the heap without bound. Now
+  the first call for a (script, method) pair builds the table, and every later call
+  returns the same vec and pair records. A cached call allocates nothing; the
+  uncached version, measured, allocated 840,000 B over 1,000 calls.
+
+  **Aliasing, the one semantic change:** the result is now shared and read-only. A
+  caller that writes into a pair, or pushes onto the vec, changes it for every later
+  caller. Copy it first if you need to edit it. Every unknown script gets the same
+  shared empty vec. A method other than ordinal or reduced still reads as standard,
+  as before, and now shares the standard table.
+
+- **`assert` and `bench` moved to `[test] stdlib`** (cyrius 6.7.6+), so they are no
+  longer prepended to the library build. No file under `src/` calls either. They
+  are still vendored and locked. Measured before → after, without sakshi (added
+  below):
+
+  | Build | Before | After |
+  |---|---|---|
+  | default | 551,248 B | 533,984 B (−17,264) |
+  | `-D LOGGING -D MCP -D DAIMON -D HOOSH` | 579,080 B | 561,816 B (−17,264) |
+  | default, `CYRIUS_DCE=1` | 63,824 B | 62,944 B (−880) |
+  | full, `CYRIUS_DCE=1` | 67,080 B | 66,200 B (−880) |
+
+  A test file now builds through `cyrius test`, not a bare `cyrius build`, which no
+  longer prepends `assert`.
+
+- **`-D LOGGING` goes through sakshi**, the AGNOS tracing library, instead of a bare
+  stderr writer. `"sakshi"` is declared in `[deps].stdlib`, as the manifest's own note
+  for `-D LOGGING` said, and locked (36 deps). sakshi timestamps and levels each event,
+  and `sakshi_set_output` can send it to a file, a ring buffer, UDP or a hook: the audit
+  trail CLAUDE.md calls for. Its default target is stderr, as before.
+
+  **`VARNA_LOG`, as in v1.x.** v1.x built its filter with
+  `EnvFilter::try_from_env("VARNA_LOG").unwrap_or_else(|_| EnvFilter::new(default))`.
+  `varna_log_init_with_level(level)` now does the same: a valid `VARNA_LOG` (`trace`,
+  `debug`, `info`, `warn`, `error`, `off`) wins over the caller's level, and an absent
+  or invalid one falls back to it. A tracing directive such as `varna=debug` is not
+  parsed, so it falls back. `off` is new: it silences everything. The API is
+  unchanged: `varna_log_init`, `varna_log_init_with_level`, `varna_log_level`,
+  `varna_log`.
+
+  **Cost:** sakshi is prepended to every varna build, logging or not. The default
+  binary grows 533,984 → 563,760 B (+29.8 KB), or by 9.3 KB under `CYRIUS_DCE=1`.
+  `dist/*.deps` does not list sakshi, so a consumer that folds `dist/varna.cyr` with
+  `-D LOGGING` declares `"sakshi"` itself.
+
+### Fixed
+
+- **Thai has vowel length and its three diphthongs.** The block had the nine
+  qualities only, though the corpus already cited Tingsabadh & Abramson (1993), the
+  JIPA Illustration, for Thai's tones. Their p. 25: "There are nine vowels. Length is
+  distinctive for all the vowels." They write long vowels with ː. The three
+  diphthongs are /ia ɯa ua/. Thai now has 21 vowels (9 + 9 + 3). Short and long
+  vowels share a quality, because the authors found the spectral differences "too
+  subtle to place with confidence". The 21 consonants already matched the source.
+
+- **Yoruba has nasal vowels: /ĩ ũ ɔ̃/.** This is the three-vowel analysis of the
+  source Yoruba's ATR values already come from: "nasal vowel counterparts for the
+  high and low vowels only" (Archangeli & Pulleyblank 1989, p. 175, n. 5).
+  Pulleyblank (in Comrie, p. 972) prefers the same "three-way contrast", and has ɔ̃
+  and ɑ̃ as "variants of a single phoneme". The descriptive grammars' marginal fourth,
+  ɛ̃ (Bamgboṣe; Capo 1985), is left out, and the source comment says so. No source
+  states a nasal vowel's ATR value, so these are inferred from the oral vowels: ĩ ũ
+  +ATR, ɔ̃ −ATR. They are spelled with the combining tilde (U+0303), the corpus
+  convention, so the precomposed U+0129 that NFC text produces does not find /ĩ/.
+
+- **Portuguese's five nasal vowels and five of Guarani's six read as [−nasal].** They
+  were written with the precomposed letters (ã ẽ ĩ õ ũ) and carried no `Nasalized`
+  bit, so `phoneme_df(p, DF_NASAL)` answered − for all ten. The vowel test could not see
+  it, because it checks the combining tilde. Only Guarani ɨ̃, written with that tilde,
+  was right. All ten now carry the bit and the corpus's one spelling (*Breaking*). A
+  new test fails on any precomposed nasal vowel in an inventory or a Swadesh
+  transcription. A mutation run that put one ã back failed 3 assertions.
+
+- **Tests.** Corpus totals moved by exactly these changes: long vowels 118 → 127,
+  nasal vowels 5 → 18 (Yoruba 3, Portuguese 5, Guarani 5), languages with a marked
+  vowel 23 → 26, ATR-specified vowels 22 → 25. Every new or corrected vowel is pinned.
+
+### Performance
+
+- **`gematria_alphabet_table`: 1,291 → 211 ns (−83.7%)**, from the cache, as min of 3
+  runs interleaved against a 2.5.3 build (timer floor 1.21–1.24 µs). A second
+  session gave 1,279 → 201 ns. What remains is finding the script's slot. A cached
+  call allocates nothing.
+
+- **Why benchmark rows move with no code change** (the 2.5.4 investigation).
+  `grammar_by_code_lookup` and `lexicon_find_word` had moved 10–13% across builds
+  that never touched them. Each candidate was tested in a scratch tree, with runs
+  interleaved:
+
+  | Candidate | Test | Result |
+  |---|---|---|
+  | Function-entry alignment | cycc does not align entries (`&lexicon_find` sat at offset 63 mod 64). 16 builds moved the hot functions through offsets 0–63, and 16 more moved only the benchmark wrappers, 2 rounds each | No effect. Rows stayed within 216–232 ns and 765–819 ns, unrelated to offset; the slow rows in one round were fast in the other |
+  | Where the harness sits | 2.5.4 with `assert` and `bench` back in `[deps].stdlib`, against 2.5.4 as shipped | No effect: 218 vs 217 ns |
+  | sakshi, ~30 KB ahead of varna's code | 2.5.4 with and without it | ≤ 1.8%, inside the spread |
+  | The run itself | One fixed binary, run 8 times; then pinned with `taskset` | 226–238 ns in two clusters; cpu0 and cpu2 ~227 ns, cpu4 ~237 ns |
+
+  The host is a Ryzen 7 5800H on the `powersave` governor, so clock speed varies by
+  core and over time. That per-run state is the effect that reproduces. It is not
+  small: 2.5.4 against 2.5.3, interleaved, read +7.5% on these untouched rows in one
+  session (spread 2–3%) and +2.4% in the next (spread 5.5%). So a move under about 10%
+  on code that did not change is not a result until it reproduces across sessions.
+  Nothing was filed with cyrius, because the roadmap's condition was "if alignment
+  is the cause", and it is not. Pinning a core and a fixed governor for benchmark
+  runs would narrow the spread; `scripts/bench-history.sh` does neither yet.
+
 ## [2.5.3] - 2026-11-13
 
 Roadmap 2.5.3, data accuracy. Glottocodes for all 51 languages, the Burmese, Lao

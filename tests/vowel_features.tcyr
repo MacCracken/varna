@@ -150,8 +150,9 @@ fn main() {
         long_c = long_c + _count_kind(inv, PhonemeFeature.Long, PhonemeKind.Consonant);
         i = i + 1;
     }
-    # 113 until 2.5.3, when Lao gained /ɤː oː ɛː aː ɔː/ (Enfield 2007, Table 4).
-    assert_eq(long_v, 118, "118 long vowels in the corpus");
+    # 113 until 2.5.3, when Lao gained /ɤː oː ɛː aː ɔː/ (Enfield 2007, Table 4), and
+    # 118 until 2.5.4, when Thai gained its nine (Tingsabadh & Abramson 1993, p. 25).
+    assert_eq(long_v, 127, "127 long vowels in the corpus");
     assert_eq(long_c, 1, "1 long consonant in the corpus");
 
     # ---------------------------------------------------------------
@@ -173,10 +174,74 @@ fn main() {
         xs = xs + c;
         i = i + 1;
     }
-    assert_eq(nas, 5, "5 nasal vowels in the corpus");
+    # 5 until 2.5.4. Yoruba gained ĩ ũ ɔ̃, and Portuguese's five and Guarani's five
+    # precomposed nasal vowels, which carried no Nasalized bit and so were never
+    # counted, now carry it.
+    assert_eq(nas, 18, "18 nasal vowels in the corpus");
     assert_eq(syl, 4, "4 syllabic vowels");
     assert_eq(xs, 1, "1 extra-short vowel");
-    assert_eq(marked_langs, 23, "23 languages carry a marked vowel");
+    # 23 until 2.5.4: Thai gained length, and Yoruba and Portuguese nasality.
+    assert_eq(marked_langs, 26, "26 languages carry a marked vowel");
+
+    # ---------------------------------------------------------------
+    test_group("one_nasal_spelling");
+    # The corpus spells a nasal vowel with the combining tilde (U+0303) and the
+    # Nasalized bit, never with a precomposed letter. Until 2.5.4 Portuguese and
+    # Guarani used the precomposed ã ẽ ĩ õ ũ with no bit, so features.cyr read ten
+    # nasal vowels as [−nasal] and the diacritic check below could not see them.
+    var pt = phoneme_portuguese();
+    _vfeats(pt, "ã", PhonemeFeature.Nasalized, "Portuguese /ã/ is nasal");
+    _vfeats(pt, "ẽ", PhonemeFeature.Nasalized, "Portuguese /ẽ/ is nasal");
+    _vfeats(pt, "ĩ", PhonemeFeature.Nasalized, "Portuguese /ĩ/ is nasal");
+    _vfeats(pt, "õ", PhonemeFeature.Nasalized, "Portuguese /õ/ is nasal");
+    _vfeats(pt, "ũ", PhonemeFeature.Nasalized, "Portuguese /ũ/ is nasal");
+    var gn = phoneme_guarani();
+    _vfeats(gn, "ã", PhonemeFeature.Nasalized, "Guarani /ã/ is nasal");
+    _vfeats(gn, "ẽ", PhonemeFeature.Nasalized, "Guarani /ẽ/ is nasal");
+    _vfeats(gn, "ĩ", PhonemeFeature.Nasalized, "Guarani /ĩ/ is nasal");
+    _vfeats(gn, "õ", PhonemeFeature.Nasalized, "Guarani /õ/ is nasal");
+    _vfeats(gn, "ũ", PhonemeFeature.Nasalized, "Guarani /ũ/ is nasal");
+    _vfeats(gn, "ɨ̃", PhonemeFeature.Nasalized, "Guarani /ɨ̃/ is nasal");
+    # No precomposed nasal vowel in any inventory, or in any Swadesh transcription.
+    var precomposed = vec_new();
+    vec_push(precomposed, "ã");
+    vec_push(precomposed, "ẽ");
+    vec_push(precomposed, "ĩ");
+    vec_push(precomposed, "õ");
+    vec_push(precomposed, "ũ");
+    var pre_inv = 0;
+    i = 0;
+    while (i < n) {
+        var ph5 = phoneme_list(registry_phonemes(vec_get(codes, i)));
+        var k5 = 0;
+        while (k5 < vec_len(ph5)) {
+            var c5 = 0;
+            while (c5 < vec_len(precomposed)) {
+                if (_has_sub(phoneme_ipa(vec_get(ph5, k5)), vec_get(precomposed, c5)) == 1) { pre_inv = pre_inv + 1; }
+                c5 = c5 + 1;
+            }
+            k5 = k5 + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(pre_inv, 0, "no inventory spells a nasal vowel precomposed");
+    var pre_sw = 0;
+    var sw_codes = swadesh_all_codes();
+    i = 0;
+    while (i < vec_len(sw_codes)) {
+        var es5 = lexicon_entries(swadesh_by_code(vec_get(sw_codes, i)));
+        var e5 = 0;
+        while (e5 < vec_len(es5)) {
+            var c6 = 0;
+            while (c6 < vec_len(precomposed)) {
+                if (_has_sub(lex_ipa(vec_get(es5, e5)), vec_get(precomposed, c6)) == 1) { pre_sw = pre_sw + 1; }
+                c6 = c6 + 1;
+            }
+            e5 = e5 + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(pre_sw, 0, "no Swadesh transcription spells a nasal vowel precomposed");
 
     # ---------------------------------------------------------------
     test_group("symbol_vowel_feature_agreement");
@@ -232,6 +297,15 @@ fn main() {
     _vfeats(yo, "ɔ", rtr, "Yoruba /ɔ/ is -ATR");
     _vfeats(yo, "o", atr, "Yoruba /o/ is +ATR");
     _vfeats(yo, "u", atr, "Yoruba /u/ is +ATR");
+    # The nasal vowels (2.5.4), ATR inferred from their oral counterparts. They are
+    # spelled with the combining tilde, so ĩ is "i" + U+0303. The precomposed U+0129
+    # that NFC text produces does not find them.
+    var nas_f = PhonemeFeature.Nasalized;
+    _vfeats(yo, "ĩ", nas_f | atr, "Yoruba /ĩ/ is nasal and +ATR");
+    _vfeats(yo, "ũ", nas_f | atr, "Yoruba /ũ/ is nasal and +ATR");
+    _vfeats(yo, "ɔ̃", nas_f | rtr, "Yoruba /ɔ̃/ is nasal and -ATR");
+    assert_eq(phoneme_find(yo, "ĩ"), 0, "the precomposed U+0129 spelling is not the corpus's");
+    assert_eq(phoneme_find(yo, "ɛ̃"), 0, "Yoruba has no /ɛ̃/: the marginal fourth is left out");
 
     var wo = phoneme_wolof();
     _vfeats(wo, "i", atr, "Wolof /i/ is +ATR");
@@ -287,7 +361,7 @@ fn main() {
         i = i + 1;
     }
     assert_eq(atr_langs, 2, "two languages carry ATR: Yoruba and Wolof");
-    assert_eq(atr_vowels, 22, "22 vowels carry an ATR value: Yoruba 7, Wolof 15");
+    assert_eq(atr_vowels, 25, "25 vowels carry an ATR value: Yoruba 10, Wolof 15");
     assert_eq(atr_consonants, 0, "no consonant carries an ATR value");
     assert_eq(atr_both, 0, "no segment is both +ATR and -ATR");
     assert_eq(atr_marks, 0, "no corpus segment is transcribed with an ATR/RTR diacritic");

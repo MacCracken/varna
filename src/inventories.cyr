@@ -98,7 +98,7 @@ var _c_phoneme_yoruba = 0;
 fn phoneme_yoruba() {
     if (_c_phoneme_yoruba != 0) { return _c_phoneme_yoruba; }
 
-    var b = phoneme_builder_with_capacity("yo", "Yoruba", 25);
+    var b = phoneme_builder_with_capacity("yo", "Yoruba", 28);
     phoneme_builder_stress(b, StressPattern.Tonal);
     var t = vec_new();
     vec_push(t, "˥");
@@ -145,8 +145,6 @@ fn phoneme_yoruba() {
     # ultrasound study (Allen, Pulleyblank & Ajíbóyè 2013, Phonology 30(2)) reports
     # results "consistent with" a tongue-root feature; only its abstract was read.
     #
-    # KNOWN GAP: no nasal vowels. Sources disagree on whether Standard Yoruba has three,
-    # four or five (ĩ ũ plus one or more of ɛ̃ ɔ̃ ã); see the roadmap.
     phoneme_builder_vowel_full(b, "i", Height.Close, Backness.Front, 0, PhonemeFeature.AdvancedTongueRoot);
     phoneme_builder_vowel_full(b, "e", Height.CloseMid, Backness.Front, 0, PhonemeFeature.AdvancedTongueRoot);
     phoneme_builder_vowel_full(b, "ɛ", Height.OpenMid, Backness.Front, 0, PhonemeFeature.RetractedTongueRoot);
@@ -154,6 +152,33 @@ fn phoneme_yoruba() {
     phoneme_builder_vowel_full(b, "ɔ", Height.OpenMid, Backness.Back, 1, PhonemeFeature.RetractedTongueRoot);
     phoneme_builder_vowel_full(b, "o", Height.CloseMid, Backness.Back, 1, PhonemeFeature.AdvancedTongueRoot);
     phoneme_builder_vowel_full(b, "u", Height.Close, Backness.Back, 1, PhonemeFeature.AdvancedTongueRoot);
+    # Three nasal vowels (2.5.4), the analysis of the source the ATR values come from:
+    # "nasal vowel counterparts for the high and low vowels only, nasalized mid vowels
+    # being possible only as the result of postlexical processes" (Archangeli &
+    # Pulleyblank 1989, p. 175, n. 5). Pulleyblank (in Comrie, The World's Major
+    # Languages, p. 972) prefers the same "three-way contrast", and says "[ɔ̃] and [ɑ̃]
+    # are variants of a single phoneme". Ajíbóyè & Pulleyblank list ĩ ũ ã.
+    #
+    # The low nasal is written ɔ̃, as most printed inventories write it (Bamgboṣe 1963,
+    # Capo 1985, Przezdziecki 2005). ã is its other spelling and pronunciation.
+    # The descriptive grammars count a fourth, ɛ̃ (Bamgboṣe; Capo 1985: "SY ...
+    # four-vowel system: ĩ ɛ̃ ɔ̃ ũ"), which Pulleyblank says has "an extremely limited
+    # distribution". It is left out. Nasality is phonemic (kú 'die' vs kún 'be full',
+    # Pulleyblank p. 975), but not after a nasal consonant.
+    #
+    # ATR: no source states a nasal vowel's value directly. These follow the oral
+    # vowels by inference, as their n. 5 says nasal vowels behave like oral ones in
+    # harmony: ĩ ũ + like i u, ɔ̃ − as a low vowel ("redundantly" −ATR). Bamgboṣe
+    # transcribes the high nasals [ɪ̃ ʊ̃], so their phonetic quality may be retracted.
+    #
+    # Spelled with the combining tilde (U+0303), the corpus convention the vowel
+    # tests check, so ĩ is "i" + U+0303, not the precomposed U+0129.
+    phoneme_builder_vowel_full(b, "ĩ", Height.Close, Backness.Front, 0,
+      PhonemeFeature.Nasalized | PhonemeFeature.AdvancedTongueRoot);
+    phoneme_builder_vowel_full(b, "ũ", Height.Close, Backness.Back, 1,
+      PhonemeFeature.Nasalized | PhonemeFeature.AdvancedTongueRoot);
+    phoneme_builder_vowel_full(b, "ɔ̃", Height.OpenMid, Backness.Back, 1,
+      PhonemeFeature.Nasalized | PhonemeFeature.RetractedTongueRoot);
     _c_phoneme_yoruba = phoneme_builder_build(b);
     return _c_phoneme_yoruba;
 }
@@ -238,7 +263,7 @@ var _c_phoneme_thai = 0;
 fn phoneme_thai() {
     if (_c_phoneme_thai != 0) { return _c_phoneme_thai; }
 
-    var b = phoneme_builder_with_capacity("th", "Thai", 30);
+    var b = phoneme_builder_with_capacity("th", "Thai", 42);
     phoneme_builder_stress(b, StressPattern.Tonal);
     # Five tones in the canonical order สามัญ / เอก / โท / ตรี / จัตวา, all from one
     # description: Tingsabadh & Abramson (1993), "Thai", JIPA 23(1), the IPA
@@ -286,16 +311,41 @@ fn phoneme_thai() {
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
-    # Vowels
+    # Vowels, from the same description as the tones: Tingsabadh & Abramson (1993),
+    # p. 25. "There are nine vowels. Length is distinctive for all the vowels."
+    # Long vowels are written with ː. "Small spectral differences between short and
+    # long counterparts" exist, but they found them "too subtle to place with
+    # confidence in the vowel quadrilateral", so each pair shares one quality here.
+    # Three diphthongs, /ia ɯa ua/ (rian 'to study', rɯan 'house', ruan 'to be
+    # provocative'). Other phonetic diphthongs end in /w/ or /j/.
+    #
+    # Corrected at 2.5.4: the block had the nine qualities and no length or
+    # diphthongs, though the corpus already cited this source for the tones.
+    # The consonants match the source's 21 exactly. It writes the affricate tɕ
+    # without a tie bar, and labels /r/ a trill, "realized most frequently as [ɾ]",
+    # with a weak contrast with /l/ (p. 26).
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "ɛː", Height.OpenMid, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ɤ", Height.CloseMid, Backness.Back, 0);
+    phoneme_builder_vowel_full(b, "ɤː", Height.CloseMid, Backness.Back, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "ɔː", Height.OpenMid, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ɯ", Height.Close, Backness.Back, 0);
+    phoneme_builder_vowel_full(b, "ɯː", Height.Close, Backness.Back, 0, PhonemeFeature.Long);
+    # Diphthongs (as vowel units), modelled as the Lao row models its own.
+    phoneme_builder_vowel(b, "ia", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɯa", Height.CloseMid, Backness.Back, 0);
+    phoneme_builder_vowel(b, "ua", Height.CloseMid, Backness.Back, 1);
     _c_phoneme_thai = phoneme_builder_build(b);
     return _c_phoneme_thai;
 }
@@ -1264,12 +1314,17 @@ fn phoneme_portuguese() {
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
-    # Nasal vowels
-    phoneme_builder_vowel(b, "ẽ", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ã", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "õ", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ĩ", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ũ", Height.Close, Backness.Back, 1);
+    # Nasal vowels. Corrected at 2.5.4: they were written with the precomposed letters
+    # (U+00E3 ã and kin) and carried no Nasalized bit, so features.cyr read all five as
+    # [−nasal]. The vowel test could not see it, because it checks the combining tilde.
+    # They now carry the bit and are spelled with the combining tilde (U+0303), the
+    # one spelling the corpus uses. A caller passing NFC text, which composes ã to
+    # U+00E3, must decompose it (NFD) before phoneme_find.
+    phoneme_builder_vowel_full(b, "ẽ", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ã", Height.Open, Backness.Central, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "õ", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ĩ", Height.Close, Backness.Front, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ũ", Height.Close, Backness.Back, 1, PhonemeFeature.Nasalized);
     _c_phoneme_portuguese = phoneme_builder_build(b);
     return _c_phoneme_portuguese;
 }
@@ -2410,12 +2465,14 @@ fn phoneme_guarani() {
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
-    # Nasal vowels (6)
-    phoneme_builder_vowel(b, "ã", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "ẽ", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ĩ", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "õ", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ũ", Height.Close, Backness.Back, 1);
+    # Nasal vowels (6). Corrected at 2.5.4: five were precomposed with no Nasalized
+    # bit, so only ɨ̃ read as [+nasal]. All six now carry the bit and the combining
+    # tilde (U+0303), as ɨ̃ already did (see Portuguese).
+    phoneme_builder_vowel_full(b, "ã", Height.Open, Backness.Central, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ẽ", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ĩ", Height.Close, Backness.Front, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "õ", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ũ", Height.Close, Backness.Back, 1, PhonemeFeature.Nasalized);
     phoneme_builder_vowel_full(b, "ɨ̃", Height.Close, Backness.Central, 0, PhonemeFeature.Nasalized);
     _c_phoneme_guarani = phoneme_builder_build(b);
     return _c_phoneme_guarani;

@@ -413,15 +413,59 @@ fn string_value_in(script_code, system, s) {
 # Under NUM_ORDINAL a numeral sign's slot holds the unmapped sentinel (0-1), since
 # it carries a value but no alphabet position; the pairs are not all positive.
 #
-# This BUILDS the table on every call and the bump allocator never frees, so hoist
-# it out of a loop rather than calling it per lookup. Caching it is roadmapped for
-# 2.4.x — it would make callers share the pair records, which is a semantic change
-# this release does not want to bundle.
+# CACHED since 2.5.4, like every other table in this file. There are only 15
+# possible results (5 scripts x 3 methods). Until 2.5.4 each call built a fresh
+# ~856 B table, and the bump allocator never frees, so a caller in a loop grew the
+# heap without bound. Now the first call for a (script, method) builds its table
+# and every later call returns the SAME vec and the same pair records, allocating
+# nothing.
+#
+# That sharing is the one semantic change: the result is read-only. A caller that
+# writes into a pair, or pushes onto the vec, changes it for every later caller.
+# Copy it first if you need to edit it. Every unknown script shares one empty vec,
+# so the same holds there.
+#
+# A `system` other than NUM_ORDINAL or NUM_REDUCED reads as NUM_STANDARD, as it
+# always has here and in char_value, and shares the standard table.
+var _c_alpha_tables = 0;   # 15 slots, [script index * 3 + method], 0 until built
+var _c_alpha_empty = 0;    # the one empty table every unknown script gets
+
 fn script_alphabet_values(script_code, system) {
-    var sys = gematria_by_script(script_code);
-    # Resolve before allocating: the bump allocator never frees, so a vec built
-    # on the not-found path would be a permanent leak per bad call.
-    if (sys == 0) { return vec_new(); }
+    var scripts = gematria_all_scripts();
+    var si = 0 - 1;
+    var k = 0;
+    while (k < vec_len(scripts)) {
+        if (streq(vec_get(scripts, k), script_code) == 1) { si = k; }
+        k = k + 1;
+    }
+    if (si < 0) {
+        if (_c_alpha_empty == 0) { _c_alpha_empty = vec_new(); }
+        return _c_alpha_empty;
+    }
+    var mi = 0;
+    if (system == NumericSystem.NUM_ORDINAL) { mi = 1; }
+    elif (system == NumericSystem.NUM_REDUCED) { mi = 2; }
+    if (_c_alpha_tables == 0) {
+        var slots = vec_len(scripts) * 3;
+        _c_alpha_tables = alloc(slots * 8);
+        var z = 0;
+        while (z < slots) {
+            store64(_c_alpha_tables + z * 8, 0);
+            z = z + 1;
+        }
+    }
+    var slot = _c_alpha_tables + (si * 3 + mi) * 8;
+    if (load64(slot) == 0) {
+        store64(slot, _alphabet_table_build(gematria_by_script(script_code), mi));
+    }
+    return load64(slot);
+}
+
+# Build one (script, method) table. `method` is 0 standard, 1 ordinal, 2 reduced.
+fn _alphabet_table_build(sys, method) {
+    var system = NumericSystem.NUM_STANDARD;
+    if (method == 1) { system = NumericSystem.NUM_ORDINAL; }
+    if (method == 2) { system = NumericSystem.NUM_REDUCED; }
     var out = vec_new();
     var ms = numerals_mappings(sys);
     var n = vec_len(ms);

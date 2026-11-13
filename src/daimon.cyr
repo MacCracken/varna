@@ -68,7 +68,7 @@ fn daimon_registration() {
     _capability_add_input(c6, "system");
     vec_push(caps, c6);
 
-    return _registration_new("varna", "2.5.3", "Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access",  #skip-lint
+    return _registration_new("varna", "2.5.4", "Multilingual language engine: phoneme inventories, writing systems, grammar profiles, and lexicon access",  #skip-lint
         caps, registry_all_codes(), script_all_codes());
 }
 

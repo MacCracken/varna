@@ -1,6 +1,6 @@
 # Development Roadmap
 
-> **Current**: 2.5.3 · **Open work only.** Shipped releases are in
+> **Current**: 2.5.4 · **Open work only.** Shipped releases are in
 > [CHANGELOG.md](../../CHANGELOG.md) and the git tags.
 >
 > Releases are listed in their intended order, which is not a commitment to ship
@@ -11,7 +11,6 @@
 
 | Release | Theme | Priority |
 |---|---|---|
-| 2.5.4 | Hygiene and follow-ons: a numerals cache, layout-sensitive benchmarks, test-scoped deps, sakshi logging, four data items from 2.5.3 | P3 |
 | 2.6.0 | Coverage scale: allophony, phonotactics, transliteration, numerals, provenance, PHOIBLE | P3 |
 | 2.7.0 | Typology and interchange: PHOIBLE export, WALS codes, cross-cutting queries, ISO 639 | P4 |
 | 2.8.0+ | Linguistic depth: prosody, morphology, historical phonology, sign language, Hangul | P4 |
@@ -30,47 +29,20 @@ citations turned out to be Wikipedia's text credited to the primary source (Burm
 that checked only whether the claim was plausible. JIPA Illustrations set IPA in
 custom fonts, so render the page and look rather than trusting extracted text.
 
-## 2.5.4 — Hygiene and follow-ons (P3)
+## Carried over from 2.5.4 (not yet assigned to a release)
 
-- [ ] **Data follow-ons from 2.5.3**, each a research item under the same method:
-  - **Thai has no vowel length**, while Lao, its closest relative in the corpus, now
-    has 18 vowels. Thai's length contrast is not in dispute. Check the block against
-    Tingsabadh & Abramson (1993), the source its tone row already cites.
-  - **Osatananda (1997, p. 40)** reportedly gives Lao 33 / 35 / 13 / 52 / 31, closer to
-    Enfield's prose than Yanagimura's isolation values. That figure is known only from
-    Wikipedia; the dissertation (UMI 9801455) was not reachable. Read it before
-    preferring it.
-  - **Re-check the other source comments** that predate 2.5.3 against their primary
-    texts. Two of them were Wikipedia, and a third (Wolof) over-claimed its sources;
-    assume more may be.
-  - **Yoruba has no nasal vowels.** Every description has some, but they disagree on
-    how many. Pulleyblank (in Comrie, *The World's Major Languages*, p. 972) lists ĩ ũ ɛ̃
-    ɔ̃ but prefers a three-way analysis, with ɔ̃ ~ ã one phoneme and ɛ̃ marginal.
-    Przezdziecki (2005) has /ĩ ũ ɔ̃/; Capo (1985) ĩ ɛ̃ ɔ̃ ũ; Archangeli & Pulleyblank (1989,
-    n. 5) high and low only; and PHOIBLE's three inventories differ again. Pick an
-    analysis and name it. The new vowels would also need ATR values.
-- [ ] **Cache `script_alphabet_values`** (from the 2.4.0 review). It is the only table
-      builder in `numerals.cyr` without a `_c_` cache, and it returns ~856 B of fresh
-      bump memory per call for one of only 15 possible (script, method) results, so a
-      caller in a loop grows the heap without bound. Callers would then share the pair
-      records, as every other cached table already does. That aliasing change gets its
-      own release note.
-- [ ] **Microbenchmarks move with code layout.** `grammar_by_code_lookup` read 209 →
-      ~241 ns across three toolchain pins, then fell back to ~213 ns when 2.5.2's JSON
-      code was added elsewhere; the same change moved `lexicon_find_word` +10.5%. None of
-      those functions changed. Find the mechanism (fn / loop alignment, which the cyrius
-      backend may not do) before reading a row's movement as a code change; until then,
-      interleave A/B against the previous build for any row that moves, as 2.4.3–2.5.2
-      did. If alignment is the cause, file it with cyrius, with the repro.
-- [ ] **bayan: refuse a raw control byte in a string and invalid UTF-8.** RFC 8259
-      requires both, and its parser accepts both. `_json_parse` scans for them in varna,
-      at about 8% of a read, and the parser already walks those bytes. Once bayan refuses
-      them, `_json_text_ok` goes. Reproduce with a raw newline or a 0xFF byte in a string.
-- [ ] **Move `assert` and `bench` to `[test] stdlib`** (cyrius 6.7.6+), so they stop
-      being prepended to the library build. Measure the binary before and after.
-- [ ] **`-D LOGGING` through sakshi.** `src/logging.cyr` is a level-gated stderr logger;
-      the `VARNA_LOG` filter and the sakshi audit trail CLAUDE.md calls for are still
-      deferred.
+- [ ] **Drop `_json_text_ok` once bayan refuses raw control bytes and invalid UTF-8.**
+      RFC 8259 requires both; bayan's parser accepts both, so `_json_parse` scans for
+      them itself, at about 8% of a read. The fix is bayan's, filed there as
+      `docs/development/issues/2026-11-11-json-strings-accept-raw-control-bytes-and-invalid-utf8.md`.
+      After a bayan release refuses them, bump `[deps.bayan]` and delete the scan.
+- [ ] **Osatananda (1997, p. 40)** reportedly gives Lao 33 / 35 / 13 / 52 / 31, closer to
+      Enfield's prose than Yanagimura's isolation values. That figure is known only
+      from Wikipedia. The dissertation (UMI 9801455) is image-only and was not
+      reachable at 2.5.3 or 2.5.4. Read it before preferring it.
+- [ ] **Re-check the source comments that predate 2.5.3** against their primary texts,
+      under the method above. Two were Wikipedia and a third (Wolof) over-claimed;
+      assume more may be. A large item: every inventory's comment, one at a time.
 
 ## 2.6.0 — Coverage scale (P3)
 

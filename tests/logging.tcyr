@@ -1,22 +1,69 @@
-# tests/logging.tcyr — logging init smoke (v1.x Rust src/logging.rs has no tests).
+# tests/logging.tcyr — -D LOGGING through sakshi (2.5.4).
+#
+# v1.x src/logging.rs had no tests. These pin its contract: VARNA_LOG, when valid,
+# overrides the caller's level, and an absent or invalid one falls back to it. The
+# override is tested through _varna_log_resolve, because a test cannot set its own
+# environment. What is emitted is counted in sakshi's ring buffer rather than read
+# off stderr.
 
 #define LOGGING
 include "src/logging.cyr"
 
+fn _emitted(level, msg) {
+    var before = sakshi_ring_event_count();
+    varna_log(level, msg);
+    return sakshi_ring_event_count() - before;
+}
+
 fn main() {
     alloc_init();
-    test_group("logging");
-    varna_log_init();
-    assert_eq(varna_log_level(), 2, "default info level");
-    varna_log_init_with_level("debug");
-    assert_eq(varna_log_level(), 1, "debug level");
-    varna_log_init_with_level("trace");
-    assert_eq(varna_log_level(), 0, "trace level");
-    varna_log_init_with_level("error");
-    assert_eq(varna_log_level(), 4, "error level");
-    varna_log_init_with_level("bogus");
-    assert_eq(varna_log_level(), 2, "unknown defaults to info");
-    varna_log(4, "logging smoke (stderr)");
+    test_group("level_names");
+    assert_eq(_varna_level_parse("trace"), 0, "trace");
+    assert_eq(_varna_level_parse("debug"), 1, "debug");
+    assert_eq(_varna_level_parse("info"), 2, "info");
+    assert_eq(_varna_level_parse("warn"), 3, "warn");
+    assert_eq(_varna_level_parse("error"), 4, "error");
+    assert_eq(_varna_level_parse("off"), 5, "off");
+    assert_eq(_varna_level_parse("bogus"), 0 - 1, "an unknown name");
+    assert_eq(_varna_level_parse(0), 0 - 1, "no name");
+
+    test_group("varna_log_env_override");
+    # v1.x: EnvFilter::try_from_env("VARNA_LOG").unwrap_or_else(|_| EnvFilter::new(default)).
+    assert_eq(_varna_log_resolve(0, "info"), 2, "no VARNA_LOG: the caller's level");
+    assert_eq(_varna_log_resolve("debug", "info"), 1, "VARNA_LOG wins over the caller");
+    assert_eq(_varna_log_resolve("off", "trace"), 5, "VARNA_LOG=off silences everything");
+    assert_eq(_varna_log_resolve("loud", "warn"), 3, "an invalid VARNA_LOG falls back to the caller");
+    assert_eq(_varna_log_resolve("varna=debug", "warn"), 3, "a tracing directive is not parsed, so it falls back");
+    assert_eq(_varna_log_resolve(0, "bogus"), 2, "an unknown default reads as info");
+
+    test_group("init");
+    # Only meaningful when the environment running the suite sets no VARNA_LOG.
+    if (getenv("VARNA_LOG") == 0) {
+        varna_log_init();
+        assert_eq(varna_log_level(), 2, "default info level");
+        varna_log_init_with_level("debug");
+        assert_eq(varna_log_level(), 1, "debug level");
+        assert_eq(sakshi_get_level(), LogLevel.SK_DEBUG, "and sakshi's level follows");
+        varna_log_init_with_level("error");
+        assert_eq(varna_log_level(), 4, "error level");
+        assert_eq(sakshi_get_level(), LogLevel.SK_ERROR, "and sakshi's level follows");
+    }
+
+    test_group("emitted_through_sakshi");
+    sakshi_output_buffer();
+    _varna_log_level = 2;
+    sakshi_set_level(_varna_to_sakshi(2));
+    assert_eq(_emitted(2, "an info message"), 1, "info is emitted at info");
+    assert_eq(_emitted(4, "an error message"), 1, "error is emitted at info");
+    assert_eq(_emitted(1, "a debug message"), 0, "debug is not emitted at info");
+    assert_eq(_emitted(0, "a trace message"), 0, "nor is trace");
+    _varna_log_level = 5;
+    sakshi_set_level(_varna_to_sakshi(5));
+    assert_eq(_emitted(4, "an error message"), 0, "off emits nothing, not even an error");
+    _varna_log_level = 0;
+    sakshi_set_level(_varna_to_sakshi(0));
+    assert_eq(_emitted(0, "a trace message"), 1, "trace is emitted at trace");
+    sakshi_set_output(OutputTarget.SK_OUT_STDERR);
     return assert_summary();
 }
 

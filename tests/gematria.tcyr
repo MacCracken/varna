@@ -303,6 +303,49 @@ fn main() {
     }
     assert_eq(alloc_used() - c0, 0, "nor does the ordinal lookup, which rescans");
 
+    # Until 2.5.4 script_alphabet_values built a fresh ~856 B table on every call, so
+    # a caller in a loop grew the heap without bound. It is cached now, which this
+    # group measures rather than assumes: the same table comes back, and a call after
+    # the first allocates nothing.
+    test_group("alphabet_tables_are_cached");
+    var ta = script_alphabet_values("Grek", NumericSystem.NUM_ORDINAL);
+    var tb = script_alphabet_values("Grek", NumericSystem.NUM_ORDINAL);
+    assert_eq(ta, tb, "the same (script, method) returns the same table");
+    assert(ta != script_alphabet_values("Grek", NumericSystem.NUM_STANDARD),
+      "a different method is a different table");
+    assert(ta != script_alphabet_values("Hebr", NumericSystem.NUM_ORDINAL),
+      "a different script is a different table");
+    # Any method other than ordinal or reduced reads as standard, as in char_value.
+    assert_eq(script_alphabet_values("Grek", 7), script_alphabet_values("Grek", NumericSystem.NUM_STANDARD),
+      "an out-of-range method shares the standard table");
+    # Warm all 15, plus the unknown-script table, then measure.
+    var sc = gematria_all_scripts();
+    var w = 0;
+    while (w < vec_len(sc)) {
+        script_alphabet_values(vec_get(sc, w), NumericSystem.NUM_STANDARD);
+        script_alphabet_values(vec_get(sc, w), NumericSystem.NUM_ORDINAL);
+        script_alphabet_values(vec_get(sc, w), NumericSystem.NUM_REDUCED);
+        w = w + 1;
+    }
+    script_alphabet_values("Zzzz", NumericSystem.NUM_STANDARD);
+    var d0 = alloc_used();
+    i = 0;
+    while (i < 1000) {
+        var tt = script_alphabet_values("Hebr", NumericSystem.NUM_REDUCED);
+        var tz = script_alphabet_values("Zzzz", NumericSystem.NUM_STANDARD);
+        i = i + 1;
+    }
+    assert_eq(alloc_used() - d0, 0, "a cached table allocates nothing, nor does an unknown script");
+    assert_eq(script_alphabet_values("Zzzz", 0), script_alphabet_values("Qqqq", 0),
+      "every unknown script shares one empty table");
+    assert_eq(vec_len(script_alphabet_values("Zzzz", 0)), 0, "and it is empty");
+    # The cache must not change a value: the reduced and ordinal tables still
+    # hold their own numbers after the standard one was built first.
+    assert_eq(load64(vec_get(script_alphabet_values("Hebr", NumericSystem.NUM_REDUCED), 21) + 8), 4,
+      "tav still reduces to 4 from the cache");
+    assert_eq(load64(vec_get(script_alphabet_values("Hebr", NumericSystem.NUM_STANDARD), 21) + 8), 400,
+      "and is still 400 in the standard table");
+
     test_group("every_value_pinned");
     # Hebrew mispar hechrachi — 27 values
     assert_eq(_std("Hebr", "א"), 1, "Hebr א = 1");
