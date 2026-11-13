@@ -1,0 +1,145 @@
+# tests/syllable_profiles.tcyr — the twelve sourced phonotactic profiles (2.6.0).
+#
+# One guard ties every profile to its inventory: each constraint sequence must split,
+# by longest match, into phonemes of that language. v1.x's English list wrote "str"
+# where the inventory spells ɹ, and Sanskrit's wrote t for t̪; neither could ever match
+# a word built from the inventory. Each template is pinned to its source.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/syllable.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+
+# 1 when `s` splits entirely into phonemes of `inv`, longest match first.
+fn _tokenizes(inv, s) {
+    var ph = phoneme_list(inv);
+    var n = strlen(s);
+    var pos = 0;
+    while (pos < n) {
+        var best = 0;
+        var i = 0;
+        while (i < vec_len(ph)) {
+            var ipa = phoneme_ipa(vec_get(ph, i));
+            var len = strlen(ipa);
+            if (len > best && pos + len <= n) {
+                if (memeq(s + pos, ipa, len) == 1) { best = len; }
+            }
+            i = i + 1;
+        }
+        if (best == 0) { return 0; }
+        pos = pos + best;
+    }
+    return 1;
+}
+
+# The C slots of a pattern before its V (after = 0) or after it (after = 1).
+fn _c_slots(pattern, after) {
+    var n = strlen(pattern);
+    var seen_v = 0;
+    var c = 0;
+    var i = 0;
+    while (i < n) {
+        var b = load8(pattern + i);
+        if (b == 86) { seen_v = 1; }
+        if (b == 67 && seen_v == after) { c = c + 1; }
+        i = i + 1;
+    }
+    return c;
+}
+
+fn _tmpl(code, onset, coda, cx, pattern) {
+    var p = phonotactics_by_code(code);
+    assert(p != 0, code);
+    if (p == 0) { return 0; }
+    assert_eq(phonotactics_max_onset(p), onset, code);
+    assert_eq(phonotactics_max_coda(p), coda, code);
+    assert_eq(syllable_complex_nucleus(phonotactics_syllable(p)), cx, code);
+    assert(streq(phonotactics_pattern(p), pattern), code);
+    return 0;
+}
+
+fn main() {
+    alloc_init();
+    test_group("lookup");
+    var codes = phonotactics_all_codes();
+    assert_eq(vec_len(codes), 12, "the 11 core languages and Sanskrit");
+    assert_eq(phonotactics_by_code("xx"), 0, "an unknown code has none");
+    assert_eq(phonotactics_by_code(0), 0, "nor does null");
+    assert_eq(phonotactics_by_code("de"), phonotactics_german(), "profiles are cached");
+
+    test_group("every_sequence_spells_with_its_inventory");
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var code = vec_get(codes, i);
+        var p = phonotactics_by_code(code);
+        assert(streq(phonotactics_language_code(p), code), "the profile names its code");
+        var inv = registry_phonemes(code);
+        var cs = phonotactics_constraints(p);
+        var k = 0;
+        while (k < vec_len(cs)) {
+            var sq = constraint_sequences(vec_get(cs, k));
+            var j = 0;
+            while (j < vec_len(sq)) {
+                if (_tokenizes(inv, vec_get(sq, j)) == 0) {
+                    println(vec_get(sq, j));
+                    bad = bad + 1;
+                }
+                j = j + 1;
+            }
+            k = k + 1;
+        }
+        # The pattern's C slots agree with the template's maxima.
+        assert_eq(_c_slots(phonotactics_pattern(p), 0), phonotactics_max_onset(p), "onset C slots");
+        assert_eq(_c_slots(phonotactics_pattern(p), 1), phonotactics_max_coda(p), "coda C slots");
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "every sequence splits into its language's phonemes");
+
+    test_group("templates_pinned_to_sources");
+    _tmpl("en", 3, 4, 1, "(C)(C)(C)V(C)(C)(C)(C)");   # Gimson
+    _tmpl("ar", 1, 2, 1, "CV(C)(C)");                 # Ryding 2005
+    _tmpl("zh", 1, 1, 1, "(C)V(C)");                  # Lee & Zee 2003
+    _tmpl("hi", 3, 3, 1, "(C)(C)(C)V(C)(C)(C)");      # Ohala 1983
+    _tmpl("ja", 2, 1, 1, "(C)(C)V(C)");               # Kubozono 2015
+    _tmpl("es", 2, 2, 1, "(C)(C)V(C)(C)");            # Ríos Mestre 1999
+    _tmpl("fr", 2, 1, 0, "(C)(C)V(C)");               # unverified, see the profile
+    _tmpl("de", 3, 5, 1, "(C)(C)(C)V(C)(C)(C)(C)(C)"); # Schäfer 2018
+    _tmpl("ru", 4, 4, 0, "(C)(C)(C)(C)V(C)(C)(C)(C)"); # Русская грамматика 1980, Chew 2003
+    _tmpl("ko", 1, 1, 1, "(C)V(C)");                  # Lee 1993
+    _tmpl("pt", 2, 1, 1, "(C)(C)V(C)");               # Mateus & d'Andrade 1998 (EP)
+    _tmpl("sa", 3, 1, 1, "(C)(C)(C)V(C)");            # Allen 1953, Macdonell 1927
+
+    test_group("key_constraints");
+    var on = SyllablePosition.Onset;
+    var cd = SyllablePosition.Coda;
+    assert_eq(phonotactics_is_permitted(phonotactics_arabic(), "br", on), 0, "ar: no onset cluster (/br/)");
+    assert_eq(phonotactics_is_permitted(phonotactics_mandarin(), "ŋ", cd), 1, "zh: ŋ is a coda");
+    assert_eq(phonotactics_is_permitted(phonotactics_mandarin(), "m", cd), 0, "zh: m is not");
+    assert_eq(phonotactics_is_permitted(phonotactics_hindi(), "spl", on), 1, "hi: spl- (Ohala p. 39)");
+    assert_eq(phonotactics_is_permitted(phonotactics_hindi(), "nd̪", cd), 1, "hi: homorganic nasal + stop final");
+    assert_eq(phonotactics_is_permitted(phonotactics_spanish(), "pɾ", on), 1, "es: pɾ onset");
+    assert_eq(phonotactics_is_permitted(phonotactics_spanish(), "tl", on), 0, "es: tl not tautosyllabic");
+    assert_eq(phonotactics_is_permitted(phonotactics_spanish(), "ɲ", cd), 0, "es: no palatal coda");
+    assert_eq(phonotactics_is_permitted(phonotactics_spanish(), "ks", cd), 1, "es: ks coda (C + s)");
+    assert_eq(phonotactics_is_permitted(phonotactics_french(), "ŋ", on), 0, "fr: ŋ only final in loans");
+    assert_eq(phonotactics_is_permitted(phonotactics_german(), "ʃtʁ", on), 1, "de: ʃtʁ onset");
+    assert_eq(phonotactics_is_permitted(phonotactics_german(), "pt", on), 0, "de: *[pteː]");
+    assert_eq(phonotactics_is_permitted(phonotactics_german(), "b", cd), 0, "de: final devoicing");
+    assert_eq(phonotactics_is_permitted(phonotactics_german(), "mf", cd), 0, "de: [mf] excluded");
+    assert_eq(phonotactics_is_permitted(phonotactics_russian(), "jt", on), 0, "ru: no /j/ + consonant onset");
+    assert_eq(phonotactics_is_permitted(phonotactics_russian(), "vʲj", on), 1, "ru: consonant + /j/ (вьюга)");
+    assert_eq(phonotactics_is_permitted(phonotactics_korean(), "ŋ", cd), 1, "ko: ŋ is one of the seven finals");
+    assert_eq(phonotactics_is_permitted(phonotactics_korean(), "s", cd), 0 - 1, "ko: s is not listed (Lee 1993)");
+    assert_eq(phonotactics_is_permitted(phonotactics_portuguese(), "ʃ", cd), 1, "pt: EP coda ʃ");
+    assert_eq(phonotactics_is_permitted(phonotactics_portuguese(), "pn", on), 0, "pt: pn not an onset");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

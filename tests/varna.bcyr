@@ -88,7 +88,7 @@ fn b_grammar_lookup() { grammar_by_code("ru"); return 0; }
 fn b_swadesh_lookup() { swadesh_by_code("ja"); return 0; }
 fn b_lexicon_find() { lexicon_find(_b_es, "agua"); return 0; }
 fn b_allophone_realize() { allophone_realize(_b_allo, "t", Environment.Intervocalic); return 0; }
-fn b_phonotactics_is_permitted() { phonotactics_is_permitted(_b_phono, "str", SyllablePosition.Onset); return 0; }
+fn b_phonotactics_is_permitted() { phonotactics_is_permitted(_b_phono, "stɹ", SyllablePosition.Onset); return 0; }
 fn b_dialect_apply() { dialect_apply(_b_rp, _b_en); return 0; }
 # 2.5.2 JSON (ADR 0003): the full English inventory, 36 phonemes. Each call builds a
 # fresh str_builder / value tree (there is no builder reset and the bump allocator

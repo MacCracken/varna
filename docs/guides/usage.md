@@ -296,16 +296,26 @@ var p = phonotactics_english();
 assert(phonotactics_allows_onset_clusters(p));  # max_onset = 3
 assert(phonotactics_allows_coda_clusters(p));   # max_coda = 4
 
-# is_permitted is tri-state: 1 = allowed, 0 = forbidden, -1 = unspecified (sentinel)
-assert(phonotactics_is_permitted(p, "str", SyllablePosition.Onset) == 1);
-assert(phonotactics_is_permitted(p, "sr",  SyllablePosition.Onset) == 0);
-assert(phonotactics_is_permitted(p, "br",  SyllablePosition.Onset) == -1);  # no explicit rule
+# is_permitted is tri-state: 1 = allowed, 0 = forbidden, -1 = unspecified (sentinel).
+# Sequences are spelled in the inventory's symbols: English /r/ is ɹ.
+assert(phonotactics_is_permitted(p, "stɹ", SyllablePosition.Onset) == 1);
+assert(phonotactics_is_permitted(p, "tl",  SyllablePosition.Onset) == 0);
+assert(phonotactics_is_permitted(p, "bɹ",  SyllablePosition.Onset) == -1);  # no explicit rule
 
-# Japanese: (C)V(N) only
+# Japanese (Kubozono 2015): (Cj)V(VC), so Cj onsets and a moraic nasal or obstruent coda
 var ja = phonotactics_japanese();
-assert(!phonotactics_allows_onset_clusters(ja));
-assert(phonotactics_is_permitted(ja, "n", SyllablePosition.Coda) == 1);
+assert(phonotactics_allows_onset_clusters(ja));  # max_onset = 2
+assert(phonotactics_is_permitted(ja, "ɴ", SyllablePosition.Coda) == 1);
+
+# By ISO 639 code: the 11 core languages and Sanskrit; 0 for any other code
+var de = phonotactics_by_code("de");
+assert(phonotactics_is_permitted(de, "b", SyllablePosition.Coda) == 0);  # final devoicing
+assert(phonotactics_by_code("xx") == 0);
 ```
+
+Unspecified is not a ban: a Permitted list is what its source enumerates, and a
+Forbidden list is what it explicitly excludes. Each profile's comment in
+`src/syllable.cyr` names its source; French is partial.
 
 ---
 

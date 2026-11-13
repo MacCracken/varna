@@ -478,6 +478,14 @@ fn test_serde_phonotactics_all() {
     assert(_phono_eq(en, phonotactics_from_json(_phono_text(en))), "serde_phonotactics_all: en");
     assert(_phono_eq(sa, phonotactics_from_json(_phono_text(sa))), "serde_phonotactics_all: sa");
     assert(_phono_eq(ja, phonotactics_from_json(_phono_text(ja))), "serde_phonotactics_all: ja");
+    # Every pre-built profile (2.6.0: twelve), so a new one cannot be added unserialisable.
+    var codes = phonotactics_all_codes();
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var p = phonotactics_by_code(vec_get(codes, i));
+        assert(_phono_eq(p, phonotactics_from_json(_phono_text(p))), vec_get(codes, i));
+        i = i + 1;
+    }
     var et = _phono_text(en);
     assert(_starts_with(et, "{\"language_code\":\"en\",\"syllable\":{\"max_onset\":"), "profile opens with code, template");  #skip-lint
     assert(_contains(et, "},\"constraints\":[{\"kind\":"), "then constraints");

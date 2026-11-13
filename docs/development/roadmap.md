@@ -57,8 +57,21 @@ custom fonts, so render the page and look rather than trusting extracted text.
       [a̟ ʊ] before a nasal coda), no two conditions at once (Japanese devoicing, [ᵈʑ]
       word-initially before /i/), and classes that are labels nothing evaluates
       (Russian voicing assimilation needs "voiced obstruent other than /v vʲ/").
-- [ ] **Expanded phonotactic profiles**: all core languages (3 today: English,
-      Sanskrit, Japanese).
+- [x] **Expanded phonotactic profiles**: the 11 core languages plus Sanskrit, each
+      re-sourced to one cited work, spelled in its inventory's symbols, and checked
+      against that inventory by a test. `phonotactics_by_code` / `phonotactics_all_codes`.
+- [ ] **French phonotactics: re-check against Walker (2001) or Tranel (1987).** The
+      profile is partial: no reachable source states a template, so `max_coda 1` is a
+      view Côté (2000) reports and argues against, and the onset list is his minimum
+      (it misses vʁ, *vrai*).
+- [ ] **German permitted codas.** Schäfer (2018, §5.2) states them as prose rules, so
+      only his exclusions are encoded and every other coda reads unspecified. A source
+      that enumerates them (Wiese 1996, which could not be read) would allow a list.
+- [ ] **Portuguese inventory: one variety.** It mixes Brazilian /t͡ʃ d͡ʒ/ into an
+      otherwise European set; the phonotactic profile is European (Mateus & d'Andrade
+      1998). Decide the variety, or split it under *Multiple inventories per language*.
+- [ ] **Korean inventory: /ʌ/ is missing.** Lee (1993, JIPA, p. 29) lists it; the
+      inventory has i e ɛ a o u ɯ.
 - [ ] **Transliteration tables**: Cyrillic–Latin, Arabic–Latin, Hebrew–Latin, Pinyin
       (2 today: Devanagari–IAST, Greek–Beta Code).
 - [x] **Numeral follow-ons**: the variant-glyph alias layer (ѵ ѿ ҁ; not ꙋ, which has

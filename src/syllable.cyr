@@ -140,58 +140,707 @@ fn phonotactics_is_permitted(p, sequence, position) {
 }
 
 # --- Pre-built phonotactic profiles --------------------------------
+# Re-sourced and extended at 2.6.0 to the 11 core languages (en ar zh hi ja es fr de ru
+# ko pt) plus Sanskrit. The v1.x profiles for en, sa and ja were unsourced, and two were
+# wrong (see each). Each profile now names ONE description. A Permitted list is an
+# enumeration that source prints, and a Forbidden list holds sequences it explicitly
+# excludes. is_permitted answers 'unspecified' for anything else, which is not a ban.
+# Sequences are spelled in each inventory's own symbols, so a profile can be checked
+# against its inventory (tests/syllable_profiles.tcyr).
 
 var _c_phonotactics_english = 0;
+# English, after Cruttenden (rev.), Gimson's Pronunciation of English (1994), §10.9.1,
+# pp. 216-220 (read through archive.org full-text search; pages from running heads).
+# Template: initial CCC is the largest onset type (p. 218); "Final CCCC clusters occur
+# only rarely, as a result of the suffixation" (prompts /-mpts/, sixths /-ksθs/).
+# Onsets: "/s/ is the essential first element of CCC clusters; the second element is
+# a voiceless stop; the third element must be one of /l,r,j,w/"; /spw- stl- stw-/ do
+# not occur, "/CCj/ occurs only before /uː/". Gimson describes RP. The corpus inventory
+# is General American, so /stj-/ (RP 'stew') is left out: GA has no yod there.
+# Gimson's /r/ is the corpus's ɹ. Forbidden: "/ŋ/ does not occur initially", and
+# /tl dl/ "do not occur initially".
+# Corrected at 2.6.0: the v1.x list wrote r for ɹ, so "str" never matched the
+# inventory; it described all of them as "/s/+stop"; it lacked skl; and it banned
+# /sr/, which Gimson lists as occurring in loans (Sri Lanka).
 fn phonotactics_english() {
     if (_c_phonotactics_english != 0) { return _c_phonotactics_english; }
     var p = _phonotactics_new("en", _syllable_new(3, 4, 1, "(C)(C)(C)V(C)(C)(C)(C)"));
-    var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset, "English /s/+stop onset clusters");
-    _constraint_add_seq(ok, "st");
-    _constraint_add_seq(ok, "sp");
-    _constraint_add_seq(ok, "sk");
-    _constraint_add_seq(ok, "str");
-    _constraint_add_seq(ok, "spr");
-    _constraint_add_seq(ok, "skr");
-    _constraint_add_seq(ok, "spl");
-    _constraint_add_seq(ok, "skw");
-    _constraint_add_seq(ok, "stj");
-    _constraint_add_seq(ok, "spj");
-    _constraint_add_seq(ok, "skj");
-    _phonotactics_add(p, ok);
-    var no = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset, "Forbidden English onset sequences");
-    _constraint_add_seq(no, "sr");
-    _constraint_add_seq(no, "tl");
-    _constraint_add_seq(no, "dl");
-    _constraint_add_seq(no, "ŋ");
-    _phonotactics_add(p, no);
+    var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
+      "English CCC onsets: /s/ + voiceless stop + /l ɹ j w/ (Gimson)");
+    _constraint_add_seq(c0, "spl");
+    _constraint_add_seq(c0, "spɹ");
+    _constraint_add_seq(c0, "spj");
+    _constraint_add_seq(c0, "stɹ");
+    _constraint_add_seq(c0, "skl");
+    _constraint_add_seq(c0, "skɹ");
+    _constraint_add_seq(c0, "skj");
+    _constraint_add_seq(c0, "skw");
+    _phonotactics_add(p, c0);
+    var c1 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
+      "English /s/ + consonant onsets (Gimson)");
+    _constraint_add_seq(c1, "sp");
+    _constraint_add_seq(c1, "st");
+    _constraint_add_seq(c1, "sk");
+    _constraint_add_seq(c1, "sm");
+    _constraint_add_seq(c1, "sn");
+    _constraint_add_seq(c1, "sl");
+    _constraint_add_seq(c1, "sf");
+    _constraint_add_seq(c1, "sw");
+    _phonotactics_add(p, c1);
+    var c2 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset, "Not word-initial in English (Gimson)");
+    _constraint_add_seq(c2, "ŋ");
+    _constraint_add_seq(c2, "tl");
+    _constraint_add_seq(c2, "dl");
+    _phonotactics_add(p, c2);
     _c_phonotactics_english = p;
     return _c_phonotactics_english;
 }
 
 var _c_phonotactics_sanskrit = 0;
+# Sanskrit, after Allen (1953), Phonetics in Ancient India, §3.2, pp. 70, 80-83, which
+# reports the Prātiśākhya doctrine. A final consonant in pausa belongs with the
+# preceding vowel (p. 82), and Whitney (1889, §150) agrees that "only one consonant,
+# of whatever kind, is allowed to stand at the end of a word" (root stops after r,
+# ūrk, are the exception). Allen gives no onset maximum; strī 'woman' is monosyllabic
+# (Macdonell 1927, p. 61, §100a), an onset of three. Long vowels count 2 mātrās
+# (Allen p. 83). "Of the non-nasal sparśas only the voiceless unaspirated stops may
+# occur finally in pausa" (p. 70); no palatal is final (Whitney §142).
+# Corrected at 2.6.0: the v1.x template had coda 2 and onset 2, and its onset list
+# (pr kr tr sr pl kl) had no source and spelled t where the inventory has t̪.
 fn phonotactics_sanskrit() {
     if (_c_phonotactics_sanskrit != 0) { return _c_phonotactics_sanskrit; }
-    var p = _phonotactics_new("sa", _syllable_new(2, 2, 1, "(C)(C)V(C)(C)"));
-    var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset, "Sanskrit stop+liquid onset clusters");
-    _constraint_add_seq(ok, "pr");
-    _constraint_add_seq(ok, "kr");
-    _constraint_add_seq(ok, "tr");
-    _constraint_add_seq(ok, "sr");
-    _constraint_add_seq(ok, "pl");
-    _constraint_add_seq(ok, "kl");
-    _phonotactics_add(p, ok);
+    var p = _phonotactics_new("sa", _syllable_new(3, 1, 1, "(C)(C)(C)V(C)"));
+    var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
+      "Sanskrit non-nasal stops allowed word-finally in pausa (Allen p. 70)");
+    _constraint_add_seq(c0, "k");
+    _constraint_add_seq(c0, "ʈ");
+    _constraint_add_seq(c0, "t̪");
+    _constraint_add_seq(c0, "p");
+    _phonotactics_add(p, c0);
     _c_phonotactics_sanskrit = p;
     return _c_phonotactics_sanskrit;
 }
 
 var _c_phonotactics_japanese = 0;
+# Tokyo Japanese, after Kubozono (2015), "Introduction to Japanese phonetics and
+# phonology", Handbook of Japanese Phonetics and Phonology, p. 16: "the syllable
+# structure of the language can be described as (Cj)V(VC)". The second V and the C
+# "cannot generally co-occur" (no superheavy syllables). The moraic obstruent /Q/ and
+# nasal /N/ "only occur in the coda position of the syllable" (p. 9). /Q/ is the first
+# half of a geminate (ip.pai, it.tai, ik.kai, nis.san); p t k s are its printed
+# examples, and /N/ is the corpus's ɴ.
+# Corrected at 2.6.0: v1.x had "(C)V(N)", onset 1 and a nasal-only coda, so it
+# excluded both Cj onsets (kja, ɾjo) and the obstruent coda Okada (1991, p. 95)
+# already describes.
 fn phonotactics_japanese() {
     if (_c_phonotactics_japanese != 0) { return _c_phonotactics_japanese; }
-    var p = _phonotactics_new("ja", _syllable_new(1, 1, 1, "(C)V(N)"));
-    var ok = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda, "Only moraic nasal permitted in Japanese coda");  #skip-lint
-    _constraint_add_seq(ok, "n");
-    _constraint_add_seq(ok, "ɴ");
-    _phonotactics_add(p, ok);
+    var p = _phonotactics_new("ja", _syllable_new(2, 1, 1, "(C)(C)V(C)"));
+    var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
+      "Japanese codas: the moraic nasal and the moraic obstruent (Kubozono)");
+    _constraint_add_seq(c0, "ɴ");
+    _constraint_add_seq(c0, "p");
+    _constraint_add_seq(c0, "t");
+    _constraint_add_seq(c0, "k");
+    _constraint_add_seq(c0, "s");
+    _phonotactics_add(p, c0);
     _c_phonotactics_japanese = p;
     return _c_phonotactics_japanese;
+}
+
+var _c_phonotactics_arabic = 0;
+# Modern Standard Arabic, after Ryding (2005), A Reference Grammar of Modern Standard
+# Arabic, §6, pp. 35-36. "No word or syllable may start with a vowel" (p. 35), so the
+# onset is required; "no word or syllable may begin with a consonant cluster, such as
+# /sk/ or /br/" (p. 36). The five syllable types are CV, CVV, CVC, and in pause form
+# CVVC and CVCC, "primarily in word-final position" (p. 36). The template also admits
+# CVVCC, which Ryding's list excludes; that cannot be stated here.
+fn phonotactics_arabic() {
+    if (_c_phonotactics_arabic != 0) { return _c_phonotactics_arabic; }
+    var p = _phonotactics_new("ar", _syllable_new(1, 2, 1, "CV(C)(C)"));
+    var c0 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
+      "No onset cluster in MSA; Ryding's examples (p. 36)");
+    _constraint_add_seq(c0, "sk");
+    _constraint_add_seq(c0, "br");
+    _phonotactics_add(p, c0);
+    _c_phonotactics_arabic = p;
+    return _c_phonotactics_arabic;
+}
+
+var _c_phonotactics_mandarin = 0;
+# Standard Chinese (Beijing), after Lee & Zee (2003), JIPA 33(1), p. 111, the source of
+# the inventory. It prints no template: (C)V(C) follows from its distributions. Rising
+# diphthongs and triphthongs are vowel units here, so the onset is one consonant.
+# "[m] occurs only in syllable-initial position; [n] occurs in both syllable-initial
+# and syllable-final positions; and [ŋ] occurs only in syllable-final position."
+# Not stateable here: which vowels occur in open syllables only (ɤ, ai au ou uo ei, the
+# triphthongs, ɹ̩), which only before a nasal (uə iu), and ɕ t͡ɕ t͡ɕʰ only before i y.
+fn phonotactics_mandarin() {
+    if (_c_phonotactics_mandarin != 0) { return _c_phonotactics_mandarin; }
+    var p = _phonotactics_new("zh", _syllable_new(1, 1, 1, "(C)V(C)"));
+    var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda, "Mandarin codas (Lee & Zee p. 111)");
+    _constraint_add_seq(c0, "n");
+    _constraint_add_seq(c0, "ŋ");
+    _phonotactics_add(p, c0);
+    var c1 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Coda,
+      "Syllable-initial only (Lee & Zee p. 111)");
+    _constraint_add_seq(c1, "m");
+    _phonotactics_add(p, c1);
+    var c2 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
+      "Syllable-final only (Lee & Zee p. 111)");
+    _constraint_add_seq(c2, "ŋ");
+    _phonotactics_add(p, c2);
+    _c_phonotactics_mandarin = p;
+    return _c_phonotactics_mandarin;
+}
+
+var _c_phonotactics_hindi = 0;
+# Standard Hindi, after Ohala (1983), Aspects of Hindi Phonology, ch. 4, pp. 38-45,
+# 72-73. She lists clusters at word edges and prints no template; the pattern follows
+# from her lists. Onsets reach three ("str-, spr-, spl-, skr-, smr-", p. 39). Final
+# three-consonant clusters "occur in Sanskrit loans only", and one four-consonant final
+# (-rtsy) occurs in one loan (p. 43). Native finals reach two.
+# complex_nucleus is 1 to match the corpus inventory's long vowels. Ohala treats Hindi
+# vowels as contrasting in quality, not length, and [əi əu] as two vowels (p. 73).
+# Her symbols are mapped to the inventory's (t d -> t̪ d̪, ṭ ḍ -> ʈ ɖ, č ǰ -> t͡ɕ d͡ʑ,
+# y w h -> j ʋ ɦ, š -> ɕ). zy- is left out, as /z/ is not in the inventory. Her tables
+# "do not list all possible loan clusters" (p. 38), and the two-consonant loan finals
+# are not enumerated here, so they read unspecified.
+fn phonotactics_hindi() {
+    if (_c_phonotactics_hindi != 0) { return _c_phonotactics_hindi; }
+    var p = _phonotactics_new("hi", _syllable_new(3, 3, 1, "(C)(C)(C)V(C)(C)(C)"));
+    var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
+      "Hindi word-initial clusters (Ohala p. 39)");
+    _constraint_add_seq(c0, "kr");
+    _constraint_add_seq(c0, "kl");
+    _constraint_add_seq(c0, "kʋ");
+    _constraint_add_seq(c0, "kj");
+    _constraint_add_seq(c0, "kɕ");
+    _constraint_add_seq(c0, "kʰj");
+    _constraint_add_seq(c0, "kʰʋ");
+    _constraint_add_seq(c0, "ɡr");
+    _constraint_add_seq(c0, "ɡl");
+    _constraint_add_seq(c0, "ɡj");
+    _constraint_add_seq(c0, "ɡʋ");
+    _constraint_add_seq(c0, "ɡʱr");
+    _constraint_add_seq(c0, "t͡ɕj");
+    _constraint_add_seq(c0, "d͡ʑj");
+    _constraint_add_seq(c0, "d͡ʑʋ");
+    _constraint_add_seq(c0, "ʈr");
+    _constraint_add_seq(c0, "ɖr");
+    _constraint_add_seq(c0, "ɖj");
+    _constraint_add_seq(c0, "t̪r");
+    _constraint_add_seq(c0, "t̪j");
+    _constraint_add_seq(c0, "t̪ʋ");
+    _constraint_add_seq(c0, "d̪r");
+    _constraint_add_seq(c0, "d̪j");
+    _constraint_add_seq(c0, "d̪ʋ");
+    _constraint_add_seq(c0, "d̪ʱr");
+    _constraint_add_seq(c0, "d̪ʱj");
+    _constraint_add_seq(c0, "d̪ʱʋ");
+    _constraint_add_seq(c0, "pr");
+    _constraint_add_seq(c0, "pl");
+    _constraint_add_seq(c0, "pj");
+    _constraint_add_seq(c0, "pʰj");
+    _constraint_add_seq(c0, "br");
+    _constraint_add_seq(c0, "bl");
+    _constraint_add_seq(c0, "bj");
+    _constraint_add_seq(c0, "bʱr");
+    _constraint_add_seq(c0, "nr");
+    _constraint_add_seq(c0, "nj");
+    _constraint_add_seq(c0, "mr");
+    _constraint_add_seq(c0, "ml");
+    _constraint_add_seq(c0, "mj");
+    _constraint_add_seq(c0, "ʋr");
+    _constraint_add_seq(c0, "ʋj");
+    _constraint_add_seq(c0, "ɦr");
+    _constraint_add_seq(c0, "ɕr");
+    _constraint_add_seq(c0, "ɕl");
+    _constraint_add_seq(c0, "ɕʋ");
+    _constraint_add_seq(c0, "ɕj");
+    _constraint_add_seq(c0, "ɕm");
+    _constraint_add_seq(c0, "sr");
+    _constraint_add_seq(c0, "sl");
+    _constraint_add_seq(c0, "sʋ");
+    _constraint_add_seq(c0, "sj");
+    _constraint_add_seq(c0, "sk");
+    _constraint_add_seq(c0, "skʰ");
+    _constraint_add_seq(c0, "sʈ");
+    _constraint_add_seq(c0, "st̪");
+    _constraint_add_seq(c0, "st̪ʰ");
+    _constraint_add_seq(c0, "sp");
+    _constraint_add_seq(c0, "spʰ");
+    _constraint_add_seq(c0, "sn");
+    _constraint_add_seq(c0, "sm");
+    _constraint_add_seq(c0, "st̪r");
+    _constraint_add_seq(c0, "spr");
+    _constraint_add_seq(c0, "spl");
+    _constraint_add_seq(c0, "skr");
+    _constraint_add_seq(c0, "smr");
+    _phonotactics_add(p, c0);
+    var c1 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
+      "Hindi native final clusters (Ohala p. 43)");
+    _constraint_add_seq(c1, "st̪");
+    _constraint_add_seq(c1, "ns");
+    _phonotactics_add(p, c1);
+    var c2 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
+      "Hindi homorganic nasal + stop finals (Ohala p. 43)");
+    _constraint_add_seq(c2, "ŋk");
+    _constraint_add_seq(c2, "ŋkʰ");
+    _constraint_add_seq(c2, "ŋɡ");
+    _constraint_add_seq(c2, "ŋɡʱ");
+    _constraint_add_seq(c2, "ɲt͡ɕ");
+    _constraint_add_seq(c2, "ɲt͡ɕʰ");
+    _constraint_add_seq(c2, "ɲd͡ʑ");
+    _constraint_add_seq(c2, "ɲd͡ʑʱ");
+    _constraint_add_seq(c2, "ɳʈ");
+    _constraint_add_seq(c2, "ɳʈʰ");
+    _constraint_add_seq(c2, "ɳɖ");
+    _constraint_add_seq(c2, "nt̪");
+    _constraint_add_seq(c2, "nt̪ʰ");
+    _constraint_add_seq(c2, "nd̪");
+    _constraint_add_seq(c2, "nd̪ʱ");
+    _constraint_add_seq(c2, "mp");
+    _constraint_add_seq(c2, "mpʰ");
+    _constraint_add_seq(c2, "mb");
+    _constraint_add_seq(c2, "mbʱ");
+    _phonotactics_add(p, c2);
+    var c3 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
+      "Hindi final three-consonant clusters, Sanskrit loans (Ohala p. 43)");
+    _constraint_add_seq(c3, "kɕɳ");
+    _constraint_add_seq(c3, "kɕj");
+    _constraint_add_seq(c3, "kɕm");
+    _constraint_add_seq(c3, "ɡd̪ʱj");
+    _constraint_add_seq(c3, "t̪rj");
+    _constraint_add_seq(c3, "t̪sj");
+    _constraint_add_seq(c3, "ɕʈr");
+    _constraint_add_seq(c3, "ɕʈʰj");
+    _constraint_add_seq(c3, "st̪r");
+    _constraint_add_seq(c3, "st̪ʰj");
+    _constraint_add_seq(c3, "st̪j");
+    _constraint_add_seq(c3, "rkj");
+    _constraint_add_seq(c3, "rkʰj");
+    _constraint_add_seq(c3, "rɡʱj");
+    _constraint_add_seq(c3, "rd͡ʑj");
+    _constraint_add_seq(c3, "rt̪j");
+    _constraint_add_seq(c3, "rt̪m");
+    _constraint_add_seq(c3, "rt̪ʰj");
+    _constraint_add_seq(c3, "rd̪r");
+    _constraint_add_seq(c3, "rd̪ʱʋ");
+    _constraint_add_seq(c3, "rɕʋ");
+    _constraint_add_seq(c3, "rɦj");
+    _constraint_add_seq(c3, "rɳj");
+    _constraint_add_seq(c3, "rmj");
+    _constraint_add_seq(c3, "lkj");
+    _constraint_add_seq(c3, "ɳɖj");
+    _constraint_add_seq(c3, "ɳɖr");
+    _constraint_add_seq(c3, "ŋkʰj");
+    _constraint_add_seq(c3, "nt̪j");
+    _constraint_add_seq(c3, "nt̪r");
+    _constraint_add_seq(c3, "nd̪r");
+    _constraint_add_seq(c3, "nd̪ʋ");
+    _constraint_add_seq(c3, "nd̪j");
+    _constraint_add_seq(c3, "nd̪ʱj");
+    _phonotactics_add(p, c3);
+    _c_phonotactics_hindi = p;
+    return _c_phonotactics_hindi;
+}
+
+var _c_phonotactics_spanish = 0;
+# Castilian Spanish, after Ríos Mestre (1999), La transcripción fonética automática del
+# DEFSFE (UAB thesis, ELiEs 4), §6.2. Hualde (2005) and Harris (1983) could not be
+# read. Obstruent + liquid is "la única combinación consonántica permitida en
+# posición prenuclear": /p k b g f/ + /r l/ and /d t/ + /r/, and "no consideraremos
+# como tales las combinaciones /tl/ y /dl/" (§6.2.2.2). Complex codas are /b d k n l
+# r/ + /s/; "ninguna palatal aparece en posición de coda", nor /w/, nor /c/ (§6.2.2.3).
+# The source's r is the tap ɾ and its c is t͡ʃ. Prenuclear glides are in the nucleus,
+# so C + j/w is not an onset here.
+fn phonotactics_spanish() {
+    if (_c_phonotactics_spanish != 0) { return _c_phonotactics_spanish; }
+    var p = _phonotactics_new("es", _syllable_new(2, 2, 1, "(C)(C)V(C)(C)"));
+    var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
+      "Spanish onset clusters: obstruent + liquid (Ríos Mestre §6.2.2.2)");
+    _constraint_add_seq(c0, "pɾ");
+    _constraint_add_seq(c0, "kɾ");
+    _constraint_add_seq(c0, "bɾ");
+    _constraint_add_seq(c0, "ɡɾ");
+    _constraint_add_seq(c0, "fɾ");
+    _constraint_add_seq(c0, "pl");
+    _constraint_add_seq(c0, "kl");
+    _constraint_add_seq(c0, "bl");
+    _constraint_add_seq(c0, "ɡl");
+    _constraint_add_seq(c0, "fl");
+    _constraint_add_seq(c0, "dɾ");
+    _constraint_add_seq(c0, "tɾ");
+    _phonotactics_add(p, c0);
+    var c1 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
+      "Not tautosyllabic in Spanish (Ríos Mestre §6.2.2.2)");
+    _constraint_add_seq(c1, "tl");
+    _constraint_add_seq(c1, "dl");
+    _phonotactics_add(p, c1);
+    var c2 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
+      "Spanish complex codas: C + /s/ (Ríos Mestre §6.2.2.3)");
+    _constraint_add_seq(c2, "bs");
+    _constraint_add_seq(c2, "ds");
+    _constraint_add_seq(c2, "ks");
+    _constraint_add_seq(c2, "ns");
+    _constraint_add_seq(c2, "ls");
+    _constraint_add_seq(c2, "ɾs");
+    _phonotactics_add(p, c2);
+    var c3 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Coda,
+      "No palatal, /w/ or /t͡ʃ/ in a Spanish coda (Ríos Mestre §6.2.2.3)");
+    _constraint_add_seq(c3, "ɟ͡ʝ");
+    _constraint_add_seq(c3, "ɲ");
+    _constraint_add_seq(c3, "ʎ");
+    _constraint_add_seq(c3, "w");
+    _constraint_add_seq(c3, "t͡ʃ");
+    _phonotactics_add(p, c3);
+    _c_phonotactics_spanish = p;
+    return _c_phonotactics_spanish;
+}
+
+var _c_phonotactics_french = 0;
+# French: PARTIAL, AND ITS TEMPLATE IS UNVERIFIED. No reachable source states a French
+# syllable template: Walker (2001), Tranel (1987) and Dell (1995) could not be read,
+# and Fougeron & Smith (1993, JIPA) give none. max_coda 1 is a REPORTED claim:
+# Côté (2000, MIT thesis, p. 91) cites "French allows only one coda consonant"
+# (Bouchard 1981, Anderson 1982) and argues against that syllable-based view, and
+# French words do end in clusters (table, arbre). The onset list is Côté's minimum:
+# "stop+liquid (except /tl, dl/) and /f/+liquid clusters", "with the possible
+# addition of /s/". It is a minimum, not an enumeration, and misses vʁ (vrai).
+# Verified: "The velar nasal occurs only in final position in borrowed (usually
+# English) words" (Fougeron & Smith, p. 75). Re-check against Walker or Tranel.
+fn phonotactics_french() {
+    if (_c_phonotactics_french != 0) { return _c_phonotactics_french; }
+    var p = _phonotactics_new("fr", _syllable_new(2, 1, 0, "(C)(C)V(C)"));
+    var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
+      "French stop/f + liquid onsets, Côté's minimum (p. 91)");
+    _constraint_add_seq(c0, "pʁ");
+    _constraint_add_seq(c0, "bʁ");
+    _constraint_add_seq(c0, "tʁ");
+    _constraint_add_seq(c0, "dʁ");
+    _constraint_add_seq(c0, "kʁ");
+    _constraint_add_seq(c0, "ɡʁ");
+    _constraint_add_seq(c0, "pl");
+    _constraint_add_seq(c0, "bl");
+    _constraint_add_seq(c0, "kl");
+    _constraint_add_seq(c0, "ɡl");
+    _constraint_add_seq(c0, "fʁ");
+    _constraint_add_seq(c0, "fl");
+    _phonotactics_add(p, c0);
+    var c1 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
+      "Word-final in loans only (Fougeron & Smith p. 75)");
+    _constraint_add_seq(c1, "ŋ");
+    _phonotactics_add(p, c1);
+    _c_phonotactics_french = p;
+    return _c_phonotactics_french;
+}
+
+var _c_phonotactics_german = 0;
+# Standard German, after Schäfer (2018), Einführung in die grammatische Beschreibung
+# des Deutschen, 3rd ed., §5.2, pp. 124-145 (open access). Wiese (1996) could not be read.
+# The core syllable is CCVCC ("Der Anfangsrand ist maximal duplex", p. 140; "Der
+# Endrand ist maximal duplex", p. 145), with one extrasyllabic segment before the onset
+# and "nach dem Endrand maximal drei extrasilbische Segmente" (p. 137). The template
+# counts the surface maximum: three-segment onsets "sind auf [ʃpʁ] und [ʃtʁ]
+# beschränkt" (p. 130), and "qualmt, qualmst oder Herbsts zeigen, dass es drei-, vier-
+# und fünfsegmentale Endränder zu geben scheint" (p. 132).
+# Onsets (pp. 129-130): [ʁ] only after the plosives, [f], [ʃ] and rarely [v]; [v] only
+# after [k] and [ʃ]; [kn], rarely [gn], [ʃn], [ʃm]; [l] after the non-alveolar
+# plosives and [f ʃ]; [ʃp ʃt]. The list misses affricate clusters (t͡sv in zwei), which
+# Schäfer's statements leave out. Forbidden onsets are his starred forms. [ŋ] does not
+# occur in the onset of a monosyllable (p. 128). Codas: final devoicing, so no voiced
+# obstruent (p. 117, p. 131), [h] "nur im Anfangsrand", and "[mf] und [ŋf] sowie
+# Kombinationen aus zwei Nasalen oder aus Nasal und Liquid sind gänzlich
+# ausgeschlossen" (p. 132). The permitted codas are stated as prose rules, not a list,
+# so they are not enumerated. His ʝ is the inventory's j.
+fn phonotactics_german() {
+    if (_c_phonotactics_german != 0) { return _c_phonotactics_german; }
+    var p = _phonotactics_new("de", _syllable_new(3, 5, 1, "(C)(C)(C)V(C)(C)(C)(C)(C)"));
+    var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
+      "German onset clusters (Schäfer pp. 129-130)");
+    _constraint_add_seq(c0, "ʃp");
+    _constraint_add_seq(c0, "ʃt");
+    _constraint_add_seq(c0, "pʁ");
+    _constraint_add_seq(c0, "bʁ");
+    _constraint_add_seq(c0, "tʁ");
+    _constraint_add_seq(c0, "dʁ");
+    _constraint_add_seq(c0, "kʁ");
+    _constraint_add_seq(c0, "ɡʁ");
+    _constraint_add_seq(c0, "fʁ");
+    _constraint_add_seq(c0, "ʃʁ");
+    _constraint_add_seq(c0, "vʁ");
+    _constraint_add_seq(c0, "kv");
+    _constraint_add_seq(c0, "ʃv");
+    _constraint_add_seq(c0, "kn");
+    _constraint_add_seq(c0, "ɡn");
+    _constraint_add_seq(c0, "ʃn");
+    _constraint_add_seq(c0, "ʃm");
+    _constraint_add_seq(c0, "pl");
+    _constraint_add_seq(c0, "bl");
+    _constraint_add_seq(c0, "kl");
+    _constraint_add_seq(c0, "ɡl");
+    _constraint_add_seq(c0, "fl");
+    _constraint_add_seq(c0, "ʃl");
+    _constraint_add_seq(c0, "ʃpʁ");
+    _constraint_add_seq(c0, "ʃtʁ");
+    _phonotactics_add(p, c0);
+    var c1 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
+      "Starred German onsets (Schäfer pp. 129-130)");
+    _constraint_add_seq(c1, "pt");
+    _constraint_add_seq(c1, "fp");
+    _constraint_add_seq(c1, "ʃɡ");
+    _constraint_add_seq(c1, "lt");
+    _constraint_add_seq(c1, "ks");
+    _constraint_add_seq(c1, "tf");
+    _constraint_add_seq(c1, "ɡz");
+    _constraint_add_seq(c1, "pm");
+    _constraint_add_seq(c1, "bn");
+    _constraint_add_seq(c1, "tn");
+    _constraint_add_seq(c1, "fn");
+    _constraint_add_seq(c1, "sm");
+    _constraint_add_seq(c1, "ʁn");
+    _constraint_add_seq(c1, "tl");
+    _constraint_add_seq(c1, "dl");
+    _phonotactics_add(p, c1);
+    var c2 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
+      "Not in the onset of a German monosyllable (Schäfer p. 128)");
+    _constraint_add_seq(c2, "ŋ");
+    _phonotactics_add(p, c2);
+    var c3 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Coda, "Excluded German codas (Schäfer p. 132)");
+    _constraint_add_seq(c3, "mf");
+    _constraint_add_seq(c3, "ŋf");
+    _constraint_add_seq(c3, "mn");
+    _constraint_add_seq(c3, "mŋ");
+    _constraint_add_seq(c3, "nm");
+    _constraint_add_seq(c3, "nŋ");
+    _constraint_add_seq(c3, "ŋm");
+    _constraint_add_seq(c3, "ŋn");
+    _constraint_add_seq(c3, "ml");
+    _constraint_add_seq(c3, "mʁ");
+    _constraint_add_seq(c3, "nl");
+    _constraint_add_seq(c3, "nʁ");
+    _constraint_add_seq(c3, "ŋl");
+    _constraint_add_seq(c3, "ŋʁ");
+    _phonotactics_add(p, c3);
+    var c4 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Coda,
+      "No voiced obstruent or /h/ in a German coda (Schäfer pp. 117, 131)");
+    _constraint_add_seq(c4, "b");
+    _constraint_add_seq(c4, "d");
+    _constraint_add_seq(c4, "ɡ");
+    _constraint_add_seq(c4, "v");
+    _constraint_add_seq(c4, "z");
+    _constraint_add_seq(c4, "j");
+    _constraint_add_seq(c4, "h");
+    _phonotactics_add(p, c4);
+    _c_phonotactics_german = p;
+    return _c_phonotactics_german;
+}
+
+var _c_phonotactics_russian = 0;
+# Russian, after Русская грамматика (1980), vol. 1, "Фонетика" (S. N. Dmitrenko), §22.
+# A syllable can begin with up to three consonants ("двух шумных и сонорного") or a
+# vowel, and end in up to four ("цилиндр, семестр, консульств"). max_onset is 4 on
+# Chew (2003), A Computational Phonology of Russian, p. 86: four-consonant onsets exist,
+# and "all such onsets in Russian begin with /vs/ or /vz/" (взгляд). Russian has six
+# vowels and no diphthongs or length (Yanushevskaya & Bunčić 2015, p. 224).
+# "Любой слог ... не может начинаться сочетанием '[j] + согласный'", and any syllable
+# "может начинаться сочетанием 'согласный + [j]'" (вьюга): both are spelled out over
+# the inventory. Final devoicing (§28) is word-final only, which a Coda constraint
+# cannot say, so it is in allophone_russian instead.
+fn phonotactics_russian() {
+    if (_c_phonotactics_russian != 0) { return _c_phonotactics_russian; }
+    var p = _phonotactics_new("ru", _syllable_new(4, 4, 0, "(C)(C)(C)(C)V(C)(C)(C)(C)"));
+    var c0 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
+      "No Russian syllable begins with /j/ + consonant (Русская грамматика §22)");
+    _constraint_add_seq(c0, "jp");
+    _constraint_add_seq(c0, "jpʲ");
+    _constraint_add_seq(c0, "jb");
+    _constraint_add_seq(c0, "jbʲ");
+    _constraint_add_seq(c0, "jt");
+    _constraint_add_seq(c0, "jtʲ");
+    _constraint_add_seq(c0, "jd");
+    _constraint_add_seq(c0, "jdʲ");
+    _constraint_add_seq(c0, "jk");
+    _constraint_add_seq(c0, "jkʲ");
+    _constraint_add_seq(c0, "jɡ");
+    _constraint_add_seq(c0, "jɡʲ");
+    _constraint_add_seq(c0, "jt͡s");
+    _constraint_add_seq(c0, "jt͡ɕ");
+    _constraint_add_seq(c0, "jf");
+    _constraint_add_seq(c0, "jfʲ");
+    _constraint_add_seq(c0, "jv");
+    _constraint_add_seq(c0, "jvʲ");
+    _constraint_add_seq(c0, "js");
+    _constraint_add_seq(c0, "jsʲ");
+    _constraint_add_seq(c0, "jz");
+    _constraint_add_seq(c0, "jzʲ");
+    _constraint_add_seq(c0, "jʃ");
+    _constraint_add_seq(c0, "jʒ");
+    _constraint_add_seq(c0, "jɕː");
+    _constraint_add_seq(c0, "jx");
+    _constraint_add_seq(c0, "jxʲ");
+    _constraint_add_seq(c0, "jm");
+    _constraint_add_seq(c0, "jmʲ");
+    _constraint_add_seq(c0, "jn");
+    _constraint_add_seq(c0, "jnʲ");
+    _constraint_add_seq(c0, "jl");
+    _constraint_add_seq(c0, "jlʲ");
+    _constraint_add_seq(c0, "jr");
+    _constraint_add_seq(c0, "jrʲ");
+    _phonotactics_add(p, c0);
+    var c1 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
+      "Any Russian syllable may begin with consonant + /j/ (Русская грамматика §22)");
+    _constraint_add_seq(c1, "pj");
+    _constraint_add_seq(c1, "pʲj");
+    _constraint_add_seq(c1, "bj");
+    _constraint_add_seq(c1, "bʲj");
+    _constraint_add_seq(c1, "tj");
+    _constraint_add_seq(c1, "tʲj");
+    _constraint_add_seq(c1, "dj");
+    _constraint_add_seq(c1, "dʲj");
+    _constraint_add_seq(c1, "kj");
+    _constraint_add_seq(c1, "kʲj");
+    _constraint_add_seq(c1, "ɡj");
+    _constraint_add_seq(c1, "ɡʲj");
+    _constraint_add_seq(c1, "t͡sj");
+    _constraint_add_seq(c1, "t͡ɕj");
+    _constraint_add_seq(c1, "fj");
+    _constraint_add_seq(c1, "fʲj");
+    _constraint_add_seq(c1, "vj");
+    _constraint_add_seq(c1, "vʲj");
+    _constraint_add_seq(c1, "sj");
+    _constraint_add_seq(c1, "sʲj");
+    _constraint_add_seq(c1, "zj");
+    _constraint_add_seq(c1, "zʲj");
+    _constraint_add_seq(c1, "ʃj");
+    _constraint_add_seq(c1, "ʒj");
+    _constraint_add_seq(c1, "ɕːj");
+    _constraint_add_seq(c1, "xj");
+    _constraint_add_seq(c1, "xʲj");
+    _constraint_add_seq(c1, "mj");
+    _constraint_add_seq(c1, "mʲj");
+    _constraint_add_seq(c1, "nj");
+    _constraint_add_seq(c1, "nʲj");
+    _constraint_add_seq(c1, "lj");
+    _constraint_add_seq(c1, "lʲj");
+    _constraint_add_seq(c1, "rj");
+    _constraint_add_seq(c1, "rʲj");
+    _phonotactics_add(p, c1);
+    _c_phonotactics_russian = p;
+    return _c_phonotactics_russian;
+}
+
+var _c_phonotactics_korean = 0;
+# Korean, after Lee (1993), "Korean", JIPA 23(1), pp. 30-31. Glides are parts of
+# diphthongs (p. 30), so the onset is one consonant, and the corpus inventory has no
+# glides. In syllable-final position /p, p*, b/ are a voiceless unreleased stop, and so
+# for the other places, and "/m, n, ŋ, l/ are the only other consonants which can occur
+# syllable-finally" (p. 31): seven finals. His /l/ is the inventory's ɾ. Sohn (1999)
+# gives (C)(G)V(C), a glide in the onset, which the inventory cannot spell.
+fn phonotactics_korean() {
+    if (_c_phonotactics_korean != 0) { return _c_phonotactics_korean; }
+    var p = _phonotactics_new("ko", _syllable_new(1, 1, 1, "(C)V(C)"));
+    var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
+      "The seven Korean syllable finals (Lee 1993 p. 31)");
+    _constraint_add_seq(c0, "p");
+    _constraint_add_seq(c0, "t");
+    _constraint_add_seq(c0, "k");
+    _constraint_add_seq(c0, "m");
+    _constraint_add_seq(c0, "n");
+    _constraint_add_seq(c0, "ŋ");
+    _constraint_add_seq(c0, "ɾ");
+    _phonotactics_add(p, c0);
+    _c_phonotactics_korean = p;
+    return _c_phonotactics_korean;
+}
+
+var _c_phonotactics_portuguese = 0;
+# EUROPEAN Portuguese, after Mateus & d'Andrade (1998), "The syllable structure in
+# European Portuguese", D.E.L.T.A. 14(1), pp. 13-32. Onsets of two, by the Sonority
+# Principle (p. 28); "Both elements of these diphthongs - either oral or nasal - belong
+# to the syllable nucleus" (p. 19); one coda consonant, "/R/, /L/ and /S/ are usually
+# considered the only ones that can occur in Portuguese syllable coda" (p. 21),
+# realized r l ʃ ʒ in EP (its tap ɾ is the inventory's r). Not tautosyllabic: the
+# word-internal sequences of its example (1), e.g. pn gn ps (p. 15).
+# VARIETY: the corpus inventory mixes in Brazilian features (/t͡ʃ d͡ʒ/), while this
+# profile is EP. See the roadmap. In Brazilian Portuguese the codas are /R S N L/
+# (Barbosa & Albano 2004, JIPA, p. 228).
+fn phonotactics_portuguese() {
+    if (_c_phonotactics_portuguese != 0) { return _c_phonotactics_portuguese; }
+    var p = _phonotactics_new("pt", _syllable_new(2, 1, 1, "(C)(C)V(C)"));
+    var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
+      "European Portuguese onset clusters (Mateus & d'Andrade 1998, ex. 2)");
+    _constraint_add_seq(c0, "pr");
+    _constraint_add_seq(c0, "br");
+    _constraint_add_seq(c0, "tr");
+    _constraint_add_seq(c0, "dr");
+    _constraint_add_seq(c0, "kr");
+    _constraint_add_seq(c0, "ɡr");
+    _constraint_add_seq(c0, "pl");
+    _constraint_add_seq(c0, "bl");
+    _constraint_add_seq(c0, "tl");
+    _constraint_add_seq(c0, "kl");
+    _constraint_add_seq(c0, "ɡl");
+    _constraint_add_seq(c0, "fr");
+    _constraint_add_seq(c0, "vr");
+    _constraint_add_seq(c0, "fl");
+    _phonotactics_add(p, c0);
+    var c1 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
+      "Not tautosyllabic in EP (Mateus & d'Andrade 1998, ex. 1)");
+    _constraint_add_seq(c1, "pn");
+    _constraint_add_seq(c1, "ɡn");
+    _constraint_add_seq(c1, "ps");
+    _phonotactics_add(p, c1);
+    var c2 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
+      "EP coda consonants (Mateus & d'Andrade 1998, p. 21)");
+    _constraint_add_seq(c2, "r");
+    _constraint_add_seq(c2, "l");
+    _constraint_add_seq(c2, "ʃ");
+    _constraint_add_seq(c2, "ʒ");
+    _phonotactics_add(p, c2);
+    _c_phonotactics_portuguese = p;
+    return _c_phonotactics_portuguese;
+}
+
+# --- Lookup by language (2.6.0) ------------------------------------
+# The same shape as allophone_by_code and grammar_by_code.
+
+# The phonotactic profile for an ISO 639 code, or 0 when the corpus has none for it.
+#must_use
+fn phonotactics_by_code(code) {
+    if (code == 0) { return 0; }
+    if (streq(code, "en") == 1) { return phonotactics_english(); }
+    if (streq(code, "ar") == 1) { return phonotactics_arabic(); }
+    if (streq(code, "zh") == 1) { return phonotactics_mandarin(); }
+    if (streq(code, "hi") == 1) { return phonotactics_hindi(); }
+    if (streq(code, "ja") == 1) { return phonotactics_japanese(); }
+    if (streq(code, "es") == 1) { return phonotactics_spanish(); }
+    if (streq(code, "fr") == 1) { return phonotactics_french(); }
+    if (streq(code, "de") == 1) { return phonotactics_german(); }
+    if (streq(code, "ru") == 1) { return phonotactics_russian(); }
+    if (streq(code, "ko") == 1) { return phonotactics_korean(); }
+    if (streq(code, "pt") == 1) { return phonotactics_portuguese(); }
+    if (streq(code, "sa") == 1) { return phonotactics_sanskrit(); }
+    return 0;
+}
+
+var _c_phonotactics_all_codes = 0;
+# Every code with a profile, in the order they were added — vec of cstrings.
+fn phonotactics_all_codes() {
+    if (_c_phonotactics_all_codes != 0) { return _c_phonotactics_all_codes; }
+    var c = vec_new();
+    vec_push(c, "en");
+    vec_push(c, "ar");
+    vec_push(c, "zh");
+    vec_push(c, "hi");
+    vec_push(c, "ja");
+    vec_push(c, "es");
+    vec_push(c, "fr");
+    vec_push(c, "de");
+    vec_push(c, "ru");
+    vec_push(c, "ko");
+    vec_push(c, "pt");
+    vec_push(c, "sa");
+    _c_phonotactics_all_codes = c;
+    return _c_phonotactics_all_codes;
 }

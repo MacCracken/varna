@@ -1,4 +1,9 @@
-# tests/syllable.tcyr — phonotactics parity (v1.x Rust src/phoneme/syllable.rs).
+# tests/syllable.tcyr — phonotactic profiles: the template accessors and constraint
+# fields, on the en, ja and sa profiles.
+#
+# These were v1.x parity pins until 2.6.0, when every profile was re-sourced. They now
+# pin the sourced values: English (Gimson), Japanese (Kubozono 2015) and Sanskrit
+# (Allen 1953). tests/syllable_profiles.tcyr covers all twelve profiles.
 
 include "src/syllable.cyr"
 
@@ -6,39 +11,51 @@ fn main() {
     alloc_init();
     test_group("english_syllable");
     var en = phonotactics_english();
-    assert_eq(phonotactics_max_onset(en), 3, "en max_onset 3");
-    assert_eq(phonotactics_max_coda(en), 4, "en max_coda 4");
+    assert_eq(phonotactics_max_onset(en), 3, "en max_onset 3 (Gimson: initial CCC)");
+    assert_eq(phonotactics_max_coda(en), 4, "en max_coda 4 (Gimson: prompts, sixths)");
     assert(phonotactics_allows_onset_clusters(en), "en onset clusters");
     assert(phonotactics_allows_coda_clusters(en), "en coda clusters");
     assert(phonotactics_allows_closed_syllables(en), "en closed syllables");
     assert(streq(phonotactics_pattern(en), "(C)(C)(C)V(C)(C)(C)(C)"), "en pattern");
 
     test_group("english_constraints");
-    assert_eq(phonotactics_is_permitted(en, "str", SyllablePosition.Onset), 1, "str permitted");
+    # Spelled with the inventory's ɹ: v1.x's "str" never matched English's inventory.
+    assert_eq(phonotactics_is_permitted(en, "stɹ", SyllablePosition.Onset), 1, "stɹ permitted");
+    assert_eq(phonotactics_is_permitted(en, "str", SyllablePosition.Onset), 0 - 1, "plain r is not English's symbol");
     assert_eq(phonotactics_is_permitted(en, "sp", SyllablePosition.Onset), 1, "sp permitted");
-    assert_eq(phonotactics_is_permitted(en, "sr", SyllablePosition.Onset), 0, "sr forbidden");
+    assert_eq(phonotactics_is_permitted(en, "skl", SyllablePosition.Onset), 1, "skl permitted (sclerosis)");
+    # General American: no yod after /st/ ('stew'), so stj is not listed.
+    assert_eq(phonotactics_is_permitted(en, "stj", SyllablePosition.Onset), 0 - 1, "stj is RP, not listed");
     assert_eq(phonotactics_is_permitted(en, "tl", SyllablePosition.Onset), 0, "tl forbidden");
-    assert_eq(phonotactics_is_permitted(en, "br", SyllablePosition.Onset), 0 - 1, "br unspecified");
-    assert_eq(vec_len(phonotactics_constraints_at(en, SyllablePosition.Onset)), 2, "2 onset constraints");
+    assert_eq(phonotactics_is_permitted(en, "ŋ", SyllablePosition.Onset), 0, "ŋ forbidden initially");
+    # Gimson lists /sr-/ in loans (Sri Lanka): no longer banned.
+    assert_eq(phonotactics_is_permitted(en, "sr", SyllablePosition.Onset), 0 - 1, "sr is not banned");
+    assert_eq(vec_len(phonotactics_constraints_at(en, SyllablePosition.Onset)), 3, "3 onset constraints");
     assert_eq(vec_len(phonotactics_constraints_at(en, SyllablePosition.Coda)), 0, "0 coda constraints");
 
     test_group("japanese_sanskrit");
     var ja = phonotactics_japanese();
-    assert_eq(phonotactics_max_onset(ja), 1, "ja max_onset 1");
+    # Kubozono (2015): (Cj)V(VC), so Cj onsets and an obstruent coda.
+    assert_eq(phonotactics_max_onset(ja), 2, "ja max_onset 2 (Cj)");
     assert_eq(phonotactics_max_coda(ja), 1, "ja max_coda 1");
-    assert_eq(phonotactics_allows_onset_clusters(ja), 0, "ja no onset clusters");
+    assert_eq(phonotactics_allows_onset_clusters(ja), 1, "ja Cj onsets");
     assert_eq(phonotactics_allows_coda_clusters(ja), 0, "ja no coda clusters");
     assert(phonotactics_allows_closed_syllables(ja), "ja closed syllables");
-    assert_eq(phonotactics_is_permitted(ja, "n", SyllablePosition.Coda), 1, "ja n coda permitted");
+    assert_eq(phonotactics_is_permitted(ja, "ɴ", SyllablePosition.Coda), 1, "ja moraic nasal coda");
+    assert_eq(phonotactics_is_permitted(ja, "t", SyllablePosition.Coda), 1, "ja moraic obstruent coda (it.tai)");
     var sa = phonotactics_sanskrit();
-    assert_eq(phonotactics_is_permitted(sa, "kr", SyllablePosition.Onset), 1, "sa kr permitted");
-    assert_eq(phonotactics_max_onset(sa), 2, "sa max_onset 2");
+    # Allen (1953): one final consonant; strī (Macdonell) is a three-consonant onset.
+    assert_eq(phonotactics_max_onset(sa), 3, "sa max_onset 3");
+    assert_eq(phonotactics_max_coda(sa), 1, "sa max_coda 1");
+    assert_eq(phonotactics_is_permitted(sa, "t̪", SyllablePosition.Coda), 1, "sa t̪ final in pausa");
+    # v1.x listed six stop + liquid onsets, citing nothing; the sourced profile constrains the coda only.
+    assert_eq(phonotactics_is_permitted(sa, "kr", SyllablePosition.Onset), 0 - 1, "v1.x onset list dropped");
 
     test_group("phonotactics_identity");
     assert(streq(phonotactics_language_code(en), "en"), "en code");
     assert(streq(phonotactics_language_code(ja), "ja"), "ja code");
     assert(streq(phonotactics_language_code(sa), "sa"), "sa code");
-    assert_eq(vec_len(phonotactics_constraints(en)), 2, "en 2 constraints");
+    assert_eq(vec_len(phonotactics_constraints(en)), 3, "en 3 constraints");
     assert_eq(vec_len(phonotactics_constraints(ja)), 1, "ja 1 constraint");
     assert_eq(vec_len(phonotactics_constraints(sa)), 1, "sa 1 constraint");
 
@@ -54,17 +71,17 @@ fn main() {
     assert_eq(syllable_allows_coda_clusters(ent), 1, "en template coda clusters");
     assert_eq(syllable_allows_closed_syllables(ent), 1, "en template closed syllables");
     var jat = phonotactics_syllable(ja);
-    assert_eq(syllable_max_onset(jat), 1, "ja template max_onset 1");
+    assert_eq(syllable_max_onset(jat), 2, "ja template max_onset 2");
     assert_eq(syllable_max_coda(jat), 1, "ja template max_coda 1");
     assert_eq(syllable_complex_nucleus(jat), 1, "ja complex nucleus");
-    assert(streq(syllable_pattern(jat), "(C)V(N)"), "ja template pattern");
+    assert(streq(syllable_pattern(jat), "(C)(C)V(C)"), "ja template pattern");
     # max_coda 1 is a closed syllable but not a cluster — the two thresholds differ.
     assert_eq(syllable_allows_coda_clusters(jat), 0, "ja template no coda clusters");
     assert_eq(syllable_allows_closed_syllables(jat), 1, "ja template closed syllables");
     var sat = phonotactics_syllable(sa);
-    assert_eq(syllable_max_onset(sat), 2, "sa template max_onset 2");
-    assert_eq(syllable_max_coda(sat), 2, "sa template max_coda 2");
-    assert(streq(syllable_pattern(sat), "(C)(C)V(C)(C)"), "sa template pattern");
+    assert_eq(syllable_max_onset(sat), 3, "sa template max_onset 3");
+    assert_eq(syllable_max_coda(sat), 1, "sa template max_coda 1");
+    assert(streq(syllable_pattern(sat), "(C)(C)(C)V(C)"), "sa template pattern");
     # A strictly open-syllable template: max_coda 0 turns both coda answers off.
     var open = _syllable_new(1, 0, 0, "(C)V");
     assert_eq(syllable_max_coda(open), 0, "open max_coda 0");
@@ -78,23 +95,20 @@ fn main() {
     var ok = vec_get(onsets, 0);
     assert_eq(constraint_kind(ok), ConstraintKind.Permitted, "en onset[0] permitted");
     assert_eq(constraint_position(ok), SyllablePosition.Onset, "en onset[0] position");
-    assert_eq(vec_len(constraint_sequences(ok)), 11, "en 11 permitted onsets");
-    assert(streq(vec_get(constraint_sequences(ok), 0), "st"), "en permitted[0] st");
-    assert(streq(constraint_description(ok), "English /s/+stop onset clusters"), "en permitted description");
-    var no = vec_get(onsets, 1);
-    assert_eq(constraint_kind(no), ConstraintKind.Forbidden, "en onset[1] forbidden");
-    assert_eq(vec_len(constraint_sequences(no)), 4, "en 4 forbidden onsets");
-    assert(streq(vec_get(constraint_sequences(no), 0), "sr"), "en forbidden[0] sr");
-    assert(streq(constraint_description(no), "Forbidden English onset sequences"), "en forbidden description");
+    assert_eq(vec_len(constraint_sequences(ok)), 8, "en 8 CCC onsets");
+    assert(streq(vec_get(constraint_sequences(ok), 0), "spl"), "en CCC[0] spl");
+    var no = vec_get(onsets, 2);
+    assert_eq(constraint_kind(no), ConstraintKind.Forbidden, "en onset[2] forbidden");
+    assert_eq(vec_len(constraint_sequences(no)), 3, "en 3 forbidden onsets");
+    assert(streq(vec_get(constraint_sequences(no), 0), "ŋ"), "en forbidden[0] ŋ");
     # Japanese states its one rule on the coda, not the onset.
     var jc = vec_get(phonotactics_constraints(ja), 0);
     assert_eq(constraint_position(jc), SyllablePosition.Coda, "ja constraint on coda");
     assert_eq(constraint_kind(jc), ConstraintKind.Permitted, "ja constraint permitted");
-    assert_eq(vec_len(constraint_sequences(jc)), 2, "ja 2 permitted codas");
+    assert_eq(vec_len(constraint_sequences(jc)), 5, "ja 5 permitted codas: ɴ and Q's p t k s");
     var sc = vec_get(phonotactics_constraints(sa), 0);
-    assert_eq(constraint_position(sc), SyllablePosition.Onset, "sa constraint on onset");
-    assert_eq(vec_len(constraint_sequences(sc)), 6, "sa 6 permitted onsets");
-    assert(streq(constraint_description(sc), "Sanskrit stop+liquid onset clusters"), "sa description");
+    assert_eq(constraint_position(sc), SyllablePosition.Coda, "sa constraint on coda");
+    assert_eq(vec_len(constraint_sequences(sc)), 4, "sa 4 final stops");
 
     return assert_summary();
 }

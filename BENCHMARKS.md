@@ -5,7 +5,7 @@ History in `bench-history.csv`. `min` is the most representative
 per-op figure (the bump allocator never frees, so `avg` carries
 accumulating alloc overhead).
 
-Latest: **2026-11-13T19:00:56Z** commit `ceae115` on cyrius `6.7.18`
+Latest: **2026-11-13T20:25:17Z** commit `e689043` on cyrius `6.7.18`
 
 Timer floor: **1.213us** per clock read (measured on this host,
 subtracted from every sample). Cyrius >=6.5.19 calibrates this at
@@ -23,45 +23,45 @@ not directly comparable.
 
 | Benchmark | min | avg |
 |-----------|-----|-----|
-| `english_phoneme_inventory` | 9ns | 9ns |
+| `english_phoneme_inventory` | 11ns | 11ns |
 | `sanskrit_phoneme_inventory` | 7ns | 7ns |
-| `greek_phoneme_inventory` | 7ns | 7ns |
-| `phoneme_lookup_ipa` | 359ns | 371ns |
+| `greek_phoneme_inventory` | 5ns | 5ns |
+| `phoneme_lookup_ipa` | 343ns | 350ns |
 | `registry_phonemes_lookup` | 53ns | 54ns |
-| `registry_all_codes_iter` | 4.518us | 4.697us |
-| `script_by_code_lookup` | 110ns | 114ns |
+| `registry_all_codes_iter` | 4.333us | 4.396us |
+| `script_by_code_lookup` | 105ns | 107ns |
 | `script_contains_codepoint` | 14ns | 14ns |
-| `transliterate_devanagari_char` | 590ns | 611ns |
-| `transliterate_greek_word` | 19.420us | 20.232us |
-| `numeral_value_of_char` | 186ns | 195ns |
-| `numeral_string_value_word` | 631ns | 653ns |
-| `gematria_char_value` | 308ns | 321ns |
-| `gematria_char_value_ordinal` | 511ns | 530ns |
-| `gematria_string_value_in` | 878ns | 924ns |
-| `gematria_alphabet_table` | 213ns | 217ns |
-| `grammar_by_code_lookup` | 211ns | 216ns |
-| `swadesh_by_code_lookup` | 101ns | 102ns |
-| `lexicon_find_word` | 791ns | 814ns |
-| `allophone_realize` | 36ns | 37ns |
-| `phonotactics_is_permitted` | 139ns | 143ns |
-| `dialect_apply_overlay` | 2.994us | 3.136us |
-| `json_inventory_write_en` | 47.318us | 48.898us |
-| `json_inventory_read_en` | 184.041us | 190.198us |
-| `json_phonotactics_write_en` | 5.408us | 5.513us |
-| `json_phonotactics_read_en` | 16.136us | 16.719us |
-| `json_script_write_deva` | 2.104us | 2.207us |
-| `json_script_read_deva` | 8.405us | 8.597us |
-| `json_numerals_write_greek` | 16.881us | 17.309us |
-| `json_numerals_read_greek` | 73.785us | 75.371us |
-| `json_translit_write_iast` | 17.649us | 18.280us |
-| `json_translit_read_iast` | 50.121us | 51.479us |
-| `json_grammar_write_en` | 2.953us | 3.016us |
-| `json_grammar_read_en` | 15.345us | 15.719us |
-| `json_lexicon_write_ar` | 30.746us | 31.539us |
-| `json_lexicon_read_ar` | 100.561us | 103.154us |
-| `json_cognate_write_water` | 4.921us | 5.045us |
-| `json_cognate_read_water` | 13.292us | 13.695us |
-| `json_variety_write_rp` | 2.230us | 2.279us |
-| `json_variety_read_rp` | 8.928us | 9.583us |
-| `json_registry_write_en` | 2.605us | 2.666us |
-| `json_registry_read_en` | 8.830us | 9.125us |
+| `transliterate_devanagari_char` | 595ns | 605ns |
+| `transliterate_greek_word` | 19.472us | 19.918us |
+| `numeral_value_of_char` | 188ns | 190ns |
+| `numeral_string_value_word` | 627ns | 636ns |
+| `gematria_char_value` | 308ns | 313ns |
+| `gematria_char_value_ordinal` | 516ns | 523ns |
+| `gematria_string_value_in` | 890ns | 907ns |
+| `gematria_alphabet_table` | 216ns | 220ns |
+| `grammar_by_code_lookup` | 212ns | 215ns |
+| `swadesh_by_code_lookup` | 101ns | 101ns |
+| `lexicon_find_word` | 835ns | 844ns |
+| `allophone_realize` | 37ns | 37ns |
+| `phonotactics_is_permitted` | 161ns | 166ns |
+| `dialect_apply_overlay` | 2.969us | 3.365us |
+| `json_inventory_write_en` | 53.874us | 54.428us |
+| `json_inventory_read_en` | 206.167us | 209.476us |
+| `json_phonotactics_write_en` | 9.123us | 9.406us |
+| `json_phonotactics_read_en` | 21.530us | 22.629us |
+| `json_script_write_deva` | 2.107us | 2.155us |
+| `json_script_read_deva` | 8.342us | 8.538us |
+| `json_numerals_write_greek` | 16.967us | 17.286us |
+| `json_numerals_read_greek` | 73.294us | 75.575us |
+| `json_translit_write_iast` | 17.741us | 18.120us |
+| `json_translit_read_iast` | 50.544us | 54.221us |
+| `json_grammar_write_en` | 3.372us | 3.415us |
+| `json_grammar_read_en` | 16.450us | 16.607us |
+| `json_lexicon_write_ar` | 34.260us | 34.576us |
+| `json_lexicon_read_ar` | 109.571us | 110.700us |
+| `json_cognate_write_water` | 4.981us | 5.378us |
+| `json_cognate_read_water` | 13.362us | 14.957us |
+| `json_variety_write_rp` | 2.411us | 2.445us |
+| `json_variety_read_rp` | 10.249us | 10.395us |
+| `json_registry_write_en` | 2.819us | 2.866us |
+| `json_registry_read_en` | 9.824us | 9.938us |

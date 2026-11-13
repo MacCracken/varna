@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Toward 2.6.0, coverage scale: allophone rules for five more languages, the numeral
-follow-ons, and the citation re-check carried over from 2.5.4. The decisions in it were
-the project owner's: re-sourcing both tone rows, automatic variant aliases,
-Glagolitic's core values only, and exact-environment rules plus inventory fixes.
+Toward 2.6.0, coverage scale: allophone rules for five more languages, phonotactic
+profiles for all eleven core languages, the numeral follow-ons, and the citation re-check
+carried over from 2.5.4. The decisions in it were the project owner's: re-sourcing both
+tone rows, automatic variant aliases, Glagolitic's core values only, exact-environment
+rules plus inventory fixes, and, for phonotactics, re-sourcing all twelve profiles with
+each per-language choice listed below.
 
 ### Breaking
 
@@ -26,6 +28,17 @@ Glagolitic's core values only, and exact-environment rules plus inventory fixes.
   unmapped sentinel.
 - **20 scripts, not 19**, and 6 letter-value scripts, not 5 (Glagolitic). Anything that
   counts `script_all_codes` or `gematria_all_scripts` sees one more.
+- **The English, Sanskrit and Japanese phonotactic profiles are re-sourced** (details in
+  *Fixed*). What changes for a caller of `phonotactics_is_permitted`:
+  - English: `"str" "spr" "skr"` are now spelled with the inventory's ɹ (`"stɹ"`), so
+    the r forms answer unspecified (−1). `"stj"` is no longer listed (RP, not GA).
+    `"sr"` is no longer forbidden, and reads unspecified. English now has 3 constraints,
+    not 2, and their descriptions changed.
+  - Sanskrit: the template is onset 3 / coda 1 / `(C)(C)(C)V(C)`, not 2 / 2 /
+    `(C)(C)V(C)(C)`. The onset list (`pr kr tr sr pl kl`) is gone, and its one
+    constraint is now the permitted final stops `k ʈ t̪ p`.
+  - Japanese: the template is onset 2 / `(C)(C)V(C)`, not 1 / `(C)V(N)`. The coda list
+    is `ɴ p t k s`. `"n"` is dropped: the moraic nasal is spelled ɴ, and /n/ is an onset.
 
 ### Added
 
@@ -53,6 +66,44 @@ Glagolitic's core values only, and exact-environment rules plus inventory fixes.
   - Yanushevskaya & Bunčić treat [ɨ] as a phoneme, not an allophone of /i/.
   - Lee & Zee never relate the apical vowel to /i/.
 
+- **syllable: phonotactic profiles for Arabic, Mandarin, Hindi, Spanish, French, German,
+  Russian, Korean and Portuguese**, and `phonotactics_by_code` / `phonotactics_all_codes`
+  (12 codes: en ar zh hi ja es fr de ru ko pt sa). English, Sanskrit and Japanese were
+  the only profiles. Each names one source, and its comment quotes the passage behind
+  every value:
+
+  | Profile | Template | From | What it encodes |
+  |---|---|---|---|
+  | `ar` | `CV(C)(C)` | Ryding 2005, §6, pp. 35–36 | onset required, no onset cluster (her /sk/ /br/) |
+  | `zh` | `(C)V(C)` | Lee & Zee 2003, p. 111 | codas n ŋ only; m never final; ŋ never initial |
+  | `hi` | `(C)(C)(C)V(C)(C)(C)` | Ohala 1983, ch. 4 | her word-initial clusters (66), native and homorganic nasal + stop finals, the Sanskrit-loan triple finals (34) |
+  | `es` | `(C)(C)V(C)(C)` | Ríos Mestre 1999, §6.2 | obstruent + liquid onsets, not tl dl; C + s codas; no palatal coda |
+  | `fr` | `(C)(C)V(C)` | Côté 2000; Fougeron & Smith 1993 | **partial, template unverified** (below) |
+  | `de` | `(C)(C)(C)V(C)(C)(C)(C)(C)` | Schäfer 2018, §5.2 | his onsets and starred onsets; final devoicing; no [mf ŋf], nasal + nasal or nasal + liquid codas |
+  | `ru` | `(C)(C)(C)(C)V(C)(C)(C)(C)` | Русская грамматика 1980, §22; Chew 2003, p. 86 | no [j] + consonant onset; consonant + [j] permitted |
+  | `ko` | `(C)V(C)` | Lee 1993, JIPA, pp. 30–31 | the seven finals p t k m n ŋ ɾ |
+  | `pt` | `(C)(C)V(C)` | Mateus & d'Andrade 1998 | **European Portuguese**: stop/f/v + liquid onsets; codas r l ʃ ʒ |
+
+  Every sequence is spelled in its language's inventory symbols, and a test splits each
+  one into that inventory's phonemes, so a sequence that can never match fails the
+  suite (the v1.x English `"str"` and Sanskrit `"tr"` could not). A Permitted list is an
+  enumeration its source prints, and a Forbidden list holds what it explicitly excludes.
+  Anything else reads unspecified, which is not a ban. Each choice below was the
+  project owner's:
+  - **French is partial.** No reachable source states a French template (Walker 2001,
+    Tranel 1987 and Dell 1995 could not be read), so `max_coda 1` is the view Côté
+    (2000) reports and argues against, and French words do end in clusters (*arbre*).
+    The onset list is Côté's minimum and misses vʁ (*vrai*).
+  - **Portuguese is European.** The corpus inventory mixes in Brazilian /t͡ʃ d͡ʒ/; the
+    roadmap carries that.
+  - **Russian's onset is 4**, on Chew (2003): the Academy grammar says three, and
+    взгляд begins /vzɡlʲ/.
+  - **Hindi keeps long vowels** (`complex_nucleus 1`) to match the inventory, though
+    Ohala treats Hindi vowels as contrasting in quality, not length.
+  - **German counts the surface maximum**, onset 3 and coda 5 (*Herbsts*), not
+    Schäfer's duplex core. His permitted codas are prose rules, so they are not listed.
+  - **Korean's onset is 1**, after Lee (1993): glides are part of the diphthong, and the
+    inventory has none to spell Sohn's (C)(G)V(C).
 - **numerals: mispar gadol**, `NumericSystem.NUM_GADOL`: the Hebrew finals ך ם ן ף ץ
   count 500 / 600 / 700 / 800 / 900, and the other 22 letters keep their standard
   values (Jewish Encyclopedia, "Gematria", no. 11; Avodat Yisrael, Balak 2). The order
@@ -105,6 +156,18 @@ Glagolitic's core values only, and exact-environment rules plus inventory fixes.
 - **Arabic inventory**: the marginal pharyngealized /lˤ/ is added (Thelwall &
   Sa'adeddin 1990, p. 37).
 - **Russian inventory** matches Yanushevskaya & Bunčić (2015) and is unchanged.
+- **English phonotactics re-sourced to Gimson** (Cruttenden 1994, §10.9.1), adjusted to
+  General American, which the inventory is. v1.x wrote r for the inventory's ɹ, so its
+  `"str" "spr" "skr"` never matched a word built from the inventory. It described all
+  eleven as "/s/+stop", lacked /skl/ (*sclerosis*), and banned /sr/, which Gimson lists
+  in loans (*Sri Lanka*). The CCC onsets are now Gimson's /s/ + voiceless stop +
+  /l ɹ j w/, without the RP /stj/ (*stew*). The template, 3 / 4, was already his.
+- **Sanskrit phonotactics re-sourced to Allen (1953)**: one final consonant in pausa
+  (Whitney 1889, §150, agrees), the non-nasal finals k ʈ t̪ p (p. 70), and an onset of
+  three (*strī*, Macdonell 1927, §100a). v1.x allowed two-consonant codas, and its
+  onset list had no source and spelled t for the inventory's t̪.
+- **Japanese phonotactics re-sourced to Kubozono (2015)**: "(Cj)V(VC)", so Cj onsets
+  (*kja*) and the moraic obstruent coda (*it.tai*), which v1.x's `(C)V(N)` excluded.
 - **WALS claims checked against WALS's own data** (CLDF): Mandarin 85A "No dominant
   order", Hindi 98A "Tripartite", and Somali and Hausa 13A "Simple tone system". All
   four hold.
@@ -121,6 +184,21 @@ Measured interleaved against a build of 2.5.4, min of 3, timer floor 1.21–1.24
   cost one more string compare on every call. It now stops at the match.
 - `grammar_by_code_lookup` and `lexicon_find_word` read −8% with their code unchanged.
   That is the per-run CPU effect 2.5.4 measured, not a result.
+
+The phonotactics rows, measured interleaved against the committed allophone work (min of
+3 runs; every row with unchanged code and data stayed within ±5.3%, apart from the three
+single-digit-nanosecond inventory rows at the timer floor):
+
+- **`json_phonotactics_write_en`, 5,509 → 8,549 ns (+55%), and `json_phonotactics_read_en`,
+  16,524 → 21,955 ns (+33%).** The code is unchanged. The English profile grew from 2
+  constraints and 15 sequences to 3 and 19, with longer descriptions, so its document grew
+  from 425 to 592 bytes (+39%). Past 512 bytes the string builder (64-byte start, doubling)
+  grows once more, which is part of the write's extra cost; how much was not measured.
+- **`phonotactics_is_permitted`, 143 → 163 ns (+14%)**, also with unchanged code. The row
+  looked up `"str"`, which is no longer in the list and would now time a miss across all
+  three constraints, so it looks up `"stɹ"`. That is the fourth sequence of the first
+  constraint, where `"str"` was the fourth, but its ɹ is two bytes. The two rows measure
+  different strings, so the numbers are not a like-for-like comparison.
 
 ## [2.5.4] - 2026-11-13
 

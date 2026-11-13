@@ -41,9 +41,9 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | Numeral systems | 10 — six of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek, Glagolitic) |
 | Grammar profiles | 11 |
 | Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 39 files, **3,586 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
+| Tests | 40 files, **3,723 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
 | Benchmarks | 42, covering every domain and every module's JSON |
-| Reference coverage | 411/417 functions (98%) — a floor, not a correctness proof |
+| Reference coverage | 432/440 functions (98%) — a floor, not a correctness proof |
 
 ## Toolchain
 
@@ -80,7 +80,7 @@ the port and has since been extended past it.
 | `tone` | Chao tone-letter parsing → contour, register, endpoint levels, creak/checked |
 | `inventories` | the 48 extended inventories behind the 51-language corpus |
 | `allophone` | rule sets for English, Spanish, Japanese, Russian, Mandarin and Arabic, each from one JIPA Illustration; `allophone_by_code` |
-| `syllable` | syllable templates + phonotactics (English, Sanskrit, Japanese) |
+| `syllable` | syllable templates + phonotactics: 12 sourced profiles (the 11 core languages and Sanskrit), `phonotactics_by_code` |
 | `script` | 19 writing systems — type, direction, status, Unicode ranges |
 | `numerals` | 10 numeral systems + the gematria layer (standard / ordinal / reduced / mispar gadol), and a variant-glyph alias layer for Church Slavonic |
 | `transliteration` | Devanagari↔IAST, Greek↔Beta Code (greedy longest-match) |
