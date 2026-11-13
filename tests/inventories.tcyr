@@ -154,6 +154,12 @@ fn main() {
     assert(streq(phoneme_language_code(iv), "so"), "so code");
     assert_eq(phoneme_consonant_count(iv), 22, "so consonants");
     assert_eq(phoneme_vowel_count(iv), 10, "so vowels");
+    # 2.5.3: ⟨j⟩ added, /ɣ/ (an allophone of /ɡ/) removed, /t d/ dental.
+    assert(phoneme_has(iv, "t͡ʃ"), "so has the affricate ⟨j⟩");
+    assert(!phoneme_has(iv, "ɣ"), "so /ɣ/ is not a phoneme");
+    assert_eq(phoneme_place(phoneme_find(iv, "t")), Place.Dental, "so /t/ is dental");
+    assert_eq(phoneme_place(phoneme_find(iv, "d")), Place.Dental, "so /d/ is dental");
+    assert(phoneme_has(iv, "q"), "so keeps voiceless /q/");
     iv = phoneme_quechua();
     assert(streq(phoneme_language_code(iv), "qu"), "qu code");
     assert_eq(phoneme_consonant_count(iv), 24, "qu consonants");
@@ -197,7 +203,17 @@ fn main() {
     iv = phoneme_lao();
     assert(streq(phoneme_language_code(iv), "lo"), "lo code");
     assert_eq(phoneme_consonant_count(iv), 20, "lo consonants");
-    assert_eq(phoneme_vowel_count(iv), 9, "lo vowels");
+    # 18 monophthongs (9 qualities x length) + 3 diphthongs, Enfield (2007) Table 4.
+    # 2.5.2 had 9 vowels and no /a/ at all.
+    assert_eq(phoneme_vowel_count(iv), 21, "lo vowels");
+    assert(phoneme_has(iv, "a"), "lo has /a/");
+    assert(phoneme_has(iv, "aː"), "lo has /aː/");
+    assert(phoneme_has(iv, "ɤ"), "lo has the mid unrounded vowel, as ɤ");
+    assert(phoneme_has(iv, "ɔː"), "lo has /ɔː/");
+    assert(phoneme_has(iv, "ɯa"), "lo has the diphthong ɯa");
+    assert(phoneme_has(iv, "ɲ"), "lo has /ɲ/ (ຍ)");
+    assert(!phoneme_has(iv, "t͡ɕʰ"), "lo has no aspirated palatal: ຊ is /s/");
+    assert(phoneme_has(iv, "w"), "lo keeps /w/, one phoneme initial v- and final -w");
     iv = phoneme_mongolian();
     assert(streq(phoneme_language_code(iv), "mn"), "mn code");
     assert_eq(phoneme_consonant_count(iv), 21, "mn consonants");

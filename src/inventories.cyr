@@ -124,14 +124,36 @@ fn phoneme_yoruba() {
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
-    # Vowels (7 oral)
-    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    # Seven oral vowels: "Standard Yoruba has seven oral vowels: [i, e, ẹ, a, ọ, o, u]"
+    # (Archangeli & Pulleyblank 1989, "Yoruba vowel harmony", Linguistic Inquiry 20(2),
+    # p. 174). Long vowels arise from consonant deletion or vowel sequences, so they
+    # are not phonemes.
+    #
+    # [ATR] (2.5.3), from the fully specified values of their (1a), p. 174:
+    #   i + / e + / ɛ − / a − / ɔ − / o + / u +
+    # Przezdziecki (2005, Cornell PhD, Table 2.1, p. 45) gives the same split, as does
+    # Casali (2016, SAL 45, ex. 2), citing them. In their underlying forms (1b),
+    # Archangeli & Pulleyblank leave i, u and a unspecified, and only [−ATR] is
+    # lexical. The corpus records the surface values, as (1a) does. The high vowels
+    # "neither undergo nor trigger" harmony (p. 176), and are opaque in Standard
+    # Yoruba (èlùbọ́ 'yam flour', pp. 185-186). Every source that gives them a value
+    # gives +.
+    #
+    # Whether the articulator is the tongue root is less settled. Archangeli &
+    # Pulleyblank were "not familiar with any phonetic studies demonstrating" it
+    # (p. 173, n. 2), and Przezdziecki finds "no clear acoustic test" (p. 45). An
+    # ultrasound study (Allen, Pulleyblank & Ajíbóyè 2013, Phonology 30(2)) reports
+    # results "consistent with" a tongue-root feature; only its abstract was read.
+    #
+    # KNOWN GAP: no nasal vowels. Sources disagree on whether Standard Yoruba has three,
+    # four or five (ĩ ũ plus one or more of ɛ̃ ɔ̃ ã); see the roadmap.
+    phoneme_builder_vowel_full(b, "i", Height.Close, Backness.Front, 0, PhonemeFeature.AdvancedTongueRoot);
+    phoneme_builder_vowel_full(b, "e", Height.CloseMid, Backness.Front, 0, PhonemeFeature.AdvancedTongueRoot);
+    phoneme_builder_vowel_full(b, "ɛ", Height.OpenMid, Backness.Front, 0, PhonemeFeature.RetractedTongueRoot);
+    phoneme_builder_vowel_full(b, "a", Height.Open, Backness.Central, 0, PhonemeFeature.RetractedTongueRoot);
+    phoneme_builder_vowel_full(b, "ɔ", Height.OpenMid, Backness.Back, 1, PhonemeFeature.RetractedTongueRoot);
+    phoneme_builder_vowel_full(b, "o", Height.CloseMid, Backness.Back, 1, PhonemeFeature.AdvancedTongueRoot);
+    phoneme_builder_vowel_full(b, "u", Height.Close, Backness.Back, 1, PhonemeFeature.AdvancedTongueRoot);
     _c_phoneme_yoruba = phoneme_builder_build(b);
     return _c_phoneme_yoruba;
 }
@@ -223,8 +245,8 @@ fn phoneme_thai() {
     # Handbook illustration of Standard (Bangkok) Thai — 33 / 21 / 41 / 45 / 214.
     #
     # Corrected at 2.4.1. The falling tone โท was absent entirely and ˨˩˦ sat in its
-    # slot, while slot 5 held ˩˧˥ — a value no description of Thai contains, and the
-    # corpus's only other unsourced tone string (it also appears in the Lao row).
+    # slot, while slot 5 held ˩˧˥ — a value no description of Thai contains. The Lao
+    # row carried it too until 2.5.3, when that row was rebuilt from its own sources.
     # ˨˩˦ itself was never wrong: [214] is จัตวา, and its matching Mandarin's third
     # tone is a real coincidence, not the copy-paste the roadmap once diagnosed.
     #
@@ -2059,29 +2081,33 @@ fn phoneme_burmese() {
 
     var b = phoneme_builder_with_capacity("my", "Burmese", 37);
     phoneme_builder_stress(b, StressPattern.Tonal);
-    # Four tones in the order high / creaky / low / checked.
+    # Four tones in the order high / creaky / low / checked, all four from ONE
+    # description: Watkins (2001), "Burmese", JIPA 31(2), p. 293, the IPA Illustration
+    # (Rangoon speech). "Canonical pronunciations of the four tones in isolation":
+    #   low /ma/ [maː˨] 'hard'   high /má/ [maː˦] 'towering'
+    #   creaky /ma̰/ [ma̰˥˩] 'female'   killed /maʔ/ [maʔ˥˩] 'March'
+    # The letters are set in a custom font. At 2.5.3 the page was rendered and the
+    # strokes measured against the bar: low 2.1, high 3.9, creaky and killed 5.0 → 1.6
+    # (the same glyph). Creak is written here as ˀ after the letters, the corpus's mark.
     #
-    # Corrected at 2.4.1: the checked ("killed") tone was ˩ʔ, a LOW level — the
-    # opposite of every description. Wheatley (1987:842) has "the pitch of the checked
-    # tone (high, in citation)"; Chang (2008:45) "very short duration, high pitch";
-    # Gruber (2011) Table 1 "initial high, fall". ˩ʔ was the corpus's generic checked
-    # placeholder, also used for Literary Chinese.
+    # Re-sourced at 2.5.3. The 2.4.1 row ˥ / ˧ˀ / ˨˩ / ˥˧ʔ had one cell with a source,
+    # and that source was not what it claimed. Its "Wheatley (1987)" Chao values,
+    # ˥˥˦ / ˥˧ˀ / ˧˧˦ / ˥˧ʔ, are the UNCITED IPA column of Wikipedia's "Burmese
+    # language" tone table. Wheatley's footnote there sits on the prose column ("high,
+    # in citation"), which gives no Chao letters. 2.4.1 also chose ˥˧ʔ over Watkins'
+    # ˥˩ʔ only so that the derived register would come out high. That bent a source's
+    # value to fit a derivation rule, which this corpus does not do.
     #
-    # ˥˧ʔ rather than Watkins' ˥˩ʔ because tone.cyr derives register from the rounded
-    # mean of the levels: ˥˩ means 3 and would come out TONE_MID, the very register
-    # this fix exists to correct, while ˥˧ means 4 and gives TONE_HIGH.
-    #
-    # KNOWN RESIDUE: this row is now sourced in one cell and unsourced in three. The
-    # creaky and low values were reviewed and left alone (˨˩ is well supported by
-    # Watkins' own F0 data), but creaky ˧ˀ now sits two levels from checked where the
-    # literature puts them nearly level. The row wants a single-source pass — Wheatley
-    # 1987 (˥˥˦ / ˥˧ˀ / ˧˧˦ / ˥˧ʔ) or Watkins 2001 (˦ / ˥˩ˀ / ˨ / ˥˩ʔ) — see the
-    # roadmap. That is not a reason to keep a value wrong under every source.
+    # Consequence, accepted: tone.cyr takes register from the rounded mean of the
+    # levels, so ˥˩ comes out TONE_MID, as Mandarin's ˥˩ tone 4 already does. The
+    # high onset every description gives these two tones is in tone_start_level (5),
+    # and the shared fall in the contour. Okell (1969, §1.15) and Chang (2008) describe
+    # creaky and checked in prose as high-onset falling tones too.
     var t = vec_new();
-    vec_push(t, "˥");
-    vec_push(t, "˧ˀ");
-    vec_push(t, "˨˩");
-    vec_push(t, "˥˧ʔ");
+    vec_push(t, "˦");
+    vec_push(t, "˥˩ˀ");
+    vec_push(t, "˨");
+    vec_push(t, "˥˩ʔ");
     phoneme_builder_tones(b, t);
     # Bilabial plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
@@ -2214,25 +2240,39 @@ fn phoneme_somali() {
 
     var b = phoneme_builder_with_capacity("so", "Somali", 32);
     phoneme_builder_stress(b, StressPattern.Tonal);
+    # Standard (Northern) Somali. Reviewed at 2.5.3 against PHOIBLE's two Somali
+    # inventories (127, SPA, from Armstrong and Andrzejewski; 552, UPSID), Gabbard
+    # (2010) and Edmondson, Esling & Harris (2004).
     var t = vec_new();
     vec_push(t, "˥");
     vec_push(t, "˩");
     phoneme_builder_tones(b, t);
-    # Plosives
+    # Plosives. /t d/ are dental (2.5.3; were Alveolar): Edmondson et al.
+    # "apico-dental", PHOIBLE 552 t̪ʰ d̪, and Gabbard's chart. No source gave alveolar.
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Dental, 1);
     phoneme_builder_consonant(b, "ɖ", Manner.Plosive, Place.Retroflex, 1);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    # ⟨q⟩ stays voiceless /q/, after Gabbard (2010), whose spectrograms show "never any
+    # voicing or aspiration", and Edmondson et al. Armstrong (via SPA), both PHOIBLE
+    # inventories and Saeed (1999) write /ɢ/; the sources genuinely disagree.
     phoneme_builder_consonant(b, "q", Manner.Plosive, Place.Uvular, 0);
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
-    # Fricatives
+    # Affricate ⟨j⟩, added at 2.5.3: t̠ʃ in both PHOIBLE inventories; Edmondson et al.
+    # "voiceless aspirated palato-alveolar affricate", voiced [dʒ] in southern
+    # varieties. Its absence was a gap, not an analysis.
+    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    # Fricatives. ⟨kh⟩ stays /x/, as in SPA and both PHOIBLE inventories; it is marginal,
+    # mostly in Arabic loans, and Gabbard and Edmondson et al. hear it uvular.
+    # /ɣ/ was removed at 2.5.3. It is /ɡ/ between vowels (Armstrong, via SPA: "sometimes
+    # [ɣ] when single between vowels"; Gabbard), and no source checked lists it as a
+    # phoneme.
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
-    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
     phoneme_builder_consonant(b, "ħ", Manner.Fricative, Place.Pharyngeal, 0);
     phoneme_builder_consonant(b, "ʕ", Manner.Fricative, Place.Pharyngeal, 1);
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
@@ -2245,6 +2285,30 @@ fn phoneme_somali() {
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Five vowel qualities, each short and long, with a second "series" left out of the
+    # segments on purpose. Somali is "commonly described as containing five major vowel
+    # categories {i,e,a,o,u}, each of which is contrastive for length and (purportedly)
+    # for an additional feature" (Kimper, Bennett, Green & Yu 2019, p. 199). That is
+    # the framing kept here.
+    #
+    # The additional feature splits every vowel into two series, and the sources do not
+    # agree on what it is: front vs back (Andrzejewski 1955), ±ATR (Saeed 1999), or a
+    # voice register (Edmondson et al.). Orwin's thesis (1994, *Aspects of Somali
+    # Phonology*, p. 61) sets out "two series of vowels" and finds "no satisfactory
+    # explanation of how the front and back series ... are phonologically distinct".
+    # The series is fixed on a root, spreads to suffixes, and can reach the phrase. Kimper
+    # et al. found "no clear evidence" of a categorical contrast in their speakers and
+    # suggest a near merger. The ten-symbol listings also conflict: Saeed's chart, and
+    # PHOIBLE 127 and 552, each pair the vowels differently.
+    #
+    # Corrected citation (2.5.3): from 2.4.1 the corpus quoted "Orwin (1994)" as
+    # saying "each of these five vowels has a fronted (ATR) variant". That sentence is
+    # Wikipedia's paraphrase, not Orwin's. His five-vowel listing is the textbook,
+    # *Colloquial Somali* (1995), which says fronting "is a matter we shall not address
+    # in this book".
+    #
+    # Heights follow Edmondson et al.: i and u close, and e and o "open mid" in both
+    # registers. The expanded-register vowel is described as raised from that base.
     # Short vowels (5)
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "e", Height.OpenMid, Backness.Front, 0);
@@ -2452,8 +2516,16 @@ fn phoneme_wolof() {
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
-    # Vowels — 8 short, 7 long. Ka (1994) as presented in Unseth (2009), OPAL No. 7,
-    # Tables 1-2; the same assignment appears in Torrence (2013) and PHOIBLE.
+    # Vowels — 8 short, 7 long. Unseth (2009), "Vowel Harmony in Wolof", Occasional
+    # Papers in Applied Linguistics No. 7, Table 1 (p. 1) and Table 2 (p. 2), whose
+    # data is "based upon" Ka's Wolof Phonology and Morphology (1993; the corpus said
+    # 1994). Sy (2006), Studies in African Linguistics 35(2), ex. (1), p. 204, has the
+    # same vowels and values.
+    #
+    # Corrected at 2.5.3. The comment said "the same assignment appears in Torrence
+    # (2013) and PHOIBLE". Torrence could not be checked. PHOIBLE marks no ATR value on
+    # any Wolof vowel: it encodes e ~ ɛ as [tense], taken from the letter. Unseth's
+    # paper is a student paper and does not credit its tables to Ka.
     #
     # Completed at 2.4.1. The block previously held only /i e a o/ + long, which is
     # not any analysis of Wolof — no description lacks /u/, and a four-quality system
@@ -2465,27 +2537,40 @@ fn phoneme_wolof() {
     # at OpenMid are ⟨e o⟩. /ɛː/ vs /eː/ is minimal-pair-bearing: reew /rɛːw/
     # "impolite" ~ réew /reːw/ "country".
     #
-    # ATR (recorded here in prose only — the corpus carries no ATR bit yet, see the
-    # roadmap): +ATR /i u e o ə/, −ATR /ɛ ɔ a/, pairing e~ɛ, o~ɔ and ə~a. /i u/ have no
-    # −ATR partners. Length is independent of ATR with exactly one gap: /ə/ has no long
-    # form, so /aː/ has no +ATR partner — which is why ⟨aa⟩ is opaque to harmony.
-    # (Torrence records ⟨ëë⟩ as rare; Ka, Unseth, Gauthier et al. and PHOIBLE omit it.)
-    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
-    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
-    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    # [ATR], marked on every vowel since 2.5.3: +ATR /i u e o ə/, −ATR /ɛ ɔ a/, with
+    # length not changing the value (Unseth Table 1; Sy ex. 1). Pairs e~ɛ, o~ɔ, ə~a.
+    # Sy writes the −ATR partner of ə as ʌ, apart from low a; the values agree. "The
+    # high vowels have no [−ATR] counterparts and the low vowels no [+ATR]
+    # counterparts" (Sy p. 204). The high vowels are + as a phonological value: "All
+    # vowels trigger harmony in initial position" (Sy p. 204), /i u/ included, and
+    # medially they let it pass. Their tongue root has not been measured.
+    #
+    # /ə/ has no long form ("with the exception of [ə]", Unseth p. 1). ⟨aa⟩ "is always
+    # [-ATR] and changes all vowels following it to [-ATR]" (Unseth p. 3), as does the
+    # suffix -kat. ⟨ëë⟩ is marginal: Unseth, Gauthier et al. (2016) and PHOIBLE omit it.
+    #
+    # The articulator: Dye (2015, NYU PhD), the first instrumental study, imaged /e/ vs
+    # /ɛ/ by ultrasound and found /ɛ/ more retracted, by a small amount that varies by
+    # speaker. /o ɔ/ and /ə a/ were not measured.
+    var atr = PhonemeFeature.AdvancedTongueRoot;
+    var rtr = PhonemeFeature.RetractedTongueRoot;
+    var lng = PhonemeFeature.Long;
+    phoneme_builder_vowel_full(b, "i", Height.Close, Backness.Front, 0, atr);
+    phoneme_builder_vowel_full(b, "u", Height.Close, Backness.Back, 1, atr);
+    phoneme_builder_vowel_full(b, "e", Height.CloseMid, Backness.Front, 0, atr);
+    phoneme_builder_vowel_full(b, "o", Height.CloseMid, Backness.Back, 1, atr);
+    phoneme_builder_vowel_full(b, "ɛ", Height.OpenMid, Backness.Front, 0, rtr);
+    phoneme_builder_vowel_full(b, "ɔ", Height.OpenMid, Backness.Back, 1, rtr);
+    phoneme_builder_vowel_full(b, "ə", Height.Mid, Backness.Central, 0, atr);
+    phoneme_builder_vowel_full(b, "a", Height.Open, Backness.Central, 0, rtr);
     # Vowels — long. No /əː/.
-    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
-    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
-    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
-    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
-    phoneme_builder_vowel_full(b, "ɛː", Height.OpenMid, Backness.Front, 0, PhonemeFeature.Long);
-    phoneme_builder_vowel_full(b, "ɔː", Height.OpenMid, Backness.Back, 1, PhonemeFeature.Long);
-    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, lng | atr);
+    phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, lng | atr);
+    phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, lng | atr);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, lng | atr);
+    phoneme_builder_vowel_full(b, "ɛː", Height.OpenMid, Backness.Front, 0, lng | rtr);
+    phoneme_builder_vowel_full(b, "ɔː", Height.OpenMid, Backness.Back, 1, lng | rtr);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, lng | rtr);
     _c_phoneme_wolof = phoneme_builder_build(b);
     return _c_phoneme_wolof;
 }
@@ -2494,16 +2579,47 @@ var _c_phoneme_lao = 0;
 fn phoneme_lao() {
     if (_c_phoneme_lao != 0) { return _c_phoneme_lao; }
 
-    var b = phoneme_builder_with_capacity("lo", "Lao", 29);
+    # Vientiane Lao. Rebuilt whole at 2.5.3 from one grammar, Enfield (2007), *A Grammar
+    # of Lao* (Mouton), ch. 3, Tables 2-4 (pp. 34-35). The 2.5.2 block, unchanged since
+    # v1.x, had 20 consonants and 9 vowels with no /a/, /o/, /ɔ/, /ɛ/ or the mid
+    # unrounded vowel. That was a truncation, not an analysis: every description checked
+    # (Enfield; Morev et al. 1979 and the EA database, both via PHOIBLE) has nine
+    # vowel qualities.
+    var b = phoneme_builder_with_capacity("lo", "Lao", 41);
     phoneme_builder_stress(b, StressPattern.Tonal);
+    # FIVE tones, in Enfield's order 1-5 with his example words (pp. 35-36): mid level
+    # khaa1 'galangal', high rising khaa2 'to be stuck', low rising khaa3 'leg', high
+    # falling khaa4 'commerce', mid falling khaa5 'slave'. "There are five distinct
+    # lexical tones in the variety of Lao spoken by natives of Vientiane (cf. Osatananda
+    # 1997)" (p. 35). Osatananda's own abstract also says five.
+    #
+    # Enfield prints no pitch numbers, so the values are Yanagimura (2011), "Contextual
+    # Tonal Variations in Vientiane Lao", Journal of Mekong Societies 7(1), Table 1
+    # (p. 4): "canonical pitch patterns of the tones produced in isolation ... on a
+    # five-point scale". He numbers the tones differently; matched by example word:
+    #   Enfield 1 = his 1, 33 khaa 'value'      Enfield 2 = his 4, 34 kháa 'to be stuck'
+    #   Enfield 3 = his 5, 215 khǎa 'leg'       Enfield 4 = his 3, 451 khâa 'to trade'
+    #   Enfield 5 = his 2, 31 khàa 'to kill'
+    # His prose calls 451 "high rising-falling" and 215 "low falling-rising", so the
+    # parse reads them as peaking and dipping, as it reads Thai's citation-form ˨˩˦.
+    # Before another syllable he finds both lose the first movement. Osatananda (1997,
+    # p. 40) reportedly gives 33 / 35 / 13 / 52 / 31, but that is only as Wikipedia
+    # reports it, and the dissertation could not be read. Its values are not used here.
+    #
+    # The 2.5.2 row was six tones, ˧ ˨˩ ˥˩ ˦˥ ˩˧˥ ˧˥, labelled in v1.x with THAI tone
+    # names. It carried two high rises (˦˥ and ˧˥), and no source prints its ˩˧˥.
+    # Six-tone analyses of Lao do exist (Hoshino & Marcus 1973). Their sixth is a low
+    # level tone, which that row did not have either.
     var t = vec_new();
     vec_push(t, "˧");
-    vec_push(t, "˨˩");
-    vec_push(t, "˥˩");
-    vec_push(t, "˦˥");
-    vec_push(t, "˩˧˥");
-    vec_push(t, "˧˥");
+    vec_push(t, "˧˦");
+    vec_push(t, "˨˩˥");
+    vec_push(t, "˦˥˩");
+    vec_push(t, "˧˩");
     phoneme_builder_tones(b, t);
+    # 20 initial consonants, Enfield Table 2: p t c k ʔ / pʰ tʰ kʰ / b d / f s h /
+    # m n ɲ ŋ / l / v j. Lao has no aspirated palatal: the 2.5.2 /t͡ɕʰ/ was Thai's
+    # ช, and Lao ຊ is /s/. /ɲ/ (ຍ initially) was missing.
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
@@ -2517,10 +2633,9 @@ fn phoneme_lao() {
     phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
       Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "ʔ", Manner.Plosive, Place.Glottal, 0);
-    # Affricates
+    # Affricate. Enfield writes c. ຈ "ranges between alveolar-palatal and palatal"
+    # (the LDC Lao corpus documentation), so t͡ɕ, as in the Thai row.
     phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant_full(b, "t͡ɕʰ", Manner.Affricate, Place.Palatal, 0,
-      Airstream.Pulmonic, PhonemeFeature.Aspirated);
     # Fricatives
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
@@ -2528,13 +2643,24 @@ fn phoneme_lao() {
     # Nasals
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
-    # Approximants / liquids
+    # Approximants / liquids.
+    # /w/ is one phoneme across the syllable. Enfield writes it v- initially, where it
+    # is labio-dental and "never pronounced as a bilabial approximant w-", and -w
+    # finally, where "Final -w represents the same phoneme as initial v-" (pp. 34-35).
+    # The phoneme keeps the w that Morev et al. and the LDC chart write, because ʋ
+    # would misdescribe the coda.
     phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
       Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
-    # Vowels — short/long pairs
+    # Enfield writes the labialized onsets (kua1 'than') as consonant + ua, so the
+    # labialized series Morev et al. list (kʷ, kʷʰ, ...) is not separate here.
+    #
+    # 18 vowels, Enfield Table 4: nine qualities, each short and long. The unrounded
+    # column holds ɯ and the mid vowel Enfield writes ə; it is ɤ here, beside ɯ, as in
+    # the Thai row, Morev et al. and the LDC chart.
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel_full(b, "iː", Height.Close, Backness.Front, 0, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "ɯ", Height.Close, Backness.Back, 0);
@@ -2543,8 +2669,20 @@ fn phoneme_lao() {
     phoneme_builder_vowel_full(b, "uː", Height.Close, Backness.Back, 1, PhonemeFeature.Long);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel_full(b, "eː", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Long);
-    # Diphthong
+    phoneme_builder_vowel(b, "ɤ", Height.CloseMid, Backness.Back, 0);
+    phoneme_builder_vowel_full(b, "ɤː", Height.CloseMid, Backness.Back, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "oː", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Long);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel_full(b, "ɛː", Height.OpenMid, Backness.Front, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "aː", Height.Open, Backness.Central, 0, PhonemeFeature.Long);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel_full(b, "ɔː", Height.OpenMid, Backness.Back, 1, PhonemeFeature.Long);
+    # Diphthongs (as vowel units), Enfield: "ia, ua, ɯa", with no length contrast.
     phoneme_builder_vowel(b, "ia", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ua", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɯa", Height.CloseMid, Backness.Back, 0);
     _c_phoneme_lao = phoneme_builder_build(b);
     return _c_phoneme_lao;
 }

@@ -7,12 +7,17 @@
 
 ## Version
 
-**2.5.2** (2026-11-05) — **varna serializes again.** Every type v1.x serialized has JSON in
-v1.x's format ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)), with v1.x's
-dropped variants restored, and the `-D` surfaces on the same serializers.
-`dist/varna-json.cyr` is how a consumer opts in, and `dist/varna.cyr` still needs no bayan.
+**2.5.3** (2026-11-13) — **data accuracy.** Every registry entry carries a Glottocode,
+obtained from Glottolog itself. Burmese tones are re-sourced to Watkins (2001), Lao is
+rebuilt from Enfield (2007) (five tones, and the vowel block that had no /a/), and
+Somali's consonants are corrected and its vowels re-cited. Vowels gain a tongue-root
+([ATR]) value, set for Yoruba and Wolof. Checking the sources found two citations that
+were Wikipedia's text credited to a primary author, and a third that over-claimed.
 
-Previous: **2.5.1** toolchain `6.7.9` → `6.7.18`, bayan moved to its thin
+Previous: **2.5.2** varna serializes again: every type v1.x serialized has JSON in v1.x's
+format ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)), and
+`dist/varna-json.cyr` is how a consumer opts in.
+**2.5.1** toolchain `6.7.9` → `6.7.18`, bayan moved to its thin
 `dist/bayan-json.cyr` profile, and the finding that set 2.5.2: the port had dropped
 serialization while the docs claimed it.
 **2.5.0** toolchain `6.6.20` → `6.7.9` (the language minor; semantic changes
@@ -29,12 +34,12 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 
 | | |
 |---|---|
-| Languages | 51, each with a phoneme inventory and a resolving primary script |
+| Languages | 51, each with a phoneme inventory, a resolving primary script and a Glottocode (2.5.3, from Glottolog) |
 | Scripts | 19 |
 | Numeral systems | 9 — five of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek) |
 | Grammar profiles | 11 |
 | Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 37 files, **2,964 assertions**, 0 failing, plus a fuzz harness (2.5.1 shipped 35 / 2,409) |
+| Tests | 38 files, **3,295 assertions**, 0 failing, plus a fuzz harness (2.5.2 shipped 37 / 2,964) |
 | Benchmarks | 42, covering every domain and every module's JSON |
 | Reference coverage | 411/417 functions (98%) — a floor, not a correctness proof |
 
@@ -68,7 +73,7 @@ the port and has since been extended past it.
 |---|---|
 | `error` | `VarnaError` codes |
 | `util` | shared UTF-8 codepoint helpers |
-| `phoneme` | phoneme record + builder, `Airstream`, a 14-bit feature mask, `phoneme_is_breathy` |
+| `phoneme` | phoneme record + builder, `Airstream`, a 16-bit feature mask (tongue root from 2.5.3), `phoneme_is_breathy` |
 | `features` | 25 derived SPE/Hayes distinctive features, tri-state (+/−/unspecified) |
 | `tone` | Chao tone-letter parsing → contour, register, endpoint levels, creak/checked |
 | `inventories` | the 48 extended inventories behind the 51-language corpus |
@@ -140,6 +145,11 @@ Two verification habits are load-bearing here and worth keeping:
   tested the fix. Several releases have shipped assertions that pinned the *defect*
   rather than the correction — 2.3.1 asserted a genus violation, 2.4.0 asserted an
   ordinal shift.
+- **Read the primary text.** At 2.5.3 two "sourced" values (Burmese "Wheatley 1987",
+  Somali "Orwin 1994") turned out to be Wikipedia's text with the primary author's
+  name on it. They had survived an adversarial review, because that review checked
+  plausibility, not provenance. JIPA Illustrations set IPA in custom fonts: render the
+  page and look.
 - **Interleave benchmark runs.** Min-of-N across separate sessions produced phantom
   regressions in four consecutive releases. Run old and new alternately in one session
   and report spreads alongside minima; if the spreads overlap, there is no result.
@@ -148,13 +158,11 @@ Two verification habits are load-bearing here and worth keeping:
 
 The [roadmap](roadmap.md) is organized into releases (reorganized at 2.5.1). In brief:
 
-- **2.5.3, data accuracy:** Somali's vowel analysis, which gates the
-  `AdvancedTongueRoot` bit; the Burmese and Lao tone rows, which are under-sourced rather
-  than wrong; Glottocodes, which need a source rather than a decision (generating them
-  would produce fabrications).
-- **2.5.4, hygiene:** caching `script_alphabet_values`; `grammar_by_code_lookup`, which
-  slowed at three straight toolchain pins (209 → ~241 ns); `assert` / `bench` into
-  `[test] stdlib`; `-D LOGGING` through sakshi.
+- **2.5.4, hygiene and data follow-ons:** caching `script_alphabet_values`; rows that
+  move with code layout; `assert` / `bench` into `[test] stdlib`; `-D LOGGING` through
+  sakshi. And four data items from 2.5.3: Thai vowel length, Yoruba's nasal vowels,
+  Osatananda's Lao tone values, and re-checking the older source comments against
+  their primary texts.
 - **2.6.0+** is feature work: coverage scale, typology and interchange, linguistic
   depth.
 

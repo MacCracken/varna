@@ -51,7 +51,20 @@ fn main() {
     # A feature that is not defined for this segment reads as the unspecified
     # sentinel, distinct from [-].
     assert_eq(phoneme_df(p, DistinctiveFeature.DF_STRIDENT), 0 - 1, "[strident] is undefined for a stop");
-    assert_eq(phoneme_df(p, DistinctiveFeature.DF_TENSE_ATR), 0 - 1, "[ATR] is undefined corpus-wide");
+    assert_eq(phoneme_df(p, DistinctiveFeature.DF_TENSE_ATR), 0 - 1, "[ATR] is undefined for a consonant");
+    # All three values of [ATR] on one vowel quality (2.5.3): Yoruba /e/ +, Yoruba /ɛ/ −,
+    # and English /ɛ/ unspecified, because English has no sourced ATR system.
+    var yo = phoneme_yoruba();
+    assert_eq(phoneme_df(phoneme_find(yo, "e"), DistinctiveFeature.DF_TENSE_ATR), 1, "Yoruba /e/ is [+ATR]");
+    assert_eq(phoneme_df(phoneme_find(yo, "ɛ"), DistinctiveFeature.DF_TENSE_ATR), 0, "Yoruba /ɛ/ is [-ATR]");
+    var en_eh = phoneme_find(en, "ɛ");
+    assert_eq(phoneme_df(en_eh, DistinctiveFeature.DF_TENSE_ATR), 0 - 1, "English /ɛ/ is unspecified for [ATR]");
+    # Not guessed from the letter: Wolof /ə/ is [+ATR] and /a/ [-ATR], in harmony.
+    var wo = phoneme_wolof();
+    assert_eq(phoneme_df(phoneme_find(wo, "ə"), DistinctiveFeature.DF_TENSE_ATR), 1, "Wolof /ə/ is [+ATR]");
+    assert_eq(phoneme_df(phoneme_find(wo, "a"), DistinctiveFeature.DF_TENSE_ATR), 0, "Wolof /a/ is [-ATR]");
+    var so_e = phoneme_find(phoneme_somali(), "e");
+    assert_eq(phoneme_df(so_e, DistinctiveFeature.DF_TENSE_ATR), 0 - 1, "Somali /e/ is unspecified for [ATR]");
     # The two masks agree with the tri-state reader.
     assert((phoneme_df_defined(p) & DistinctiveFeature.DF_VOICE) != 0, "voice is defined for /p/");
     assert_eq(phoneme_df_present(p) & DistinctiveFeature.DF_VOICE, 0, "voice is not present for /p/");
@@ -255,7 +268,7 @@ fn main() {
                     syllabic_consonant = syllabic_consonant + 1;
                 }
             }
-            # ATR is never specified anywhere (roadmap data item).
+            # [ATR] is specified only where a source gives it (2.5.3).
             if ((defd & DistinctiveFeature.DF_TENSE_ATR) != 0) { atr_specified = atr_specified + 1; }
             j = j + 1;
         }
@@ -265,7 +278,7 @@ fn main() {
     assert_eq(son_obstruent, 0, "no obstruent is [+sonorant]");
     assert_eq(nasal_not_sonorant, 0, "every nasal is [+sonorant]");
     assert_eq(syllabic_consonant, 0, "every consonant is [-syllabic]");
-    assert_eq(atr_specified, 0, "[ATR] is unspecified for every phoneme in the corpus");
+    assert_eq(atr_specified, 22, "[ATR] is specified for exactly the 22 Yoruba and Wolof vowels");
 
     # ---------------------------------------------------------------
     test_group("derivation_does_not_allocate");

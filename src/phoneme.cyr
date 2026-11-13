@@ -76,6 +76,22 @@ enum PhonemeFeature {
     Nasalized = 2048;     # ̃  — French /ɛ̃ ɑ̃ œ̃ ɔ̃/, Guarani /ɨ̃/
     Syllabic = 4096;      # ̩  — syllabic sonorant (Sanskrit /r̩ l̩ r̩ː l̩ː/)
     ExtraShort = 8192;    # ̆  — extra-short (Vietnamese /ɤ̆/)
+    # --- tongue root, added at 2.5.3 -------------------------------------
+    # One feature, [ATR], in two bits, so that a vowel can be +, − or unspecified;
+    # features.cyr reads it as DF_TENSE_ATR. Neither bit is the common case: the
+    # value is set only where a named source gives it, which today is Yoruba and
+    # Wolof. Somali is deliberately unmarked (see its inventory).
+    #
+    # The bits are NOT spelled into the IPA string with ̘ / ̙. Both languages already
+    # write the contrast with distinct letters (e ~ ɛ, o ~ ɔ, ə ~ a), so the letters
+    # stay as their sources print them and phoneme_find(yo, "e") still works.
+    #
+    # RetractedTongueRoot marks the [−ATR] member of an ATR system. Whether that
+    # class is "not advanced" or "actively retracted" ([+RTR], Pulleyblank 1996 for
+    # Yoruba) is a question of theory the corpus does not settle. Setting both bits
+    # is a contradiction, and the JSON reader refuses it.
+    AdvancedTongueRoot = 16384;   # ̘  — [+ATR]
+    RetractedTongueRoot = 32768;  # ̙  — [−ATR]
 }
 
 #derive(Serialize)

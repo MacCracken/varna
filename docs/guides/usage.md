@@ -14,7 +14,7 @@ Depend on varna from another Cyrius project via `cyrius.cyml`:
 ```cyml
 [deps.varna]
 git = "https://github.com/MacCracken/varna"
-tag = "2.5.2"
+tag = "2.5.3"
 modules = ["dist/varna.cyr"]
 ```
 
@@ -64,7 +64,9 @@ assert(phoneme_has(inv, "ɖ"));               # retroflex stop
 assert(!phoneme_has(inv, "θ"));              # no dental fricative in Sanskrit
 ```
 
-All registered codes: `registry_all_codes()`.
+All registered codes: `registry_all_codes()`. Each entry also carries its Glottolog
+identifier: `registry_info_glottocode(registry_info("lo"))` is `"laoo1244"`, and
+`registry_by_glottocode("laoo1244")` finds the entry again.
 
 ---
 

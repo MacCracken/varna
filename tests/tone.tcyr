@@ -199,11 +199,61 @@ fn main() {
     assert_eq(vec_len(phoneme_tones(lzh)), 4, "Literary Chinese has 4 tones");
     _tone_is(lzh, 3, "˩ʔ", ToneContour.TONE_LEVEL, ToneRegister.TONE_LOW, 1, 1,
       ToneFeature.TONE_CHECKED, "the entering tone is checked");
+    # Burmese, all four pinned by index: Watkins (2001:293), the JIPA Illustration, in
+    # the corpus order high / creaky / low / checked. Re-sourced at 2.5.3 from a row
+    # whose "Wheatley" values were Wikipedia's uncited IPA column.
     var my = phoneme_burmese();
-    _tone_is(my, 1, "˧ˀ", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3,
-      ToneFeature.TONE_GLOTTALIZED, "the Burmese creaky tone is glottalized");
-    _tone_is(my, 3, "˥˧ʔ", ToneContour.TONE_FALLING, ToneRegister.TONE_HIGH, 5, 3,
-      ToneFeature.TONE_CHECKED, "the Burmese checked tone falls from a high onset");
+    assert_eq(vec_len(phoneme_tones(my)), 4, "Burmese has 4 tones");
+    _tone_is(my, 0, "˦", ToneContour.TONE_LEVEL, ToneRegister.TONE_HIGH, 4, 4, 0,
+      "the Burmese high tone is a level 4");
+    _tone_is(my, 1, "˥˩ˀ", ToneContour.TONE_FALLING, ToneRegister.TONE_MID, 5, 1,
+      ToneFeature.TONE_GLOTTALIZED, "the Burmese creaky tone falls from the top and is glottalized");
+    _tone_is(my, 2, "˨", ToneContour.TONE_LEVEL, ToneRegister.TONE_LOW, 2, 2, 0,
+      "the Burmese low tone is a level 2");
+    # Register is the rounded mean of the levels, so ˥˩ reads MID, as Mandarin's
+    # tone 4 does. The high onset the sources describe is the start level, 5. Do not
+    # respell the source's value to move the register: 2.4.1 did, and it is undone here.
+    _tone_is(my, 3, "˥˩ʔ", ToneContour.TONE_FALLING, ToneRegister.TONE_MID, 5, 1,
+      ToneFeature.TONE_CHECKED, "the Burmese checked tone falls from the top");
+    # Creaky and checked share one pitch shape (Watkins prints one glyph for both), as
+    # every description puts them at about the same height. They differ in phonation
+    # and the stop.
+    var my_cr = vec_get(phoneme_tones(my), 1);
+    var my_ck = vec_get(phoneme_tones(my), 3);
+    assert_eq(tone_start_level(my_cr), tone_start_level(my_ck), "creaky and checked start level");
+    assert_eq(tone_end_level(my_cr), tone_end_level(my_ck), "and end level");
+    assert(tone_start_level(my_cr) > tone_start_level(vec_get(phoneme_tones(my), 0)),
+      "both start above the high tone, as in Watkins");
+
+    # ---------------------------------------------------------------
+    test_group("lao_tones");
+    # Five tones in Enfield's (2007) order 1-5, values from Yanagimura (2011) Table 1,
+    # matched by example word. 2.5.2 had six, labelled with Thai tone names, with two
+    # high rises and a ˩˧˥ no source prints. All five are pinned by index, which also
+    # pins the order.
+    var lo = phoneme_lao();
+    assert_eq(vec_len(phoneme_tones(lo)), 5, "Lao has 5 tones");
+    _tone_is(lo, 0, "˧", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3, 0,
+      "Lao tone 1, mid level (khaa1 'galangal')");
+    _tone_is(lo, 1, "˧˦", ToneContour.TONE_RISING, ToneRegister.TONE_HIGH, 3, 4, 0,
+      "Lao tone 2, high rising (khaa2 'to be stuck')");
+    _tone_is(lo, 2, "˨˩˥", ToneContour.TONE_DIPPING, ToneRegister.TONE_MID, 2, 5, 0,
+      "Lao tone 3, low rising, 'low falling-rising' in isolation (khaa3 'leg')");
+    _tone_is(lo, 3, "˦˥˩", ToneContour.TONE_PEAKING, ToneRegister.TONE_MID, 4, 1, 0,
+      "Lao tone 4, high falling, 'high rising-falling' in isolation (khaa4 'commerce')");
+    _tone_is(lo, 4, "˧˩", ToneContour.TONE_FALLING, ToneRegister.TONE_LOW, 3, 1, 0,
+      "Lao tone 5, mid falling (khaa5 'slave')");
+    # The tone the earlier review would not delete, the low rise of ຂາ 'leg', is still
+    # here, and it starts lowest, as Yanagimura says: "the lowest onset value of the
+    # five tones".
+    var lo_low = 9;
+    var li = 0;
+    while (li < 5) {
+        var st = tone_start_level(vec_get(phoneme_tones(lo), li));
+        if (st < lo_low) { lo_low = st; }
+        li = li + 1;
+    }
+    assert_eq(tone_start_level(vec_get(phoneme_tones(lo), 2)), lo_low, "Lao tone 3 has the lowest onset");
 
     # ---------------------------------------------------------------
     test_group("level_tone_languages");
@@ -265,7 +315,8 @@ fn main() {
         i = i + 1;
     }
     assert_eq(tonal_langs, 9, "9 languages carry tone inventories");
-    assert_eq(total_tones, 37, "37 tones in the corpus");
+    # 37 until 2.5.3, when Lao went from six tones to Enfield's five.
+    assert_eq(total_tones, 36, "36 tones in the corpus");
     assert_eq(bad_level, 0, "every pitch level is on the 1-5 Chao scale");
     assert_eq(bad_contour, 0, "every contour is in range and consistent with its endpoints");
     assert_eq(bad_register, 0, "every register is in range");

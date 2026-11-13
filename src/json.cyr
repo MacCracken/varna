@@ -292,6 +292,9 @@ fn _json_phoneme(v) {
     if (air < 0) { return 0; }
     var feats = _json_features_from(bayan_json_v_obj_get_by_cstr(body, "features"));
     if (feats < 0) { return 0; }
+    # [+ATR] and [−ATR] at once is a contradiction, not a record (2.5.3).
+    var atr_both = PhonemeFeature.AdvancedTongueRoot | PhonemeFeature.RetractedTongueRoot;
+    if ((feats & atr_both) == atr_both) { return 0; }
 
     if (kind == PhonemeKind.Consonant) {
         var manner = _json_enum(bayan_json_v_obj_get_by_cstr(body, "manner"), &Manner_from_json_str);
@@ -1505,11 +1508,17 @@ fn language_variety_from_json(text) {
 # --- LanguageInfo ---------------------------------------------------------
 #
 # New at 2.5.2, not a restoration: v1.x's LanguageInfo did not derive Serialize. So there
-# is no v1.x document to accept, and every field is required but the three Options.
+# is no v1.x document to accept, and every field is required but the Options.
 # `script_codes` keeps v1.x's field name, and everything after it is post-v1.x.
 #   {"code":"en","name":"English","script_codes":["Latn"],"family":"Indo-European",
 #    "subfamily":"Germanic","genus":"West Germanic","endangerment":"END_SAFE",
-#    "macroarea":"AREA_EURASIA","latitude_mdeg":52500,"longitude_mdeg":-1000}
+#    "macroarea":"AREA_EURASIA","latitude_mdeg":52500,"longitude_mdeg":-1500,
+#    "glottocode":"stan1293"}
+#
+# `glottocode` (2.5.3) is appended, so no 2.5.2 field moves. It is written as a string
+# or null, and on read it may also be ABSENT, because every 2.5.2 document lacks it.
+# Present, it must be a string of a Glottocode's shape (registry_glottocode_well_formed)
+# or null; anything else refuses the entry, as a wrong type does for every other field.
 
 # 1 when `v` is a JSON integer in lo..hi. A latitude can be negative, so no value here
 # can stand for failure the way -1 does in the unsigned readers.
@@ -1543,6 +1552,8 @@ fn registry_info_to_json(li, sb) {
     str_builder_add_int(sb, registry_info_latitude_mdeg(li));
     str_builder_add_cstr(sb, ",\"longitude_mdeg\":");
     str_builder_add_int(sb, registry_info_longitude_mdeg(li));
+    str_builder_add_cstr(sb, ",\"glottocode\":");
+    _json_opt_cstr_write(sb, registry_info_glottocode(li));
     str_builder_putc(sb, '}');
     return 0;
 }
@@ -1567,7 +1578,13 @@ fn _json_registry_info(v) {
     var lon = bayan_json_v_obj_get_by_cstr(v, "longitude_mdeg");
     if (_json_int_in(lat, 0 - 90000, 90000) == 0) { return 0; }
     if (_json_int_in(lon, 0 - 180000, 180000) == 0) { return 0; }
-    var li = _li_new_geo(code, name, vec_get(scripts, 0), family, subfamily, genus, level,
+    # Absent and null both read 0 (_json_opt_cstr), which is what a 2.5.2 document needs.
+    var gc = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "glottocode"));
+    if (gc < 0) { return 0; }
+    if (gc != 0) {
+        if (registry_glottocode_well_formed(gc) == 0) { return 0; }
+    }
+    var li = _li_new_geo(code, name, vec_get(scripts, 0), gc, family, subfamily, genus, level,
         area, bayan_json_v_int(lat), bayan_json_v_int(lon));
     var n = vec_len(scripts);
     var i = 1;

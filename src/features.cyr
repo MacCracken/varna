@@ -11,10 +11,10 @@
 # --- Three values, not two ---------------------------------------
 # Feature systems are not binary. A feature can be +, −, or genuinely *unspecified*
 # for a segment: [±anterior] is only defined for coronals, [±delayed release] only for
-# stops and affricates, and [±ATR] is not transcribed anywhere in this corpus at all
-# (see roadmap "Data: ATR vowel systems"). Collapsing unspecified into − would assert
-# things the data does not support, so the reader returns a tri-state and the two
-# masks are exposed separately:
+# stops and affricates, and [±ATR] is specified only for the vowels of languages with
+# a sourced ATR system (Yoruba and Wolof, from 2.5.3). Everywhere else it is
+# unspecified. Collapsing unspecified into − would assert things the data does not
+# support, so the reader returns a tri-state and the two masks are exposed separately:
 #
 #   phoneme_df(p, f)         ->  1 (+),  0 (−),  (0-1) unspecified
 #   phoneme_df_present(p)    ->  bitmask of features that are +
@@ -251,7 +251,7 @@ fn _df_consonant(a, p) {
         _df_set(a, DistinctiveFeature.DF_BACK, 1);
     }
 
-    # --- length; ATR is never specified (see the header) ---
+    # --- length; ATR is not specified for a consonant (see the header) ---
     _df_set(a, DistinctiveFeature.DF_LONG, phoneme_has_feature(p, PhonemeFeature.Long));
     return a;
 }
@@ -297,6 +297,18 @@ fn _df_vowel(a, p) {
     elif (backness == Backness.Front) { _df_set(a, DistinctiveFeature.DF_BACK, 0); }
 
     _df_set(a, DistinctiveFeature.DF_LONG, phoneme_has_feature(p, PhonemeFeature.Long));
+
+    # [ATR] from the two stored bits (2.5.3), and only from them: it is never guessed
+    # from the vowel's letter or height. PHOIBLE derives a [tense] value from the
+    # symbol, but in an ATR system that misplaces exactly the vowels the harmony is
+    # about: Wolof /ə/ is [+ATR] and /a/ [−ATR]. With neither bit set, as for every
+    # language without a sourced ATR system, the feature stays unspecified.
+    if (phoneme_has_feature(p, PhonemeFeature.AdvancedTongueRoot) == 1) {
+        _df_set(a, DistinctiveFeature.DF_TENSE_ATR, 1);
+    }
+    elif (phoneme_has_feature(p, PhonemeFeature.RetractedTongueRoot) == 1) {
+        _df_set(a, DistinctiveFeature.DF_TENSE_ATR, 0);
+    }
     return a;
 }
 

@@ -279,7 +279,7 @@ fn test_enum_names() {
         i = i + 1;
     }
     var bit = 1;
-    while (bit <= PhonemeFeature.ExtraShort) {
+    while (bit <= PhonemeFeature.RetractedTongueRoot) {
         var sb6 = str_builder_new();
         PhonemeFeature_to_json(bit, sb6);
         var t6, x6 = PhonemeFeature_from_json_str(str_cstr(str_builder_build(sb6)));
@@ -321,6 +321,13 @@ fn test_malformed_phoneme() {
     _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false,\"features\":[\"Nope\"]}}}", "unknown feature name");  #skip-lint
     _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false,\"features\":[1]}}}", "feature as a number");  #skip-lint
     _rejects("{\"ipa\":\"p\",\"ipa\":\"b\",\"kind\":{\"Consonant\":{\"manner\":\"Plosive\",\"place\":\"Bilabial\",\"voiced\":false}}}", "duplicate key");  #skip-lint
+    # [+ATR] and [-ATR] on one vowel is a contradiction (2.5.3); either alone is fine.
+    _rejects("{\"ipa\":\"e\",\"kind\":{\"Vowel\":{\"height\":\"CloseMid\",\"backness\":\"Front\",\"rounded\":false,\"features\":[\"AdvancedTongueRoot\",\"RetractedTongueRoot\"]}}}", "vowel both +ATR and -ATR");  #skip-lint
+    var ye = phoneme_from_json("{\"ipa\":\"e\",\"kind\":{\"Vowel\":{\"height\":\"CloseMid\",\"backness\":\"Front\",\"rounded\":false,\"features\":[\"AdvancedTongueRoot\"]}}}");  #skip-lint
+    assert(ye != 0, "a +ATR vowel reads");
+    assert_eq(phoneme_features(ye), PhonemeFeature.AdvancedTongueRoot, "and keeps its ATR bit");
+    # Yoruba /ɛ/ as written: its −ATR value is the RetractedTongueRoot name.
+    assert(streq(_text_of(&phoneme_to_json, phoneme_find(phoneme_yoruba(), "ɛ")), "{\"ipa\":\"ɛ\",\"kind\":{\"Vowel\":{\"height\":\"OpenMid\",\"backness\":\"Front\",\"rounded\":false,\"airstream\":\"Pulmonic\",\"features\":[\"RetractedTongueRoot\"]}}}"), "Yoruba /ɛ/ writes its -ATR value");  #skip-lint
     _rejects("{\"ipa\":\"p\",\"kind\":{\"Consonant\":{\"manner\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"place\":\"Bilabial\",\"voiced\":false}}}", "over-long name");  #skip-lint
     return 0;
 }
@@ -1350,7 +1357,8 @@ fn _li_eq(a, b) {
     if (registry_info_endangerment(a) != registry_info_endangerment(b)) { return 0; }
     if (registry_info_macroarea(a) != registry_info_macroarea(b)) { return 0; }
     if (registry_info_latitude_mdeg(a) != registry_info_latitude_mdeg(b)) { return 0; }
-    return registry_info_longitude_mdeg(a) == registry_info_longitude_mdeg(b);
+    if (registry_info_longitude_mdeg(a) != registry_info_longitude_mdeg(b)) { return 0; }
+    return _opt_eq(registry_info_glottocode(a), registry_info_glottocode(b));
 }
 
 # grammar's english() as v1.x's serde wrote it, by hand from the v1.x source.
@@ -1687,11 +1695,20 @@ fn test_registry_info() {
     }
     assert_eq(bad, 0, "all 51 registry entries round-trip");
 
-    var r = _li_new_geo("xx", "Xish", "Latn", "Fam", 0, "Gen", EndangermentLevel.END_MORIBUND, MacroArea.AREA_PAPUNESIA, 0 - 33500, 0 - 151000);
+    var r = _li_new_geo("xx", "Xish", "Latn", 0, "Fam", 0, "Gen", EndangermentLevel.END_MORIBUND, MacroArea.AREA_PAPUNESIA, 0 - 33500, 0 - 151000);
     vec_push(registry_info_scripts(r), "Grek");
     var t = _text_of(&registry_info_to_json, r);
-    assert(streq(t, "{\"code\":\"xx\",\"name\":\"Xish\",\"script_codes\":[\"Latn\",\"Grek\"],\"family\":\"Fam\",\"subfamily\":null,\"genus\":\"Gen\",\"endangerment\":\"END_MORIBUND\",\"macroarea\":\"AREA_PAPUNESIA\",\"latitude_mdeg\":-33500,\"longitude_mdeg\":-151000}"), "entry text, negative coordinates");  #skip-lint
+    assert(streq(t, "{\"code\":\"xx\",\"name\":\"Xish\",\"script_codes\":[\"Latn\",\"Grek\"],\"family\":\"Fam\",\"subfamily\":null,\"genus\":\"Gen\",\"endangerment\":\"END_MORIBUND\",\"macroarea\":\"AREA_PAPUNESIA\",\"latitude_mdeg\":-33500,\"longitude_mdeg\":-151000,\"glottocode\":null}"), "entry text, negative coordinates, no glottocode");  #skip-lint
     assert(_li_eq(r, registry_info_from_json(t)), "and back");
+
+    # glottocode (2.5.3) is appended, so a real entry ends with it as a string.
+    var en = _text_of(&registry_info_to_json, registry_info("en"));
+    assert(streq(en, "{\"code\":\"en\",\"name\":\"English\",\"script_codes\":[\"Latn\"],\"family\":\"Indo-European\",\"subfamily\":\"Germanic\",\"genus\":\"West Germanic\",\"endangerment\":\"END_SAFE\",\"macroarea\":\"AREA_EURASIA\",\"latitude_mdeg\":52500,\"longitude_mdeg\":-1500,\"glottocode\":\"stan1293\"}"), "English's entry text ends with its glottocode");  #skip-lint
+    # A 2.5.2 document has no glottocode key at all, and must still decode, as 0.
+    var old = registry_info_from_json(_with(en, ",\"glottocode\":\"stan1293\"", ""));
+    assert(old != 0, "a 2.5.2 document, with no glottocode, decodes");
+    assert_eq(registry_info_glottocode(old), 0, "and reads no glottocode");
+    assert(streq(registry_info_name(old), "English"), "and keeps every other field");
 
     var edge = _with(_with(t, "-33500", "-90000"), "-151000", "180000");
     assert(registry_info_from_json(edge) != 0, "the coordinate limits are in range");
@@ -1724,6 +1741,20 @@ fn test_malformed_registry() {
     vec_push(d, _with(g, ",\"longitude_mdeg\":0", ""));
     vec_push(d, _with(g, "\"longitude_mdeg\":0", "\"longitude_mdeg\":180001"));
     vec_push(d, _with(g, "\"longitude_mdeg\":0", "\"longitude_mdeg\":-180001"));
+    # glottocode may be absent (g has none) or null, but present it is a Glottocode.
+    var gn = _with(g, "\"longitude_mdeg\":0", "\"longitude_mdeg\":0,\"glottocode\":null");
+    var gs = _with(g, "\"longitude_mdeg\":0", "\"longitude_mdeg\":0,\"glottocode\":\"abcd1234\"");
+    assert(registry_info_from_json(gn) != 0, "a null glottocode is good");
+    assert(streq(registry_info_glottocode(registry_info_from_json(gs)), "abcd1234"), "a glottocode reads back");
+    vec_push(d, _with(gs, "\"abcd1234\"", "7"));
+    vec_push(d, _with(gs, "\"abcd1234\"", "[]"));
+    vec_push(d, _with(gs, "\"abcd1234\"", "false"));
+    vec_push(d, _with(gs, "\"abcd1234\"", "\"\""));
+    vec_push(d, _with(gs, "\"abcd1234\"", "\"ABCD1234\""));
+    vec_push(d, _with(gs, "\"abcd1234\"", "\"abcd123\""));
+    vec_push(d, _with(gs, "\"abcd1234\"", "\"abcd12345\""));
+    vec_push(d, _with(gs, "\"abcd1234\"", "\"abcd12x4\""));
+    vec_push(d, _with(gs, "\"abcd1234\"", "\"ab-d1234\""));
     _refuses_all(&registry_info_from_json, d, "every malformed registry entry is refused");
     assert_eq(registry_info_from_json(0), 0, "registry: null text");
     return 0;
@@ -1789,7 +1820,7 @@ fn _build_hostile() {
     _add_decoder(&cognate_set_from_json, _text_of(&cognate_set_to_json, _cognate_set_new(0, 0, "g")));
     _add_decoder(&etymology_from_json, _text_of(&etymology_to_json, etymology_new("l", "f", BorrowingType.Calque, 0)));
     _add_decoder(&language_variety_from_json, _text_of(&language_variety_to_json, _variety_new("c", "n", "p", VarietyKind.Regional)));
-    _add_decoder(&registry_info_from_json, _text_of(&registry_info_to_json, _li_new_geo("c", "n", "Latn", 0, 0, 0, EndangermentLevel.END_SAFE, MacroArea.AREA_AFRICA, 0, 0)));
+    _add_decoder(&registry_info_from_json, _text_of(&registry_info_to_json, _li_new_geo("c", "n", "Latn", "abcd1234", 0, 0, 0, EndangermentLevel.END_SAFE, MacroArea.AREA_AFRICA, 0, 0)));
 
     # The list above only means something if each document is good to start with.
     var i = 0;
@@ -2060,7 +2091,7 @@ fn test_wire_names() {
     assert(streq(_wire_names(&NumeralSystemKind_to_json, 2, 0), "Decimal Alphabetic Other"), "NumeralSystemKind");  #skip-lint
     assert(streq(_wire_names(&LetterRole_to_json, 2, 0), "ROLE_LETTER ROLE_ALLOGRAPH ROLE_NUMERAL_SIGN"), "LetterRole");  #skip-lint
     assert(streq(_wire_names(&Airstream_to_json, 3, 0), "Pulmonic Ejective Implosive Click"), "Airstream");  #skip-lint
-    assert(streq(_wire_names(&PhonemeFeature_to_json, 13, 1), "Aspirated Breathy Palatalized Labialized Pharyngealized Tense Devoiced Prenasalized Long Raised Lateral Nasalized Syllabic ExtraShort"), "PhonemeFeature");  #skip-lint
+    assert(streq(_wire_names(&PhonemeFeature_to_json, 15, 1), "Aspirated Breathy Palatalized Labialized Pharyngealized Tense Devoiced Prenasalized Long Raised Lateral Nasalized Syllabic ExtraShort AdvancedTongueRoot RetractedTongueRoot"), "PhonemeFeature");  #skip-lint
     assert(streq(_wire_names(&Manner_to_json, 8, 0), "Plosive Nasal Trill TapFlap Fricative LateralFricative Approximant LateralApproximant Affricate"), "Manner");  #skip-lint
     assert(streq(_wire_names(&Place_to_json, 11, 0), "Bilabial Labiodental Dental Alveolar Postalveolar Retroflex Palatal Velar Uvular Pharyngeal Glottal LabialVelar"), "Place");  #skip-lint
     assert(streq(_wire_names(&Height_to_json, 6, 0), "Close NearClose CloseMid Mid OpenMid NearOpen Open"), "Height");  #skip-lint

@@ -1,0 +1,161 @@
+# tests/glottocode.tcyr — Glottolog identifiers on registry entries, added at 2.5.3.
+#
+# Every value below was copied from Glottolog's own response on 2026-11-13: the
+# entry's ISO 639-3 code resolved through glottolog.org/resource/languoid/iso/<iso>,
+# and the name Glottolog returned is beside each pin. The registry rows were written
+# from the same responses. None is from memory: a Glottocode is opaque, so a
+# remembered one is a plausible fabrication. Re-verify against Glottolog itself, not
+# against this file, if a value is ever in doubt.
+#
+# Each value is pinned on its own, because a sweep cannot see two rows swapping codes:
+# every code would still be well formed and unique.
+
+include "src/error.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+
+var _gc_pinned = 0;
+
+fn _gc(code, glottocode) {
+    var li = registry_info(code);
+    if (li == 0) {
+        assert(0, code);
+        return 0;
+    }
+    var g = registry_info_glottocode(li);
+    if (g == 0) {
+        assert(0, code);
+        return 0;
+    }
+    assert(streq(g, glottocode), code);
+    # And back: the code finds this entry and no other.
+    assert_eq(registry_by_glottocode(glottocode), li, glottocode);
+    _gc_pinned = _gc_pinned + 1;
+    return 0;
+}
+
+fn main() {
+    alloc_init();
+    test_group("glottocode_values");
+    _gc("en", "stan1293");   # eng, Glottolog "English"
+    _gc("sa", "sans1269");   # san, Glottolog "Sanskrit"
+    _gc("el", "mode1248");   # ell, Glottolog "Modern Greek"
+    _gc("yua", "yuca1254");   # yua, Glottolog "Yucatec Maya"
+    _gc("sw", "swah1253");   # swh, Glottolog "Swahili"
+    _gc("yo", "yoru1245");   # yor, Glottolog "Yoruba"
+    _gc("zu", "zulu1248");   # zul, Glottolog "Zulu"
+    _gc("th", "thai1261");   # tha, Glottolog "Thai"
+    _gc("vi", "viet1252");   # vie, Glottolog "Vietnamese"
+    _gc("tl", "taga1270");   # tgl, Glottolog "Tagalog"
+    _gc("tr", "nucl1301");   # tur, Glottolog "Turkish"
+    _gc("fi", "finn1318");   # fin, Glottolog "Finnish"
+    _gc("haw", "hawa1245");   # haw, Glottolog "Hawaiian"
+    _gc("nah", "clas1250");   # nci, Glottolog "Classical Nahuatl"
+    _gc("la", "lati1261");   # lat, Glottolog "Latin"
+    _gc("ar", "stan1318");   # arb, Glottolog "Standard Arabic"
+    _gc("grc", "anci1242");   # grc, Glottolog "Ionic-Attic Ancient Greek"
+    _gc("lzh", "lite1248");   # lzh, Glottolog "Classical Chinese"
+    _gc("zh", "mand1415");   # cmn, Glottolog "Mandarin Chinese"
+    _gc("hi", "hind1269");   # hin, Glottolog "Hindi"
+    _gc("bn", "beng1280");   # ben, Glottolog "Bengali"
+    _gc("ta", "tami1289");   # tam, Glottolog "Tamil"
+    _gc("ur", "urdu1245");   # urd, Glottolog "Urdu"
+    _gc("ja", "nucl1643");   # jpn, Glottolog "Japanese"
+    _gc("es", "stan1288");   # spa, Glottolog "Spanish"
+    _gc("fr", "stan1290");   # fra, Glottolog "French"
+    _gc("de", "stan1295");   # deu, Glottolog "German"
+    _gc("ru", "russ1263");   # rus, Glottolog "Russian"
+    _gc("ko", "kore1280");   # kor, Glottolog "Korean"
+    _gc("pt", "port1283");   # por, Glottolog "Portuguese"
+    _gc("it", "ital1282");   # ita, Glottolog "Italian"
+    _gc("nl", "dutc1256");   # nld, Glottolog "Dutch"
+    _gc("pl", "poli1260");   # pol, Glottolog "Polish"
+    _gc("am", "amha1245");   # amh, Glottolog "Amharic"
+    _gc("ha", "haus1257");   # hau, Glottolog "Hausa"
+    _gc("id", "indo1316");   # ind, Glottolog "Standard Indonesian"
+    _gc("fa", "west2369");   # pes, Glottolog "Iranian Persian"
+    _gc("he", "hebr1245");   # heb, Glottolog "Modern Hebrew"
+    _gc("ka", "nucl1302");   # kat, Glottolog "Georgian"
+    _gc("cs", "czec1258");   # ces, Glottolog "Czech"
+    _gc("hu", "hung1274");   # hun, Glottolog "Hungarian"
+    _gc("ro", "roma1327");   # ron, Glottolog "Romanian"
+    _gc("my", "nucl1310");   # mya, Glottolog "Burmese"
+    _gc("km", "cent1989");   # khm, Glottolog "Central Khmer"
+    _gc("so", "soma1255");   # som, Glottolog "Somali"
+    _gc("qu", "cusc1236");   # quz, Glottolog "Cusco Quechua"
+    _gc("gn", "para1311");   # gug, Glottolog "Paraguayan Guaraní"
+    _gc("is", "icel1247");   # isl, Glottolog "Icelandic"
+    _gc("wo", "nucl1347");   # wol, Glottolog "Wolof"
+    _gc("lo", "laoo1244");   # lao, Glottolog "Lao"
+    _gc("mn", "halh1238");   # khk, Glottolog "Halh Mongolian"
+    assert_eq(_gc_pinned, 51, "all 51 entries pinned");
+
+    test_group("glottocode_corpus");
+    # Every entry has one, of the right shape, and no two share one.
+    var langs = registry_languages();
+    var n = vec_len(langs);
+    var missing = 0;
+    var malformed = 0;
+    var shared_codes = 0;
+    var i = 0;
+    while (i < n) {
+        var g = registry_info_glottocode(vec_get(langs, i));
+        if (g == 0) { missing = missing + 1; }
+        elif (registry_glottocode_well_formed(g) == 0) { malformed = malformed + 1; }
+        else {
+            var j = i + 1;
+            while (j < n) {
+                var h = registry_info_glottocode(vec_get(langs, j));
+                if (h != 0) {
+                    if (streq(g, h) == 1) { shared_codes = shared_codes + 1; }
+                }
+                j = j + 1;
+            }
+        }
+        i = i + 1;
+    }
+    assert_eq(missing, 0, "every entry has a glottocode");
+    assert_eq(malformed, 0, "every glottocode is well formed");
+    assert_eq(shared_codes, 0, "no two entries share a glottocode");
+
+    test_group("glottocode_scope");
+    # The two rows whose code needed a judgement, pinned with the reason.
+    # grc: Glottolog's koin1234 "Koineic Greek" is the clade of Koine's descendants
+    # (Medieval, Modern, Pontic...), not Hellenistic Koine, so it must not be used.
+    assert_eq(registry_by_glottocode("koin1234"), 0, "Koine's descendant clade is not an entry");
+    # qu: Southern Quechua, quec1389, is a subgroup. The entry is its Cusco-Collao
+    # member, the variety with the plain / aspirated / ejective series it transcribes.
+    assert_eq(registry_by_glottocode("quec1389"), 0, "the Southern Quechua subgroup is not an entry");
+    assert(phoneme_find(registry_phonemes("qu"), "qʼ") != 0, "qu has the ejectives that place it in Cusco-Collao");
+    assert(phoneme_find(registry_phonemes("qu"), "qʰ") != 0, "and the aspirates");
+
+    test_group("glottocode_lookup");
+    assert_eq(registry_by_glottocode(0), 0, "null finds nothing");
+    assert_eq(registry_by_glottocode(""), 0, "empty finds nothing");
+    assert_eq(registry_by_glottocode("stan1294"), 0, "a near miss finds nothing");
+    assert_eq(registry_by_glottocode("STAN1293"), 0, "lookup is exact, not case-folded");
+    # An entry built without one reads 0, not a placeholder.
+    var bare = _li_new("xx", "X", "Latn");
+    assert_eq(registry_info_glottocode(bare), 0, "an entry built without one reads 0");
+
+    test_group("glottocode_shape");
+    assert_eq(registry_glottocode_well_formed("stan1293"), 1, "letters then digits");
+    assert_eq(registry_glottocode_well_formed("laoo1244"), 1, "a repeated letter");
+    assert_eq(registry_glottocode_well_formed("b10b1234"), 1, "digits are allowed in the first four");
+    assert_eq(registry_glottocode_well_formed(0), 0, "null");
+    assert_eq(registry_glottocode_well_formed(""), 0, "empty");
+    assert_eq(registry_glottocode_well_formed("stan129"), 0, "seven bytes");
+    assert_eq(registry_glottocode_well_formed("stan12930"), 0, "nine bytes");
+    assert_eq(registry_glottocode_well_formed("Stan1293"), 0, "uppercase");
+    assert_eq(registry_glottocode_well_formed("stan12a3"), 0, "a letter in the last four");
+    assert_eq(registry_glottocode_well_formed("st-n1293"), 0, "punctuation");
+    assert_eq(registry_glottocode_well_formed("stñ1293"), 0, "a multibyte letter, still eight bytes");
+    assert_eq(registry_glottocode_well_formed("stan 293"), 0, "a space");
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

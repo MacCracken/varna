@@ -1,6 +1,6 @@
 # Development Roadmap
 
-> **Current**: 2.5.2 · **Open work only.** Shipped releases are in
+> **Current**: 2.5.3 · **Open work only.** Shipped releases are in
 > [CHANGELOG.md](../../CHANGELOG.md) and the git tags.
 >
 > Releases are listed in their intended order, which is not a commitment to ship
@@ -11,49 +11,44 @@
 
 | Release | Theme | Priority |
 |---|---|---|
-| 2.5.3 | Data accuracy: Somali ATR, Burmese / Lao tone rows, Glottocodes | P2 |
-| 2.5.4 | Hygiene and follow-ons: a numerals cache, layout-sensitive benchmarks, test-scoped deps, sakshi logging | P3 |
+| 2.5.4 | Hygiene and follow-ons: a numerals cache, layout-sensitive benchmarks, test-scoped deps, sakshi logging, four data items from 2.5.3 | P3 |
 | 2.6.0 | Coverage scale: allophony, phonotactics, transliteration, numerals, provenance, PHOIBLE | P3 |
 | 2.7.0 | Typology and interchange: PHOIBLE export, WALS codes, cross-cutting queries, ISO 639 | P4 |
 | 2.8.0+ | Linguistic depth: prosody, morphology, historical phonology, sign language, Hangul | P4 |
 
-## 2.5.3 — Data accuracy (P2)
+## Data items: the method
 
-Accuracy items in the corpus data. None is a coding task: each needs a decision about a
-language, and none should change silently mid-release. 2.4.1 set the method. Every
+Changes to the corpus data are not coding tasks. Each one is a decision about a
+language, and none should change silently mid-release. 2.4.1 set the method: every
 value is researched independently, then adversarially refuted, and **most proposed
 corrections did not survive that**. A reference corpus is damaged as much by churn as
 by error, so a value defensible under any mainstream description stays, and the
-variety it commits to is named in the source comment.
-
-- [ ] **Somali's vowel analysis**, a choice rather than an omission. This is the one
-      thing still gating the `AdvancedTongueRoot` bit; Yoruba and Wolof are both
-      markable since 2.4.1. The corpus has Orwin's (1994) five qualities `/i e a o u/`
-      + long, whose own wording is that "each of these **five** vowels has a fronted
-      (ATR) variant". A ten-quality listing needs a symbol decision the sources do not
-      agree on (ʉ̞ vs ʉ vs ʊ̈, ɵ̞ vs ɞ, a vs ɑ), and PHOIBLE marks `advancedTongueRoot`
-      "−" on every Somali vowel in both of its inventories. Pick an analysis and name
-      it, or keep the five and say so.
-- [ ] **Then the `AdvancedTongueRoot` bit.** Marking two of the three languages would
-      leave ATR silently absent from one that has it, which is worse than uniformly
-      absent. The rationale is pinned in `tests/vowel_features.tcyr`; update it when
-      this lands.
-- [ ] **Burmese tone row**: sourced in one cell and unsourced in three. Creaky `˧ˀ` sits
-      two levels from checked, where the literature puts them nearly level. Re-source
-      the whole row to one description: Wheatley (1987), `˥˥˦ / ˥˧ˀ / ˧˧˦ / ˥˧ʔ`, or
-      Watkins (2001), `˦ / ˥˩ˀ / ˨ / ˥˩ʔ`.
-- [ ] **Lao tone row**: the corpus's weakest tone values. No source prints its `˩˧˥`
-      verbatim, and `˥˩` [51] is inside the attested envelope (41/42/52/53) but not on
-      it. Both proposed replacements were checked and refuted, since swapping `˩˧˥`
-      deletes the ຂາ tone. Check the whole row against Enfield (2007) or Osatananda
-      rather than patching cells.
-- [ ] **Glottocodes** (deferred from 2.3.0). They are opaque identifiers (`stan1293`)
-      that can only be looked up, and generating them from memory would produce
-      plausible fabrications. Obtain the 51 from Glottolog itself, then add the
-      nullable field.
+variety it commits to is named in the source comment. 2.5.3 added a third step:
+**read every quote and value against the primary text**. Two of the corpus's
+citations turned out to be Wikipedia's text credited to the primary source (Burmese
+"Wheatley 1987", Somali "Orwin 1994"), and both had survived an adversarial review
+that checked only whether the claim was plausible. JIPA Illustrations set IPA in
+custom fonts, so render the page and look rather than trusting extracted text.
 
 ## 2.5.4 — Hygiene and follow-ons (P3)
 
+- [ ] **Data follow-ons from 2.5.3**, each a research item under the same method:
+  - **Thai has no vowel length**, while Lao, its closest relative in the corpus, now
+    has 18 vowels. Thai's length contrast is not in dispute. Check the block against
+    Tingsabadh & Abramson (1993), the source its tone row already cites.
+  - **Osatananda (1997, p. 40)** reportedly gives Lao 33 / 35 / 13 / 52 / 31, closer to
+    Enfield's prose than Yanagimura's isolation values. That figure is known only from
+    Wikipedia; the dissertation (UMI 9801455) was not reachable. Read it before
+    preferring it.
+  - **Re-check the other source comments** that predate 2.5.3 against their primary
+    texts. Two of them were Wikipedia, and a third (Wolof) over-claimed its sources;
+    assume more may be.
+  - **Yoruba has no nasal vowels.** Every description has some, but they disagree on
+    how many. Pulleyblank (in Comrie, *The World's Major Languages*, p. 972) lists ĩ ũ ɛ̃
+    ɔ̃ but prefers a three-way analysis, with ɔ̃ ~ ã one phoneme and ɛ̃ marginal.
+    Przezdziecki (2005) has /ĩ ũ ɔ̃/; Capo (1985) ĩ ɛ̃ ɔ̃ ũ; Archangeli & Pulleyblank (1989,
+    n. 5) high and low only; and PHOIBLE's three inventories differ again. Pick an
+    analysis and name it. The new vowels would also need ATR values.
 - [ ] **Cache `script_alphabet_values`** (from the 2.4.0 review). It is the only table
       builder in `numerals.cyr` without a `_c_` cache, and it returns ~856 B of fresh
       bump memory per call for one of only 15 possible (script, method) results, so a

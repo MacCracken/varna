@@ -7,6 +7,226 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.3] - 2026-11-13
+
+Roadmap 2.5.3, data accuracy. Glottocodes for all 51 languages, the Burmese, Lao
+and Somali items, each re-sourced to named descriptions, and the tongue-root ([ATR])
+feature, set for the Yoruba and Wolof vowels. The Burmese, Lao and Somali changes were
+researched, then put through an adversarial review that tried to refute them, as at
+2.4.1. The ATR values skipped that review, because no source disagreed on any vowel.
+Then every quote and value used here was checked against the primary text. That last
+step found that **two of the corpus's existing citations were Wikipedia's text
+credited to a primary source**, and that a third over-claimed its sources (see
+*Fixed*).
+
+### Breaking
+
+Data corrections that a consumer can observe:
+
+- **Lao has 5 tones, not 6.** A caller indexing `phoneme_tones(lo)` at 5 now reads past
+  the end, and slots 1–4 hold different tones (Enfield's order, below). Find a tone by
+  shape (`tone_contour`, `tone_start_level`) rather than by a position taken from 2.5.2.
+- **Removed segments:** Lao `/t͡ɕʰ/` and Somali `/ɣ/`. `phoneme_find` returns 0 for
+  both. Neither exists in the language (below).
+- **Burmese tone strings changed** (`˥ ˧ˀ ˨˩ ˥˧ʔ` → `˦ ˥˩ˀ ˨ ˥˩ʔ`), and the checked
+  tone's derived register is now `TONE_MID` rather than `TONE_HIGH`. Its high onset is
+  `tone_start_level`, 5.
+- **Yoruba and Wolof vowels carry feature bits**, so `phoneme_features(p)` is no longer
+  0 for them, and their JSON `features` arrays now hold `"AdvancedTongueRoot"` or
+  `"RetractedTongueRoot"`. A 2.5.2 reader refuses those names, as it refuses any
+  flag it does not know. 2.5.2 documents still read in 2.5.3.
+
+### Added
+
+- **registry: a Glottocode on every entry** (roadmap 2.5.3, deferred from 2.3.0).
+  `registry_info_glottocode(li)` returns the Glottolog identifier (`"stan1293"` for
+  English), or 0 when an entry has none. `registry_by_glottocode(gc)` goes the other
+  way, for a caller holding a Glottolog or PHOIBLE identifier, and
+  `registry_glottocode_well_formed(s)` checks a string's shape (four lowercase letters
+  or digits, then four digits).
+
+  All 51 came from Glottolog itself on 2026-11-13: each entry's ISO 639-3 code went
+  through Glottolog's resolver (`glottolog.org/resource/languoid/iso/<iso>`), and the
+  name it returned was checked against the entry. None was written from memory. A
+  Glottocode is an opaque identifier, so a remembered one is a plausible fabrication,
+  not an approximation.
+
+  Each is the **language-level** languoid for the variety the inventory transcribes.
+  For a macrolanguage code, that is the standard individual language: `sw` → swh,
+  `ar` → arb, `zh` → cmn, `fa` → pes, `gn` → gug and `mn` → khk; `nah` is nci, as its
+  scope comment already said. Two entries needed a judgement, and both are pinned with
+  the reason:
+
+  | Entry | Glottocode | Why not the obvious one |
+  |---|---|---|
+  | `grc` Koine Greek | `anci1242` | Glottolog's `koin1234` "Koineic Greek" is the clade of Koine's *descendants* (Medieval, Modern and Pontic Greek), not Hellenistic Koine. |
+  | `qu` Southern Quechua | `cusc1236` | Southern Quechua, `quec1389`, is a subgroup, and it is already this entry's genus. The inventory's plain / aspirated / ejective stops are Cusco-Collao, which Ayacucho lacks. |
+
+- **tests/glottocode.tcyr**, 127 assertions. All 51 values are pinned one by one, each
+  with the name Glottolog returned, because a sweep cannot see two rows swap codes. It
+  also covers the reverse lookup, presence, shape and uniqueness across the corpus, and
+  the edge cases of the shape check. A mutation run swapping `fr` and `de` failed 4
+  assertions; the unmutated control passed.
+
+- **phoneme: the tongue-root feature, [ATR]**, in two bits:
+  `PhonemeFeature.AdvancedTongueRoot` (16384, [+ATR]) and
+  `PhonemeFeature.RetractedTongueRoot` (32768, [−ATR]). Two bits rather than one, so
+  that a vowel can be +, − or unspecified. One bit could not tell Yoruba's −ATR /ɛ/ from
+  English /ɛ/, which has no ATR value at all. The bits are not written into the IPA
+  string with ̘ / ̙. Both languages already spell the contrast with distinct letters
+  (e ~ ɛ, o ~ ɔ, ə ~ a), so `phoneme_find(yo, "e")` is unchanged.
+
+  `features.cyr` derives `DF_TENSE_ATR` from the bits alone: + for
+  `AdvancedTongueRoot`, − for `RetractedTongueRoot`, unspecified for neither. It never
+  guesses from the letter. PHOIBLE's symbol-derived [tense] does guess from the letter,
+  and in an ATR system that misplaces the very vowels the harmony is about: Wolof /ə/ is
+  +ATR and /a/ −ATR.
+
+  The values were researched per vowel and checked against the primary tables. Every
+  source agrees, so no vowel is left unspecified:
+
+  | | +ATR | −ATR | Source |
+  |---|---|---|---|
+  | Yoruba (7) | i e o u | ɛ a ɔ | Archangeli & Pulleyblank (1989), *LI* 20(2), (1a) p. 174; Przezdziecki (2005) Table 2.1 |
+  | Wolof (15) | i u e o ə, and iː uː eː oː | ɛ ɔ a, and ɛː ɔː aː | Unseth (2009) Table 1; Sy (2006), *SAL* 35(2), ex. (1) p. 204 |
+
+  The high vowels are + in both languages. That is the value every source assigning
+  one gives them, and in Wolof they trigger harmony word-initially ("All vowels trigger
+  harmony in initial position", Sy p. 204). Archangeli & Pulleyblank leave Yoruba
+  i, u and a unspecified in their underlying forms. The corpus records the surface
+  values, as their (1a) does. Whether the articulator really is the tongue root is
+  less settled, and the source comments say so: Archangeli & Pulleyblank knew of no
+  phonetic study showing it for Yoruba (p. 173, n. 2), and Dye's (2015) ultrasound of
+  Wolof found only a small /e/–/ɛ/ difference. The JSON reader refuses a vowel with
+  both bits.
+
+  Somali has a second vowel series too, and stays unmarked on purpose (see *Fixed*).
+
+### Changed
+
+- **`LanguageInfo` is 88 bytes**, with the Glottocode at `[80]`. The private
+  constructor `_li_new_geo` takes it as a fourth argument, after the script code. The
+  compiler checks arity, so any external caller of that private name fails to build
+  rather than misreading its arguments.
+
+- **Registry JSON gains `"glottocode"`**, appended after `longitude_mdeg` so no 2.5.2
+  field moves. It is written as a string or `null`. On read it may also be absent,
+  because every 2.5.2 document lacks it, and such a document still decodes, with
+  glottocode 0. If present, it must be a well-formed Glottocode string or `null`;
+  anything else (`7`, `""`, `"STAN1293"`, `"abcd123"`) refuses the entry, as a wrong
+  type does for every other field.
+
+### Fixed
+
+- **Burmese tones re-sourced to one description**, Watkins (2001), "Burmese", the JIPA
+  Illustration, p. 293: high `˦`, creaky `˥˩ˀ`, low `˨`, checked `˥˩ʔ` (was `˥ ˧ˀ ˨˩
+  ˥˧ʔ`). Watkins sets the tone letters in a custom font, so the page was rendered and
+  the strokes measured against the bar: low 2.1, high 3.9, and creaky and checked
+  5.0 → 1.6 on one shared glyph. Creaky and checked now share a pitch shape, as every
+  description has them. Before, creaky sat two levels below checked.
+
+  The 2.4.1 row's one "sourced" cell was not sourced. Its "Wheatley (1987)" values,
+  `˥˥˦ / ˥˧ˀ / ˧˧˦ / ˥˧ʔ`, are the uncited IPA column of Wikipedia's *Burmese language*
+  tone table. Wheatley's footnote there sits on the prose column, which has no Chao
+  letters. 2.4.1 also took `˥˧ʔ` over Watkins' `˥˩ʔ` only so that the derived register
+  would come out high. That bent a source's value to fit a derivation rule, which is
+  now undone. `˥˩` derives `TONE_MID` because register is the rounded mean of the
+  levels, the same as Mandarin's tone 4 already. Switching to an onset-based rule was
+  considered and rejected for this release: it would move 11 of the corpus's 37 tones
+  across five languages, and Mandarin's rising tone 2 `˧˥` would become mid.
+
+- **Lao rebuilt from one grammar**, Enfield (2007), *A Grammar of Lao*, ch. 3. The 2.5.2
+  block, unchanged since v1.x, was not a reduced transcription. It was a fragment:
+
+  | | 2.5.2 | 2.5.3 |
+  |---|---|---|
+  | Tones | 6: `˧ ˨˩ ˥˩ ˦˥ ˩˧˥ ˧˥`, labelled in v1.x with Thai tone names | 5: `˧ ˧˦ ˨˩˥ ˦˥˩ ˧˩` |
+  | Consonants | 20, including Thai's `/t͡ɕʰ/`, with no `/ɲ/` | 20: `/t͡ɕʰ/` removed (Lao ຊ is /s/), `/ɲ/` (ຍ) added |
+  | Vowels | `i ɯ u e` + long, and `ia`: **no `/a/`** | 9 qualities × length (18), and `ia ua ɯa` |
+
+  Enfield: "There are five distinct lexical tones in the variety of Lao spoken by
+  natives of Vientiane" (p. 35). Osatananda's 1997 dissertation on Vientiane tone says
+  five in its abstract, and Ueda (1994) has five too. The old row had two high rises
+  (`˦˥` and `˧˥`), and no source prints its `˩˧˥`. Enfield prints no pitch numbers, so
+  the values are Yanagimura (2011), *Journal of Mekong Societies* 7(1), Table 1. Those
+  are isolation forms. Yanagimura numbers the tones differently, so his were matched to
+  Enfield's by example word. In Enfield's order, with Enfield's examples: 33 (khaa1
+  'galangal'), 34 (khaa2 'to be stuck'), 215 (khaa3 'leg'), 451 (khaa4 'commerce'),
+  31 (khaa5 'slave'). Yanagimura's own prose calls 451
+  "high rising-falling" and 215 "low falling-rising", so they parse as peaking and
+  dipping, as Thai's citation-form `˨˩˦` already does. The 2.4.1 review was right that
+  the low rise of ຂາ 'leg' must stay. It is tone 3, and it has the lowest onset.
+
+  Osatananda's own values (reported by Wikipedia as 33 / 35 / 13 / 52 / 31) could not
+  be read and are not used. The review changed two symbols from the first proposal.
+  `/w/` stays: Enfield writes initial v- (labio-dental) and final -w as one phoneme, so
+  ʋ would misdescribe the coda. The mid unrounded vowel is `ɤ` beside `ɯ`, as in the
+  Thai row, where Enfield writes ə. All four of PHOIBLE's Lao inventories have `/ɲ/`,
+  and none has `/t͡ɕʰ/`.
+
+- **Somali consonants.** Each change survived the review, and each was checked against
+  the source it cites. Values the sources dispute stay, with the dispute noted:
+
+  | Segment | Change | Evidence |
+  |---|---|---|
+  | `/t͡ʃ/` ⟨j⟩ | added | `t̠ʃ` in both PHOIBLE inventories; Edmondson, Esling & Harris (2004): "voiceless aspirated palato-alveolar affricate", voiced [dʒ] in southern varieties |
+  | `/ɣ/` | removed | `/ɡ/` between vowels: Gabbard (2010) derives "[γ] from /g/"; neither PHOIBLE inventory lists it |
+  | `/t d/` | Alveolar → Dental | Edmondson et al. "apico-dental"; PHOIBLE 552 `t̪ʰ d̪` |
+  | `/q/` | kept voiceless | Gabbard's spectrograms show "never any voicing or aspiration"; Saeed (1999) and PHOIBLE write `/ɢ/` |
+  | `/x/` | kept | SPA and both PHOIBLE inventories; marginal, mostly Arabic loans |
+
+- **Somali's vowels: unchanged, but they now cite the right source.** From 2.4.1 the
+  corpus said the five qualities were "Orwin (1994)", whose "own wording" was that "each
+  of these five vowels has a fronted (ATR) variant". That sentence is Wikipedia's
+  paraphrase. Orwin's thesis (*Aspects of Somali Phonology*, p. 61) sets out "two series
+  of vowels". The five-vowel listing is his textbook, *Colloquial Somali* (1995), which
+  leaves fronting aside. Five qualities plus length stay, after Kimper, Bennett, Green &
+  Yu (2019, p. 199): Somali is "commonly described as containing five major vowel
+  categories {i,e,a,o,u}, each of which is contrastive for length and (purportedly)
+  for an additional feature". That feature is described in the source comment rather
+  than marked per vowel. Sources disagree on what it is (front/back, ±ATR, or a voice
+  register), the ten-symbol listings conflict, and Kimper et al. found "no clear
+  evidence" of a categorical contrast.
+
+  That settled what gated the `AdvancedTongueRoot` bit since 2.4.1. Somali does not
+  carry it, and the comment says why. The bit landed for Yoruba and Wolof (*Added*).
+
+- **Wolof's vowel citation.** From 2.4.1 the comment said the vowels were "Ka (1994)
+  as presented in Unseth (2009)" and that "the same assignment appears in Torrence
+  (2013) and PHOIBLE". Unseth's paper is a student paper. It bases its data on Ka
+  (1993, not 1994), but does not credit its tables to him. Torrence could not be checked.
+  And PHOIBLE marks no ATR value on any Wolof vowel: it encodes e ~ ɛ as [tense], taken
+  from the letter. The comment now cites Unseth and Sy directly. Its ATR values were
+  right and are unchanged.
+
+- **Tests** pin all five Lao tones and all four Burmese tones by index, plus the Lao and
+  Somali corrections segment by segment. The ATR group in `tests/vowel_features.tcyr`,
+  which pinned the bit's absence, now pins all 22 Yoruba and Wolof vowels one by one.
+  It also checks that no consonant, no Somali vowel and no IPA string carries an ATR
+  mark. A mutation run flipping Wolof /ə/ to −ATR, which leaves every count unchanged,
+  failed in both `vowel_features` and `distinctive`; the controls passed. Two corpus counts moved by exactly these
+  changes: aspirated consonants 76 → 75 (Lao `/t͡ɕʰ/`), and long vowels 113 → 118 (Lao).
+  The corpus now has 36 tones (was 37).
+
+### Performance
+
+- **Registry JSON is 9–12% slower to write and read**, because English's document
+  grew by the 25 bytes of `,"glottocode":"stan1293"`, about 12%. Each column is a
+  separate session interleaved against a build of 2.5.2 in the same boot, reporting
+  the minimum (timer floor 1.21–1.33 µs):
+
+  | Row | Glottocodes only (min of 2) | Final tree (min of 3) |
+  |---|---|---|
+  | `json_registry_write_en` | 2,167 → 2,431 ns (+12.2%) | 2,343 → 2,545 ns (+8.6%) |
+  | `json_registry_read_en` | 7,423 → 8,278 ns (+11.5%) | 7,952 → 8,863 ns (+11.5%) |
+
+  In the final run, one other row moved by more than its own spread:
+  `swadesh_by_code_lookup`, 108 → 99 ns (−8.3%, spread under 5%), with its code
+  unchanged. That is the code-layout effect already filed in 2.5.4.
+  `lexicon_find_word`, +5.0% in an intermediate run, was back within noise. The data
+  and ATR changes are not on any benchmarked path: no benchmark covers Burmese, Lao,
+  Somali, Yoruba or Wolof. `phoneme_df` gains two bit tests on the vowel path only.
+
 ## [2.5.2] - 2026-11-05
 
 Roadmap 2.5.2 (P0), bayan / serde integration. **Every type v1.x serialized has JSON

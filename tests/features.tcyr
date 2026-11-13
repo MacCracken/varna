@@ -391,7 +391,8 @@ fn main() {
         lat2 = lat2 + _count_feature(inv4, PhonemeFeature.Lateral);
         i = i + 1;
     }
-    assert_eq(asp, 76, "76 aspirated consonants in the corpus");
+    # 76 until 2.5.3, when Lao lost /t͡ɕʰ/, a Thai segment Lao does not have.
+    assert_eq(asp, 75, "75 aspirated consonants in the corpus");
     assert_eq(bre, 15, "15 breathy consonants");
     assert_eq(pal, 16, "16 palatalized consonants");
     assert_eq(lab, 3, "3 labialized consonants");
