@@ -491,7 +491,8 @@ fn main() {
 
     test_group("corpus_wide");
     var scripts = gematria_all_scripts();
-    assert_eq(vec_len(scripts), 5, "5 scripts carry letter values");
+    # 5 until 2.6.0 added Glagolitic.
+    assert_eq(vec_len(scripts), 6, "6 scripts carry letter values");
     # Every advertised script resolves, and every one of its letters has a value
     # under all three methods.
     var unresolved = 0;
@@ -543,19 +544,21 @@ fn main() {
     assert_eq(unresolved, 0, "every advertised script resolves to an alphabet");
     assert_eq(bad, 0, "every entry has a positive standard, a 1-9 reduced, and a valid ordinal");
     assert_eq(gaps, 0, "alphabet positions run 1..N with no holes in any script");
-    assert_eq(total_entries, 136, "136 mapped characters across the five scripts");
+    assert_eq(total_entries, 165, "165 mapped characters across the six scripts (Glagolitic 29)");
 
     # Alphabet sizes, counted as POSITIONS rather than table entries: allographs
     # and numeral signs are mapped but hold no position of their own. These are
     # the MAXIMUM position in each table, not the last letter's - a last-letter
     # check passes even when an allograph is wrongly given a position of its own
     # after it, which is exactly how the Hebrew finals could regress unnoticed.
-    assert_eq(vec_len(sizes), 5, "one size per script, in gematria_all_scripts order");
+    assert_eq(vec_len(sizes), 6, "one size per script, in gematria_all_scripts order");
     assert_eq(vec_get(sizes, 0), 22, "the Hebrew alphabet has 22 positions");
     assert_eq(vec_get(sizes, 1), 28, "the Arabic abjad has 28 positions");
     assert_eq(vec_get(sizes, 2), 26, "the Latin alphabet has 26 positions");
     assert_eq(vec_get(sizes, 3), 27, "the Church Slavonic table has 27 positions");
     assert_eq(vec_get(sizes, 4), 24, "the Greek alphabet has 24 positions");
+    # 29 entries, 28 positions: initial izhe is a second form of izhe.
+    assert_eq(vec_get(sizes, 5), 28, "the Glagolitic table has 28 positions");
 
     # Every Hebrew final folds - all five, so no single one can regress alone.
     assert_eq(_ord("Hebr", "ך"), _ord("Hebr", "כ"), "final kaf folds to kaf");
@@ -571,6 +574,104 @@ fn main() {
         i = i + 1;
     }
     assert_eq(unregistered, 0, "every gematria script is a registered ISO 15924 script");
+
+    # ---------------------------------------------------------------
+    # Glagolitic (2.6.0): every value pinned, from Leskien, Vajs, Schenker, Cubberley
+    # and Everson & Cleminson, which all agree on these 29.
+    test_group("glagolitic");
+    assert_eq(_std("Glag", "ⰰ"), 1, "Glag azu (U+2C30) = 1");
+    assert_eq(_std("Glag", "ⰱ"), 2, "Glag buky (U+2C31) = 2");
+    assert_eq(_std("Glag", "ⰲ"), 3, "Glag vede (U+2C32) = 3");
+    assert_eq(_std("Glag", "ⰳ"), 4, "Glag glagoli (U+2C33) = 4");
+    assert_eq(_std("Glag", "ⰴ"), 5, "Glag dobro (U+2C34) = 5");
+    assert_eq(_std("Glag", "ⰵ"), 6, "Glag yestu (U+2C35) = 6");
+    assert_eq(_std("Glag", "ⰶ"), 7, "Glag zhivete (U+2C36) = 7");
+    assert_eq(_std("Glag", "ⰷ"), 8, "Glag dzelo (U+2C37) = 8");
+    assert_eq(_std("Glag", "ⰸ"), 9, "Glag zemlja (U+2C38) = 9");
+    assert_eq(_std("Glag", "ⰹ"), 10, "Glag izhe (U+2C39) = 10");
+    assert_eq(_std("Glag", "ⰺ"), 10, "Glag initial izhe (U+2C3A) = 10");
+    assert_eq(_std("Glag", "ⰻ"), 20, "Glag i (U+2C3B) = 20");
+    assert_eq(_std("Glag", "ⰼ"), 30, "Glag djervi (U+2C3C) = 30");
+    assert_eq(_std("Glag", "ⰽ"), 40, "Glag kako (U+2C3D) = 40");
+    assert_eq(_std("Glag", "ⰾ"), 50, "Glag ljudije (U+2C3E) = 50");
+    assert_eq(_std("Glag", "ⰿ"), 60, "Glag myslite (U+2C3F) = 60");
+    assert_eq(_std("Glag", "ⱀ"), 70, "Glag nashi (U+2C40) = 70");
+    assert_eq(_std("Glag", "ⱁ"), 80, "Glag onu (U+2C41) = 80");
+    assert_eq(_std("Glag", "ⱂ"), 90, "Glag pokoji (U+2C42) = 90");
+    assert_eq(_std("Glag", "ⱃ"), 100, "Glag ritsi (U+2C43) = 100");
+    assert_eq(_std("Glag", "ⱄ"), 200, "Glag slovo (U+2C44) = 200");
+    assert_eq(_std("Glag", "ⱅ"), 300, "Glag tvrido (U+2C45) = 300");
+    assert_eq(_std("Glag", "ⱆ"), 400, "Glag uku (U+2C46) = 400");
+    assert_eq(_std("Glag", "ⱇ"), 500, "Glag fritu (U+2C47) = 500");
+    assert_eq(_std("Glag", "ⱈ"), 600, "Glag heru (U+2C48) = 600");
+    assert_eq(_std("Glag", "ⱉ"), 700, "Glag otu (U+2C49) = 700");
+    assert_eq(_std("Glag", "ⱋ"), 800, "Glag shta (U+2C4B) = 800");
+    assert_eq(_std("Glag", "ⱌ"), 900, "Glag tsi (U+2C4C) = 900");
+    assert_eq(_std("Glag", "ⱍ"), 1000, "Glag chrivi (U+2C4D) = 1000");
+    # Its own order, not Cyrillic's: buky and zhivete carry values here.
+    assert_eq(_std("Cyrl", "б"), 0 - 1, "Cyrillic б has no value");
+    assert_eq(_std("Glag", "ⰱ"), 2, "Glagolitic buky is 2");
+    assert_eq(_ord("Glag", "ⰺ"), _ord("Glag", "ⰹ"), "initial izhe folds to izhe's position");
+    assert_eq(_ord("Glag", "ⱍ"), 28, "chrivi is the 28th position");
+    # Left out on purpose: pe has no agreed value, and the thousands above 1000 are late.
+    assert_eq(_std("Glag", "ⱊ"), 0 - 1, "pe has no value");
+    assert_eq(_std("Glag", "ⱎ"), 0 - 1, "sha carries no value here");
+    assert_eq(_std("Glag", "ⱓ"), 0 - 1, "yu carries no value here");
+    assert_eq(string_value_in("Glag", NumericSystem.NUM_STANDARD, "ⱍⱃⰰ"), 1101,
+      "chrivi + ritsi + azu = 1101");
+
+    # ---------------------------------------------------------------
+    # Mispar gadol (2.6.0): the finals take 500-900 in value order, the other 22 keep
+    # their standard values, and no other script has the method.
+    test_group("mispar_gadol");
+    var gd = NumericSystem.NUM_GADOL;
+    assert_eq(char_value("Hebr", gd, "ך"), 500, "final kaf is 500");
+    assert_eq(char_value("Hebr", gd, "ם"), 600, "final mem is 600");
+    assert_eq(char_value("Hebr", gd, "ן"), 700, "final nun is 700");
+    assert_eq(char_value("Hebr", gd, "ף"), 800, "final pe is 800");
+    assert_eq(char_value("Hebr", gd, "ץ"), 900, "final tsadi is 900");
+    assert_eq(char_value("Hebr", gd, "כ"), 20, "kaf keeps 20");
+    assert_eq(char_value("Hebr", gd, "ת"), 400, "tav keeps 400");
+    assert_eq(char_value("Hebr", gd, "א"), 1, "alef keeps 1");
+    # The finals under the standard method are unchanged.
+    assert_eq(_std("Hebr", "ם"), 40, "final mem is still 40 under the standard method");
+    # shalom: ש 300 + ל 30 + ו 6 + ם 600.
+    assert_eq(string_value_in("Hebr", gd, "שלום"), 936, "shalom under mispar gadol is 936");
+    assert_eq(char_value("Grek", gd, "α"), 0 - 1, "mispar gadol is Hebrew only");
+    assert_eq(vec_len(script_alphabet_values("Grek", gd)), 0, "and has no Greek table");
+    var heb_gd = script_alphabet_values("Hebr", gd);
+    assert_eq(vec_len(heb_gd), 27, "the Hebrew gadol table has all 27 entries");
+    assert_eq(load64(vec_get(heb_gd, 26) + 8), 900, "and ends with final tsadi at 900");
+
+    # ---------------------------------------------------------------
+    # Variant glyphs (2.6.0): read as their canonical letter, never stored as one.
+    test_group("variant_glyph_aliases");
+    assert_eq(_std("Cyrl", "ѵ"), 400, "izhitsa reads as 400");
+    assert_eq(_std("Cyrl", "ѿ"), 800, "ot reads as 800");
+    assert_eq(_std("Cyrl", "ҁ"), 90, "koppa reads as 90");
+    assert_eq(_ord("Cyrl", "ѵ"), _ord("Cyrl", "у"), "an alias takes its letter's slot");
+    assert_eq(_std("Cyrl", "ꙋ"), 0 - 1, "monograph uk has no numeric use, so no alias");
+    assert_eq(_std("Grek", "ѵ"), 0 - 1, "the aliases are Cyrillic only");
+    assert_eq(string_value_in("Cyrl", NumericSystem.NUM_STANDARD, "ѿѵ"), 1200, "ot + izhitsa = 1200");
+    # The canonical table is unchanged: no alias is an entry.
+    var cy = script_alphabet_values("Cyrl", NumericSystem.NUM_STANDARD);
+    var alias_entries = 0;
+    var ci = 0;
+    while (ci < vec_len(cy)) {
+        var cc = load64(vec_get(cy, ci));
+        if (streq(cc, "ѵ") == 1 || streq(cc, "ѿ") == 1 || streq(cc, "ҁ") == 1) { alias_entries = alias_entries + 1; }
+        ci = ci + 1;
+    }
+    assert_eq(alias_entries, 0, "no variant glyph is a table entry");
+    # Still allocation-free with the alias layer and gadol in the path.
+    var al0 = alloc_used();
+    var ai = 0;
+    while (ai < 1000) {
+        var av = string_value_in("Cyrl", NumericSystem.NUM_STANDARD, "ѿѵ");
+        var gv = string_value_in("Hebr", gd, "שלום");
+        ai = ai + 1;
+    }
+    assert_eq(alloc_used() - al0, 0, "aliases and mispar gadol allocate nothing");
 
     # ---------------------------------------------------------------
     test_group("existing_numerals_unchanged");

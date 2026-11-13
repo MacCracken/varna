@@ -145,21 +145,22 @@ fn main() {
 
     # ---------------------------------------------------------------
     test_group("vietnamese");
-    # Six tones, two of them glottalised: ngã (˧ˀ˥) and nặng (˨˩ˀ).
+    # All six pinned by index: Kirby (2011), the JIPA Illustration, p. 386. Re-sourced
+    # at 2.6.0 from a row whose hỏi, ngã and nặng were Wikipedia's uncited column.
+    # ngã and nặng carry ˀ for Kirby's "broken" and "low glottalized".
     var vi = phoneme_vietnamese();
     assert_eq(vec_len(phoneme_tones(vi)), 6, "Vietnamese has 6 tones");
-    _tone_is(vi, 4, "˧ˀ˥", ToneContour.TONE_RISING, ToneRegister.TONE_HIGH, 3, 5,
-      ToneFeature.TONE_GLOTTALIZED, "ngã is a glottalized rise");
-    _tone_is(vi, 5, "˨˩ˀ", ToneContour.TONE_FALLING, ToneRegister.TONE_LOW, 2, 1,
-      ToneFeature.TONE_GLOTTALIZED, "nặng is a glottalized fall");
-    _tone_is(vi, 3, "˧˩˧", ToneContour.TONE_DIPPING, ToneRegister.TONE_LOW, 3, 3, 0,
-      "hỏi dips and returns to its starting pitch");
-    # huyền was ˨˩˦ until 2.4.1 — Mandarin's third tone, and a dipping contour no
-    # description of Vietnamese gives it. It is a low fall. Unpinned, it survived.
-    _tone_is(vi, 1, "˨˩", ToneContour.TONE_FALLING, ToneRegister.TONE_LOW, 2, 1, 0,
-      "huyền is a low fall, not a dip");
-    _tone_is(vi, 0, "˧", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3, 0, "ngang is mid level");
-    _tone_is(vi, 2, "˧˥", ToneContour.TONE_RISING, ToneRegister.TONE_HIGH, 3, 5, 0, "sắc rises");
+    _tone_is(vi, 0, "˦", ToneContour.TONE_LEVEL, ToneRegister.TONE_HIGH, 4, 4, 0, "ngang is level, 44");
+    # huyền was ˨˩˦ until 2.4.1, Mandarin's third tone; it is a fall.
+    _tone_is(vi, 1, "˧˨", ToneContour.TONE_FALLING, ToneRegister.TONE_MID, 3, 2, 0,
+      "huyền is a mid fall, 32");
+    _tone_is(vi, 2, "˨˦", ToneContour.TONE_RISING, ToneRegister.TONE_MID, 2, 4, 0, "sắc rises, 24");
+    _tone_is(vi, 3, "˧˩˨", ToneContour.TONE_DIPPING, ToneRegister.TONE_LOW, 3, 2, 0,
+      "hỏi falls low and turns, 312");
+    _tone_is(vi, 4, "˧˨˥ˀ", ToneContour.TONE_DIPPING, ToneRegister.TONE_MID, 3, 5,
+      ToneFeature.TONE_GLOTTALIZED, "ngã is broken, 325");
+    _tone_is(vi, 5, "˨ˀ", ToneContour.TONE_LEVEL, ToneRegister.TONE_LOW, 2, 2,
+      ToneFeature.TONE_GLOTTALIZED, "nặng is low and glottalized, 22");
     var glot_count = 0;
     var ts = phoneme_tones(vi);
     i = 0;
@@ -179,18 +180,16 @@ fn main() {
     test_group("thai");
     var th = phoneme_thai();
     assert_eq(vec_len(phoneme_tones(th)), 5, "Thai has 5 tones");
-    _tone_is(th, 0, "˧", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3, 0, "samman is mid level");
-    _tone_is(th, 1, "˨˩", ToneContour.TONE_FALLING, ToneRegister.TONE_LOW, 2, 1, 0, "ek is low");
-    _tone_is(th, 2, "˦˩", ToneContour.TONE_FALLING, ToneRegister.TONE_MID, 4, 1, 0, "tho falls");
-    _tone_is(th, 3, "˦˥", ToneContour.TONE_RISING, ToneRegister.TONE_HIGH, 4, 5, 0, "tri is high");
-    _tone_is(th, 4, "˨˩˦", ToneContour.TONE_DIPPING, ToneRegister.TONE_LOW, 2, 4, 0, "chattawa dips then rises");
-    # Thai must have exactly one falling-to-the-floor contour and one rise. The old
-    # list had two rising shapes and no phonemic fall at all.
-    assert(_count_contour(th, ToneContour.TONE_DIPPING) == 1, "exactly one Thai rising tone");
-    # ˨˩˦ is genuinely shared with Mandarin's third tone — a real coincidence, and NOT
-    # the copy-paste the roadmap once diagnosed. Both languages have a concave low rise.
-    assert_eq(_std_tone_letters(th, 4), _std_tone_letters(phoneme_mandarin(), 2),
-      "Thai chattawa and Mandarin tone 3 share a value, correctly");
+    # Teeranon (2007, p. 1), after Abramson: 33 / 21 / 43 / 44~45 / 323. Re-sourced at
+    # 2.6.0 from 33 / 21 / 41 / 45 / 214, which was Wikipedia's uncited column credited
+    # to Tingsabadh & Abramson (1993), who print no numbers.
+    _tone_is(th, 0, "˧", ToneContour.TONE_LEVEL, ToneRegister.TONE_MID, 3, 3, 0, "samman is mid level, 33");
+    _tone_is(th, 1, "˨˩", ToneContour.TONE_FALLING, ToneRegister.TONE_LOW, 2, 1, 0, "ek is low, 21");
+    _tone_is(th, 2, "˦˧", ToneContour.TONE_FALLING, ToneRegister.TONE_HIGH, 4, 3, 0, "tho falls, 43");
+    _tone_is(th, 3, "˦˥", ToneContour.TONE_RISING, ToneRegister.TONE_HIGH, 4, 5, 0, "tri is high, 45");
+    _tone_is(th, 4, "˧˨˧", ToneContour.TONE_DIPPING, ToneRegister.TONE_MID, 3, 3, 0, "chattawa dips and rises, 323");
+    # Exactly one fall from the top half and one dip-rise, as every description has.
+    assert(_count_contour(th, ToneContour.TONE_DIPPING) == 1, "exactly one Thai dipping tone");
 
     # ---------------------------------------------------------------
     test_group("checked_tones");

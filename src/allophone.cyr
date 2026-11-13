@@ -194,3 +194,231 @@ fn allophone_english() {
     _c_allophone_english = s;
     return _c_allophone_english;
 }
+
+# --- Lookup by language (2.6.0) ------------------------------------
+# The same shape as grammar_by_code and swadesh_by_code. Each set is cached, so
+# a caller gets the same record back on every call.
+
+# The rule set for an ISO 639 code, or 0 when the corpus has none for it.
+#must_use
+fn allophone_by_code(code) {
+    if (code == 0) { return 0; }
+    if (streq(code, "en") == 1) { return allophone_english(); }
+    if (streq(code, "es") == 1) { return allophone_spanish(); }
+    if (streq(code, "ja") == 1) { return allophone_japanese(); }
+    if (streq(code, "ru") == 1) { return allophone_russian(); }
+    if (streq(code, "zh") == 1) { return allophone_mandarin(); }
+    if (streq(code, "ar") == 1) { return allophone_arabic(); }
+    return 0;
+}
+
+var _c_allophone_all_codes = 0;
+# Every code with a rule set, in the order they were added — vec of cstrings.
+fn allophone_all_codes() {
+    if (_c_allophone_all_codes != 0) { return _c_allophone_all_codes; }
+    var c = vec_new();
+    vec_push(c, "en");
+    vec_push(c, "es");
+    vec_push(c, "ja");
+    vec_push(c, "ru");
+    vec_push(c, "zh");
+    vec_push(c, "ar");
+    _c_allophone_all_codes = c;
+    return _c_allophone_all_codes;
+}
+
+# --- The 2.6.0 rule sets -------------------------------------------
+# Each set comes from ONE description, the language's JIPA Illustration of the IPA,
+# and holds only the rules whose environment this model states exactly. A rule whose
+# real environment the model cannot say ("elsewhere", "in a syllable closed by a
+# nasal", "after a palatalized consonant") is listed in the set's comment and NOT
+# encoded: a nearby environment would state something the source does not.
+# "Before a voiced consonant" is spelled out as one rule per consonant, because the
+# Voiced class is a label (nothing evaluates it) and would read as including vowels.
+
+# Before(Specific(seg)) for one IPA segment.
+fn _env_before(seg) { return EnvBefore(ClassSpecific(seg)); }
+fn _env_after(seg) { return EnvAfter(ClassSpecific(seg)); }
+
+# One rule per segment in `segs`, all with the same phoneme, allophone and Before side.
+fn _aset_add_before_each(s, phoneme, allophone, segs, obligatory) {
+    var i = 0;
+    while (i < vec_len(segs)) {
+        _aset_add(s, phoneme, allophone, _env_before(vec_get(segs, i)), obligatory);
+        i = i + 1;
+    }
+    return s;
+}
+
+var _c_allophone_spanish = 0;
+# Castilian Spanish: Martínez-Celdrán, Fernández-Planas & Carrera-Sabaté (2003), JIPA
+# 33(2), pp. 257-258.
+#   Nasal place: "The place of articulation of nasal consonants in syllabic codas is
+#     always the same as that of any following consonant": ánfora [ˈaɱfoɾa], encía
+#     [en̟ˈθia], antes, ancha, banco. Encoded for the places the examples show.
+#   Voicing: θ "like [s], becomes voiced before a voiced consonant" (rasgo [ˈrazɣo]).
+#   /s/ "often becomes dental before a denti-alveolar consonant" (optional).
+#   /x/ "can be pronounced uvular before a back vowel and the semivowel [w]" (optional).
+#   /l/ "can become interdentalised, dentalised" before those places (optional).
+# NOT encoded: spirantization of /b d ɡ/ to [β̞ ð̞ ɣ̞] (their environment is "in other
+#   positions" than after a pause, a nasal, or for /d/ a lateral: an elsewhere case);
+#   /ɟ͡ʝ/ → [ʝ̞] "in all other contexts"; /l/ palatalized (the source names a place, not
+#   segments); vowel nasalization between nasals; coda /b d ɡ/ deletion.
+fn allophone_spanish() {
+    if (_c_allophone_spanish != 0) { return _c_allophone_spanish; }
+    var s = _aset_new("es");
+    _aset_add(s, "n", "m", _env_before("p"), 1);
+    _aset_add(s, "n", "m", _env_before("b"), 1);
+    _aset_add(s, "n", "ɱ", _env_before("f"), 1);
+    _aset_add(s, "n", "n̟", _env_before("θ"), 1);
+    _aset_add(s, "n", "n̪", _env_before("t"), 1);
+    _aset_add(s, "n", "n̪", _env_before("d"), 1);
+    _aset_add(s, "n", "nʲ", _env_before("t͡ʃ"), 1);
+    _aset_add(s, "n", "ŋ", _env_before("k"), 1);
+    _aset_add(s, "n", "ŋ", _env_before("ɡ"), 1);
+    _aset_add(s, "n", "ŋ", _env_before("x"), 1);
+    var voiced = vec_new();
+    vec_push(voiced, "b");
+    vec_push(voiced, "d");
+    vec_push(voiced, "ɡ");
+    vec_push(voiced, "ɟ͡ʝ");
+    vec_push(voiced, "m");
+    vec_push(voiced, "n");
+    vec_push(voiced, "ɲ");
+    vec_push(voiced, "l");
+    vec_push(voiced, "ʎ");
+    vec_push(voiced, "ɾ");
+    vec_push(voiced, "r");
+    _aset_add_before_each(s, "s", "z", voiced, 1);
+    _aset_add_before_each(s, "θ", "θ̬", voiced, 1);
+    _aset_add(s, "s", "s̪", _env_before("t"), 0);
+    _aset_add(s, "s", "s̪", _env_before("d"), 0);
+    _aset_add(s, "x", "χ", _env_before("u"), 0);
+    _aset_add(s, "x", "χ", _env_before("o"), 0);
+    _aset_add(s, "x", "χ", _env_before("w"), 0);
+    _aset_add(s, "l", "l̟", _env_before("θ"), 0);
+    _aset_add(s, "l", "l̪", _env_before("t"), 0);
+    _aset_add(s, "l", "l̪", _env_before("d"), 0);
+    _c_allophone_spanish = s;
+    return _c_allophone_spanish;
+}
+
+var _c_allophone_japanese = 0;
+# Tokyo Japanese: Okada (1991), JIPA 21(2), p. 95.
+#   "/tˢ/ is normally [ts] but becomes [tɕ] before /i/"
+#   "/s/ and /z/ are [ɕ] and [ʑ] before /i/"
+#   "/z/ may be [ᵈz] initially ([ᵈʑ] before /i/) and after /N/" (optional)
+#   "/h/ tends towards [ç] and [ɸ] before /i/ and /u/ respectively" (optional)
+#   /g/ among younger speakers "often tends to become [ɣ] between vowels" (optional)
+#   "Consonants, and notably /n/, are generally strongly palatalized before /i/"
+#     (optional; ʲ is the IPA mark for "palatalized", Okada gives no symbol)
+# NOT encoded: /g/ → [ŋ] "medially" (no exact environment); high-vowel devoicing
+#   "between voiceless consonants" except in accented syllables; final /su/ → [s]; /ɴ/'s
+#   homorganic place; [ᵈʑ] word-initially before /i/ (two conditions at once).
+fn allophone_japanese() {
+    if (_c_allophone_japanese != 0) { return _c_allophone_japanese; }
+    var s = _aset_new("ja");
+    _aset_add(s, "t͡s", "t͡ɕ", _env_before("i"), 1);
+    _aset_add(s, "s", "ɕ", _env_before("i"), 1);
+    _aset_add(s, "z", "ʑ", _env_before("i"), 1);
+    _aset_add(s, "z", "ᵈz", Environment.WordInitial, 0);
+    _aset_add(s, "z", "ᵈz", _env_after("ɴ"), 0);
+    _aset_add(s, "h", "ç", _env_before("i"), 0);
+    _aset_add(s, "h", "ɸ", _env_before("u"), 0);
+    _aset_add(s, "ɡ", "ɣ", Environment.Intervocalic, 0);
+    _aset_add(s, "n", "nʲ", _env_before("i"), 0);
+    _c_allophone_japanese = s;
+    return _c_allophone_japanese;
+}
+
+var _c_allophone_russian = 0;
+# Russian (St. Petersburg standard): Yanushevskaya & Bunčić (2015), JIPA 45(2).
+#   Final devoicing: "only voiceless but no voiced obstruents occur word-finally"
+#     (p. 223), each to its voiceless partner in the chart (p. 222).
+#   Vowel reduction (p. 225): "/o/ is replaced with /a/", and /a/ "is realised as [ʌ]
+#     or [ɐ] in the first degree of reduction (the former is characteristic of
+#     St. Petersburg...) and as [ə] in the second". The first degree is "the syllable
+#     immediately before the stressed syllable" (PreStress here); the second applies
+#     "to all other unstressed syllables" (Unstressed here, which in this set means
+#     unstressed and not immediately before the stress).
+#   /j/ is "a semivowel [i̯] (especially when unstressed)" (p. 223, optional).
+# NOT encoded: regressive voicing assimilation (needs a class "voiced obstruent other
+#   than /v vʲ/"); /e/ → /i/ or /ɨ/ unstressed (no condition given for which);
+#   ikanye after palatalized consonants; [æ] between palatalized consonants;
+#   labialization before /o u/ (one rule per consonant); /ɨ/ "tends to be
+#   diphthongised ... particularly when word-final" (p. 225: no target symbol given).
+fn allophone_russian() {
+    if (_c_allophone_russian != 0) { return _c_allophone_russian; }
+    var s = _aset_new("ru");
+    var wf = Environment.WordFinal;
+    _aset_add(s, "b", "p", wf, 1);
+    _aset_add(s, "bʲ", "pʲ", wf, 1);
+    _aset_add(s, "d", "t", wf, 1);
+    _aset_add(s, "dʲ", "tʲ", wf, 1);
+    _aset_add(s, "ɡ", "k", wf, 1);
+    _aset_add(s, "ɡʲ", "kʲ", wf, 1);
+    _aset_add(s, "v", "f", wf, 1);
+    _aset_add(s, "vʲ", "fʲ", wf, 1);
+    _aset_add(s, "z", "s", wf, 1);
+    _aset_add(s, "zʲ", "sʲ", wf, 1);
+    _aset_add(s, "ʒ", "ʃ", wf, 1);
+    _aset_add(s, "o", "ʌ", Environment.PreStress, 1);
+    _aset_add(s, "a", "ʌ", Environment.PreStress, 1);
+    _aset_add(s, "o", "ə", Environment.Unstressed, 1);
+    _aset_add(s, "a", "ə", Environment.Unstressed, 1);
+    _aset_add(s, "j", "i̯", Environment.Unstressed, 0);
+    _c_allophone_russian = s;
+    return _c_allophone_russian;
+}
+
+var _c_allophone_mandarin = 0;
+# Standard Chinese (Beijing): Lee & Zee (2003), JIPA 33(1), p. 111.
+#   "In open syllables, [i, y, u] are about cardinal, [a] = [a̠]"
+#   "in open syllables [ə] is rhotacized, i.e. [ɚ]"
+# SyllableFinal is exact for both: a and ə are monophthong units here (diphthongs are
+# separate units), so the vowel ends its syllable exactly when the syllable is open.
+# NOT encoded: [a] = [a̟] and [u] = [ʊ] "in syllables closed by a nasal" (a nasal in
+#   the same syllable, which Before(Nasal) does not say); [ɤ] "slightly diphthongized
+#   from [ɤ] to [ʌ]" (no symbol given); voicing of syllable-initial obstruents before
+#   the neutral tone (a tone, not stress); "[w] has a free variant form of [ʋ]" (no
+#   environment); er-hua and tone sandhi.
+fn allophone_mandarin() {
+    if (_c_allophone_mandarin != 0) { return _c_allophone_mandarin; }
+    var s = _aset_new("zh");
+    _aset_add(s, "a", "a̠", Environment.SyllableFinal, 1);
+    _aset_add(s, "ə", "ɚ", Environment.SyllableFinal, 1);
+    _c_allophone_mandarin = s;
+    return _c_allophone_mandarin;
+}
+
+var _c_allophone_arabic = 0;
+# Arabic, spoken Modern Standard Arabic as read by one speaker of Levantine background:
+# Thelwall & Sa'adeddin (1990), JIPA 20(2), pp. 38-39.
+#   "/tˤ,dˤ,sˤ,ðˤ/ are Retracted Tongue Root ... /ʕ/ is a Retracted Tongue Root glottal
+#     stop" (p. 38): the five consonants the vowel rules name as RTR.
+#   "/a/ has three main allophones: [ɑ] before Retracted Tongue Root consonants, [ɐ]
+#     before word boundary, and [a] elsewhere, taking phonological length into
+#     account" (p. 39). So /aː/ → [ɑː] before them too.
+#   "/i/ and /ij/ become [ɨ] before Retracted Tongue Root and pharyngeal consonants":
+#     the five RTR consonants and pharyngeal /ħ/. Encoded for short /i/.
+# NOT encoded: emphasis spread over the whole lexeme in both directions, blocked only
+#   by /j/ (p. 38); "/u/ and /uw/ become [ʊ] and [ɤ]" (which goes with which is not
+#   stated); /iː/ (whether [ɨ] keeps its length is not stated); word-final /aː/ (its
+#   length "is neutralised", to what is not stated).
+fn allophone_arabic() {
+    if (_c_allophone_arabic != 0) { return _c_allophone_arabic; }
+    var s = _aset_new("ar");
+    var rtr = vec_new();
+    vec_push(rtr, "tˤ");
+    vec_push(rtr, "dˤ");
+    vec_push(rtr, "sˤ");
+    vec_push(rtr, "ðˤ");
+    vec_push(rtr, "ʕ");
+    _aset_add_before_each(s, "a", "ɑ", rtr, 1);
+    _aset_add_before_each(s, "aː", "ɑː", rtr, 1);
+    _aset_add(s, "a", "ɐ", Environment.WordFinal, 1);
+    _aset_add_before_each(s, "i", "ɨ", rtr, 1);
+    _aset_add(s, "i", "ɨ", _env_before("ħ"), 1);
+    _c_allophone_arabic = s;
+    return _c_allophone_arabic;
+}

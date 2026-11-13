@@ -270,10 +270,20 @@ fn numerals_chinese_rod_numerals() {
 # `NumeralSystemKind` (Decimal / Alphabetic / Other) on each record, and is what
 # `numerals_string_value` implements. Adding it here would have been a fourth enum
 # value that no lookup could answer differently from Standard.
+#
+# NUM_GADOL (2.6.0) is mispar gadol, a Hebrew method: the five final forms count as
+# the hundreds after tav, ך 500, ם 600, ן 700, ף 800, ץ 900, and the other 22 letters
+# keep their standard values (Jewish Encyclopedia, "Gematria", no. 11: "the final
+# letters count as hundreds"; Avodat Yisrael, Balak 2, for ך 500 and ם 600, with the
+# atbash pairs fixing ף 800 and ץ 900). The order is by value, NOT the order of the
+# mnemonic מנצפ״ך. It is the first method that needs data the standard table does not
+# carry, so the five values live in _gadol_final. Mispar gadol exists only for
+# Hebrew, so for any other script it reports unmapped rather than inventing a value.
 enum NumericSystem {
     NUM_STANDARD = 0;   # the letter's own numeral value (Hebrew ת = 400)
     NUM_ORDINAL = 1;    # its position in the alphabet (Hebrew ת = 22)
     NUM_REDUCED = 2;    # the standard value's digital root (Hebrew ת = 4)
+    NUM_GADOL = 3;      # mispar gadol, Hebrew only: finals 500-900 (Hebrew ץ = 900)
 }
 
 # Digital root: repeatedly sum decimal digits until a single digit remains. For the
@@ -299,6 +309,7 @@ fn gematria_by_script(code) {
     if (streq(code, "Latn") == 1) { return gematria_latin(); }
     if (streq(code, "Cyrl") == 1) { return gematria_cyrillic(); }
     if (streq(code, "Grek") == 1) { return numerals_greek_isopsephy(); }
+    if (streq(code, "Glag") == 1) { return gematria_glagolitic(); }
     return 0;
 }
 
@@ -312,6 +323,7 @@ fn gematria_all_scripts() {
     vec_push(c, "Latn");
     vec_push(c, "Cyrl");
     vec_push(c, "Grek");
+    vec_push(c, "Glag");
     _c_gematria_all_scripts = c;
     return _c_gematria_all_scripts;
 }
@@ -381,10 +393,62 @@ fn _char_value_bytes(ms, system, ch, len) {
     return 0 - 1;
 }
 
+# Mispar gadol's value for a Hebrew final form, or 0 when `ch` is not one.
+fn _gadol_final(ch, len) {
+    if (len != 2) { return 0; }
+    if (memeq(ch, "ך", 2) == 1) { return 500; }
+    if (memeq(ch, "ם", 2) == 1) { return 600; }
+    if (memeq(ch, "ן", 2) == 1) { return 700; }
+    if (memeq(ch, "ף", 2) == 1) { return 800; }
+    if (memeq(ch, "ץ", 2) == 1) { return 900; }
+    return 0;
+}
+
+# --- Variant glyphs (2.6.0) -------------------------------------------
+# A decode-side alias layer: a variant glyph is read as its canonical letter, so the
+# canonical tables stay one entry per slot (see architecture note 001, which is why
+# these must never go into a table). Church Slavonic only, verified per glyph:
+#   ѵ izhitsa (U+0475) → у, 400. The 400 of Old Church Slavonic (Leskien 1922 p. 5;
+#       Schenker 1995 p. 182). Synodal Church Slavonic writes 400 with у instead
+#       (Unicode Technical Note #41, Table 15).
+#   ѿ ot (U+047F), the ligature of ѡ and т → ѡ, 800, the usual form in Synodal
+#       printing (UTN #41, pp. 16, 74).
+#   ҁ koppa (U+0481) → ч, 90, the earlier ustav period's 90 before ч took the slot
+#       (UTN #41, pp. 16, 64).
+# Not aliased: monograph uk ꙋ (U+A64B). It is a glyph of оу, but no source shows it
+# used as a numeral (Cleminson, L2/06-359, p. 3; UTN #41 omits it).
+# An alias reads its canonical letter under every method, ordinal included, because
+# it fills that letter's slot. Only the lowercase forms are aliased, as the tables
+# map lowercase only.
+fn _numerals_alias(script_code, ch, len) {
+    if (len != 2) { return 0; }
+    if (streq(script_code, "Cyrl") == 0) { return 0; }
+    if (memeq(ch, "ѵ", 2) == 1) { return "у"; }
+    if (memeq(ch, "ѿ", 2) == 1) { return "ѡ"; }
+    if (memeq(ch, "ҁ", 2) == 1) { return "ч"; }
+    return 0;
+}
+
+# The value of the `len` bytes at `ch` in a script's table under one method, with
+# mispar gadol and the alias layer applied. Allocates nothing.
+fn _lookup_value(script_code, ms, system, ch, len) {
+    if (system == NumericSystem.NUM_GADOL) {
+        if (streq(script_code, "Hebr") == 0) { return 0 - 1; }
+        var g = _gadol_final(ch, len);
+        if (g > 0) { return g; }
+        return _char_value_bytes(ms, NumericSystem.NUM_STANDARD, ch, len);
+    }
+    var v = _char_value_bytes(ms, system, ch, len);
+    if (v >= 0) { return v; }
+    var a = _numerals_alias(script_code, ch, len);
+    if (a == 0) { return 0 - 1; }
+    return _char_value_bytes(ms, system, a, strlen(a));
+}
+
 fn char_value(script_code, system, ch) {
     var sys = gematria_by_script(script_code);
     if (sys == 0) { return 0 - 1; }
-    return _char_value_bytes(numerals_mappings(sys), system, ch, strlen(ch));
+    return _lookup_value(script_code, numerals_mappings(sys), system, ch, strlen(ch));
 }
 
 # Sum of a string's character values under one method. (0-1) if any character is
@@ -398,7 +462,7 @@ fn string_value_in(script_code, system, s) {
     var n = strlen(s);
     while (p < n) {
         var len = _utf8_step(s, p, n);
-        var v = _char_value_bytes(ms, system, s + p, len);
+        var v = _lookup_value(script_code, ms, system, s + p, len);
         if (v < 0) { return 0 - 1; }
         total = total + v;
         p = p + len;
@@ -413,8 +477,8 @@ fn string_value_in(script_code, system, s) {
 # Under NUM_ORDINAL a numeral sign's slot holds the unmapped sentinel (0-1), since
 # it carries a value but no alphabet position; the pairs are not all positive.
 #
-# CACHED since 2.5.4, like every other table in this file. There are only 15
-# possible results (5 scripts x 3 methods). Until 2.5.4 each call built a fresh
+# CACHED since 2.5.4, like every other table in this file. There are only 24
+# possible results (6 scripts x 4 methods, since 2.6.0). Until 2.5.4 each call built a fresh
 # ~856 B table, and the bump allocator never frees, so a caller in a loop grew the
 # heap without bound. Now the first call for a (script, method) builds its table
 # and every later call returns the SAME vec and the same pair records, allocating
@@ -425,17 +489,23 @@ fn string_value_in(script_code, system, s) {
 # Copy it first if you need to edit it. Every unknown script shares one empty vec,
 # so the same holds there.
 #
-# A `system` other than NUM_ORDINAL or NUM_REDUCED reads as NUM_STANDARD, as it
-# always has here and in char_value, and shares the standard table.
-var _c_alpha_tables = 0;   # 15 slots, [script index * 3 + method], 0 until built
+# A `system` other than NUM_ORDINAL, NUM_REDUCED or NUM_GADOL reads as NUM_STANDARD,
+# as it always has here and in char_value, and shares the standard table. NUM_GADOL
+# on a script other than Hebrew has no table, and returns the shared empty vec.
+# The tables are canonical: the alias layer's variant glyphs are not in them.
+var _c_alpha_tables = 0;   # 24 slots, [script index * 4 + method], 0 until built
 var _c_alpha_empty = 0;    # the one empty table every unknown script gets
 
 fn script_alphabet_values(script_code, system) {
     var scripts = gematria_all_scripts();
     var si = 0 - 1;
     var k = 0;
+    # Stop at the match: every script past it is one more string compare per call.
     while (k < vec_len(scripts)) {
-        if (streq(vec_get(scripts, k), script_code) == 1) { si = k; }
+        if (streq(vec_get(scripts, k), script_code) == 1) {
+            si = k;
+            break;
+        }
         k = k + 1;
     }
     if (si < 0) {
@@ -445,8 +515,15 @@ fn script_alphabet_values(script_code, system) {
     var mi = 0;
     if (system == NumericSystem.NUM_ORDINAL) { mi = 1; }
     elif (system == NumericSystem.NUM_REDUCED) { mi = 2; }
+    elif (system == NumericSystem.NUM_GADOL) { mi = 3; }
+    if (mi == 3) {
+        if (streq(script_code, "Hebr") == 0) {
+            if (_c_alpha_empty == 0) { _c_alpha_empty = vec_new(); }
+            return _c_alpha_empty;
+        }
+    }
     if (_c_alpha_tables == 0) {
-        var slots = vec_len(scripts) * 3;
+        var slots = vec_len(scripts) * 4;
         _c_alpha_tables = alloc(slots * 8);
         var z = 0;
         while (z < slots) {
@@ -454,18 +531,20 @@ fn script_alphabet_values(script_code, system) {
             z = z + 1;
         }
     }
-    var slot = _c_alpha_tables + (si * 3 + mi) * 8;
+    var slot = _c_alpha_tables + (si * 4 + mi) * 8;
     if (load64(slot) == 0) {
         store64(slot, _alphabet_table_build(gematria_by_script(script_code), mi));
     }
     return load64(slot);
 }
 
-# Build one (script, method) table. `method` is 0 standard, 1 ordinal, 2 reduced.
+# Build one (script, method) table. `method` is 0 standard, 1 ordinal, 2 reduced,
+# 3 gadol (Hebrew only; the caller has already refused other scripts).
 fn _alphabet_table_build(sys, method) {
     var system = NumericSystem.NUM_STANDARD;
     if (method == 1) { system = NumericSystem.NUM_ORDINAL; }
     if (method == 2) { system = NumericSystem.NUM_REDUCED; }
+    if (method == 3) { system = NumericSystem.NUM_GADOL; }
     var out = vec_new();
     var ms = numerals_mappings(sys);
     var n = vec_len(ms);
@@ -483,6 +562,11 @@ fn _alphabet_table_build(sys, method) {
             else { store64(pair + 8, _ordinal_at(ms, i)); }
         }
         elif (system == NumericSystem.NUM_REDUCED) { store64(pair + 8, _digital_root(load64(m + 16))); }
+        elif (system == NumericSystem.NUM_GADOL) {
+            var g = _gadol_final(load64(m), load64(m + 8));
+            if (g > 0) { store64(pair + 8, g); }
+            else { store64(pair + 8, load64(m + 16)); }
+        }
         else { store64(pair + 8, load64(m + 16)); }
         vec_push(out, pair);
         i = i + 1;
@@ -652,17 +736,19 @@ var _c_gematria_cyrillic = 0;
 # Cyrillic while big yus carries nothing. я is absent as the modern ia-ligature;
 # for early material the glyph written for /ja/ is ѧ, which is 900.
 #
-# Scope. This is the standardised (post-1300) recension. Before roughly 1300, 90
-# is koppa ҁ and ч has no value; some Western Cyrillic varieties instead give
-# ч=60 and ҁ=90. Variant glyphs exist for two slots — 400 is у, ѹ, ѵ (izhitsa)
-# or ꙋ, and 800 is ѡ or ѿ (ot) — and only the conventional carrier is mapped
-# here. Glagolitic is a different system entirely, numbering in its own
-# alphabetical order, where buky=2 and zhivete=7 rather than nothing; it would
-# be a separate "Glag" table, not an edit to this one.
+# Scope. This is the standardised recension. In the earlier ustav period 90 is
+# koppa ҁ and ч has no value (Unicode Technical Note #41, pp. 16, 64; the date of
+# the change, often given as about 1300, was not verified). Some Western Cyrillic
+# varieties instead give ч=60 and ҁ=90. Variant glyphs exist for two slots: 400
+# is у or ѵ (izhitsa, the Old Church Slavonic form), and 800 is ѡ or ѿ (ot, the
+# Synodal form). Only the conventional carrier is mapped here. Monograph uk ꙋ is
+# NOT a 400 glyph: no source shows it used as a numeral (corrected at 2.6.0).
+# Glagolitic is a different system, numbering in its own alphabetical order
+# (buky=2, zhivete=7): see gematria_glagolitic.
 #
-# Variant glyphs and period alternatives stay OUT of this table on purpose. It
-# is a canonical alphabet, and a decoder that must accept them wants an alias
-# map that normalises a glyph to its canonical letter before lookup.
+# Variant glyphs and period alternatives stay OUT of this table on purpose. It is a
+# canonical alphabet. Since 2.6.0 the alias layer (_numerals_alias) reads ѵ, ѿ and
+# ҁ as their canonical letters before lookup, so char_value accepts them.
 fn gematria_cyrillic() {
     if (_c_gematria_cyrillic != 0) { return _c_gematria_cyrillic; }
     var sys = _nsys_new("Cyrl", "Church Slavonic Numerals (standardised recension)", NumeralSystemKind.Alphabetic);
@@ -695,4 +781,58 @@ fn gematria_cyrillic() {
     _nsys_add(sys, "ц", 900);
     _c_gematria_cyrillic = sys;
     return _c_gematria_cyrillic;
+}
+
+var _c_gematria_glagolitic = 0;
+# Glagolitic numerals (2.6.0), the letters' values in Glagolitic's own alphabetical
+# order, which differs from Cyrillic's: buky is 2 and zhivete 7, where Cyrillic gives
+# both no value. Every value below is in each of Leskien (1922, pp. 4-5), Vajs (1932,
+# p. 18), Schenker (1995, p. 182), Cubberley in Daniels & Bright (1996, Table 27.1)
+# and Everson & Cleminson (WG2 N2610R, 2003, p. 5). Code points are the small
+# letters, U+2C30-U+2C4D, checked against UnicodeData.txt.
+#
+# Initial izhe is a second form of izhe, both 10, so it is an allograph and folds to
+# izhe's position. The ordinal is the position in this numeral table, as for the
+# Cyrillic one, not in the full alphabet: valueless letters are not in it.
+#
+# Left out on purpose, because the sources disagree or only a late one has them: pe
+# (no value; some scholars put it at 800 before shta took the slot, Schenker p. 172);
+# yat as 800 (one 1391 breviary, per Vajs n. 19); and the thousands above 1000, sha
+# 2000, yeru 3000, yu 5000 (Everson & Cleminson, "fifteenth-century evidence"; Vajs
+# calls the higher cases isolated). The other letters, the yers, the yuses, fita and
+# izhitsa, carry no value in any of the sources.
+fn gematria_glagolitic() {
+    if (_c_gematria_glagolitic != 0) { return _c_gematria_glagolitic; }
+    var sys = _nsys_new("Glag", "Glagolitic Numerals", NumeralSystemKind.Alphabetic);
+    _nsys_add(sys, "ⰰ", 1);   # U+2C30 azu
+    _nsys_add(sys, "ⰱ", 2);   # U+2C31 buky
+    _nsys_add(sys, "ⰲ", 3);   # U+2C32 vede
+    _nsys_add(sys, "ⰳ", 4);   # U+2C33 glagoli
+    _nsys_add(sys, "ⰴ", 5);   # U+2C34 dobro
+    _nsys_add(sys, "ⰵ", 6);   # U+2C35 yestu
+    _nsys_add(sys, "ⰶ", 7);   # U+2C36 zhivete
+    _nsys_add(sys, "ⰷ", 8);   # U+2C37 dzelo
+    _nsys_add(sys, "ⰸ", 9);   # U+2C38 zemlja
+    _nsys_add(sys, "ⰹ", 10);   # U+2C39 izhe
+    _nsys_add_variant(sys, "ⰺ", 10, "ⰹ");   # U+2C3A initial izhe, a form of izhe
+    _nsys_add(sys, "ⰻ", 20);   # U+2C3B i
+    _nsys_add(sys, "ⰼ", 30);   # U+2C3C djervi
+    _nsys_add(sys, "ⰽ", 40);   # U+2C3D kako
+    _nsys_add(sys, "ⰾ", 50);   # U+2C3E ljudije
+    _nsys_add(sys, "ⰿ", 60);   # U+2C3F myslite
+    _nsys_add(sys, "ⱀ", 70);   # U+2C40 nashi
+    _nsys_add(sys, "ⱁ", 80);   # U+2C41 onu
+    _nsys_add(sys, "ⱂ", 90);   # U+2C42 pokoji
+    _nsys_add(sys, "ⱃ", 100);   # U+2C43 ritsi
+    _nsys_add(sys, "ⱄ", 200);   # U+2C44 slovo
+    _nsys_add(sys, "ⱅ", 300);   # U+2C45 tvrido
+    _nsys_add(sys, "ⱆ", 400);   # U+2C46 uku
+    _nsys_add(sys, "ⱇ", 500);   # U+2C47 fritu
+    _nsys_add(sys, "ⱈ", 600);   # U+2C48 heru
+    _nsys_add(sys, "ⱉ", 700);   # U+2C49 otu
+    _nsys_add(sys, "ⱋ", 800);   # U+2C4B shta
+    _nsys_add(sys, "ⱌ", 900);   # U+2C4C tsi
+    _nsys_add(sys, "ⱍ", 1000);   # U+2C4D chrivi
+    _c_gematria_glagolitic = sys;
+    return _c_gematria_glagolitic;
 }

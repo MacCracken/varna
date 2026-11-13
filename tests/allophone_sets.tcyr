@@ -1,0 +1,146 @@
+# tests/allophone_sets.tcyr — the 2.6.0 allophone rule sets (es, ja, ru, zh, ar).
+#
+# Each set comes from one JIPA Illustration, and only rules whose environment the
+# model states exactly are encoded. Every rule is pinned here, and one guard ties the
+# sets to the inventories: a rule's phoneme must be a phoneme of that language, so a
+# corrected inventory and its rules cannot drift apart.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+
+# The rule for (phoneme, environment) in set `s`, or 0.
+fn _rule(s, phoneme, env) {
+    var rs = allophone_rules_for(s, phoneme);
+    var i = 0;
+    while (i < vec_len(rs)) {
+        var r = vec_get(rs, i);
+        if (environment_eq(allophone_rule_environment(r), env) == 1) { return r; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+fn _has(s, phoneme, allophone, env, obligatory, label) {
+    var r = _rule(s, phoneme, env);
+    assert(r != 0, label);
+    if (r == 0) { return 0; }
+    assert(streq(allophone_rule_allophone(r), allophone), label);
+    assert_eq(allophone_rule_obligatory(r), obligatory, label);
+    return 0;
+}
+
+fn _before(seg) { return EnvBefore(ClassSpecific(seg)); }
+
+fn main() {
+    alloc_init();
+
+    test_group("lookup");
+    var codes = allophone_all_codes();
+    assert_eq(vec_len(codes), 6, "six languages have rule sets");
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var s = allophone_by_code(vec_get(codes, i));
+        assert(s != 0, vec_get(codes, i));
+        if (s != 0) { assert(streq(allophone_language_code(s), vec_get(codes, i)), "the set names its code"); }
+        i = i + 1;
+    }
+    assert_eq(allophone_by_code("xx"), 0, "an unknown code has no set");
+    assert_eq(allophone_by_code(0), 0, "nor does null");
+    assert_eq(allophone_by_code("es"), allophone_spanish(), "sets are cached");
+
+    test_group("every_rule_names_a_phoneme_of_its_language");
+    var stray = 0;
+    i = 0;
+    while (i < vec_len(codes)) {
+        var code = vec_get(codes, i);
+        var s2 = allophone_by_code(code);
+        var inv = registry_phonemes(code);
+        var rs = allophone_rules(s2);
+        var k = 0;
+        while (k < vec_len(rs)) {
+            var ph = allophone_rule_phoneme(vec_get(rs, k));
+            if (phoneme_has(inv, ph) == 0) {
+                println(ph);
+                stray = stray + 1;
+            }
+            k = k + 1;
+        }
+        i = i + 1;
+    }
+    assert_eq(stray, 0, "no rule names a phoneme its language lacks");
+
+    test_group("spanish");
+    var es = allophone_spanish();
+    assert_eq(vec_len(allophone_rules(es)), 40, "40 Spanish rules: 10 nasal-place, 22 voicing, 8 optional");
+    _has(es, "n", "ɱ", _before("f"), 1, "ánfora: n is labiodental before f");
+    _has(es, "n", "n̟", _before("θ"), 1, "encía: n is interdental before θ");
+    _has(es, "n", "n̪", _before("t"), 1, "antes: n is dental before t");
+    _has(es, "n", "nʲ", _before("t͡ʃ"), 1, "ancha: n is palatalized before t͡ʃ");
+    _has(es, "n", "ŋ", _before("k"), 1, "banco: n is velar before k");
+    _has(es, "n", "m", _before("b"), 1, "n is bilabial before b");
+    _has(es, "s", "z", _before("ɡ"), 1, "rasgo: s voices before a voiced consonant");
+    _has(es, "s", "z", _before("m"), 1, "and before a voiced sonorant");
+    _has(es, "θ", "θ̬", _before("d"), 1, "θ voices before a voiced consonant");
+    _has(es, "s", "s̪", _before("t"), 0, "s often dental before t");
+    _has(es, "x", "χ", _before("u"), 0, "x can be uvular before a back vowel");
+    _has(es, "l", "l̪", _before("t"), 0, "l can be dentalised");
+    assert_eq(_rule(es, "s", _before("a")), 0, "s does not voice before a vowel");
+    # Spirantization is real, but its environment is an elsewhere case.
+    assert_eq(vec_len(allophone_rules_for(es, "b")), 0, "spirantization is not encoded");
+
+    test_group("japanese");
+    var ja = allophone_japanese();
+    assert_eq(vec_len(allophone_rules(ja)), 9, "9 Japanese rules");
+    _has(ja, "t͡s", "t͡ɕ", _before("i"), 1, "/tˢ/ is [tɕ] before /i/");
+    _has(ja, "s", "ɕ", _before("i"), 1, "/s/ is [ɕ] before /i/");
+    _has(ja, "z", "ʑ", _before("i"), 1, "/z/ is [ʑ] before /i/");
+    _has(ja, "z", "ᵈz", Environment.WordInitial, 0, "/z/ may be [ᵈz] initially");
+    _has(ja, "z", "ᵈz", EnvAfter(ClassSpecific("ɴ")), 0, "and after /N/");
+    _has(ja, "h", "ç", _before("i"), 0, "/h/ tends to [ç] before /i/");
+    _has(ja, "h", "ɸ", _before("u"), 0, "and [ɸ] before /u/");
+    _has(ja, "ɡ", "ɣ", Environment.Intervocalic, 0, "/g/ often [ɣ] between vowels");
+    _has(ja, "n", "nʲ", _before("i"), 0, "/n/ palatalized before /i/");
+
+    test_group("russian");
+    var ru = allophone_russian();
+    assert_eq(vec_len(allophone_rules(ru)), 16, "16 Russian rules");
+    _has(ru, "d", "t", Environment.WordFinal, 1, "god [ɡot]: final devoicing");
+    _has(ru, "ʒ", "ʃ", Environment.WordFinal, 1, "ʒ devoices finally");
+    _has(ru, "vʲ", "fʲ", Environment.WordFinal, 1, "palatalized pairs devoice too");
+    _has(ru, "o", "ʌ", Environment.PreStress, 1, "o is [ʌ] just before the stress");
+    _has(ru, "a", "ʌ", Environment.PreStress, 1, "and so is a (St. Petersburg)");
+    _has(ru, "o", "ə", Environment.Unstressed, 1, "o is [ə] in other unstressed syllables");
+    _has(ru, "a", "ə", Environment.Unstressed, 1, "and so is a");
+    _has(ru, "j", "i̯", Environment.Unstressed, 0, "j is [i̯] especially when unstressed");
+    # [ɨ] is a phoneme in this description, not an allophone of /i/.
+    assert_eq(vec_len(allophone_rules_for(ru, "i")), 0, "no /i/ → [ɨ] rule");
+
+    test_group("mandarin");
+    var zh = allophone_mandarin();
+    assert_eq(vec_len(allophone_rules(zh)), 2, "2 Mandarin rules");
+    _has(zh, "a", "a̠", Environment.SyllableFinal, 1, "[a] = [a̠] in open syllables");
+    _has(zh, "ə", "ɚ", Environment.SyllableFinal, 1, "[ə] is rhotacized in open syllables");
+
+    test_group("arabic");
+    var ar = allophone_arabic();
+    assert_eq(vec_len(allophone_rules(ar)), 17, "17 Arabic rules");
+    _has(ar, "a", "ɑ", _before("sˤ"), 1, "a is [ɑ] before an emphatic");
+    _has(ar, "a", "ɑ", _before("ʕ"), 1, "and before /ʕ/, which the source calls RTR");
+    _has(ar, "aː", "ɑː", _before("tˤ"), 1, "length is kept");
+    _has(ar, "a", "ɐ", Environment.WordFinal, 1, "a is [ɐ] before word boundary");
+    _has(ar, "i", "ɨ", _before("ħ"), 1, "i is [ɨ] before a pharyngeal");
+    _has(ar, "i", "ɨ", _before("dˤ"), 1, "and before an emphatic");
+    assert_eq(_rule(ar, "a", _before("lˤ")), 0, "lˤ is not among the source's RTR consonants");
+    assert_eq(vec_len(allophone_rules_for(ar, "u")), 0, "the ambiguous /u/ rule is not encoded");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

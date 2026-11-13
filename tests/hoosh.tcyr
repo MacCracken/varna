@@ -40,7 +40,7 @@ fn main() {
 
     var r3 = hoosh_answer_from_data(hoosh_compare("en", "ja", ComparisonAspect.Phonology));
     assert(r3 != 0, "comparison resolved");
-    assert(streq(hoosh_response_content(r3), "English has 24C+12V, Japanese has 20C+5V"), "comparison content");
+    assert(streq(hoosh_response_content(r3), "English has 24C+12V, Japanese has 16C+5V"), "comparison content");
 
     assert_eq(hoosh_answer_from_data(hoosh_identify("some text")), 0, "identify needs LLM");
     assert_eq(hoosh_answer_from_data(hoosh_examples_for_phoneme("xx", "a", 1)), 0, "unknown language none");

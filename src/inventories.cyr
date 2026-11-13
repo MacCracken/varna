@@ -265,25 +265,28 @@ fn phoneme_thai() {
 
     var b = phoneme_builder_with_capacity("th", "Thai", 42);
     phoneme_builder_stress(b, StressPattern.Tonal);
-    # Five tones in the canonical order สามัญ / เอก / โท / ตรี / จัตวา, all from one
-    # description: Tingsabadh & Abramson (1993), "Thai", JIPA 23(1), the IPA
-    # Handbook illustration of Standard (Bangkok) Thai — 33 / 21 / 41 / 45 / 214.
+    # Five tones in the canonical order สามัญ / เอก / โท / ตรี / จัตวา, from one
+    # source that prints numbers for all five: Teeranon (2007), "The change of Standard
+    # Thai high tone", SKASE Journal of Theoretical Linguistics 4(3), p. 1: "mid tone
+    # [33], low tone [21], falling tone [43], high tone [44 or 45] and rising tone
+    # [323]". She gives them "based on" Abramson's acoustic work (1962, 1975, 1978),
+    # so these are her five-level conversion of his F0 data. The high tone is 45, the
+    # second of her two values; it is the one that is changing (her own data has [44]
+    # in speakers over 60 and [334] in speakers under 20). Rising [323] parses as a
+    # dip, which is what its shape is.
     #
-    # Corrected at 2.4.1. The falling tone โท was absent entirely and ˨˩˦ sat in its
-    # slot, while slot 5 held ˩˧˥ — a value no description of Thai contains. The Lao
-    # row carried it too until 2.5.3, when that row was rebuilt from its own sources.
-    # ˨˩˦ itself was never wrong: [214] is จัตวา, and its matching Mandarin's third
-    # tone is a real coincidence, not the copy-paste the roadmap once diagnosed.
-    #
-    # Falling is ˦˩ [41], not the ˥˩ [51] of the Gandour tradition, because the other
-    # four slots are Tingsabadh & Abramson's. Moving to ˥˩ means re-sourcing the whole
-    # row to Gandour, not swapping one cell — mixing traditions is what caused this.
+    # Re-sourced at 2.6.0. The 2.4.1 row, 33 / 21 / 41 / 45 / 214, was credited to
+    # Tingsabadh & Abramson (1993), the JIPA Illustration. That article prints no pitch
+    # numbers: its p. 26 gives the five tones as diacritics only. The numbers match,
+    # cell for cell, the uncited "Phonetic" column of Wikipedia's "Thai language" tone
+    # table. No source checked prints 41 or 214 for Thai. Tingsabadh & Abramson remain
+    # the source of the vowels and consonants below.
     var t = vec_new();
     vec_push(t, "˧");
     vec_push(t, "˨˩");
-    vec_push(t, "˦˩");
+    vec_push(t, "˦˧");
     vec_push(t, "˦˥");
-    vec_push(t, "˨˩˦");
+    vec_push(t, "˧˨˧");
     phoneme_builder_tones(b, t);
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
@@ -356,24 +359,28 @@ fn phoneme_vietnamese() {
 
     var b = phoneme_builder_with_capacity("vi", "Vietnamese", 33);
     phoneme_builder_stress(b, StressPattern.Tonal);
-    # Six tones in the order ngang / huyền / sắc / hỏi / ngã / nặng, Northern (Hanoi)
-    # Vietnamese after Nguyễn Văn Lợi & Edmondson (1998), which slots 4 and 6 already
-    # followed (hỏi 313, ngã 3ˀ5).
+    # Six tones in the order ngang / huyền / sắc / hỏi / ngã / nặng, Hanoi Vietnamese,
+    # all from one source: Kirby (2011), "Vietnamese (Hanoi Vietnamese)", JIPA 41(3),
+    # the IPA Illustration, p. 386. Its tone letters are set in a custom font, so the
+    # page was rendered and each stroke read against its staff:
+    #   A1 ngang 44 "level"    A2 huyền 32 "mid falling"   B1 sắc 24 "rising"
+    #   C1 hỏi 312 "low falling"   C2 ngã 325 "broken"   B2 nặng 22 "low glottalized"
+    # (the checked tones D1 45 and D2 21 are sắc and nặng on stopped syllables). His
+    # letters carry no creak mark. ngã and nặng carry the corpus's ˀ for what his
+    # labels say they are, "broken" and "glottalized".
     #
-    # Corrected at 2.4.1: huyền was ˨˩˦, a dipping contour no description of any
-    # dialect gives it — it is a low FALLING tone, [21]. This one WAS the copy-paste
-    # the roadmap suspected: ˨˩˦ is Mandarin's third tone. ˨˩ not ˧˩, since [31] is
-    # the Southern value and the rest of this row is Northern. No ˀ is added: N&E find
-    # the breathiness speaker-variable, and tone.cyr models creak, not breathy voice.
-    # nặng keeps ˨˩ˀ (Thompson 1965 / Kirby 2011) rather than N&E's ˧ˀ˨ʔ — a final ʔ
-    # would assert a stopped syllable, false for open and sonorant-final rhymes.
+    # Re-sourced at 2.6.0. The 2.4.1 row, ˧ / ˨˩ / ˧˥ / ˧˩˧ / ˧ˀ˥ / ˨˩ˀ, mixed sources.
+    # ngang 33, huyền 21 and sắc 35 are Nguyễn Văn Lợi & Edmondson (1998, p. 8), but
+    # they print no number for hỏi or ngã, and give nặng 32. Thompson (1965) prints no
+    # numbers at all. The row's 313, 3ˀ5 and 21ˀ, and the comment's "N&E's ˧ˀ˨ʔ", match
+    # the uncited Northern column of Wikipedia's "Vietnamese phonology" table instead.
     var t = vec_new();
-    vec_push(t, "˧");
-    vec_push(t, "˨˩");
-    vec_push(t, "˧˥");
-    vec_push(t, "˧˩˧");
-    vec_push(t, "˧ˀ˥");
-    vec_push(t, "˨˩ˀ");
+    vec_push(t, "˦");
+    vec_push(t, "˧˨");
+    vec_push(t, "˨˦");
+    vec_push(t, "˧˩˨");
+    vec_push(t, "˧˨˥ˀ");
+    vec_push(t, "˨ˀ");
     phoneme_builder_tones(b, t);
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
@@ -652,7 +659,7 @@ var _c_phoneme_classical_arabic = 0;
 fn phoneme_classical_arabic() {
     if (_c_phoneme_classical_arabic != 0) { return _c_phoneme_classical_arabic; }
 
-    var b = phoneme_builder_with_capacity("ar", "Arabic", 34);
+    var b = phoneme_builder_with_capacity("ar", "Arabic", 35);
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
@@ -690,6 +697,11 @@ fn phoneme_classical_arabic() {
     phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
       Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Added at 2.6.0: the pharyngealized lateral /lˤ/, listed with tˤ dˤ sˤ ðˤ in
+    # Thelwall & Sa'adeddin (1990), "Arabic", JIPA 20(2), p. 37. It is marginal: its
+    # only example is [alˤlˤaa] 'god'.
+    phoneme_builder_consonant_full(b, "lˤ", Manner.LateralApproximant, Place.Alveolar, 1,
+      Airstream.Pulmonic, PhonemeFeature.Lateral | PhonemeFeature.Pharyngealized);
     # Approximants
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -814,7 +826,7 @@ var _c_phoneme_mandarin = 0;
 fn phoneme_mandarin() {
     if (_c_phoneme_mandarin != 0) { return _c_phoneme_mandarin; }
 
-    var b = phoneme_builder_with_capacity("zh", "Mandarin Chinese", 28);
+    var b = phoneme_builder_with_capacity("zh", "Mandarin Chinese", 46);
     phoneme_builder_stress(b, StressPattern.Tonal);
     var t = vec_new();
     vec_push(t, "˥˥");
@@ -857,14 +869,46 @@ fn phoneme_mandarin() {
     phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
       Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
-    # Vowels (nuclear vowels of the syllable finals)
-    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ɤ", Height.CloseMid, Backness.Back, 0);
-    phoneme_builder_vowel(b, "e", Height.OpenMid, Backness.Front, 0);
+    # --- Corrected at 2.6.0, after Lee & Zee (2003), "Standard Chinese (Beijing)",
+    # JIPA 33(1), the IPA Illustration (pp. 109-111). Their chart has /ŋ w j/, which the
+    # corpus lacked: "[ŋ] occurs only in syllable-final position" (p. 111). The
+    # sibilants and /ɻ/ above keep the retroflex symbols of Chao (1968), a convention
+    # Lee & Zee's own notes record; they write [tʃ̺ tʃ̺ʰ ʃ̺ ɹ̺], "apical post-alveolar".
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels, Lee & Zee p. 110: monophthongs i y a ə u ɤ. The corpus had /e o/ as
+    # monophthongs and no /ə/. In this description e and o occur only inside the
+    # diphthongs and triphthongs below, so they are not listed alone.
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "y", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɤ", Height.CloseMid, Backness.Back, 0);
+    # The syllabic apical approximant [ɹ̩], the "apical vowel" (p. 110, "Syllabic
+    # consonants"; sɹ̩ 'to think'). It "occurs only in isolation or after [s, ts, tsʰ, ʃ,
+    # tʃ, tʃʰ]" (p. 111). Filed as a vowel unit with the Syllabic bit, as Sanskrit's
+    # syllabic liquids are.
+    phoneme_builder_vowel_full(b, "ɹ̩", Height.Close, Backness.Central, 0, PhonemeFeature.Syllabic);
+    # Diphthongs (11) and triphthongs (4), Lee & Zee p. 110, as vowel units. Each is
+    # filed under the height, backness and rounding of its nucleus: the vowel that is
+    # not the i/y/u glide.
+    phoneme_builder_vowel(b, "ai", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "au", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ou", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uo", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ei", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ye", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ie", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ia", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ua", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "uə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "iu", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "iau", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "uai", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "iou", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uei", Height.CloseMid, Backness.Front, 0);
     _c_phoneme_mandarin = phoneme_builder_build(b);
     return _c_phoneme_mandarin;
 }
@@ -947,8 +991,21 @@ var _c_phoneme_japanese = 0;
 fn phoneme_japanese() {
     if (_c_phoneme_japanese != 0) { return _c_phoneme_japanese; }
 
-    var b = phoneme_builder_with_capacity("ja", "Japanese", 20);
+    var b = phoneme_builder_with_capacity("ja", "Japanese", 21);
     phoneme_builder_stress(b, StressPattern.PitchAccent);
+    # Tokyo Japanese after Okada (1991), "Japanese", JIPA 21(2), the IPA Illustration:
+    # 16 consonants p b t d tˢ ɖ k ɡ m n ɴ s z h j w and the vowels i e a o u (p. 94).
+    #
+    # Corrected at 2.6.0. The corpus listed [t͡ɕ d͡ʑ ɸ ɕ ŋ] as phonemes. Okada gives
+    # each as an allophone: /tˢ/ "becomes [tɕ] before /i/", /s z/ "are [ɕ] and [ʑ]
+    # before /i/" ([ᵈʑ] for /z/ initially), /h/ "tends towards [ç] and [ɸ] before /i/
+    # and /u/", and /g/ "becomes [ŋ] medially" (p. 95). They are rules now
+    # (allophone_japanese). The moraic nasal /ɴ/ was missing.
+    #
+    # Two notations are kept. The affricate stays t͡s, Okada's /tˢ/. The liquid stays ɾ:
+    # Okada writes it /ɖ/, "often transcribed by others as /r/", postalveolar, with
+    # [ɾ] "more frequent" between vowels. Vowel length and geminates are distinctive
+    # (p. 95). Okada analyses both as moraic sequences, not separate phonemes.
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
@@ -956,20 +1013,16 @@ fn phoneme_japanese() {
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
-    # Affricates (allophonic before /i/, /u/ — treated as separate in inventory)
+    # Affricate
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
     # Fricatives
-    phoneme_builder_consonant(b, "ɸ", Manner.Fricative, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
-    # Nasals
+    # Nasals. /ɴ/ is the moraic nasal, homorganic with a following consonant.
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ɴ", Manner.Nasal, Place.Uvular, 1);
     # Approximants & liquids
     phoneme_builder_consonant(b, "ɾ", Manner.TapFlap, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -988,8 +1041,22 @@ var _c_phoneme_spanish = 0;
 fn phoneme_spanish() {
     if (_c_phoneme_spanish != 0) { return _c_phoneme_spanish; }
 
-    var b = phoneme_builder_with_capacity("es", "Spanish", 24);
+    var b = phoneme_builder_with_capacity("es", "Spanish", 26);
     phoneme_builder_stress(b, StressPattern.Free);
+    # Castilian Spanish after Martínez-Celdrán, Fernández-Planas & Carrera-Sabaté (2003),
+    # "Castilian Spanish", JIPA 33(2), the IPA Illustration: 19 consonants p b t d k ɡ
+    # t͡ʃ ɟ͡ʝ m n ɲ ɾ r f θ s x l ʎ (p. 255) and the vowels i e a o u (p. 256).
+    #
+    # Corrected at 2.6.0:
+    #   - [β ð ɣ] were listed as phonemes. They are allophones of /b d ɡ/: "complete
+    #     stops only after a pause or after a nasal consonant and, in the case of /d/,
+    #     after a lateral too. In other positions they are pronounced as their
+    #     approximant variants [β̞], [ð̞] and [ɣ̞]" (p. 257).
+    #   - The rhotics were "r" (a tap) and "rr", which is spelling, not IPA. The source
+    #     has the tap /ɾ/ and the trill /r/ (caro [ˈkaɾo] vs carro [ˈkaro], p. 258).
+    #   - /ɟ͡ʝ/ (yate [ˈɟ͡ʝate]) was missing.
+    # /j w/ stay. The source writes them as glides in diphthongs (p. 256) and states no
+    # analysis that would remove them.
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
@@ -999,14 +1066,12 @@ fn phoneme_spanish() {
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     # Affricates
     phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ɟ͡ʝ", Manner.Affricate, Place.Palatal, 1);
     # Fricatives
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
-    phoneme_builder_consonant(b, "β", Manner.Fricative, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "ð", Manner.Fricative, Place.Dental, 1);
-    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
     # Nasals
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
@@ -1016,8 +1081,8 @@ fn phoneme_spanish() {
       Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant_full(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1,
       Airstream.Pulmonic, PhonemeFeature.Lateral);
-    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "rr", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɾ", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     # Approximants
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);

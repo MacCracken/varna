@@ -1501,25 +1501,28 @@ fn phoneme_thai() {
 
     var b = phoneme_builder_with_capacity("th", "Thai", 42);
     phoneme_builder_stress(b, StressPattern.Tonal);
-    # Five tones in the canonical order สามัญ / เอก / โท / ตรี / จัตวา, all from one
-    # description: Tingsabadh & Abramson (1993), "Thai", JIPA 23(1), the IPA
-    # Handbook illustration of Standard (Bangkok) Thai — 33 / 21 / 41 / 45 / 214.
+    # Five tones in the canonical order สามัญ / เอก / โท / ตรี / จัตวา, from one
+    # source that prints numbers for all five: Teeranon (2007), "The change of Standard
+    # Thai high tone", SKASE Journal of Theoretical Linguistics 4(3), p. 1: "mid tone
+    # [33], low tone [21], falling tone [43], high tone [44 or 45] and rising tone
+    # [323]". She gives them "based on" Abramson's acoustic work (1962, 1975, 1978),
+    # so these are her five-level conversion of his F0 data. The high tone is 45, the
+    # second of her two values; it is the one that is changing (her own data has [44]
+    # in speakers over 60 and [334] in speakers under 20). Rising [323] parses as a
+    # dip, which is what its shape is.
     #
-    # Corrected at 2.4.1. The falling tone โท was absent entirely and ˨˩˦ sat in its
-    # slot, while slot 5 held ˩˧˥ — a value no description of Thai contains. The Lao
-    # row carried it too until 2.5.3, when that row was rebuilt from its own sources.
-    # ˨˩˦ itself was never wrong: [214] is จัตวา, and its matching Mandarin's third
-    # tone is a real coincidence, not the copy-paste the roadmap once diagnosed.
-    #
-    # Falling is ˦˩ [41], not the ˥˩ [51] of the Gandour tradition, because the other
-    # four slots are Tingsabadh & Abramson's. Moving to ˥˩ means re-sourcing the whole
-    # row to Gandour, not swapping one cell — mixing traditions is what caused this.
+    # Re-sourced at 2.6.0. The 2.4.1 row, 33 / 21 / 41 / 45 / 214, was credited to
+    # Tingsabadh & Abramson (1993), the JIPA Illustration. That article prints no pitch
+    # numbers: its p. 26 gives the five tones as diacritics only. The numbers match,
+    # cell for cell, the uncited "Phonetic" column of Wikipedia's "Thai language" tone
+    # table. No source checked prints 41 or 214 for Thai. Tingsabadh & Abramson remain
+    # the source of the vowels and consonants below.
     var t = vec_new();
     vec_push(t, "˧");
     vec_push(t, "˨˩");
-    vec_push(t, "˦˩");
+    vec_push(t, "˦˧");
     vec_push(t, "˦˥");
-    vec_push(t, "˨˩˦");
+    vec_push(t, "˧˨˧");
     phoneme_builder_tones(b, t);
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant_full(b, "pʰ", Manner.Plosive, Place.Bilabial, 0,
@@ -1592,24 +1595,28 @@ fn phoneme_vietnamese() {
 
     var b = phoneme_builder_with_capacity("vi", "Vietnamese", 33);
     phoneme_builder_stress(b, StressPattern.Tonal);
-    # Six tones in the order ngang / huyền / sắc / hỏi / ngã / nặng, Northern (Hanoi)
-    # Vietnamese after Nguyễn Văn Lợi & Edmondson (1998), which slots 4 and 6 already
-    # followed (hỏi 313, ngã 3ˀ5).
+    # Six tones in the order ngang / huyền / sắc / hỏi / ngã / nặng, Hanoi Vietnamese,
+    # all from one source: Kirby (2011), "Vietnamese (Hanoi Vietnamese)", JIPA 41(3),
+    # the IPA Illustration, p. 386. Its tone letters are set in a custom font, so the
+    # page was rendered and each stroke read against its staff:
+    #   A1 ngang 44 "level"    A2 huyền 32 "mid falling"   B1 sắc 24 "rising"
+    #   C1 hỏi 312 "low falling"   C2 ngã 325 "broken"   B2 nặng 22 "low glottalized"
+    # (the checked tones D1 45 and D2 21 are sắc and nặng on stopped syllables). His
+    # letters carry no creak mark. ngã and nặng carry the corpus's ˀ for what his
+    # labels say they are, "broken" and "glottalized".
     #
-    # Corrected at 2.4.1: huyền was ˨˩˦, a dipping contour no description of any
-    # dialect gives it — it is a low FALLING tone, [21]. This one WAS the copy-paste
-    # the roadmap suspected: ˨˩˦ is Mandarin's third tone. ˨˩ not ˧˩, since [31] is
-    # the Southern value and the rest of this row is Northern. No ˀ is added: N&E find
-    # the breathiness speaker-variable, and tone.cyr models creak, not breathy voice.
-    # nặng keeps ˨˩ˀ (Thompson 1965 / Kirby 2011) rather than N&E's ˧ˀ˨ʔ — a final ʔ
-    # would assert a stopped syllable, false for open and sonorant-final rhymes.
+    # Re-sourced at 2.6.0. The 2.4.1 row, ˧ / ˨˩ / ˧˥ / ˧˩˧ / ˧ˀ˥ / ˨˩ˀ, mixed sources.
+    # ngang 33, huyền 21 and sắc 35 are Nguyễn Văn Lợi & Edmondson (1998, p. 8), but
+    # they print no number for hỏi or ngã, and give nặng 32. Thompson (1965) prints no
+    # numbers at all. The row's 313, 3ˀ5 and 21ˀ, and the comment's "N&E's ˧ˀ˨ʔ", match
+    # the uncited Northern column of Wikipedia's "Vietnamese phonology" table instead.
     var t = vec_new();
-    vec_push(t, "˧");
-    vec_push(t, "˨˩");
-    vec_push(t, "˧˥");
-    vec_push(t, "˧˩˧");
-    vec_push(t, "˧ˀ˥");
-    vec_push(t, "˨˩ˀ");
+    vec_push(t, "˦");
+    vec_push(t, "˧˨");
+    vec_push(t, "˨˦");
+    vec_push(t, "˧˩˨");
+    vec_push(t, "˧˨˥ˀ");
+    vec_push(t, "˨ˀ");
     phoneme_builder_tones(b, t);
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
@@ -1888,7 +1895,7 @@ var _c_phoneme_classical_arabic = 0;
 fn phoneme_classical_arabic() {
     if (_c_phoneme_classical_arabic != 0) { return _c_phoneme_classical_arabic; }
 
-    var b = phoneme_builder_with_capacity("ar", "Arabic", 34);
+    var b = phoneme_builder_with_capacity("ar", "Arabic", 35);
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
@@ -1926,6 +1933,11 @@ fn phoneme_classical_arabic() {
     phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
       Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
+    # Added at 2.6.0: the pharyngealized lateral /lˤ/, listed with tˤ dˤ sˤ ðˤ in
+    # Thelwall & Sa'adeddin (1990), "Arabic", JIPA 20(2), p. 37. It is marginal: its
+    # only example is [alˤlˤaa] 'god'.
+    phoneme_builder_consonant_full(b, "lˤ", Manner.LateralApproximant, Place.Alveolar, 1,
+      Airstream.Pulmonic, PhonemeFeature.Lateral | PhonemeFeature.Pharyngealized);
     # Approximants
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -2050,7 +2062,7 @@ var _c_phoneme_mandarin = 0;
 fn phoneme_mandarin() {
     if (_c_phoneme_mandarin != 0) { return _c_phoneme_mandarin; }
 
-    var b = phoneme_builder_with_capacity("zh", "Mandarin Chinese", 28);
+    var b = phoneme_builder_with_capacity("zh", "Mandarin Chinese", 46);
     phoneme_builder_stress(b, StressPattern.Tonal);
     var t = vec_new();
     vec_push(t, "˥˥");
@@ -2093,14 +2105,46 @@ fn phoneme_mandarin() {
     phoneme_builder_consonant_full(b, "kʰ", Manner.Plosive, Place.Velar, 0,
       Airstream.Pulmonic, PhonemeFeature.Aspirated);
     phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
-    # Vowels (nuclear vowels of the syllable finals)
-    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ɤ", Height.CloseMid, Backness.Back, 0);
-    phoneme_builder_vowel(b, "e", Height.OpenMid, Backness.Front, 0);
+    # --- Corrected at 2.6.0, after Lee & Zee (2003), "Standard Chinese (Beijing)",
+    # JIPA 33(1), the IPA Illustration (pp. 109-111). Their chart has /ŋ w j/, which the
+    # corpus lacked: "[ŋ] occurs only in syllable-final position" (p. 111). The
+    # sibilants and /ɻ/ above keep the retroflex symbols of Chao (1968), a convention
+    # Lee & Zee's own notes record; they write [tʃ̺ tʃ̺ʰ ʃ̺ ɹ̺], "apical post-alveolar".
+    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
+    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
+    # Vowels, Lee & Zee p. 110: monophthongs i y a ə u ɤ. The corpus had /e o/ as
+    # monophthongs and no /ə/. In this description e and o occur only inside the
+    # diphthongs and triphthongs below, so they are not listed alone.
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
-    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
     phoneme_builder_vowel(b, "y", Height.Close, Backness.Front, 1);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ɤ", Height.CloseMid, Backness.Back, 0);
+    # The syllabic apical approximant [ɹ̩], the "apical vowel" (p. 110, "Syllabic
+    # consonants"; sɹ̩ 'to think'). It "occurs only in isolation or after [s, ts, tsʰ, ʃ,
+    # tʃ, tʃʰ]" (p. 111). Filed as a vowel unit with the Syllabic bit, as Sanskrit's
+    # syllabic liquids are.
+    phoneme_builder_vowel_full(b, "ɹ̩", Height.Close, Backness.Central, 0, PhonemeFeature.Syllabic);
+    # Diphthongs (11) and triphthongs (4), Lee & Zee p. 110, as vowel units. Each is
+    # filed under the height, backness and rounding of its nucleus: the vowel that is
+    # not the i/y/u glide.
+    phoneme_builder_vowel(b, "ai", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "au", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ou", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uo", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ei", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ye", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ie", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ia", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ua", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "uə", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "iu", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "iau", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "uai", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "iou", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "uei", Height.CloseMid, Backness.Front, 0);
     _c_phoneme_mandarin = phoneme_builder_build(b);
     return _c_phoneme_mandarin;
 }
@@ -2183,8 +2227,21 @@ var _c_phoneme_japanese = 0;
 fn phoneme_japanese() {
     if (_c_phoneme_japanese != 0) { return _c_phoneme_japanese; }
 
-    var b = phoneme_builder_with_capacity("ja", "Japanese", 20);
+    var b = phoneme_builder_with_capacity("ja", "Japanese", 21);
     phoneme_builder_stress(b, StressPattern.PitchAccent);
+    # Tokyo Japanese after Okada (1991), "Japanese", JIPA 21(2), the IPA Illustration:
+    # 16 consonants p b t d tˢ ɖ k ɡ m n ɴ s z h j w and the vowels i e a o u (p. 94).
+    #
+    # Corrected at 2.6.0. The corpus listed [t͡ɕ d͡ʑ ɸ ɕ ŋ] as phonemes. Okada gives
+    # each as an allophone: /tˢ/ "becomes [tɕ] before /i/", /s z/ "are [ɕ] and [ʑ]
+    # before /i/" ([ᵈʑ] for /z/ initially), /h/ "tends towards [ç] and [ɸ] before /i/
+    # and /u/", and /g/ "becomes [ŋ] medially" (p. 95). They are rules now
+    # (allophone_japanese). The moraic nasal /ɴ/ was missing.
+    #
+    # Two notations are kept. The affricate stays t͡s, Okada's /tˢ/. The liquid stays ɾ:
+    # Okada writes it /ɖ/, "often transcribed by others as /r/", postalveolar, with
+    # [ɾ] "more frequent" between vowels. Vowel length and geminates are distinctive
+    # (p. 95). Okada analyses both as moraic sequences, not separate phonemes.
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
@@ -2192,20 +2249,16 @@ fn phoneme_japanese() {
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
-    # Affricates (allophonic before /i/, /u/ — treated as separate in inventory)
+    # Affricate
     phoneme_builder_consonant(b, "t͡s", Manner.Affricate, Place.Alveolar, 0);
-    phoneme_builder_consonant(b, "t͡ɕ", Manner.Affricate, Place.Palatal, 0);
-    phoneme_builder_consonant(b, "d͡ʑ", Manner.Affricate, Place.Palatal, 1);
     # Fricatives
-    phoneme_builder_consonant(b, "ɸ", Manner.Fricative, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ɕ", Manner.Fricative, Place.Palatal, 0);
     phoneme_builder_consonant(b, "h", Manner.Fricative, Place.Glottal, 0);
-    # Nasals
+    # Nasals. /ɴ/ is the moraic nasal, homorganic with a following consonant.
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ŋ", Manner.Nasal, Place.Velar, 1);
+    phoneme_builder_consonant(b, "ɴ", Manner.Nasal, Place.Uvular, 1);
     # Approximants & liquids
     phoneme_builder_consonant(b, "ɾ", Manner.TapFlap, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
@@ -2224,8 +2277,22 @@ var _c_phoneme_spanish = 0;
 fn phoneme_spanish() {
     if (_c_phoneme_spanish != 0) { return _c_phoneme_spanish; }
 
-    var b = phoneme_builder_with_capacity("es", "Spanish", 24);
+    var b = phoneme_builder_with_capacity("es", "Spanish", 26);
     phoneme_builder_stress(b, StressPattern.Free);
+    # Castilian Spanish after Martínez-Celdrán, Fernández-Planas & Carrera-Sabaté (2003),
+    # "Castilian Spanish", JIPA 33(2), the IPA Illustration: 19 consonants p b t d k ɡ
+    # t͡ʃ ɟ͡ʝ m n ɲ ɾ r f θ s x l ʎ (p. 255) and the vowels i e a o u (p. 256).
+    #
+    # Corrected at 2.6.0:
+    #   - [β ð ɣ] were listed as phonemes. They are allophones of /b d ɡ/: "complete
+    #     stops only after a pause or after a nasal consonant and, in the case of /d/,
+    #     after a lateral too. In other positions they are pronounced as their
+    #     approximant variants [β̞], [ð̞] and [ɣ̞]" (p. 257).
+    #   - The rhotics were "r" (a tap) and "rr", which is spelling, not IPA. The source
+    #     has the tap /ɾ/ and the trill /r/ (caro [ˈkaɾo] vs carro [ˈkaro], p. 258).
+    #   - /ɟ͡ʝ/ (yate [ˈɟ͡ʝate]) was missing.
+    # /j w/ stay. The source writes them as glides in diphthongs (p. 256) and states no
+    # analysis that would remove them.
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
@@ -2235,14 +2302,12 @@ fn phoneme_spanish() {
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
     # Affricates
     phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ɟ͡ʝ", Manner.Affricate, Place.Palatal, 1);
     # Fricatives
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "θ", Manner.Fricative, Place.Dental, 0);
     phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
     phoneme_builder_consonant(b, "x", Manner.Fricative, Place.Velar, 0);
-    phoneme_builder_consonant(b, "β", Manner.Fricative, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "ð", Manner.Fricative, Place.Dental, 1);
-    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
     # Nasals
     phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
     phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
@@ -2252,8 +2317,8 @@ fn phoneme_spanish() {
       Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant_full(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1,
       Airstream.Pulmonic, PhonemeFeature.Lateral);
-    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "rr", Manner.Trill, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ɾ", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "r", Manner.Trill, Place.Alveolar, 1);
     # Approximants
     phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
     phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
@@ -4235,6 +4300,234 @@ fn allophone_english() {
     return _c_allophone_english;
 }
 
+# --- Lookup by language (2.6.0) ------------------------------------
+# The same shape as grammar_by_code and swadesh_by_code. Each set is cached, so
+# a caller gets the same record back on every call.
+
+# The rule set for an ISO 639 code, or 0 when the corpus has none for it.
+#must_use
+fn allophone_by_code(code) {
+    if (code == 0) { return 0; }
+    if (streq(code, "en") == 1) { return allophone_english(); }
+    if (streq(code, "es") == 1) { return allophone_spanish(); }
+    if (streq(code, "ja") == 1) { return allophone_japanese(); }
+    if (streq(code, "ru") == 1) { return allophone_russian(); }
+    if (streq(code, "zh") == 1) { return allophone_mandarin(); }
+    if (streq(code, "ar") == 1) { return allophone_arabic(); }
+    return 0;
+}
+
+var _c_allophone_all_codes = 0;
+# Every code with a rule set, in the order they were added — vec of cstrings.
+fn allophone_all_codes() {
+    if (_c_allophone_all_codes != 0) { return _c_allophone_all_codes; }
+    var c = vec_new();
+    vec_push(c, "en");
+    vec_push(c, "es");
+    vec_push(c, "ja");
+    vec_push(c, "ru");
+    vec_push(c, "zh");
+    vec_push(c, "ar");
+    _c_allophone_all_codes = c;
+    return _c_allophone_all_codes;
+}
+
+# --- The 2.6.0 rule sets -------------------------------------------
+# Each set comes from ONE description, the language's JIPA Illustration of the IPA,
+# and holds only the rules whose environment this model states exactly. A rule whose
+# real environment the model cannot say ("elsewhere", "in a syllable closed by a
+# nasal", "after a palatalized consonant") is listed in the set's comment and NOT
+# encoded: a nearby environment would state something the source does not.
+# "Before a voiced consonant" is spelled out as one rule per consonant, because the
+# Voiced class is a label (nothing evaluates it) and would read as including vowels.
+
+# Before(Specific(seg)) for one IPA segment.
+fn _env_before(seg) { return EnvBefore(ClassSpecific(seg)); }
+fn _env_after(seg) { return EnvAfter(ClassSpecific(seg)); }
+
+# One rule per segment in `segs`, all with the same phoneme, allophone and Before side.
+fn _aset_add_before_each(s, phoneme, allophone, segs, obligatory) {
+    var i = 0;
+    while (i < vec_len(segs)) {
+        _aset_add(s, phoneme, allophone, _env_before(vec_get(segs, i)), obligatory);
+        i = i + 1;
+    }
+    return s;
+}
+
+var _c_allophone_spanish = 0;
+# Castilian Spanish: Martínez-Celdrán, Fernández-Planas & Carrera-Sabaté (2003), JIPA
+# 33(2), pp. 257-258.
+#   Nasal place: "The place of articulation of nasal consonants in syllabic codas is
+#     always the same as that of any following consonant": ánfora [ˈaɱfoɾa], encía
+#     [en̟ˈθia], antes, ancha, banco. Encoded for the places the examples show.
+#   Voicing: θ "like [s], becomes voiced before a voiced consonant" (rasgo [ˈrazɣo]).
+#   /s/ "often becomes dental before a denti-alveolar consonant" (optional).
+#   /x/ "can be pronounced uvular before a back vowel and the semivowel [w]" (optional).
+#   /l/ "can become interdentalised, dentalised" before those places (optional).
+# NOT encoded: spirantization of /b d ɡ/ to [β̞ ð̞ ɣ̞] (their environment is "in other
+#   positions" than after a pause, a nasal, or for /d/ a lateral: an elsewhere case);
+#   /ɟ͡ʝ/ → [ʝ̞] "in all other contexts"; /l/ palatalized (the source names a place, not
+#   segments); vowel nasalization between nasals; coda /b d ɡ/ deletion.
+fn allophone_spanish() {
+    if (_c_allophone_spanish != 0) { return _c_allophone_spanish; }
+    var s = _aset_new("es");
+    _aset_add(s, "n", "m", _env_before("p"), 1);
+    _aset_add(s, "n", "m", _env_before("b"), 1);
+    _aset_add(s, "n", "ɱ", _env_before("f"), 1);
+    _aset_add(s, "n", "n̟", _env_before("θ"), 1);
+    _aset_add(s, "n", "n̪", _env_before("t"), 1);
+    _aset_add(s, "n", "n̪", _env_before("d"), 1);
+    _aset_add(s, "n", "nʲ", _env_before("t͡ʃ"), 1);
+    _aset_add(s, "n", "ŋ", _env_before("k"), 1);
+    _aset_add(s, "n", "ŋ", _env_before("ɡ"), 1);
+    _aset_add(s, "n", "ŋ", _env_before("x"), 1);
+    var voiced = vec_new();
+    vec_push(voiced, "b");
+    vec_push(voiced, "d");
+    vec_push(voiced, "ɡ");
+    vec_push(voiced, "ɟ͡ʝ");
+    vec_push(voiced, "m");
+    vec_push(voiced, "n");
+    vec_push(voiced, "ɲ");
+    vec_push(voiced, "l");
+    vec_push(voiced, "ʎ");
+    vec_push(voiced, "ɾ");
+    vec_push(voiced, "r");
+    _aset_add_before_each(s, "s", "z", voiced, 1);
+    _aset_add_before_each(s, "θ", "θ̬", voiced, 1);
+    _aset_add(s, "s", "s̪", _env_before("t"), 0);
+    _aset_add(s, "s", "s̪", _env_before("d"), 0);
+    _aset_add(s, "x", "χ", _env_before("u"), 0);
+    _aset_add(s, "x", "χ", _env_before("o"), 0);
+    _aset_add(s, "x", "χ", _env_before("w"), 0);
+    _aset_add(s, "l", "l̟", _env_before("θ"), 0);
+    _aset_add(s, "l", "l̪", _env_before("t"), 0);
+    _aset_add(s, "l", "l̪", _env_before("d"), 0);
+    _c_allophone_spanish = s;
+    return _c_allophone_spanish;
+}
+
+var _c_allophone_japanese = 0;
+# Tokyo Japanese: Okada (1991), JIPA 21(2), p. 95.
+#   "/tˢ/ is normally [ts] but becomes [tɕ] before /i/"
+#   "/s/ and /z/ are [ɕ] and [ʑ] before /i/"
+#   "/z/ may be [ᵈz] initially ([ᵈʑ] before /i/) and after /N/" (optional)
+#   "/h/ tends towards [ç] and [ɸ] before /i/ and /u/ respectively" (optional)
+#   /g/ among younger speakers "often tends to become [ɣ] between vowels" (optional)
+#   "Consonants, and notably /n/, are generally strongly palatalized before /i/"
+#     (optional; ʲ is the IPA mark for "palatalized", Okada gives no symbol)
+# NOT encoded: /g/ → [ŋ] "medially" (no exact environment); high-vowel devoicing
+#   "between voiceless consonants" except in accented syllables; final /su/ → [s]; /ɴ/'s
+#   homorganic place; [ᵈʑ] word-initially before /i/ (two conditions at once).
+fn allophone_japanese() {
+    if (_c_allophone_japanese != 0) { return _c_allophone_japanese; }
+    var s = _aset_new("ja");
+    _aset_add(s, "t͡s", "t͡ɕ", _env_before("i"), 1);
+    _aset_add(s, "s", "ɕ", _env_before("i"), 1);
+    _aset_add(s, "z", "ʑ", _env_before("i"), 1);
+    _aset_add(s, "z", "ᵈz", Environment.WordInitial, 0);
+    _aset_add(s, "z", "ᵈz", _env_after("ɴ"), 0);
+    _aset_add(s, "h", "ç", _env_before("i"), 0);
+    _aset_add(s, "h", "ɸ", _env_before("u"), 0);
+    _aset_add(s, "ɡ", "ɣ", Environment.Intervocalic, 0);
+    _aset_add(s, "n", "nʲ", _env_before("i"), 0);
+    _c_allophone_japanese = s;
+    return _c_allophone_japanese;
+}
+
+var _c_allophone_russian = 0;
+# Russian (St. Petersburg standard): Yanushevskaya & Bunčić (2015), JIPA 45(2).
+#   Final devoicing: "only voiceless but no voiced obstruents occur word-finally"
+#     (p. 223), each to its voiceless partner in the chart (p. 222).
+#   Vowel reduction (p. 225): "/o/ is replaced with /a/", and /a/ "is realised as [ʌ]
+#     or [ɐ] in the first degree of reduction (the former is characteristic of
+#     St. Petersburg...) and as [ə] in the second". The first degree is "the syllable
+#     immediately before the stressed syllable" (PreStress here); the second applies
+#     "to all other unstressed syllables" (Unstressed here, which in this set means
+#     unstressed and not immediately before the stress).
+#   /j/ is "a semivowel [i̯] (especially when unstressed)" (p. 223, optional).
+# NOT encoded: regressive voicing assimilation (needs a class "voiced obstruent other
+#   than /v vʲ/"); /e/ → /i/ or /ɨ/ unstressed (no condition given for which);
+#   ikanye after palatalized consonants; [æ] between palatalized consonants;
+#   labialization before /o u/ (one rule per consonant); /ɨ/ "tends to be
+#   diphthongised ... particularly when word-final" (p. 225: no target symbol given).
+fn allophone_russian() {
+    if (_c_allophone_russian != 0) { return _c_allophone_russian; }
+    var s = _aset_new("ru");
+    var wf = Environment.WordFinal;
+    _aset_add(s, "b", "p", wf, 1);
+    _aset_add(s, "bʲ", "pʲ", wf, 1);
+    _aset_add(s, "d", "t", wf, 1);
+    _aset_add(s, "dʲ", "tʲ", wf, 1);
+    _aset_add(s, "ɡ", "k", wf, 1);
+    _aset_add(s, "ɡʲ", "kʲ", wf, 1);
+    _aset_add(s, "v", "f", wf, 1);
+    _aset_add(s, "vʲ", "fʲ", wf, 1);
+    _aset_add(s, "z", "s", wf, 1);
+    _aset_add(s, "zʲ", "sʲ", wf, 1);
+    _aset_add(s, "ʒ", "ʃ", wf, 1);
+    _aset_add(s, "o", "ʌ", Environment.PreStress, 1);
+    _aset_add(s, "a", "ʌ", Environment.PreStress, 1);
+    _aset_add(s, "o", "ə", Environment.Unstressed, 1);
+    _aset_add(s, "a", "ə", Environment.Unstressed, 1);
+    _aset_add(s, "j", "i̯", Environment.Unstressed, 0);
+    _c_allophone_russian = s;
+    return _c_allophone_russian;
+}
+
+var _c_allophone_mandarin = 0;
+# Standard Chinese (Beijing): Lee & Zee (2003), JIPA 33(1), p. 111.
+#   "In open syllables, [i, y, u] are about cardinal, [a] = [a̠]"
+#   "in open syllables [ə] is rhotacized, i.e. [ɚ]"
+# SyllableFinal is exact for both: a and ə are monophthong units here (diphthongs are
+# separate units), so the vowel ends its syllable exactly when the syllable is open.
+# NOT encoded: [a] = [a̟] and [u] = [ʊ] "in syllables closed by a nasal" (a nasal in
+#   the same syllable, which Before(Nasal) does not say); [ɤ] "slightly diphthongized
+#   from [ɤ] to [ʌ]" (no symbol given); voicing of syllable-initial obstruents before
+#   the neutral tone (a tone, not stress); "[w] has a free variant form of [ʋ]" (no
+#   environment); er-hua and tone sandhi.
+fn allophone_mandarin() {
+    if (_c_allophone_mandarin != 0) { return _c_allophone_mandarin; }
+    var s = _aset_new("zh");
+    _aset_add(s, "a", "a̠", Environment.SyllableFinal, 1);
+    _aset_add(s, "ə", "ɚ", Environment.SyllableFinal, 1);
+    _c_allophone_mandarin = s;
+    return _c_allophone_mandarin;
+}
+
+var _c_allophone_arabic = 0;
+# Arabic, spoken Modern Standard Arabic as read by one speaker of Levantine background:
+# Thelwall & Sa'adeddin (1990), JIPA 20(2), pp. 38-39.
+#   "/tˤ,dˤ,sˤ,ðˤ/ are Retracted Tongue Root ... /ʕ/ is a Retracted Tongue Root glottal
+#     stop" (p. 38): the five consonants the vowel rules name as RTR.
+#   "/a/ has three main allophones: [ɑ] before Retracted Tongue Root consonants, [ɐ]
+#     before word boundary, and [a] elsewhere, taking phonological length into
+#     account" (p. 39). So /aː/ → [ɑː] before them too.
+#   "/i/ and /ij/ become [ɨ] before Retracted Tongue Root and pharyngeal consonants":
+#     the five RTR consonants and pharyngeal /ħ/. Encoded for short /i/.
+# NOT encoded: emphasis spread over the whole lexeme in both directions, blocked only
+#   by /j/ (p. 38); "/u/ and /uw/ become [ʊ] and [ɤ]" (which goes with which is not
+#   stated); /iː/ (whether [ɨ] keeps its length is not stated); word-final /aː/ (its
+#   length "is neutralised", to what is not stated).
+fn allophone_arabic() {
+    if (_c_allophone_arabic != 0) { return _c_allophone_arabic; }
+    var s = _aset_new("ar");
+    var rtr = vec_new();
+    vec_push(rtr, "tˤ");
+    vec_push(rtr, "dˤ");
+    vec_push(rtr, "sˤ");
+    vec_push(rtr, "ðˤ");
+    vec_push(rtr, "ʕ");
+    _aset_add_before_each(s, "a", "ɑ", rtr, 1);
+    _aset_add_before_each(s, "aː", "ɑː", rtr, 1);
+    _aset_add(s, "a", "ɐ", Environment.WordFinal, 1);
+    _aset_add_before_each(s, "i", "ɨ", rtr, 1);
+    _aset_add(s, "i", "ɨ", _env_before("ħ"), 1);
+    _c_allophone_arabic = s;
+    return _c_allophone_arabic;
+}
+
 # --- syllable.cyr ---
 
 # src/syllable.cyr — syllable structure + phonotactic constraints.
@@ -5851,6 +6144,22 @@ fn script_lao() {
     return _c_script_lao;
 }
 
+var _c_script_glagolitic = 0;
+# Glagolitic (2.6.0), registered because its numerals are (gematria_glagolitic), and
+# every letter-value script must be a registered script. No corpus language is
+# written in it; it is the script of the earliest Old Church Slavonic texts.
+# Historical. Its attestation dates are left unset (0), because no source for them
+# was checked; Croatian liturgical use continued long after its main period. Ranges
+# are Unicode's Glagolitic and Glagolitic Supplement blocks (Blocks.txt).
+fn script_glagolitic() {
+    if (_c_script_glagolitic != 0) { return _c_script_glagolitic; }
+    var s = _script_new("Glag", "Glagolitic", ScriptType.Alphabet, Direction.LeftToRight, ScriptStatus.Historical, 0);
+    _script_add_range(s, 0x2C00, 0x2C5F);
+    _script_add_range(s, 0x1E000, 0x1E02F);
+    _c_script_glagolitic = s;
+    return _c_script_glagolitic;
+}
+
 # Look up a script by ISO 15924 code — Script ptr, or 0 if unregistered.
 fn script_by_code(code) {
     if (streq(code, "Latn") == 1) { return script_latin(); }
@@ -5872,6 +6181,7 @@ fn script_by_code(code) {
     if (streq(code, "Mymr") == 1) { return script_myanmar(); }
     if (streq(code, "Khmr") == 1) { return script_khmer(); }
     if (streq(code, "Laoo") == 1) { return script_lao(); }
+    if (streq(code, "Glag") == 1) { return script_glagolitic(); }
     return 0;
 }
 
@@ -5899,6 +6209,7 @@ fn script_all_codes() {
     vec_push(c, "Mymr");
     vec_push(c, "Khmr");
     vec_push(c, "Laoo");
+    vec_push(c, "Glag");
     _c_script_all_codes = c;
     return _c_script_all_codes;
 }
@@ -6808,10 +7119,20 @@ fn numerals_chinese_rod_numerals() {
 # `NumeralSystemKind` (Decimal / Alphabetic / Other) on each record, and is what
 # `numerals_string_value` implements. Adding it here would have been a fourth enum
 # value that no lookup could answer differently from Standard.
+#
+# NUM_GADOL (2.6.0) is mispar gadol, a Hebrew method: the five final forms count as
+# the hundreds after tav, ך 500, ם 600, ן 700, ף 800, ץ 900, and the other 22 letters
+# keep their standard values (Jewish Encyclopedia, "Gematria", no. 11: "the final
+# letters count as hundreds"; Avodat Yisrael, Balak 2, for ך 500 and ם 600, with the
+# atbash pairs fixing ף 800 and ץ 900). The order is by value, NOT the order of the
+# mnemonic מנצפ״ך. It is the first method that needs data the standard table does not
+# carry, so the five values live in _gadol_final. Mispar gadol exists only for
+# Hebrew, so for any other script it reports unmapped rather than inventing a value.
 enum NumericSystem {
     NUM_STANDARD = 0;   # the letter's own numeral value (Hebrew ת = 400)
     NUM_ORDINAL = 1;    # its position in the alphabet (Hebrew ת = 22)
     NUM_REDUCED = 2;    # the standard value's digital root (Hebrew ת = 4)
+    NUM_GADOL = 3;      # mispar gadol, Hebrew only: finals 500-900 (Hebrew ץ = 900)
 }
 
 # Digital root: repeatedly sum decimal digits until a single digit remains. For the
@@ -6837,6 +7158,7 @@ fn gematria_by_script(code) {
     if (streq(code, "Latn") == 1) { return gematria_latin(); }
     if (streq(code, "Cyrl") == 1) { return gematria_cyrillic(); }
     if (streq(code, "Grek") == 1) { return numerals_greek_isopsephy(); }
+    if (streq(code, "Glag") == 1) { return gematria_glagolitic(); }
     return 0;
 }
 
@@ -6850,6 +7172,7 @@ fn gematria_all_scripts() {
     vec_push(c, "Latn");
     vec_push(c, "Cyrl");
     vec_push(c, "Grek");
+    vec_push(c, "Glag");
     _c_gematria_all_scripts = c;
     return _c_gematria_all_scripts;
 }
@@ -6919,10 +7242,62 @@ fn _char_value_bytes(ms, system, ch, len) {
     return 0 - 1;
 }
 
+# Mispar gadol's value for a Hebrew final form, or 0 when `ch` is not one.
+fn _gadol_final(ch, len) {
+    if (len != 2) { return 0; }
+    if (memeq(ch, "ך", 2) == 1) { return 500; }
+    if (memeq(ch, "ם", 2) == 1) { return 600; }
+    if (memeq(ch, "ן", 2) == 1) { return 700; }
+    if (memeq(ch, "ף", 2) == 1) { return 800; }
+    if (memeq(ch, "ץ", 2) == 1) { return 900; }
+    return 0;
+}
+
+# --- Variant glyphs (2.6.0) -------------------------------------------
+# A decode-side alias layer: a variant glyph is read as its canonical letter, so the
+# canonical tables stay one entry per slot (see architecture note 001, which is why
+# these must never go into a table). Church Slavonic only, verified per glyph:
+#   ѵ izhitsa (U+0475) → у, 400. The 400 of Old Church Slavonic (Leskien 1922 p. 5;
+#       Schenker 1995 p. 182). Synodal Church Slavonic writes 400 with у instead
+#       (Unicode Technical Note #41, Table 15).
+#   ѿ ot (U+047F), the ligature of ѡ and т → ѡ, 800, the usual form in Synodal
+#       printing (UTN #41, pp. 16, 74).
+#   ҁ koppa (U+0481) → ч, 90, the earlier ustav period's 90 before ч took the slot
+#       (UTN #41, pp. 16, 64).
+# Not aliased: monograph uk ꙋ (U+A64B). It is a glyph of оу, but no source shows it
+# used as a numeral (Cleminson, L2/06-359, p. 3; UTN #41 omits it).
+# An alias reads its canonical letter under every method, ordinal included, because
+# it fills that letter's slot. Only the lowercase forms are aliased, as the tables
+# map lowercase only.
+fn _numerals_alias(script_code, ch, len) {
+    if (len != 2) { return 0; }
+    if (streq(script_code, "Cyrl") == 0) { return 0; }
+    if (memeq(ch, "ѵ", 2) == 1) { return "у"; }
+    if (memeq(ch, "ѿ", 2) == 1) { return "ѡ"; }
+    if (memeq(ch, "ҁ", 2) == 1) { return "ч"; }
+    return 0;
+}
+
+# The value of the `len` bytes at `ch` in a script's table under one method, with
+# mispar gadol and the alias layer applied. Allocates nothing.
+fn _lookup_value(script_code, ms, system, ch, len) {
+    if (system == NumericSystem.NUM_GADOL) {
+        if (streq(script_code, "Hebr") == 0) { return 0 - 1; }
+        var g = _gadol_final(ch, len);
+        if (g > 0) { return g; }
+        return _char_value_bytes(ms, NumericSystem.NUM_STANDARD, ch, len);
+    }
+    var v = _char_value_bytes(ms, system, ch, len);
+    if (v >= 0) { return v; }
+    var a = _numerals_alias(script_code, ch, len);
+    if (a == 0) { return 0 - 1; }
+    return _char_value_bytes(ms, system, a, strlen(a));
+}
+
 fn char_value(script_code, system, ch) {
     var sys = gematria_by_script(script_code);
     if (sys == 0) { return 0 - 1; }
-    return _char_value_bytes(numerals_mappings(sys), system, ch, strlen(ch));
+    return _lookup_value(script_code, numerals_mappings(sys), system, ch, strlen(ch));
 }
 
 # Sum of a string's character values under one method. (0-1) if any character is
@@ -6936,7 +7311,7 @@ fn string_value_in(script_code, system, s) {
     var n = strlen(s);
     while (p < n) {
         var len = _utf8_step(s, p, n);
-        var v = _char_value_bytes(ms, system, s + p, len);
+        var v = _lookup_value(script_code, ms, system, s + p, len);
         if (v < 0) { return 0 - 1; }
         total = total + v;
         p = p + len;
@@ -6951,8 +7326,8 @@ fn string_value_in(script_code, system, s) {
 # Under NUM_ORDINAL a numeral sign's slot holds the unmapped sentinel (0-1), since
 # it carries a value but no alphabet position; the pairs are not all positive.
 #
-# CACHED since 2.5.4, like every other table in this file. There are only 15
-# possible results (5 scripts x 3 methods). Until 2.5.4 each call built a fresh
+# CACHED since 2.5.4, like every other table in this file. There are only 24
+# possible results (6 scripts x 4 methods, since 2.6.0). Until 2.5.4 each call built a fresh
 # ~856 B table, and the bump allocator never frees, so a caller in a loop grew the
 # heap without bound. Now the first call for a (script, method) builds its table
 # and every later call returns the SAME vec and the same pair records, allocating
@@ -6963,17 +7338,23 @@ fn string_value_in(script_code, system, s) {
 # Copy it first if you need to edit it. Every unknown script shares one empty vec,
 # so the same holds there.
 #
-# A `system` other than NUM_ORDINAL or NUM_REDUCED reads as NUM_STANDARD, as it
-# always has here and in char_value, and shares the standard table.
-var _c_alpha_tables = 0;   # 15 slots, [script index * 3 + method], 0 until built
+# A `system` other than NUM_ORDINAL, NUM_REDUCED or NUM_GADOL reads as NUM_STANDARD,
+# as it always has here and in char_value, and shares the standard table. NUM_GADOL
+# on a script other than Hebrew has no table, and returns the shared empty vec.
+# The tables are canonical: the alias layer's variant glyphs are not in them.
+var _c_alpha_tables = 0;   # 24 slots, [script index * 4 + method], 0 until built
 var _c_alpha_empty = 0;    # the one empty table every unknown script gets
 
 fn script_alphabet_values(script_code, system) {
     var scripts = gematria_all_scripts();
     var si = 0 - 1;
     var k = 0;
+    # Stop at the match: every script past it is one more string compare per call.
     while (k < vec_len(scripts)) {
-        if (streq(vec_get(scripts, k), script_code) == 1) { si = k; }
+        if (streq(vec_get(scripts, k), script_code) == 1) {
+            si = k;
+            break;
+        }
         k = k + 1;
     }
     if (si < 0) {
@@ -6983,8 +7364,15 @@ fn script_alphabet_values(script_code, system) {
     var mi = 0;
     if (system == NumericSystem.NUM_ORDINAL) { mi = 1; }
     elif (system == NumericSystem.NUM_REDUCED) { mi = 2; }
+    elif (system == NumericSystem.NUM_GADOL) { mi = 3; }
+    if (mi == 3) {
+        if (streq(script_code, "Hebr") == 0) {
+            if (_c_alpha_empty == 0) { _c_alpha_empty = vec_new(); }
+            return _c_alpha_empty;
+        }
+    }
     if (_c_alpha_tables == 0) {
-        var slots = vec_len(scripts) * 3;
+        var slots = vec_len(scripts) * 4;
         _c_alpha_tables = alloc(slots * 8);
         var z = 0;
         while (z < slots) {
@@ -6992,18 +7380,20 @@ fn script_alphabet_values(script_code, system) {
             z = z + 1;
         }
     }
-    var slot = _c_alpha_tables + (si * 3 + mi) * 8;
+    var slot = _c_alpha_tables + (si * 4 + mi) * 8;
     if (load64(slot) == 0) {
         store64(slot, _alphabet_table_build(gematria_by_script(script_code), mi));
     }
     return load64(slot);
 }
 
-# Build one (script, method) table. `method` is 0 standard, 1 ordinal, 2 reduced.
+# Build one (script, method) table. `method` is 0 standard, 1 ordinal, 2 reduced,
+# 3 gadol (Hebrew only; the caller has already refused other scripts).
 fn _alphabet_table_build(sys, method) {
     var system = NumericSystem.NUM_STANDARD;
     if (method == 1) { system = NumericSystem.NUM_ORDINAL; }
     if (method == 2) { system = NumericSystem.NUM_REDUCED; }
+    if (method == 3) { system = NumericSystem.NUM_GADOL; }
     var out = vec_new();
     var ms = numerals_mappings(sys);
     var n = vec_len(ms);
@@ -7021,6 +7411,11 @@ fn _alphabet_table_build(sys, method) {
             else { store64(pair + 8, _ordinal_at(ms, i)); }
         }
         elif (system == NumericSystem.NUM_REDUCED) { store64(pair + 8, _digital_root(load64(m + 16))); }
+        elif (system == NumericSystem.NUM_GADOL) {
+            var g = _gadol_final(load64(m), load64(m + 8));
+            if (g > 0) { store64(pair + 8, g); }
+            else { store64(pair + 8, load64(m + 16)); }
+        }
         else { store64(pair + 8, load64(m + 16)); }
         vec_push(out, pair);
         i = i + 1;
@@ -7190,17 +7585,19 @@ var _c_gematria_cyrillic = 0;
 # Cyrillic while big yus carries nothing. я is absent as the modern ia-ligature;
 # for early material the glyph written for /ja/ is ѧ, which is 900.
 #
-# Scope. This is the standardised (post-1300) recension. Before roughly 1300, 90
-# is koppa ҁ and ч has no value; some Western Cyrillic varieties instead give
-# ч=60 and ҁ=90. Variant glyphs exist for two slots — 400 is у, ѹ, ѵ (izhitsa)
-# or ꙋ, and 800 is ѡ or ѿ (ot) — and only the conventional carrier is mapped
-# here. Glagolitic is a different system entirely, numbering in its own
-# alphabetical order, where buky=2 and zhivete=7 rather than nothing; it would
-# be a separate "Glag" table, not an edit to this one.
+# Scope. This is the standardised recension. In the earlier ustav period 90 is
+# koppa ҁ and ч has no value (Unicode Technical Note #41, pp. 16, 64; the date of
+# the change, often given as about 1300, was not verified). Some Western Cyrillic
+# varieties instead give ч=60 and ҁ=90. Variant glyphs exist for two slots: 400
+# is у or ѵ (izhitsa, the Old Church Slavonic form), and 800 is ѡ or ѿ (ot, the
+# Synodal form). Only the conventional carrier is mapped here. Monograph uk ꙋ is
+# NOT a 400 glyph: no source shows it used as a numeral (corrected at 2.6.0).
+# Glagolitic is a different system, numbering in its own alphabetical order
+# (buky=2, zhivete=7): see gematria_glagolitic.
 #
-# Variant glyphs and period alternatives stay OUT of this table on purpose. It
-# is a canonical alphabet, and a decoder that must accept them wants an alias
-# map that normalises a glyph to its canonical letter before lookup.
+# Variant glyphs and period alternatives stay OUT of this table on purpose. It is a
+# canonical alphabet. Since 2.6.0 the alias layer (_numerals_alias) reads ѵ, ѿ and
+# ҁ as their canonical letters before lookup, so char_value accepts them.
 fn gematria_cyrillic() {
     if (_c_gematria_cyrillic != 0) { return _c_gematria_cyrillic; }
     var sys = _nsys_new("Cyrl", "Church Slavonic Numerals (standardised recension)", NumeralSystemKind.Alphabetic);
@@ -7233,6 +7630,60 @@ fn gematria_cyrillic() {
     _nsys_add(sys, "ц", 900);
     _c_gematria_cyrillic = sys;
     return _c_gematria_cyrillic;
+}
+
+var _c_gematria_glagolitic = 0;
+# Glagolitic numerals (2.6.0), the letters' values in Glagolitic's own alphabetical
+# order, which differs from Cyrillic's: buky is 2 and zhivete 7, where Cyrillic gives
+# both no value. Every value below is in each of Leskien (1922, pp. 4-5), Vajs (1932,
+# p. 18), Schenker (1995, p. 182), Cubberley in Daniels & Bright (1996, Table 27.1)
+# and Everson & Cleminson (WG2 N2610R, 2003, p. 5). Code points are the small
+# letters, U+2C30-U+2C4D, checked against UnicodeData.txt.
+#
+# Initial izhe is a second form of izhe, both 10, so it is an allograph and folds to
+# izhe's position. The ordinal is the position in this numeral table, as for the
+# Cyrillic one, not in the full alphabet: valueless letters are not in it.
+#
+# Left out on purpose, because the sources disagree or only a late one has them: pe
+# (no value; some scholars put it at 800 before shta took the slot, Schenker p. 172);
+# yat as 800 (one 1391 breviary, per Vajs n. 19); and the thousands above 1000, sha
+# 2000, yeru 3000, yu 5000 (Everson & Cleminson, "fifteenth-century evidence"; Vajs
+# calls the higher cases isolated). The other letters, the yers, the yuses, fita and
+# izhitsa, carry no value in any of the sources.
+fn gematria_glagolitic() {
+    if (_c_gematria_glagolitic != 0) { return _c_gematria_glagolitic; }
+    var sys = _nsys_new("Glag", "Glagolitic Numerals", NumeralSystemKind.Alphabetic);
+    _nsys_add(sys, "ⰰ", 1);   # U+2C30 azu
+    _nsys_add(sys, "ⰱ", 2);   # U+2C31 buky
+    _nsys_add(sys, "ⰲ", 3);   # U+2C32 vede
+    _nsys_add(sys, "ⰳ", 4);   # U+2C33 glagoli
+    _nsys_add(sys, "ⰴ", 5);   # U+2C34 dobro
+    _nsys_add(sys, "ⰵ", 6);   # U+2C35 yestu
+    _nsys_add(sys, "ⰶ", 7);   # U+2C36 zhivete
+    _nsys_add(sys, "ⰷ", 8);   # U+2C37 dzelo
+    _nsys_add(sys, "ⰸ", 9);   # U+2C38 zemlja
+    _nsys_add(sys, "ⰹ", 10);   # U+2C39 izhe
+    _nsys_add_variant(sys, "ⰺ", 10, "ⰹ");   # U+2C3A initial izhe, a form of izhe
+    _nsys_add(sys, "ⰻ", 20);   # U+2C3B i
+    _nsys_add(sys, "ⰼ", 30);   # U+2C3C djervi
+    _nsys_add(sys, "ⰽ", 40);   # U+2C3D kako
+    _nsys_add(sys, "ⰾ", 50);   # U+2C3E ljudije
+    _nsys_add(sys, "ⰿ", 60);   # U+2C3F myslite
+    _nsys_add(sys, "ⱀ", 70);   # U+2C40 nashi
+    _nsys_add(sys, "ⱁ", 80);   # U+2C41 onu
+    _nsys_add(sys, "ⱂ", 90);   # U+2C42 pokoji
+    _nsys_add(sys, "ⱃ", 100);   # U+2C43 ritsi
+    _nsys_add(sys, "ⱄ", 200);   # U+2C44 slovo
+    _nsys_add(sys, "ⱅ", 300);   # U+2C45 tvrido
+    _nsys_add(sys, "ⱆ", 400);   # U+2C46 uku
+    _nsys_add(sys, "ⱇ", 500);   # U+2C47 fritu
+    _nsys_add(sys, "ⱈ", 600);   # U+2C48 heru
+    _nsys_add(sys, "ⱉ", 700);   # U+2C49 otu
+    _nsys_add(sys, "ⱋ", 800);   # U+2C4B shta
+    _nsys_add(sys, "ⱌ", 900);   # U+2C4C tsi
+    _nsys_add(sys, "ⱍ", 1000);   # U+2C4D chrivi
+    _c_gematria_glagolitic = sys;
+    return _c_gematria_glagolitic;
 }
 
 # --- transliteration.cyr ---

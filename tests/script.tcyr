@@ -72,7 +72,7 @@ fn main() {
     assert(script_by_code("Grek") != 0, "by_code Grek");
     assert_eq(script_by_code("XXXX"), 0, "by_code unknown");
     var codes = script_all_codes();
-    assert_eq(vec_len(codes), 19, "19 script codes (10 original + 9 added at 2.1.6)");
+    assert_eq(vec_len(codes), 20, "20 script codes (10 original, 9 added at 2.1.6, Glagolitic at 2.6.0)");
     var n = vec_len(codes);
     var i = 0;
     var missing = 0;
@@ -156,7 +156,7 @@ fn main() {
     assert_eq(script_by_code("Mymr"), my, "Myanmar via by_code");
     assert_eq(script_by_code("Khmr"), km, "Khmer via by_code");
     assert_eq(script_by_code("Laoo"), lo, "Lao via by_code");
-    assert_eq(vec_len(script_all_codes()), 19, "19 registered scripts (10 + the 9 added)");
+    assert_eq(vec_len(script_all_codes()), 20, "20 registered scripts (10 + 9 + Glagolitic)");
 
     return assert_summary();
 }

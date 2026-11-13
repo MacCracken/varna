@@ -332,6 +332,22 @@ fn script_lao() {
     return _c_script_lao;
 }
 
+var _c_script_glagolitic = 0;
+# Glagolitic (2.6.0), registered because its numerals are (gematria_glagolitic), and
+# every letter-value script must be a registered script. No corpus language is
+# written in it; it is the script of the earliest Old Church Slavonic texts.
+# Historical. Its attestation dates are left unset (0), because no source for them
+# was checked; Croatian liturgical use continued long after its main period. Ranges
+# are Unicode's Glagolitic and Glagolitic Supplement blocks (Blocks.txt).
+fn script_glagolitic() {
+    if (_c_script_glagolitic != 0) { return _c_script_glagolitic; }
+    var s = _script_new("Glag", "Glagolitic", ScriptType.Alphabet, Direction.LeftToRight, ScriptStatus.Historical, 0);
+    _script_add_range(s, 0x2C00, 0x2C5F);
+    _script_add_range(s, 0x1E000, 0x1E02F);
+    _c_script_glagolitic = s;
+    return _c_script_glagolitic;
+}
+
 # Look up a script by ISO 15924 code — Script ptr, or 0 if unregistered.
 fn script_by_code(code) {
     if (streq(code, "Latn") == 1) { return script_latin(); }
@@ -353,6 +369,7 @@ fn script_by_code(code) {
     if (streq(code, "Mymr") == 1) { return script_myanmar(); }
     if (streq(code, "Khmr") == 1) { return script_khmer(); }
     if (streq(code, "Laoo") == 1) { return script_lao(); }
+    if (streq(code, "Glag") == 1) { return script_glagolitic(); }
     return 0;
 }
 
@@ -380,6 +397,7 @@ fn script_all_codes() {
     vec_push(c, "Mymr");
     vec_push(c, "Khmr");
     vec_push(c, "Laoo");
+    vec_push(c, "Glag");
     _c_script_all_codes = c;
     return _c_script_all_codes;
 }

@@ -66,7 +66,9 @@ fn main() {
     assert_eq(phoneme_vowel_count(iv), 10, "la vowels");
     iv = phoneme_classical_arabic();
     assert(streq(phoneme_language_code(iv), "ar"), "ar code");
-    assert_eq(phoneme_consonant_count(iv), 28, "ar consonants");
+    # 28 + the marginal /lˤ/ (Thelwall & Sa'adeddin 1990), added at 2.6.0.
+    assert_eq(phoneme_consonant_count(iv), 29, "ar consonants");
+    assert(phoneme_has(iv, "lˤ"), "ar has /lˤ/");
     assert_eq(phoneme_vowel_count(iv), 6, "ar vowels");
     iv = phoneme_koine_greek();
     assert(streq(phoneme_language_code(iv), "grc"), "grc code");
@@ -78,19 +80,37 @@ fn main() {
     assert_eq(phoneme_vowel_count(iv), 12, "lzh vowels");
     iv = phoneme_mandarin();
     assert(streq(phoneme_language_code(iv), "zh"), "zh code");
-    assert_eq(phoneme_consonant_count(iv), 21, "zh consonants");
-    assert_eq(phoneme_vowel_count(iv), 7, "zh vowels");
+    # Lee & Zee (2003), 2.6.0: + /ŋ w j/; monophthongs i y a ə u ɤ, syllabic ɹ̩, and
+    # 11 diphthongs and 4 triphthongs as units. /e o/ occur only inside those.
+    assert_eq(phoneme_consonant_count(iv), 24, "zh consonants");
+    assert_eq(phoneme_vowel_count(iv), 22, "zh vowels");
+    assert(phoneme_has(iv, "ŋ"), "zh has /ŋ/");
+    assert(phoneme_has(iv, "ə"), "zh has /ə/");
+    assert(phoneme_has(iv, "uei"), "zh has the triphthong uei");
+    assert(!phoneme_has(iv, "e"), "zh has no monophthong /e/");
+    assert(!phoneme_has(iv, "o"), "zh has no monophthong /o/");
     iv = phoneme_hindi();
     assert(streq(phoneme_language_code(iv), "hi"), "hi code");
     assert_eq(phoneme_consonant_count(iv), 34, "hi consonants");
     assert_eq(phoneme_vowel_count(iv), 10, "hi vowels");
     iv = phoneme_japanese();
     assert(streq(phoneme_language_code(iv), "ja"), "ja code");
-    assert_eq(phoneme_consonant_count(iv), 20, "ja consonants");
+    # Okada (1991), 2.6.0: t͡ɕ d͡ʑ ɸ ɕ ŋ are allophones (now rules), and /ɴ/ added.
+    assert_eq(phoneme_consonant_count(iv), 16, "ja consonants");
+    assert(phoneme_has(iv, "ɴ"), "ja has the moraic nasal /ɴ/");
+    assert(!phoneme_has(iv, "ɕ"), "ja [ɕ] is /s/ before /i/, not a phoneme");
+    assert(!phoneme_has(iv, "ŋ"), "ja [ŋ] is /ɡ/ medially, not a phoneme");
     assert_eq(phoneme_vowel_count(iv), 5, "ja vowels");
     iv = phoneme_spanish();
     assert(streq(phoneme_language_code(iv), "es"), "es code");
-    assert_eq(phoneme_consonant_count(iv), 23, "es consonants");
+    # Martínez-Celdrán et al. (2003), 2.6.0: β ð ɣ are allophones, "r"/"rr" are /ɾ r/,
+    # and /ɟ͡ʝ/ added.
+    assert_eq(phoneme_consonant_count(iv), 21, "es consonants");
+    assert(!phoneme_has(iv, "β"), "es [β] is /b/, not a phoneme");
+    assert(!phoneme_has(iv, "rr"), "es has no non-IPA rr");
+    assert_eq(phoneme_manner(phoneme_find(iv, "ɾ")), Manner.TapFlap, "es /ɾ/ is the tap");
+    assert_eq(phoneme_manner(phoneme_find(iv, "r")), Manner.Trill, "es /r/ is the trill");
+    assert(phoneme_has(iv, "ɟ͡ʝ"), "es has /ɟ͡ʝ/");
     assert_eq(phoneme_vowel_count(iv), 5, "es vowels");
     iv = phoneme_french();
     assert(streq(phoneme_language_code(iv), "fr"), "fr code");

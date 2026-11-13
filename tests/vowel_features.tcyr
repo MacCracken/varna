@@ -178,10 +178,12 @@ fn main() {
     # precomposed nasal vowels, which carried no Nasalized bit and so were never
     # counted, now carry it.
     assert_eq(nas, 18, "18 nasal vowels in the corpus");
-    assert_eq(syl, 4, "4 syllabic vowels");
+    # 4 until 2.6.0 added Mandarin's apical [ɹ̩] (Lee & Zee 2003).
+    assert_eq(syl, 5, "5 syllabic vowels");
     assert_eq(xs, 1, "1 extra-short vowel");
-    # 23 until 2.5.4: Thai gained length, and Yoruba and Portuguese nasality.
-    assert_eq(marked_langs, 26, "26 languages carry a marked vowel");
+    # 23 until 2.5.4: Thai gained length, and Yoruba and Portuguese nasality. 26 until
+    # 2.6.0: Mandarin gained the syllabic [ɹ̩].
+    assert_eq(marked_langs, 27, "27 languages carry a marked vowel");
 
     # ---------------------------------------------------------------
     test_group("one_nasal_spelling");

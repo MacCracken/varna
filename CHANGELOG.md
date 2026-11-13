@@ -7,6 +7,121 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Toward 2.6.0, coverage scale: allophone rules for five more languages, the numeral
+follow-ons, and the citation re-check carried over from 2.5.4. The decisions in it were
+the project owner's: re-sourcing both tone rows, automatic variant aliases,
+Glagolitic's core values only, and exact-environment rules plus inventory fixes.
+
+### Breaking
+
+- **Inventories corrected to their sources** (every change is in *Fixed*). These
+  phonemes are gone, so `phoneme_find` returns 0 for them:
+  - Spanish `β ð ɣ`, and `"rr"`. The tap is now `"ɾ"` and the trill `"r"`, so `"r"`
+    now names the trill, where it named the tap.
+  - Japanese `t͡ɕ d͡ʑ ɸ ɕ ŋ`.
+  - Mandarin's monophthongs `e o`.
+- **Tone rows changed**: Thai `˦˩ → ˦˧` (falling) and `˨˩˦ → ˧˨˧` (rising), and every
+  Vietnamese cell (below).
+- **`char_value("Cyrl", …)` reads ѵ, ѿ and ҁ** (400, 800, 90) where it returned the
+  unmapped sentinel.
+- **20 scripts, not 19**, and 6 letter-value scripts, not 5 (Glagolitic). Anything that
+  counts `script_all_codes` or `gematria_all_scripts` sees one more.
+
+### Added
+
+- **allophone: rule sets for Spanish, Japanese, Russian, Mandarin and Arabic**, and
+  `allophone_by_code` / `allophone_all_codes`. English was the only set. Each set comes
+  from that language's JIPA Illustration of the IPA, and holds only the rules whose
+  environment the model states exactly:
+
+  | Set | Rules | From | Examples |
+  |---|---|---|---|
+  | `es` | 40 | Martínez-Celdrán et al. 2003, pp. 257–258 | nasal place (ánfora [ˈaɱfoɾa]), /s θ/ voicing before a voiced consonant, optional /s/ dentalization, /x/ → [χ], /l/ dentalization |
+  | `ja` | 9 | Okada 1991, p. 95 | /tˢ s z/ → [tɕ ɕ ʑ] before /i/, /h/ → [ç ɸ], /z/ → [ᵈz], /g/ → [ɣ], palatalized /n/ |
+  | `ru` | 16 | Yanushevskaya & Bunčić 2015, pp. 223–225 | final devoicing (11 pairs), vowel reduction to [ʌ] / [ə], /j/ → [i̯] |
+  | `zh` | 2 | Lee & Zee 2003, p. 111 | [a] = [a̠] and [ə] → [ɚ] in open syllables |
+  | `ar` | 17 | Thelwall & Sa'adeddin 1990, pp. 38–39 | /a aː/ → [ɑ ɑː] and /i/ → [ɨ] before the RTR consonants, /a/ → [ɐ] word-finally |
+
+  "Before a voiced consonant" is written out as one rule per consonant, because a class
+  such as Voiced is only a label: nothing evaluates it, and it would read as including
+  vowels. The rules the model cannot state exactly are listed in each set's comment and
+  not encoded. They include Spanish spirantization ("in other positions" than after a
+  pause or nasal), Japanese /g/ → [ŋ] "medially", Russian voicing assimilation, Mandarin
+  [a̟ ʊ] "in syllables closed by a nasal", and Arabic emphasis spread. Some rules the
+  roadmap expected are not in these sources:
+  - Okada treats /tˢ/ as a phoneme, so /t/ → [ts] is not his rule.
+  - Yanushevskaya & Bunčić treat [ɨ] as a phoneme, not an allophone of /i/.
+  - Lee & Zee never relate the apical vowel to /i/.
+
+- **numerals: mispar gadol**, `NumericSystem.NUM_GADOL`: the Hebrew finals ך ם ן ף ץ
+  count 500 / 600 / 700 / 800 / 900, and the other 22 letters keep their standard
+  values (Jewish Encyclopedia, "Gematria", no. 11; Avodat Yisrael, Balak 2). The order
+  is by value, not the mnemonic מנצפ״ך. Mispar gadol exists only for Hebrew, so on any
+  other script it reports unmapped, and `script_alphabet_values` gives the shared empty
+  table. The cache holds 6 scripts × 4 methods.
+- **numerals: Glagolitic** (`gematria_glagolitic`, script `Glag`): 29 entries in
+  Glagolitic's own order, 1–900 and chrivi 1000, with initial izhe as a second form of
+  izhe. Every value is in each of Leskien 1922, Vajs 1932, Schenker 1995, Cubberley 1996
+  and Everson & Cleminson 2003. The disputed ones are left out and listed: pe, yat as
+  800, and the late thousands (sha 2000, yeru 3000, yu 5000).
+- **numerals: the variant-glyph alias layer.** `char_value` and `string_value_in` read
+  izhitsa ѵ as у (400, the Old Church Slavonic form), ot ѿ as ѡ (800, the Synodal form)
+  and koppa ҁ as ч (90, the earlier ustav period). The canonical tables are unchanged,
+  as architecture note 001 requires. Monograph uk ꙋ is not aliased: no source shows it
+  used as a numeral, which also corrects the Cyrillic table's own note.
+- **script: Glagolitic** (`script_glagolitic`), registered because its numerals are:
+  every letter-value script must be a registered script. The ranges are Unicode's
+  Glagolitic and Glagolitic Supplement blocks. Its attestation dates are left unset,
+  because no source for them was checked.
+
+### Fixed
+
+- **Thai tones re-sourced: the third Wikipedia value credited to a primary source.**
+  The 2.4.1 row, 33 / 21 / 41 / 45 / 214, was credited to Tingsabadh & Abramson (1993),
+  who print no pitch numbers (p. 26 gives diacritics only). It matches the uncited
+  "Phonetic" column of Wikipedia's *Thai language* table. The row is now Teeranon (2007,
+  p. 1), after Abramson's acoustic work: `˧ / ˨˩ / ˦˧ / ˦˥ / ˧˨˧`. No source checked
+  prints 41 or 214 for Thai.
+- **Vietnamese tones re-sourced to Kirby (2011)**, the JIPA Illustration, p. 386, read
+  from the rendered tone letters: `˦ / ˧˨ / ˨˦ / ˧˩˨ / ˧˨˥ˀ / ˨ˀ`. The ˀ marks are for his
+  "broken" and "low glottalized". In the old row, ngang 33, huyền 21 and sắc 35 were
+  Nguyễn & Edmondson's. But hỏi 313, ngã 3ˀ5 and nặng 21ˀ, credited to them and to
+  Thompson, match the uncited Northern column of Wikipedia's *Vietnamese phonology*
+  table instead.
+- **Spanish inventory**, after Martínez-Celdrán et al. (2003): [β ð ɣ] are allophones of
+  /b d ɡ/ ("their approximant variants", p. 257), so they are removed. The rhotics are
+  now /ɾ/ (tap) and /r/ (trill); before, "r" was the tap and "rr" the trill. /ɟ͡ʝ/ is
+  added.
+- **Japanese inventory**, after Okada (1991): [t͡ɕ d͡ʑ ɸ ɕ ŋ] are allophones, now rules,
+  so they are removed, and the moraic nasal /ɴ/ is added. Consonants 20 → 16.
+- **Mandarin inventory**, after Lee & Zee (2003):
+  - /ŋ w j/ are added.
+  - The monophthongs are i y a ə u ɤ, so /ə/ is added and /e o/ removed; those two
+    occur only in the diphthongs.
+  - The syllabic apical [ɹ̩] is added.
+  - Their 11 diphthongs and 4 triphthongs are added as units.
+
+  The retroflex symbols stay, a Chao (1968) convention Lee & Zee's own notes record.
+- **Arabic inventory**: the marginal pharyngealized /lˤ/ is added (Thelwall &
+  Sa'adeddin 1990, p. 37).
+- **Russian inventory** matches Yanushevskaya & Bunčić (2015) and is unchanged.
+- **WALS claims checked against WALS's own data** (CLDF): Mandarin 85A "No dominant
+  order", Hindi 98A "Tripartite", and Somali and Hausa 13A "Simple tone system". All
+  four hold.
+
+### Performance
+
+Measured interleaved against a build of 2.5.4, min of 3, timer floor 1.21–1.24 µs:
+
+- **`gematria_char_value`, 292 → 307 ns (+5%).** This is the cost of the alias and
+  mispar-gadol dispatch that every lookup now passes through. A cached call still
+  allocates nothing: a test measures 1,000 calls through each path.
+- **`gematria_alphabet_table` is unchanged** (214 → 219 ns, inside its spread). It
+  first read +20.7%: the script-index loop did not stop at a match, so the sixth script
+  cost one more string compare on every call. It now stops at the match.
+- `grammar_by_code_lookup` and `lexicon_find_word` read −8% with their code unchanged.
+  That is the per-run CPU effect 2.5.4 measured, not a result.
+
 ## [2.5.4] - 2026-11-13
 
 Roadmap 2.5.4, hygiene and follow-ons: a cached numerals table, test-only deps,

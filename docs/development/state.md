@@ -37,11 +37,11 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | | |
 |---|---|
 | Languages | 51, each with a phoneme inventory, a resolving primary script and a Glottocode (2.5.3, from Glottolog) |
-| Scripts | 19 |
-| Numeral systems | 9 — five of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek) |
+| Scripts | 20 (Glagolitic added in the unreleased 2.6.0 work) |
+| Numeral systems | 10 — six of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek, Glagolitic) |
 | Grammar profiles | 11 |
 | Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 38 files, **3,373 assertions**, 0 failing, plus a fuzz harness (2.5.3 shipped 38 / 3,295) |
+| Tests | 39 files, **3,586 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
 | Benchmarks | 42, covering every domain and every module's JSON |
 | Reference coverage | 411/417 functions (98%) — a floor, not a correctness proof |
 
@@ -79,10 +79,10 @@ the port and has since been extended past it.
 | `features` | 25 derived SPE/Hayes distinctive features, tri-state (+/−/unspecified) |
 | `tone` | Chao tone-letter parsing → contour, register, endpoint levels, creak/checked |
 | `inventories` | the 48 extended inventories behind the 51-language corpus |
-| `allophone` | English allophone rules (flapping, aspiration, dark l) |
+| `allophone` | rule sets for English, Spanish, Japanese, Russian, Mandarin and Arabic, each from one JIPA Illustration; `allophone_by_code` |
 | `syllable` | syllable templates + phonotactics (English, Sanskrit, Japanese) |
 | `script` | 19 writing systems — type, direction, status, Unicode ranges |
-| `numerals` | 9 numeral systems + the gematria layer (standard / ordinal / reduced) |
+| `numerals` | 10 numeral systems + the gematria layer (standard / ordinal / reduced / mispar gadol), and a variant-glyph alias layer for Church Slavonic |
 | `transliteration` | Devanagari↔IAST, Greek↔Beta Code (greedy longest-match) |
 | `grammar` | 11 typological profiles, eight WALS-style dimensions each |
 | `lexicon` | `LexEntry`/`Lexicon`, `PartOfSpeech`, frequency ranking |

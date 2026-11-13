@@ -40,32 +40,30 @@ custom fonts, so render the page and look rather than trusting extracted text.
       Enfield's prose than Yanagimura's isolation values. That figure is known only
       from Wikipedia. The dissertation (UMI 9801455) is image-only and was not
       reachable at 2.5.3 or 2.5.4. Read it before preferring it.
-- [ ] **Re-check the source comments that predate 2.5.3** against their primary texts,
-      under the method above. Two were Wikipedia and a third (Wolof) over-claimed;
-      assume more may be. A large item: every inventory's comment, one at a time.
+- [x] **Re-check the source comments that predate 2.5.3.** Only 7 of the 48 inventories
+      cite a dated source; the two not already re-checked, Thai and Vietnamese, were
+      Wikipedia's tone columns too, and are re-sourced (Teeranon 2007; Kirby 2011). The
+      four explicit WALS claims hold against WALS's CLDF data. The other 41 inventories
+      cite nothing, which is the provenance item below.
 
 ## 2.6.0 — Coverage scale (P3)
 
-- [ ] **Expanded allophone rules**: Mandarin, Spanish, Japanese, Russian, Arabic
-      (`allophone_english` is the only rule set).
+- [x] **Expanded allophone rules**: Spanish, Japanese, Russian, Mandarin and Arabic,
+      each from its JIPA Illustration, with only the rules whose environment the model
+      states exactly. The inventories were corrected to the same sources.
+- [ ] **An allophone environment model that can state the rules left out.** Each new
+      set's comment lists rules that are real but not encoded, because the model has
+      no "elsewhere" (Spanish spirantization, /ɟ͡ʝ/), no "same syllable" (Mandarin
+      [a̟ ʊ] before a nasal coda), no two conditions at once (Japanese devoicing, [ᵈʑ]
+      word-initially before /i/), and classes that are labels nothing evaluates
+      (Russian voicing assimilation needs "voiced obstruent other than /v vʲ/").
 - [ ] **Expanded phonotactic profiles**: all core languages (3 today: English,
       Sanskrit, Japanese).
 - [ ] **Transliteration tables**: Cyrillic–Latin, Arabic–Latin, Hebrew–Latin, Pinyin
       (2 today: Devanagari–IAST, Greek–Beta Code).
-- [ ] **Numeral follow-ons** from the 2.4.0 review. None is a correction, since every
-      shipped value is pinned per letter.
-  - **Variant-glyph alias map**: a decode-side layer that normalises a glyph to its
-    canonical letter before lookup, so Church Slavonic izhitsa ѵ (400), ot ѿ (800),
-    monograph uk ꙋ and koppa ҁ (90, pre-1300) can be read without polluting the
-    canonical tables. These must not go inline; see
-    [architecture note 001](../architecture/001-numeral-mappings-are-the-ordinal-source.md).
-    It is a prerequisite for any early-period Cyrillic material.
-  - **Glagolitic numerals (`Glag`)**: a genuinely different system, numbered in its
-    own alphabetical order (buky=2, zhivete=7, where Cyrillic gives both no value). A
-    separate table, not an edit to the Cyrillic one.
-  - **Mispar gadol**: the Hebrew method that gives the finals 500–900 instead of their
-    base values. A fourth `NumericSystem`, and the first that needs per-character data
-    the standard table does not already carry.
+- [x] **Numeral follow-ons**: the variant-glyph alias layer (ѵ ѿ ҁ; not ꙋ, which has
+      no numeric use), Glagolitic numerals (`Glag`, the 29 values every source agrees
+      on), and mispar gadol (`NUM_GADOL`, Hebrew only).
 - [ ] **Source provenance**: track the bibliography / reference for each inventory.
       Today the source is named only in comments, as the 2.5.3 method requires.
 - [ ] **Multiple inventories per language**: competing analyses, as PHOIBLE keeps them.

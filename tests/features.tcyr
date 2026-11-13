@@ -205,7 +205,8 @@ fn main() {
     _feats(ar, "tˤ", PhonemeFeature.Pharyngealized, "Arabic emphatic /tˤ/");
     _feats(ar, "sˤ", PhonemeFeature.Pharyngealized, "Arabic emphatic /sˤ/");
     _feats(ar, "t", 0, "Arabic plain /t/");
-    assert_eq(_count_feature(ar, PhonemeFeature.Pharyngealized), 4, "Arabic has 4 emphatics");
+    # 4 until 2.6.0 added the marginal /lˤ/ (Thelwall & Sa'adeddin 1990).
+    assert_eq(_count_feature(ar, PhonemeFeature.Pharyngealized), 5, "Arabic has 5 emphatics, with /lˤ/");
 
     var ko = phoneme_korean();
     _feats(ko, "p͈", PhonemeFeature.Tense, "Korean fortis /p͈/");
@@ -396,7 +397,7 @@ fn main() {
     assert_eq(bre, 15, "15 breathy consonants");
     assert_eq(pal, 16, "16 palatalized consonants");
     assert_eq(lab, 3, "3 labialized consonants");
-    assert_eq(pha, 4, "4 pharyngealized consonants");
+    assert_eq(pha, 5, "5 pharyngealized consonants (Arabic /lˤ/ added at 2.6.0)");
     assert_eq(ten, 5, "5 tense consonants");
     assert_eq(dev, 6, "6 devoiced sonorants");
     assert_eq(pre, 4, "4 prenasalized stops");
