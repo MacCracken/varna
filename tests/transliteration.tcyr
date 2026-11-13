@@ -1,4 +1,8 @@
-# tests/transliteration.tcyr — parity (v1.x Rust src/script/transliteration.rs).
+# tests/transliteration.tcyr — parity (v1.x Rust src/script/transliteration.rs), and
+# the inherent-vowel rule (2.6.0).
+#
+# v1.x tested single letters only, which is how a table that turned नमस्ते into
+# "namasatae" passed. Whole words are pinned here.
 
 include "src/util.cyr"
 include "src/transliteration.cyr"
@@ -9,10 +13,28 @@ fn main() {
     var iast = translit_devanagari_iast();
     assert(streq(translit_char(iast, "अ"), "a"), "deva a");
     assert(streq(translit_char(iast, "आ"), "ā"), "deva aa");
-    assert(streq(translit_char(iast, "क"), "ka"), "deva ka");
+    # 2.6.0: a consonant's own target is bare; translit_apply adds the inherent a.
+    assert(streq(translit_char(iast, "क"), "k"), "deva ka is bare k (was ka)");
     assert_eq(translit_char(iast, "X"), 0, "deva unknown");
     assert(streq(translit_apply(iast, "अ"), "a"), "deva apply a");
     assert(streq(translit_apply(iast, "क"), "ka"), "deva apply ka");
+
+    test_group("devanagari_inherent_vowel");
+    assert(streq(translit_inherent_vowel(iast), "a"), "Devanagari's inherent vowel is a");
+    assert_eq(translit_pair_kind(vec_get(translit_forward(iast), 0)), TranslitKind.TR_PLAIN, "अ is plain");
+    assert(streq(translit_apply(iast, "नमस्ते"), "namaste"), "namaste (v1.x: namasatae)");
+    assert(streq(translit_apply(iast, "कि"), "ki"), "a vowel sign replaces the a (v1.x: kai)");
+    assert(streq(translit_apply(iast, "क्"), "k"), "the virama removes it (v1.x: ka)");
+    assert(streq(translit_apply(iast, "संस्कृतम्"), "saṃskṛtam"), "saṃskṛtam");
+    assert(streq(translit_apply(iast, "अग्नि"), "agni"), "agni");
+    assert(streq(translit_apply(iast, "क्ष"), "kṣa"), "a conjunct keeps the last consonant's a");
+    assert(streq(translit_apply(iast, "कं"), "kaṃ"), "the anusvara follows the vowel");
+    assert(streq(translit_apply(iast, "कः"), "kaḥ"), "and the visarga");
+    assert(streq(translit_apply(iast, "कअ"), "kaa"), "an independent vowel writes the a first");
+    assert(streq(translit_apply(iast, "क1"), "ka1"), "so does an unmapped character");
+    assert(streq(translit_apply(iast, "कक"), "kaka"), "consonant after consonant");
+    assert(streq(translit_apply(iast, "ि"), "i"), "a lone sign has nothing to replace");
+    assert(streq(translit_apply(iast, "्"), ""), "a lone virama writes nothing");
     var rev = translit_reverse_map(iast);
     assert(streq(map_get(rev, "a"), "अ"), "rev a");
     assert(streq(map_get(rev, "ā"), "ा"), "rev aa is matra (last wins)");
@@ -25,6 +47,140 @@ fn main() {
     assert(streq(translit_apply(beta, "λογος"), "logos"), "greek logos");
     assert(streq(translit_apply(beta, "Αθηνα"), "*aqhna"), "greek athena");
     assert(streq(translit_apply(beta, "α 1"), "a 1"), "passthrough");
+    assert_eq(translit_inherent_vowel(beta), 0, "an alphabet has no inherent vowel");
+
+    test_group("greek_beta_diacritics");
+    # TLG encoding page: lowercase "letter, breathing, accent, iota subscript"; uppercase
+    # "asterisk, breathing, accent, letter, iota subscript".
+    assert(streq(translit_apply(beta, "λόγος"), "lo/gos"), "lo/gos (v1.x: lόgos)");
+    assert(streq(translit_apply(beta, "Ἀθῆναι"), "*)aqh=nai"), "a capital's marks come before its letter");
+    assert(streq(translit_apply(beta, "ᾠδῇ"), "w)|dh=|"), "iota subscript last");
+    assert(streq(translit_apply(beta, "Ὅμηρος"), "*(/omhros"), "breathing before accent");
+    assert(streq(translit_apply(beta, "ῥήτωρ"), "r(h/twr"), "rho takes a breathing");
+    assert(streq(translit_apply(beta, "ᾼ"), "*a|"), "a capital's iota subscript follows the letter");
+    assert(streq(translit_apply(beta, "ϊ"), "i+"), "one diaeresis on a small letter");
+    assert(streq(translit_apply(beta, "ᾱ"), "a%26"), "macron is %26 (manual p. 27)");
+    assert(streq(translit_apply(beta, "ᾰ"), "a%27"), "breve is %27 (p. 28)");
+    # Unicode's oxia duplicates read like the tonos letters, and reverse to them.
+    assert(streq(translit_apply(beta, "ά"), "a/"), "U+1F71 is U+03AC");
+    assert(streq(map_get(translit_reverse_map(beta), "a/"), "ά"), "a/ reverses to the tonos form");
+    # Decomposed text: marks one by one in the order typed, and capitals reordered.
+    assert(streq(translit_apply(beta, "ἄ"), "a)/"), "decomposed small letter");
+    assert(streq(translit_apply(beta, "Ἀ"), "*)a"), "decomposed capital");
+    assert(streq(translit_apply(beta, "ᾌ"), "*)/a|"), "decomposed capital, three marks");
+    # Derived by analogy (no TLG statement): diaeresis, macron and breve before the
+    # accent, and before a capital's letter.
+    assert(streq(translit_apply(beta, "ΐ"), "i+/"), "diaeresis before the accent");
+    assert(streq(translit_apply(beta, "ΐ"), "i+/"), "as the decomposed letter gives");
+    assert(streq(translit_apply(beta, "ῗ"), "i+="), "and before the circumflex");
+    assert(streq(translit_apply(beta, "Ϊ"), "*+i"), "a capital's diaeresis before its letter");
+    assert(streq(translit_apply(beta, "Ϊ"), "*+i"), "decomposed too");
+    assert(streq(translit_apply(beta, "Ᾱ"), "*%26a"), "a capital's macron");
+    assert(streq(translit_apply(beta, "Ᾰ"), "*%27a"), "a capital's breve");
+    assert_eq(vec_len(translit_forward(beta)), 393, "49 letters, 9 marks, 98 decomposed capitals, 237 precomposed");
+
+    test_group("russian_alalc");
+    # ALA-LC Russian (2012): one romanization per letter; the tie is U+0361.
+    var ru = translit_russian_alalc();
+    assert(streq(translit_apply(ru, "щука"), "shchuka"), "shchuka");
+    assert(streq(translit_apply(ru, "царь"), "t͡sarʹ"), "t͡s with U+0361, soft sign U+02B9");
+    assert(streq(translit_apply(ru, "объём"), "obʺëm"), "hard sign U+02BA, ё as ë");
+    assert(streq(translit_apply(ru, "Москва"), "Moskva"), "Moskva");
+    assert(streq(translit_apply(ru, "Россия"), "Rossii͡a"), "я is i͡a");
+    assert(streq(translit_apply(ru, "Юрий"), "I͡Uriĭ"), "a capital's tie pair prints in capitals; й is ĭ");
+    assert(streq(translit_apply(ru, "Жуков"), "Zhukov"), "a capital digraph is title case");
+    assert(streq(translit_apply(ru, "эхо"), "ėkho"), "э is ė, х is kh");
+    assert(streq(translit_apply(ru, "миръ"), "mirʺ"), "pre-1918 final hard sign");
+    assert(streq(translit_apply(ru, "вѣра"), "vi͡era"), "ѣ is i͡e");
+    assert(streq(translit_apply(ru, "і ѳ ѵ"), "ī ḟ ẏ"), "the other 1918 letters");
+    assert_eq(vec_len(translit_forward(ru)), 74, "37 letters, both cases");
+    assert(streq(map_get(translit_reverse_map(ru), "ʹ"), "ь"), "ʹ reverses to the small letter");
+
+    test_group("arabic_alalc");
+    # ALA-LC Arabic (2012), letter by letter: vowelled text gives its forms.
+    var ar = translit_arabic_alalc();
+    assert(streq(translit_apply(ar, "كِتَاب"), "kitāb"), "kitāb, vowelled");
+    assert(streq(translit_apply(ar, "كتب"), "ktb"), "unvowelled: the skeleton");
+    assert(streq(translit_apply(ar, "شَمْس"), "shams"), "sukun writes nothing");
+    assert(streq(translit_apply(ar, "مَسْأَلَة"), "masʼalah"), "medial hamzah, rule 8(a); ta marbuta h");
+    assert(streq(translit_apply(ar, "عَدُوّ"), "ʻadūw"), "ʻadūw, rule 11(a)(1)");
+    assert(streq(translit_apply(ar, "قُوَّة"), "qūwah"), "qūwah, Unicode order");
+    assert(streq(translit_apply(ar, "قُوَّة"), "qūwah"), "qūwah, typed order");
+    assert(streq(translit_apply(ar, "شَوَّال"), "shawwāl"), "Shawwāl, Unicode order");
+    assert(streq(translit_apply(ar, "شَوَّال"), "shawwāl"), "Shawwāl, typed order");
+    assert(streq(translit_apply(ar, "سَيِّد"), "sayyid"), "sayyid, rule 11(b)(3)");
+    assert(streq(translit_apply(ar, "كَشَّاف"), "kashshāf"), "a doubled digraph, rule 11(c)");
+    assert(streq(translit_apply(ar, "حَتَّى"), "ḥattá"), "ḥattá, rule 6(a)");
+    assert(streq(translit_apply(ar, "نَوْم"), "nawm"), "nawm, rule 1(c)");
+    assert(streq(translit_apply(ar, "شَيْخ"), "shaykh"), "shaykh");
+    assert(streq(translit_apply(ar, "دْهَم"), "dʹham"), "the prime, rule 21(a)");
+    assert(streq(translit_apply(ar, "أَسَد"), "ʼasad"), "initial hamzah is left out: ʼasad, not asad");
+    assert(streq(translit_apply(ar, "الكتاب"), "lktb"), "the article is left out");
+    assert(streq(translit_char(ar, "ع"), "ʻ"), "ayn is U+02BB, as MARC 21 maps it");
+    assert(streq(translit_char(ar, "ء"), "ʼ"), "hamzah is U+02BC");
+    assert(streq(map_get(translit_reverse_map(ar), "h"), "ه"), "h reverses to ha, not ta marbuta");
+    assert_eq(translit_by_scheme("arabic_alalc"), ar, "arabic_alalc");
+
+    test_group("hebrew_alalc");
+    # ALA-LC Hebrew, letter by letter, with the owner's choices for its "X or Y" entries.
+    var he = translit_hebrew_alalc();
+    assert(streq(translit_apply(he, "הִסְהִיד"), "hisʹhid"), "the table's own example: shva, the prime");
+    assert(streq(translit_apply(he, "יִשְׂרָאֵל"), "yiśraʼel"), "Yiśraʼel");
+    assert(streq(translit_apply(he, "אָדָם"), "ʼadam"), "alef is ʼ everywhere (ALA-LC: adam)");
+    assert(streq(translit_apply(he, "שַׁבָּת"), "shabat"), "shabat, Unicode order");
+    assert(streq(translit_apply(he, "שַׁבָּת"), "shabat"), "shabat, typed order");
+    assert(streq(translit_apply(he, "שלום"), "shlṿm"), "unpointed: consonants, bare shin sh");
+    assert(streq(translit_apply(he, "שָׁלוֹם"), "shalom"), "shalom, holam male");
+    assert(streq(translit_apply(he, "בֵּית"), "bet"), "bet: hard letter, then a vowel letter");
+    assert(streq(translit_apply(he, "כִּי"), "ki"), "ki");
+    assert(streq(translit_apply(he, "מַיִם"), "mayim"), "a pointed yod is a consonant");
+    assert(streq(translit_apply(he, "בַּיִת"), "bayit"), "bayit");
+    assert(streq(translit_apply(he, "חַי"), "ḥai"), "ḥai");
+    assert(streq(translit_apply(he, "סוּפָה"), "sufah"), "shuruq is u, bare pe is f");
+    assert(streq(translit_apply(he, "קָצָר"), "ḳatsar"), "ḳ, ts");
+    # A cantillation mark sorts last, between hiriq and its yod, so the yod reads y.
+    assert(streq(translit_apply(he, "בְּרֵאשִׁ֖ית"), "breʼshiyt"), "cantillation splits a vowel letter");
+    assert(streq(translit_char(he, "בּ"), "b"), "the PDF's presentation-form bet");
+    assert(streq(translit_char(he, "ׇ"), "o"), "qamats qatan is o");
+    assert_eq(translit_by_scheme("hebrew_alalc"), he, "hebrew_alalc");
+
+    test_group("zhuyin_pinyin");
+    # 汉语拼音方案 (1958) spellings; Unihan kMandarin tone marks; MOE (2000) tone positions.
+    var zy = translit_zhuyin_pinyin();
+    assert(streq(translit_apply(zy, "ㄇㄚ"), "mā"), "媽 mā: tone 1 unmarked (the scheme's example)");
+    assert(streq(translit_apply(zy, "ㄇㄚˉ"), "mā"), "or marked");
+    assert(streq(translit_apply(zy, "ㄇㄚˊ"), "má"), "麻");
+    assert(streq(translit_apply(zy, "ㄇㄚˇ"), "mǎ"), "馬");
+    assert(streq(translit_apply(zy, "ㄇㄚˋ"), "mà"), "駡");
+    assert(streq(translit_apply(zy, "˙ㄇㄚ"), "ma"), "嗎: the neutral dot comes first");
+    assert(streq(translit_apply(zy, "ㄧㄡ"), "yōu"), "rule 4: no initial (憂)");
+    assert(streq(translit_apply(zy, "ㄋㄧㄡˊ"), "niú"), "rule 5: iou is iu (牛)");
+    assert(streq(translit_apply(zy, "ㄍㄨㄟ"), "guī"), "rule 5: uei is ui (归)");
+    assert(streq(translit_apply(zy, "ㄌㄨㄣˋ"), "lùn"), "rule 5: uen is un (論)");
+    assert(streq(translit_apply(zy, "ㄓ"), "zhī"), "rule 1: zhi (知)");
+    assert(streq(translit_apply(zy, "ㄦˊ"), "ér"), "rule 2: er");
+    assert(streq(translit_apply(zy, "ㄐㄩ"), "jū"), "rule 4: ju (居)");
+    assert(streq(translit_apply(zy, "ㄋㄩˇ"), "nǚ"), "but nü (女)");
+    assert(streq(translit_apply(zy, "ㄩㄝ"), "yuē"), "yue (約)");
+    assert(streq(translit_apply(zy, "ㄓㄨㄤˋ"), "zhuàng"), "three symbols and a tone");
+    assert(streq(translit_apply(zy, "ㄋㄧˇ ㄏㄠˇ"), "nǐ hǎo"), "syllables keep their spaces");
+    assert(streq(map_get(translit_reverse_map(zy), "mā"), "ㄇㄚ"), "mā reverses to the unmarked form");
+    assert(streq(translit_source_script(zy), "Bopo"), "Bopomofo is the source script");
+    assert_eq(translit_by_scheme("zhuyin_pinyin"), zy, "zhuyin_pinyin");
+    assert_eq(vec_len(translit_all_schemes()), 6, "six schemes");
+
+    test_group("translit_by_scheme");
+    var schemes = translit_all_schemes();
+    var i = 0;
+    while (i < vec_len(schemes)) {
+        assert(translit_by_scheme(vec_get(schemes, i)) != 0, vec_get(schemes, i));
+        i = i + 1;
+    }
+    assert_eq(translit_by_scheme("devanagari_iast"), iast, "devanagari_iast");
+    assert_eq(translit_by_scheme("greek_beta"), beta, "greek_beta");
+    assert_eq(translit_by_scheme("russian_alalc"), ru, "russian_alalc");
+    assert_eq(translit_by_scheme("klingon"), 0, "an unknown scheme has none");
+    assert_eq(translit_by_scheme(0), 0, "nor does null");
 
     return assert_summary();
 }

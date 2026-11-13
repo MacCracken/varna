@@ -72,8 +72,25 @@ custom fonts, so render the page and look rather than trusting extracted text.
       1998). Decide the variety, or split it under *Multiple inventories per language*.
 - [ ] **Korean inventory: /ʌ/ is missing.** Lee (1993, JIPA, p. 29) lists it; the
       inventory has i e ɛ a o u ɯ.
-- [ ] **Transliteration tables**: Cyrillic–Latin, Arabic–Latin, Hebrew–Latin, Pinyin
-      (2 today: Devanagari–IAST, Greek–Beta Code).
+- [x] **Transliteration tables**: ALA-LC Russian, Arabic and Hebrew, and Zhuyin →
+      Pinyin, with `translit_by_scheme`; Devanagari's inherent vowel and Greek's
+      accented letters fixed; a source index for lookup; Bopomofo registered.
+- [ ] **Word-level romanization rules.** Arabic's initial hamzah, construct-state tāʼ
+      marbūṭah, the article al- and final -iyy; Hebrew's word-initial alef and vocal
+      shva; ALA-LC capitalization; Pinyin's apostrophe and word division. Each needs
+      word position, which the table model lacks; the same gap as the allophone
+      environment model above.
+- [ ] **Marks a table can skip while matching.** A Hebrew cantillation mark sorts
+      between a vowel point and its vowel letter, so בְּרֵאשִׁ֖ית reads breʼshiyt.
+- [ ] **Devanagari → IAST, re-sourced.** v1.x's table cites nothing, and lacks the vowel
+      signs ॄ ॢ ॣ (their independent vowels are in it), nukta, avagraha and
+      chandrabindu.
+- [ ] **Greek → Beta Code: the 16 derived letters.** The diaeresis, macron and breve
+      have no place in the TLG's stated order; they follow an analogy (the owner's
+      choice) until a TLG statement turns up. Digamma and lunate sigma, which the
+      TLG lists, are not in the table.
+- [ ] **More ALA-LC tables**: the other Cyrillic languages (ALA-LC has one per
+      language) and the Yiddish column of the Hebrew table.
 - [x] **Numeral follow-ons**: the variant-glyph alias layer (ѵ ѿ ҁ; not ꙋ, which has
       no numeric use), Glagolitic numerals (`Glag`, the 29 values every source agrees
       on), and mispar gadol (`NUM_GADOL`, Hebrew only).

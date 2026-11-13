@@ -317,9 +317,21 @@ fn main() {
     # ---------------------------------------------------------------
     test_group("transliteration_invariants");
 
+    # Every pre-built table (2.6.0: through translit_all_schemes).
     var tables = vec_new();
-    vec_push(tables, translit_devanagari_iast());
-    vec_push(tables, translit_greek_beta_code());
+    var schemes = translit_all_schemes();
+    var t_unreg = 0;
+    i = 0;
+    while (i < vec_len(schemes)) {
+        var tb = translit_by_scheme(vec_get(schemes, i));
+        vec_push(tables, tb);
+        # transliteration_scripts_registered: both ends name a registered script
+        if (script_by_code(translit_source_script(tb)) == 0) { t_unreg = t_unreg + 1; }
+        if (script_by_code(translit_target_script(tb)) == 0) { t_unreg = t_unreg + 1; }
+        i = i + 1;
+    }
+    assert_eq(vec_len(tables), 6, "six pre-built tables");
+    assert_eq(t_unreg, 0, "every table's scripts are registered scripts");
 
     var t_empty = 0;
     var t_empty_src = 0;
@@ -340,16 +352,28 @@ fn main() {
     assert_eq(t_empty_src, 0, "no transliteration mapping has an empty source");
 
     # transliteration_roundtrip_individual_chars — every source maps to its target
-    var beta = translit_greek_beta_code();
-    var bfwd = translit_forward(beta);
+    # (2.6.0: every table; an abugida consonant also writes its inherent vowel).
     var rt_bad = 0;
     i = 0;
-    while (i < vec_len(bfwd)) {
-        var pair = vec_get(bfwd, i);
-        if (streq(translit_apply(beta, load64(pair)), load64(pair + 8)) == 0) { rt_bad = rt_bad + 1; }
+    while (i < vec_len(tables)) {
+        var tb = vec_get(tables, i);
+        var fwd = translit_forward(tb);
+        j = 0;
+        while (j < vec_len(fwd)) {
+            var pair = vec_get(fwd, j);
+            var want = translit_pair_target(pair);
+            if (translit_pair_kind(pair) == TranslitKind.TR_CONSONANT) {
+                want = str_cstr(str_cat(str_from(want), str_from(translit_inherent_vowel(tb))));
+            }
+            if (streq(translit_apply(tb, translit_pair_source(pair)), want) == 0) {
+                println(translit_pair_source(pair));
+                rt_bad = rt_bad + 1;
+            }
+            j = j + 1;
+        }
         i = i + 1;
     }
-    assert_eq(rt_bad, 0, "every Greek source char transliterates to its mapped target");
+    assert_eq(rt_bad, 0, "every source transliterates to its mapped target");
 
     # ---------------------------------------------------------------
     test_group("numeral_invariants");

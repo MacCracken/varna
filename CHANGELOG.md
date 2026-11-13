@@ -8,11 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 Toward 2.6.0, coverage scale: allophone rules for five more languages, phonotactic
-profiles for all eleven core languages, the numeral follow-ons, and the citation re-check
-carried over from 2.5.4. The decisions in it were the project owner's: re-sourcing both
-tone rows, automatic variant aliases, Glagolitic's core values only, exact-environment
-rules plus inventory fixes, and, for phonotactics, re-sourcing all twelve profiles with
-each per-language choice listed below.
+profiles for all eleven core languages, four new transliteration tables and a fix to
+the two old ones, the numeral follow-ons, and the citation re-check carried over from
+2.5.4. The decisions in it were the project owner's: re-sourcing both tone rows,
+automatic variant aliases, Glagolitic's core values only, exact-environment rules plus
+inventory fixes, re-sourcing all twelve phonotactic profiles, and, for
+transliteration, ALA-LC for the alphabets, Zhuyin as Pinyin's source, an inherent-vowel
+rule, and each "X or Y" choice listed below.
 
 ### Breaking
 
@@ -28,6 +30,17 @@ each per-language choice listed below.
   unmapped sentinel.
 - **20 scripts, not 19**, and 6 letter-value scripts, not 5 (Glagolitic). Anything that
   counts `script_all_codes` or `gematria_all_scripts` sees one more.
+- **transliteration: a Devanagari consonant's own target is bare.**
+  `translit_char(translit_devanagari_iast(), "क")` is `"k"`, not `"ka"`, and the
+  reverse map gives क for `"k"`. `translit_apply` still writes a lone क as `"ka"`: it
+  adds the inherent vowel itself (see *Fixed*). The table's JSON gains an `"inherent"`
+  field; every other table's JSON is unchanged.
+- **transliteration: accented Greek is transliterated.** `λόγος` gives `"lo/gos"`,
+  where `ό` passed through untouched (`"lόgos"`).
+- **21 scripts, not 20** (Bopomofo, `Bopo`).
+- **MCP `varna_translate_ipa`**: its description and `scheme` parameter text list the
+  six schemes, so `tools/list` output changed. v1.x's "↔" is now "→": the tool only
+  transliterates forward.
 - **The English, Sanskrit and Japanese phonotactic profiles are re-sourced** (details in
   *Fixed*). What changes for a caller of `phonotactics_is_permitted`:
   - English: `"str" "spr" "skr"` are now spelled with the inventory's ɹ (`"stɹ"`), so
@@ -104,6 +117,49 @@ each per-language choice listed below.
     Schäfer's duplex core. His permitted codas are prose rules, so they are not listed.
   - **Korean's onset is 1**, after Lee (1993): glides are part of the diphthong, and the
     inventory has none to spell Sohn's (C)(G)V(C).
+- **transliteration: four tables**, and `translit_by_scheme(name)` /
+  `translit_all_schemes()`, keyed by the names the MCP tool takes. Each table cites
+  its primary source in a comment, and where the source gives two readings or none,
+  the comment names the project owner's choice:
+
+  | Scheme | Table | Rows | From |
+  |---|---|---|---|
+  | `russian_alalc` | `translit_russian_alalc` | 74 | LoC ALA-LC Russian table (2012) |
+  | `arabic_alalc` | `translit_arabic_alalc` | 312 | LoC ALA-LC Arabic table (2012), **partial** |
+  | `hebrew_alalc` | `translit_hebrew_alalc` | 462 | LoC ALA-LC Hebrew and Yiddish table, **partial** |
+  | `zhuyin_pinyin` | `translit_zhuyin_pinyin` | 2,111 | 汉语拼音方案 (1958), Unihan kMandarin, MOE 國語注音符號手冊 (2000) |
+
+  - **Russian** is the whole system: one romanization per letter (щука → shchuka,
+    царь → t͡sarʹ, вѣра → vi͡era). The tie is U+0361, the MARC 21 mapping since MARBI
+    Proposal 2004-08; the soft and hard signs are U+02B9 and U+02BA.
+  - **Arabic and Hebrew are partial.** ALA-LC romanizes the word as pronounced, so
+    unvowelled or unpointed text gives the consonant skeleton (كتب → ktb, שלום →
+    shlṿm). Vowelled text gives ALA-LC's forms (كِتَاب → kitāb, شَوَّال → shawwāl,
+    שַׁבָּת → shabat), in typed order and Unicode order. The rules that need word
+    position or grammar are listed in each table's comment and left out: Arabic's
+    initial hamzah, construct-state tāʼ marbūṭah, the article al-; Hebrew's
+    capitalization. The project owner chose Hebrew's "X or Y" values: א is ʼ
+    everywhere, shva writes nothing, a bare ש is sh, and dagesh elsewhere, meteg,
+    rafe and cantillation write nothing. ʻ and ʼ are U+02BB and U+02BC, as MARC 21
+    maps ALA-LC's ayn and alif; the Arabic PDF typesets them as curly quotes.
+  - **Zhuyin → Pinyin** works by syllable, since Pinyin cannot be spelled letter by
+    letter from Zhuyin: the 1958 scheme's tables and rules 1–5, the syllables and
+    tone-mark placement from Unihan's kMandarin readings (412 syllables), and the
+    tone marks' positions from the MOE manual (ㄇㄚˇ → mǎ, ㄋㄧㄡˊ → niú, ˙ㄇㄚ → ma).
+    The apostrophe between syllables and word division are left out.
+
+  The rows add 137 KB to `dist/varna.cyr` (425 → 563 KB), 2,111 of them Zhuyin's.
+- **transliteration: the inherent-vowel rule.** `TranslitKind` (`TR_PLAIN`,
+  `TR_CONSONANT`, `TR_DEPENDENT`), `translit_pair_kind(pair)` and
+  `translit_inherent_vowel(table)`. A table can name an inherent vowel and mark its
+  consonants and dependent signs; `translit_apply` writes the vowel after a consonant
+  unless a vowel sign or virama comes next. The JSON form is one optional
+  `"inherent"` field, written only for such a table, so a v1.x document still
+  decodes and every alphabet's JSON is unchanged.
+- **script: Bopomofo** (`script_bopomofo`, `Bopo`), registered because the Zhuyin table
+  reads it. `ScriptType.Mixed`, after Unicode's "part alphabet and part syllabary";
+  ranges are Unicode's Bopomofo and Bopomofo Extended blocks.
+- **MCP**: `varna_translate_ipa` takes every scheme through `translit_by_scheme`.
 - **numerals: mispar gadol**, `NumericSystem.NUM_GADOL`: the Hebrew finals ך ם ן ף ץ
   count 500 / 600 / 700 / 800 / 900, and the other 22 letters keep their standard
   values (Jewish Encyclopedia, "Gematria", no. 11; Avodat Yisrael, Balak 2). The order
@@ -156,6 +212,21 @@ each per-language choice listed below.
 - **Arabic inventory**: the marginal pharyngealized /lˤ/ is added (Thelwall &
   Sa'adeddin 1990, p. 37).
 - **Russian inventory** matches Yanushevskaya & Bunčić (2015) and is unchanged.
+- **Devanagari → IAST wrote an "a" after every consonant**, so a vowel sign or virama
+  could not remove it: नमस्ते gave "namasatae", कि "kai", संस्कृतम् "saṃsakaṛtama".
+  v1.x tested single letters only. With the inherent-vowel rule the 33 consonants
+  are bare and the 10 vowel signs and the virama are dependent: namaste, ki,
+  saṃskṛtam, and कं kaṃ.
+- **Greek → Beta Code passed every accented letter through.** It now writes the TLG's
+  codes for the marks, `) ( / \ = + |` and `%26` `%27` (TLG Beta Code Manual,
+  December 2023, pp. 6, 27–28), in the TLG's stated order: "letter, breathing, accent, iota
+  subscript", and on a capital "asterisk, breathing, accent, letter, iota subscript"
+  (tlg.uci.edu/encoding.php). Each precomposed letter's marks come from its Unicode
+  decomposition, so Ἀθῆναι is `*)aqh=nai` and ᾠδῇ is `w)|dh=|`; decomposed capitals are
+  listed too. 49 rows become 393. The TLG gives the diaeresis, macron and breve no
+  place, which 16 letters need: by analogy, the project owner's choice, the mark
+  goes before the accent and before a capital's letter (ΐ is `i+/`, Ϊ is `*+i`), flagged
+  in the table's comment as derived. The letters keep v1.x's lowercase form.
 - **English phonotactics re-sourced to Gimson** (Cruttenden 1994, §10.9.1), adjusted to
   General American, which the inventory is. v1.x wrote r for the inventory's ɹ, so its
   `"str" "spr" "skr"` never matched a word built from the inventory. It described all
@@ -184,6 +255,25 @@ Measured interleaved against a build of 2.5.4, min of 3, timer floor 1.21–1.24
   cost one more string compare on every call. It now stops at the match.
 - `grammar_by_code_lookup` and `lexicon_find_word` read −8% with their code unchanged.
   That is the per-run CPU effect 2.5.4 measured, not a result.
+
+The transliteration rows, measured interleaved against the committed phonotactics work
+(7de9ec4), min of 3 runs; every row with unchanged code and data stayed within ±3.7%,
+apart from single-digit-nanosecond rows at the timer floor:
+
+- **A table now looks sources up in an index**, built on first use, not by scanning
+  every pair four times per character. That scan made the 393-row Greek table 7.6x
+  slower than v1.x's 49 rows (147 µs a word) before the index went in.
+  - `transliterate_greek_word`: **18,254 → 3,214 ns (−82%)**, with 8x the rows.
+  - `transliterate_devanagari_char`: **557 → 100 ns (−82%)**.
+  - New rows: `transliterate_russian_word` 4,316 ns (11 letters),
+    `transliterate_arabic_word` 2,547 ns (vowelled كِتَاب), and
+    `transliterate_zhuyin_phrase` 1,061 ns (ㄋㄧˇ ㄏㄠˇ, against 2,111 rows).
+- **`json_translit_write_iast` 16,659 → 23,565 ns (+41%) and `json_translit_read_iast`
+  46,901 → 70,788 ns (+51%).** The Devanagari document gained its `"inherent"` field,
+  44 more strings. Measured in one process, parsing them costs 11.7 µs, and copying
+  and marking them about 14 µs. Marking first went through the source index, which
+  cost about 31 µs; the reader now marks with one pass in "forward" order, which is
+  how the writer lists them.
 
 The phonotactics rows, measured interleaved against the committed allophone work (min of
 3 runs; every row with unchanged code and data stayed within ±5.3%, apart from the three

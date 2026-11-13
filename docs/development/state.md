@@ -37,13 +37,13 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | | |
 |---|---|
 | Languages | 51, each with a phoneme inventory, a resolving primary script and a Glottocode (2.5.3, from Glottolog) |
-| Scripts | 20 (Glagolitic added in the unreleased 2.6.0 work) |
+| Scripts | 21 (Glagolitic and Bopomofo added in the unreleased 2.6.0 work) |
 | Numeral systems | 10 — six of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek, Glagolitic) |
 | Grammar profiles | 11 |
 | Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 40 files, **3,723 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
-| Benchmarks | 42, covering every domain and every module's JSON |
-| Reference coverage | 432/440 functions (98%) — a floor, not a correctness proof |
+| Tests | 40 files, **3,881 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
+| Benchmarks | 45, covering every domain and every module's JSON |
+| Reference coverage | 442/449 functions (98%) — a floor, not a correctness proof |
 
 ## Toolchain
 
@@ -83,7 +83,7 @@ the port and has since been extended past it.
 | `syllable` | syllable templates + phonotactics: 12 sourced profiles (the 11 core languages and Sanskrit), `phonotactics_by_code` |
 | `script` | 19 writing systems — type, direction, status, Unicode ranges |
 | `numerals` | 10 numeral systems + the gematria layer (standard / ordinal / reduced / mispar gadol), and a variant-glyph alias layer for Church Slavonic |
-| `transliteration` | Devanagari↔IAST, Greek↔Beta Code (greedy longest-match) |
+| `transliteration` | 6 tables: Devanagari→IAST, Greek→Beta Code, ALA-LC Russian, Arabic and Hebrew, Zhuyin→Pinyin; indexed greedy longest-match, inherent vowel, `translit_by_scheme` |
 | `grammar` | 11 typological profiles, eight WALS-style dimensions each |
 | `lexicon` | `LexEntry`/`Lexicon`, `PartOfSpeech`, frequency ranking |
 | `swadesh` | Swadesh-25 for 10 languages (250 entries) |

@@ -348,6 +348,25 @@ fn script_glagolitic() {
     return _c_script_glagolitic;
 }
 
+# Bopomofo (2.6.0), registered because the Zhuyin → Pinyin table reads it
+# (translit_zhuyin_pinyin), and every table's source script must be a registered
+# script. No corpus language is written in it: it annotates Mandarin, "used in
+# dictionaries and teaching materials, but not in the actual writing of Chinese
+# text" (The Unicode Standard, §18.3). Mixed, because Unicode calls it "a hybrid
+# writing system—part alphabet and part syllabary". Left to right, as Hani and Kana
+# are here; it is also written vertically. Its attestation dates are left unset (0),
+# because no source for them was checked. Ranges are Unicode's Bopomofo and Bopomofo
+# Extended blocks (Blocks.txt).
+var _c_script_bopomofo = 0;
+fn script_bopomofo() {
+    if (_c_script_bopomofo != 0) { return _c_script_bopomofo; }
+    var s = _script_new("Bopo", "Bopomofo", ScriptType.Mixed, Direction.LeftToRight, ScriptStatus.Living, 0);
+    _script_add_range(s, 0x3100, 0x312F);
+    _script_add_range(s, 0x31A0, 0x31BF);
+    _c_script_bopomofo = s;
+    return _c_script_bopomofo;
+}
+
 # Look up a script by ISO 15924 code — Script ptr, or 0 if unregistered.
 fn script_by_code(code) {
     if (streq(code, "Latn") == 1) { return script_latin(); }
@@ -370,6 +389,7 @@ fn script_by_code(code) {
     if (streq(code, "Khmr") == 1) { return script_khmer(); }
     if (streq(code, "Laoo") == 1) { return script_lao(); }
     if (streq(code, "Glag") == 1) { return script_glagolitic(); }
+    if (streq(code, "Bopo") == 1) { return script_bopomofo(); }
     return 0;
 }
 
@@ -398,6 +418,7 @@ fn script_all_codes() {
     vec_push(c, "Khmr");
     vec_push(c, "Laoo");
     vec_push(c, "Glag");
+    vec_push(c, "Bopo");
     _c_script_all_codes = c;
     return _c_script_all_codes;
 }

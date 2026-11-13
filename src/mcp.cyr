@@ -93,10 +93,11 @@ fn mcp_tool_definitions() {
     var grammar = _tool_def_new("varna_grammar", "Get the grammatical profile for a language. Returns morphology type, word order, case count, gender, and classifier usage.");  #skip-lint
     _tool_add_param(grammar, "language", "ISO 639 language code (e.g., 'de', 'ja', 'ru')");
     vec_push(tools, grammar);
-    # v1.x's description, plus what this tool has returned since 2.1.5.
-    var translate = _tool_def_new("varna_translate_ipa", "Transliterate text between scripts. Supports Devanagari↔IAST and Greek↔Beta Code. Returns scheme, input and output.");  #skip-lint
+    # v1.x's description, plus what this tool has returned since 2.1.5, and the four
+    # ALA-LC and Zhuyin tables 2.6.0 added. v1.x wrote "↔"; the tool only goes forward.
+    var translate = _tool_def_new("varna_translate_ipa", "Transliterate text between scripts. Supports Devanagari→IAST, Greek→Beta Code, Russian, Arabic and Hebrew→Latin (ALA-LC), and Zhuyin→Pinyin. Returns scheme, input and output.");  #skip-lint
     _tool_add_param(translate, "text", "Text to transliterate");
-    _tool_add_param(translate, "scheme", "Transliteration scheme: 'devanagari_iast' or 'greek_beta'");
+    _tool_add_param(translate, "scheme", "Transliteration scheme: 'devanagari_iast', 'greek_beta', 'russian_alalc', 'arabic_alalc', 'hebrew_alalc' or 'zhuyin_pinyin'");  #skip-lint
     vec_push(tools, translate);
     var compare = _tool_def_new("varna_compare", "Compare two languages. Returns shared/unique phonemes, typological differences, and cognate information.");  #skip-lint
     _tool_add_param(compare, "lang1", "First language ISO 639 code");
@@ -207,9 +208,7 @@ fn _mcp_handle_transliterate(params) {
     if (text == 0) { return _tool_err("missing required parameter: text"); }
     var scheme = map_get(params, "scheme");
     if (scheme == 0) { return _tool_err("missing required parameter: scheme"); }
-    var table = 0;
-    if (streq(scheme, "devanagari_iast") == 1) { table = translit_devanagari_iast(); }
-    if (streq(scheme, "greek_beta") == 1) { table = translit_greek_beta_code(); }
+    var table = translit_by_scheme(scheme);
     if (table == 0) { return _tool_err2("unknown scheme: ", scheme); }
 
     var sb = str_builder_new();

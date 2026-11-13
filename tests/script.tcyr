@@ -72,7 +72,7 @@ fn main() {
     assert(script_by_code("Grek") != 0, "by_code Grek");
     assert_eq(script_by_code("XXXX"), 0, "by_code unknown");
     var codes = script_all_codes();
-    assert_eq(vec_len(codes), 20, "20 script codes (10 original, 9 added at 2.1.6, Glagolitic at 2.6.0)");
+    assert_eq(vec_len(codes), 21, "21 script codes (10 original, 9 added at 2.1.6, Glagolitic and Bopomofo at 2.6.0)");
     var n = vec_len(codes);
     var i = 0;
     var missing = 0;
@@ -156,7 +156,24 @@ fn main() {
     assert_eq(script_by_code("Mymr"), my, "Myanmar via by_code");
     assert_eq(script_by_code("Khmr"), km, "Khmer via by_code");
     assert_eq(script_by_code("Laoo"), lo, "Lao via by_code");
-    assert_eq(vec_len(script_all_codes()), 20, "20 registered scripts (10 + 9 + Glagolitic)");
+    assert_eq(vec_len(script_all_codes()), 21, "21 registered scripts (10 + 9 + Glagolitic + Bopomofo)");
+
+    test_group("added_at_2_6_0");
+    # Glagolitic for its numerals, Bopomofo for the Zhuyin table; both are Unicode's blocks.
+    var glag = script_glagolitic();
+    assert_eq(script_by_code("Glag"), glag, "Glagolitic via by_code");
+    assert_eq(script_status(glag), ScriptStatus.Historical, "Glagolitic is historical");
+    assert(script_contains_codepoint(glag, 0x2C00), "Glagolitic block start");
+    assert(script_contains_codepoint(glag, 0x1E02F), "Glagolitic Supplement end");
+    var bopo = script_bopomofo();
+    assert_eq(script_by_code("Bopo"), bopo, "Bopomofo via by_code");
+    assert(streq(script_name(bopo), "Bopomofo"), "Bopomofo name");
+    assert_eq(script_type(bopo), ScriptType.Mixed, "Unicode: part alphabet, part syllabary");
+    assert_eq(script_status(bopo), ScriptStatus.Living, "Bopomofo is living");
+    assert(script_contains_codepoint(bopo, 0x3105), "ㄅ");
+    assert(script_contains_codepoint(bopo, 0x31BF), "Bopomofo Extended end");
+    assert_eq(script_contains_codepoint(bopo, 0x3130), 0, "U+3130 is Hangul Compatibility Jamo");
+    assert_eq(script_contains_codepoint(bopo, 0x02C7), 0, "the tone marks are Spacing Modifier Letters");
 
     return assert_summary();
 }

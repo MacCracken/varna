@@ -855,9 +855,13 @@ fn _tt_eq(a, b) {
         var pb = vec_get(fb, i);
         if (streq(translit_pair_source(pa), translit_pair_source(pb)) != 1) { return 0; }
         if (streq(translit_pair_target(pa), translit_pair_target(pb)) != 1) { return 0; }
+        if (translit_pair_kind(pa) != translit_pair_kind(pb)) { return 0; }
         i = i + 1;
     }
-    return 1;
+    var va = translit_inherent_vowel(a);
+    var vb = translit_inherent_vowel(b);
+    if (va == 0 || vb == 0) { return va == vb; }
+    return streq(va, vb);
 }
 
 fn _script_text(s) {
@@ -1120,11 +1124,34 @@ fn test_serde_transliteration() {
     if (bi == 0 || bb == 0) { return 0; }
     assert(streq(translit_apply(iast, "नमस्ते"), translit_apply(bi, "नमस्ते")), "a decoded table transliterates the same");
     assert(streq(translit_apply(beta, "λόγος"), translit_apply(bb, "λόγος")), "and the Beta Code one");
+    # 2.6.0: every pre-built table, so a new one cannot be added unserialisable.
+    var schemes = translit_all_schemes();
+    var si = 0;
+    while (si < vec_len(schemes)) {
+        var st = translit_by_scheme(vec_get(schemes, si));
+        assert(_tt_eq(st, transliteration_table_from_json(_tt_text(st))), vec_get(schemes, si));
+        si = si + 1;
+    }
 
     var t = _tt_new("IAST", "Deva", "Latn");
     _tt_add(t, "अ", "a");
     _tt_add(t, "आ", "ā");
     assert(streq(_tt_text(t), "{\"scheme\":\"IAST\",\"source_script\":\"Deva\",\"target_script\":\"Latn\",\"forward\":[[\"अ\",\"a\"],[\"आ\",\"ā\"]]}"), "table text is serde's shape");  #skip-lint
+
+    # 2.6.0: an inherent vowel adds one field after "forward"; none adds nothing.
+    _tt_set_inherent(t, "a");
+    _tt_consonant(t, "क", "k");
+    _tt_dependent(t, "ि", "i");
+    assert(streq(_tt_text(t), "{\"scheme\":\"IAST\",\"source_script\":\"Deva\",\"target_script\":\"Latn\",\"forward\":[[\"अ\",\"a\"],[\"आ\",\"ā\"],[\"क\",\"k\"],[\"ि\",\"i\"]],\"inherent\":{\"vowel\":\"a\",\"consonants\":[\"क\"],\"dependents\":[\"ि\"]}}"), "the inherent field");  #skip-lint
+    var it = _tt_text(iast);
+    assert(_contains(it, "]],\"inherent\":{\"vowel\":\"a\",\"consonants\":[\"क\","), "Devanagari writes it");
+    assert(_contains(_tt_text(beta), "inherent") == 0, "Beta Code does not");
+    # A v1.x document has no "inherent": it still decodes, as a table without one.
+    var v1 = transliteration_table_from_json("{\"scheme\":\"IAST\",\"source_script\":\"Deva\",\"target_script\":\"Latn\",\"forward\":[[\"क\",\"ka\"]]}");  #skip-lint
+    assert(v1 != 0, "a v1.x table decodes");
+    if (v1 == 0) { return 0; }
+    assert_eq(translit_inherent_vowel(v1), 0, "with no inherent vowel");
+    assert(streq(translit_apply(v1, "क"), "ka"), "and transliterates as v1.x did");
     return 0;
 }
 
@@ -1148,6 +1175,37 @@ fn test_malformed_transliteration() {
     vec_push(d, "[]");
     _refuses_all(&transliteration_table_from_json, d, "every malformed table is refused");
     assert_eq(transliteration_table_from_json(0), 0, "table: null text");
+
+    # The 2.6.0 "inherent" field: optional, but strict when present.
+    var h = "{\"scheme\":\"IAST\",\"source_script\":\"Deva\",\"target_script\":\"Latn\",\"forward\":[[\"क\",\"k\"],[\"ि\",\"i\"]],\"inherent\":{\"vowel\":\"a\",\"consonants\":[\"क\"],\"dependents\":[\"ि\"]}}";  #skip-lint
+    var ht = transliteration_table_from_json(h);
+    assert(ht != 0, "the good inherent table is good");
+    if (ht != 0) { assert(streq(translit_apply(ht, "कि"), "ki"), "and applies its rule"); }
+    assert(transliteration_table_from_json(_with(h, "{\"vowel\":\"a\",\"consonants\":[\"क\"],\"dependents\":[\"ि\"]}", "null")) != 0, "inherent: null is none");  #skip-lint
+    var dh = vec_new();
+    vec_push(dh, _with(h, "{\"vowel\":\"a\",\"consonants\":[\"क\"],\"dependents\":[\"ि\"]}", "\"a\""));
+    vec_push(dh, _with(h, "\"vowel\":\"a\",", ""));
+    vec_push(dh, _with(h, "\"vowel\":\"a\"", "\"vowel\":7"));
+    vec_push(dh, _with(h, ",\"consonants\":[\"क\"]", ""));
+    vec_push(dh, _with(h, ",\"dependents\":[\"ि\"]", ""));
+    vec_push(dh, _with(h, "\"consonants\":[\"क\"]", "\"consonants\":[\"ख\"]"));
+    vec_push(dh, _with(h, "\"dependents\":[\"ि\"]", "\"dependents\":[7]"));
+    vec_push(dh, _with(h, "\"consonants\":[\"क\"]", "\"consonants\":\"क\""));
+    _refuses_all(&transliteration_table_from_json, dh, "every malformed inherent field is refused");
+
+    # A hand-written list out of "forward" order is looked up source by source.
+    var o = "{\"scheme\":\"s\",\"source_script\":\"Deva\",\"target_script\":\"Latn\",\"forward\":[[\"क\",\"k\"],[\"ख\",\"kh\"],[\"ि\",\"i\"]],\"inherent\":{\"vowel\":\"a\",\"consonants\":[\"ख\",\"क\"],\"dependents\":[\"ि\"]}}";  #skip-lint
+    var ot = transliteration_table_from_json(o);
+    assert(ot != 0, "an out-of-order list decodes");
+    if (ot != 0) { assert(streq(translit_apply(ot, "कखि"), "kakhi"), "and marks both consonants"); }
+    # A repeated source: the writer's marks come back on the same pairs.
+    var rt = _tt_new("s", "Deva", "Latn");
+    _tt_set_inherent(rt, "a");
+    _tt_add(rt, "क", "k");
+    _tt_consonant(rt, "ख", "kh");
+    _tt_consonant(rt, "क", "q");
+    var rd = transliteration_table_from_json(_tt_text(rt));
+    assert(_tt_eq(rt, rd), "a repeated source keeps each pair's kind");
     return 0;
 }
 

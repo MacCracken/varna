@@ -108,7 +108,9 @@ assert(script_contains_codepoint(deva, 0x0915));  # क (ka)
 assert(!script_contains_codepoint(deva, 0x0041)); # 'A' is Latin
 ```
 
-Registered codes: `"Latn"`, `"Arab"`, `"Deva"`, `"Hani"`, `"Cyrl"`, `"Hang"`, `"Kana"`, `"Grek"`, `"Xsux"`, `"Egyp"`.
+Registered codes (`script_all_codes()`, 21): `"Latn"`, `"Arab"`, `"Deva"`, `"Hani"`, `"Cyrl"`,
+`"Hang"`, `"Kana"`, `"Grek"`, `"Xsux"`, `"Egyp"`, `"Thai"`, `"Beng"`, `"Taml"`, `"Ethi"`, `"Hebr"`,
+`"Geor"`, `"Mymr"`, `"Khmr"`, `"Laoo"`, `"Glag"`, `"Bopo"`.
 
 `ScriptStatus` variants: `ScriptStatus.Living`, `ScriptStatus.Limited`, `ScriptStatus.Historical`.
 
@@ -116,25 +118,41 @@ Registered codes: `"Latn"`, `"Arab"`, `"Deva"`, `"Hani"`, `"Cyrl"`, `"Hang"`, `"
 
 ## Transliteration
 
-Use pre-built transliteration tables to convert between scripts:
+Six pre-built tables convert a script to Latin. Each is reachable by its own function
+or by scheme name:
 
 ```cyrius
-# Devanagari -> IAST
+# Devanagari -> IAST: the inherent vowel a is written unless a vowel sign or virama follows
 var iast = translit_devanagari_iast();
+assert(streq(translit_apply(iast, "नमस्ते"), "namaste"));
 assert(streq(translit_apply(iast, "क"), "ka"));
-assert(streq(translit_apply(iast, "आ"), "ā"));
+assert(streq(translit_char(iast, "क"), "k"));      # the pair's own target is bare
 
-# Greek -> Beta Code
+# Greek -> Beta Code, accents in the TLG's order
 var beta = translit_greek_beta_code();
-assert(streq(translit_apply(beta, "λογος"), "logos"));
-assert(streq(translit_apply(beta, "Αθηνα"), "*aqhna"));
+assert(streq(translit_apply(beta, "λόγος"), "lo/gos"));
+assert(streq(translit_apply(beta, "Ἀθῆναι"), "*)aqh=nai"));
+
+# ALA-LC Russian, Arabic and Hebrew (Arabic and Hebrew need vowelled text)
+assert(streq(translit_apply(translit_russian_alalc(), "щука"), "shchuka"));
+assert(streq(translit_apply(translit_by_scheme("arabic_alalc"), "كِتَاب"), "kitāb"));
+
+# Zhuyin -> Pinyin, by syllable
+assert(streq(translit_apply(translit_zhuyin_pinyin(), "ㄋㄧˇ ㄏㄠˇ"), "nǐ hǎo"));
+
+# Every scheme name: devanagari_iast greek_beta russian_alalc arabic_alalc
+# hebrew_alalc zhuyin_pinyin
+var schemes = translit_all_schemes();
 
 # Reverse map (target -> source)
 var rev = translit_reverse_map(iast);
 assert(streq(map_get(rev, "a"), "अ"));
 ```
 
-`translit_apply()` uses greedy longest-match; unmapped characters pass through unchanged.
+`translit_apply()` uses greedy longest-match over up to four codepoints; unmapped
+characters pass through unchanged. The Arabic and Hebrew tables are letter by letter:
+unvowelled text gives the consonants (كتب → ktb), and the ALA-LC rules that need the
+whole word are listed in each table's comment.
 
 ---
 

@@ -55,7 +55,7 @@ fn daimon_registration() {
     var c3 = _capability_new("grammar_profile", "Get grammatical profile (morphology, word order, cases) for a language", "GrammarProfile");  #skip-lint
     _capability_add_input(c3, "language_code");
     vec_push(caps, c3);
-    var c4 = _capability_new("transliterate", "Transliterate text between scripts (Devanagari↔IAST, Greek↔Beta Code)", "String");  #skip-lint
+    var c4 = _capability_new("transliterate", "Transliterate text between scripts (Devanagari→IAST, Greek→Beta Code, ALA-LC Russian, Arabic and Hebrew, Zhuyin→Pinyin)", "String");  #skip-lint
     _capability_add_input(c4, "text");
     _capability_add_input(c4, "scheme");
     vec_push(caps, c4);

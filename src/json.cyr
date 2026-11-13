@@ -1000,6 +1000,13 @@ fn numeral_system_from_json(text) {
 # --- TransliterationTable -------------------------------------------------
 #
 # v1.x: {"scheme":"IAST","source_script":"Deva","target_script":"Latn","forward":[["अ","a"],..]}
+#
+# 2.6.0 adds one field, after "forward" and only for a table with an inherent vowel:
+#   "inherent":{"vowel":"a","consonants":["क",..],"dependents":["ा",..,"्"]}
+# naming the vowel and the sources of its consonant and dependent pairs. A table
+# without one writes exactly v1.x's shape. On read the field is optional (absent or
+# null is none). Present, it must be that object, and every source it lists must be
+# a source in "forward", or the reader returns 0.
 
 # Append transliteration table `tt`. Returns 0, or -1 (nothing written) for a null table
 # or one holding a null pair.
@@ -1030,7 +1037,100 @@ fn transliteration_table_to_json(tt, sb) {
         str_builder_putc(sb, ']');
         i = i + 1;
     }
-    str_builder_add_cstr(sb, "]}");
+    str_builder_putc(sb, ']');
+    var inh = translit_inherent_vowel(tt);
+    if (inh != 0) {
+        str_builder_add_cstr(sb, ",\"inherent\":{\"vowel\":");
+        str_builder_add_json_cstr(sb, inh);
+        str_builder_add_cstr(sb, ",\"consonants\":");
+        _json_translit_kind_array(sb, fwd, TranslitKind.TR_CONSONANT);
+        str_builder_add_cstr(sb, ",\"dependents\":");
+        _json_translit_kind_array(sb, fwd, TranslitKind.TR_DEPENDENT);
+        str_builder_putc(sb, '}');
+    }
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+# The sources of the pairs of one TranslitKind, as a JSON array of strings.
+fn _json_translit_kind_array(sb, fwd, kind) {
+    str_builder_putc(sb, '[');
+    var n = vec_len(fwd);
+    var first = 1;
+    var i = 0;
+    while (i < n) {
+        var pair = vec_get(fwd, i);
+        if (translit_pair_kind(pair) == kind) {
+            if (first == 0) { str_builder_putc(sb, ','); }
+            str_builder_add_json_cstr(sb, translit_pair_source(pair));
+            first = 0;
+        }
+        i = i + 1;
+    }
+    str_builder_putc(sb, ']');
+    return 0;
+}
+
+# Mark the pair whose source is each string of `list` with `kind`: 0, or -1 when
+# `list` is not an array of strings or names a source "forward" does not have.
+#
+# The writer lists a kind's sources in "forward" order, so when the list is in that
+# order one merge pass marks them: exactly the pairs the writer marked, a repeated
+# source included. Building the source index for this instead nearly doubled the
+# read of Devanagari's table. A list in any other order (hand-written) is looked up
+# source by source, which marks the first pair with each source.
+fn _json_translit_mark(tt, list, kind) {
+    var srcs = _json_cstr_vec(list);
+    if (srcs == 0) { return 0 - 1; }
+    if (_json_translit_merge(tt, srcs, kind, 0) == 1) {
+        _json_translit_merge(tt, srcs, kind, 1);
+        return 0;
+    }
+    var n = vec_len(srcs);
+    var i = 0;
+    while (i < n) {
+        var src = vec_get(srcs, i);
+        var pair = _translit_find(tt, src, strlen(src));
+        if (pair == 0) { return 0 - 1; }
+        store64(pair + 16, kind);
+        i = i + 1;
+    }
+    return 0;
+}
+
+# 1 when `srcs` are the sources of pairs in "forward" order; with `mark` 1 those
+# pairs are also given `kind`. Otherwise 0.
+fn _json_translit_merge(tt, srcs, kind, mark) {
+    var fwd = translit_forward(tt);
+    var n = vec_len(fwd);
+    var m = vec_len(srcs);
+    var j = 0;
+    var i = 0;
+    while (i < n && j < m) {
+        var pair = vec_get(fwd, i);
+        if (streq(translit_pair_source(pair), vec_get(srcs, j)) == 1) {
+            if (mark == 1) { store64(pair + 16, kind); }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    if (j < m) { return 0; }
+    return 1;
+}
+
+# The optional "inherent" member onto `tt`: 0, or -1 when it is present and malformed.
+fn _json_translit_inherent(tt, iv) {
+    if (iv == 0 || bayan_json_v_is_null(iv)) { return 0; }
+    if (!bayan_json_v_is_obj(iv)) { return 0 - 1; }
+    var vowel = _json_cstr(bayan_json_v_obj_get_by_cstr(iv, "vowel"));
+    if (vowel == 0) { return 0 - 1; }
+    if (_json_translit_mark(tt, bayan_json_v_obj_get_by_cstr(iv, "consonants"), TranslitKind.TR_CONSONANT) != 0) {
+        return 0 - 1;
+    }
+    if (_json_translit_mark(tt, bayan_json_v_obj_get_by_cstr(iv, "dependents"), TranslitKind.TR_DEPENDENT) != 0) {
+        return 0 - 1;
+    }
+    _tt_set_inherent(tt, vowel);
     return 0;
 }
 
@@ -1055,6 +1155,7 @@ fn _json_transliteration_table(v) {
         _tt_add(tt, a, b);
         i = i + 1;
     }
+    if (_json_translit_inherent(tt, bayan_json_v_obj_get_by_cstr(v, "inherent")) != 0) { return 0; }
     return tt;
 }
 

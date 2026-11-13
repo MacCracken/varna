@@ -25,7 +25,7 @@ Used by [shabda](https://github.com/MacCracken/shabda) (G2P conversion),
 | `syllable` | Phonotactic profiles and syllable-template validation |
 | `script` | Writing system metadata: alphabet, syllabary, logographic, abjad, abugida. Unicode ranges, directionality |
 | `numerals` | Nine numeral systems, five of them letter-value (gematria): standard, ordinal and reduced lookups across scripts |
-| `transliteration` | Script-to-script tables (Devanagari↔IAST, Greek↔Beta Code) |
+| `transliteration` | Script-to-Latin tables: Devanagari→IAST, Greek→Beta Code, ALA-LC Russian, Arabic and Hebrew, Zhuyin→Pinyin |
 | `grammar` | Morphological typology (isolating, agglutinative, fusional, polysynthetic), word order, case, eight WALS-style dimensions |
 | `lexicon` | Core vocabulary per language, frequency-ranked word lists |
 | `swadesh` | Swadesh lists with IPA transcriptions |

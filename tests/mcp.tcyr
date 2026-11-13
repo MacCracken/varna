@@ -95,6 +95,17 @@ fn main() {
     assert(_contains(mcp_result_payload(r4), "\"output\":\"abg\""), "transliterate abg");
     assert(_contains(mcp_result_payload(r4), "\"input\":\"αβγ\""), "transliterate echoes input");
     assert(_contains(mcp_result_payload(r4), "\"scheme\":\"greek_beta\""), "transliterate echoes scheme");
+    # 2.6.0: every scheme translit_by_scheme knows.
+    var p4b = map_new();
+    map_set(p4b, "text", "щука");
+    map_set(p4b, "scheme", "russian_alalc");
+    var r4b = mcp_invoke("varna_translate_ipa", p4b);
+    assert(_contains(mcp_result_payload(r4b), "\"output\":\"shchuka\""), "transliterate russian_alalc");
+    var p4c = map_new();
+    map_set(p4c, "text", "ㄇㄚˇ");
+    map_set(p4c, "scheme", "zhuyin_pinyin");
+    var r4c = mcp_invoke("varna_translate_ipa", p4c);
+    assert(_contains(mcp_result_payload(r4c), "\"output\":\"mǎ\""), "and zhuyin_pinyin");
 
     var p5 = map_new();
     map_set(p5, "lang1", "en");
