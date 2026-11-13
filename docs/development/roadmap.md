@@ -94,8 +94,15 @@ custom fonts, so render the page and look rather than trusting extracted text.
 - [x] **Numeral follow-ons**: the variant-glyph alias layer (ѵ ѿ ҁ; not ꙋ, which has
       no numeric use), Glagolitic numerals (`Glag`, the 29 values every source agrees
       on), and mispar gadol (`NUM_GADOL`, Hebrew only).
-- [ ] **Source provenance**: track the bibliography / reference for each inventory.
-      Today the source is named only in comments, as the 2.5.3 method requires.
+- [x] **Source provenance**: a keyed bibliography (`src/sources.cyr`) and each
+      inventory's links to the works its values come from (`inventory_sources`);
+      12 inventories cite 18 works, every entry checkable by DOI or URL.
+- [ ] **Provenance for the other datasets**: link the phonotactic profiles, allophone
+      sets, transliteration tables, tone rows and numeral systems to the bibliography,
+      as the inventories are. Their comments cite about 50 more works, each to be
+      entered from its primary record.
+- [ ] **Re-source the 39 unsourced inventories**, JIPA Illustrations first, correcting
+      each to its source as 2.6.0 did for ja es zh. Each may change data.
 - [ ] **Multiple inventories per language**: competing analyses, as PHOIBLE keeps them.
       `dialect` overlays (British English RP) are the nearest thing today.
 - [ ] **Data-driven inventories**: load PHOIBLE for 2000+ languages, feature-gated.

@@ -246,7 +246,8 @@ fn phoneme_is_breathy(p) {
 }
 
 # --- Inventory builder ---------------------------------------------
-# The builder and the inventory share one 40-byte layout; build() is identity.
+# The builder and the inventory share one 48-byte layout; build() is identity.
+# [0]=code [8]=name [16]=phonemes [24]=stress [32]=tones [40]=source links (2.6.0)
 
 # `cap` is accepted for source compatibility with the v1.x Rust builder and is
 # currently ignored: lib/vec.cyr exposes no capacity-taking constructor, so the
@@ -254,12 +255,13 @@ fn phoneme_is_breathy(p) {
 # rather than dropped because the bundle is a published consumer API; it becomes
 # load-bearing the moment the stdlib grows `vec_new_with_capacity`.
 fn phoneme_builder_with_capacity(code, name, cap) {
-    var inv = alloc(40);
+    var inv = alloc(48);
     store64(inv, code);
     store64(inv + 8, name);
     store64(inv + 16, vec_new());
     store64(inv + 24, StressPattern.Free);
     store64(inv + 32, 0);
+    store64(inv + 40, vec_new());
     return inv;
 }
 
@@ -326,6 +328,39 @@ fn phoneme_builder_phoneme(inv, p) {
 
 fn phoneme_builder_build(inv) { return inv; }
 
+# --- Source links (2.6.0) --------------------------------------------
+# Provenance: the works an inventory's values are taken from, each with what it
+# covers ("consonants and vowels", "tones"). A link names a bibliography key
+# (src/sources.cyr resolves it); this file needs nothing from there. An inventory
+# with no links cites nothing, and says so: inventory_is_sourced is 0.
+#
+# SourceLink (16B): [0]=key (cstr) [8]=covers (cstr)
+fn _source_link_new(key, covers) {
+    var l = alloc(16);
+    store64(l, key);
+    store64(l + 8, covers);
+    return l;
+}
+
+fn source_link_key(l) { return load64(l); }
+fn source_link_covers(l) { return load64(l + 8); }
+
+# Record that `key`'s work is the source of `covers` in this inventory.
+fn phoneme_builder_source(inv, key, covers) {
+    vec_push(load64(inv + 40), _source_link_new(key, covers));
+    return inv;
+}
+
+# The inventory's source links, in the order added — vec of SourceLink, empty when
+# the inventory cites nothing.
+fn inventory_sources(inv) { return load64(inv + 40); }
+
+# 1 when the inventory cites at least one source, else 0.
+fn inventory_is_sourced(inv) {
+    if (vec_len(load64(inv + 40)) > 0) { return 1; }
+    return 0;
+}
+
 # Independent copy of `inv`, safe to mutate through the `phoneme_builder_*`
 # functions without touching the original.
 #
@@ -335,7 +370,7 @@ fn phoneme_builder_build(inv) { return inv; }
 # are shared, because nothing in the API mutates a Phoneme in place — only the
 # inventory's own vec, stress and tone slots, all of which are fresh here.
 fn phoneme_clone(inv) {
-    var out = alloc(40);
+    var out = alloc(48);
     store64(out, load64(inv));
     store64(out + 8, load64(inv + 8));
     var dst = vec_new();
@@ -349,6 +384,14 @@ fn phoneme_clone(inv) {
     store64(out + 16, dst);
     store64(out + 24, load64(inv + 24));
     store64(out + 32, load64(inv + 32));
+    var links = vec_new();
+    var sl = load64(inv + 40);
+    var k = 0;
+    while (k < vec_len(sl)) {
+        vec_push(links, vec_get(sl, k));
+        k = k + 1;
+    }
+    store64(out + 40, links);
     return out;
 }
 

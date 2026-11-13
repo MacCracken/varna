@@ -1,0 +1,157 @@
+# tests/sources.tcyr — provenance (2.6.0): the bibliography and the inventories' links.
+#
+# The invariants: every link names a work the bibliography holds; every work can be
+# checked (it has a DOI or the URL its record was read from); and exactly the
+# inventories that cite a source report one. The rest cite nothing, and say so.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/sources.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/allophone.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+include "src/dialect.cyr"
+
+fn _links(inv) { return vec_len(inventory_sources(inv)); }
+
+# 1 when cstring `a` sorts strictly before `b`, byte by byte.
+fn _before(a, b) {
+    var i = 0;
+    while (1 == 1) {
+        var x = load8(a + i);
+        var y = load8(b + i);
+        if (x != y) { return x < y; }
+        if (x == 0) { return 0; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+fn _link_key(inv, i) { return source_link_key(vec_get(inventory_sources(inv), i)); }
+
+fn _link_covers(inv, i) { return source_link_covers(vec_get(inventory_sources(inv), i)); }
+
+fn main() {
+    alloc_init();
+    test_group("bibliography");
+    var keys = source_all_keys();
+    assert_eq(vec_len(keys), 18, "18 works");
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(keys)) {
+        var k = vec_get(keys, i);
+        var s = source_by_key(k);
+        if (s == 0) { bad = bad + 1; }
+        if (s != 0) {
+            if (streq(source_key(s), k) == 0) { bad = bad + 1; }
+            if (strlen(source_authors(s)) == 0 || strlen(source_title(s)) == 0) { bad = bad + 1; }
+            if (strlen(source_venue(s)) == 0) { bad = bad + 1; }
+            # A year, or 0 for an undated work, whose key then ends "_nd".
+            if (source_year(s) != 0 && (source_year(s) < 1900 || source_year(s) > 2026)) { bad = bad + 1; }
+            # Checkable: a DOI, or the page the record was read from.
+            if (source_doi(s) == 0 && source_url(s) == 0) {
+                println(k);
+                bad = bad + 1;
+            }
+        }
+        # Keys are unique and in order.
+        if (i > 0) {
+            if (_before(vec_get(keys, i - 1), k) == 0) { bad = bad + 1; }
+        }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "every work resolves, is complete, and has a DOI or a URL");
+    assert_eq(source_by_key("nosuchwork1900"), 0, "an unknown key has none");
+    assert_eq(source_by_key(0), 0, "nor does null");
+
+    test_group("one_record");
+    var lz = source_by_key("leezee2003");
+    assert(streq(source_authors(lz), "Lee, Wai-Sum; Zee, Eric"), "Lee & Zee's authors (Crossref)");
+    assert_eq(source_year(lz), 2003, "2003");
+    assert(streq(source_title(lz), "Standard Chinese (Beijing)"), "title");
+    assert(streq(source_venue(lz), "Journal of the International Phonetic Association 33(1)"), "venue");
+    assert(streq(source_pages(lz), "109-112"), "pages");
+    assert(streq(source_doi(lz), "10.1017/s0025100303001208"), "DOI");
+    assert_eq(source_url(lz), 0, "a DOI'd work needs no URL");
+    # Corrected at 2.6.0 from their primary pages: an undated manuscript, a supplement,
+    # a given name.
+    var ed = source_by_key("edmondson_nd");
+    assert_eq(source_year(ed), 0, "Edmondson et al. print no date");
+    assert(source_url(ed) != 0, "and are read from the archived copy");
+    assert(streq(source_venue(source_by_key("sy2006")), "Studies in African Linguistics 35, Supplement 11"), "Sy");
+    assert(streq(source_authors(source_by_key("unseth2009")), "Unseth, Carla"), "Unseth");
+
+    test_group("every_link_resolves");
+    var codes = registry_all_codes();
+    var unresolved = 0;
+    var empty_covers = 0;
+    var sourced = 0;
+    i = 0;
+    while (i < vec_len(codes)) {
+        var inv = registry_phonemes(vec_get(codes, i));
+        if (inv != 0) {
+            var j = 0;
+            while (j < _links(inv)) {
+                if (source_by_key(_link_key(inv, j)) == 0) {
+                    println(_link_key(inv, j));
+                    unresolved = unresolved + 1;
+                }
+                if (strlen(_link_covers(inv, j)) == 0) { empty_covers = empty_covers + 1; }
+                j = j + 1;
+            }
+            sourced = sourced + inventory_is_sourced(inv);
+        }
+        i = i + 1;
+    }
+    assert_eq(unresolved, 0, "every link names a work in the bibliography");
+    assert_eq(empty_covers, 0, "every link says what it covers");
+    assert_eq(sourced, 12, "12 of 51 inventories cite a source");
+
+    test_group("which_inventories");
+    var with = vec_new();
+    vec_push(with, "zh");
+    vec_push(with, "ja");
+    vec_push(with, "es");
+    vec_push(with, "ar");
+    vec_push(with, "ru");
+    vec_push(with, "vi");
+    vec_push(with, "th");
+    vec_push(with, "my");
+    vec_push(with, "yo");
+    vec_push(with, "so");
+    vec_push(with, "wo");
+    vec_push(with, "lo");
+    i = 0;
+    while (i < vec_len(with)) {
+        assert_eq(inventory_is_sourced(registry_phonemes(vec_get(with, i))), 1, vec_get(with, i));
+        i = i + 1;
+    }
+    assert_eq(inventory_is_sourced(phoneme_english()), 0, "English cites nothing");
+    assert_eq(_links(phoneme_finnish()), 0, "nor does Finnish");
+
+    test_group("links_pinned");
+    var th = phoneme_thai();
+    assert_eq(_links(th), 2, "Thai: two works");
+    assert(streq(_link_key(th, 0), "tingsabadh1993"), "the segments");
+    assert(streq(_link_key(th, 1), "teeranon2007"), "and the tones");
+    assert(streq(_link_covers(th, 1), "tones"), "teeranon2007 covers the tones");
+    assert_eq(_links(phoneme_somali()), 4, "Somali: four works");
+    assert(streq(_link_key(phoneme_lao(), 1), "yanagimura2011"), "Lao's tone values");
+    assert(streq(_link_covers(phoneme_classical_arabic(), 0), "the pharyngealized lateral lˤ"), "Arabic: one phoneme");
+
+    test_group("derived_inventories");
+    var copy = phoneme_clone(th);
+    assert_eq(_links(copy), 2, "a clone keeps its links");
+    phoneme_builder_source(copy, "x", "y");
+    assert_eq(_links(th), 2, "in its own vec");
+    var rp = dialect_apply(dialect_british_english(), phoneme_english());
+    assert_eq(inventory_is_sourced(rp), 0, "an overlay cites nothing of its parent's");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

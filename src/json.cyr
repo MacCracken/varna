@@ -372,7 +372,47 @@ fn phoneme_inventory_to_json(inv, sb) {
     }
     str_builder_add_cstr(sb, ",\"stress\":");
     StressPattern_to_json(phoneme_stress(inv), sb);
+    # 2.6.0: provenance, only for an inventory that cites a source, so every other
+    # inventory writes exactly v1.x's shape.
+    var links = inventory_sources(inv);
+    var nl = vec_len(links);
+    if (nl > 0) {
+        str_builder_add_cstr(sb, ",\"sources\":[");
+        var k = 0;
+        while (k < nl) {
+            var l = vec_get(links, k);
+            if (k > 0) { str_builder_putc(sb, ','); }
+            str_builder_add_cstr(sb, "{\"key\":");
+            str_builder_add_json_cstr(sb, source_link_key(l));
+            str_builder_add_cstr(sb, ",\"covers\":");
+            str_builder_add_json_cstr(sb, source_link_covers(l));
+            str_builder_putc(sb, '}');
+            k = k + 1;
+        }
+        str_builder_putc(sb, ']');
+    }
     str_builder_putc(sb, '}');
+    return 0;
+}
+
+# The optional "sources" member (2.6.0) onto `inv`: 0, or -1 when it is present and
+# malformed. Absent or null is no links; otherwise an array of {"key","covers"}
+# objects, both strings. A key is not checked against the bibliography here, as a
+# caller's own inventory may cite its own works.
+fn _json_inventory_sources(inv, sv) {
+    if (sv == 0 || bayan_json_v_is_null(sv)) { return 0; }
+    if (!bayan_json_v_is_arr(sv)) { return 0 - 1; }
+    var n = bayan_json_v_arr_len(sv);
+    var i = 0;
+    while (i < n) {
+        var o = bayan_json_v_arr_get(sv, i);
+        if (!bayan_json_v_is_obj(o)) { return 0 - 1; }
+        var key = _json_cstr(bayan_json_v_obj_get_by_cstr(o, "key"));
+        var covers = _json_cstr(bayan_json_v_obj_get_by_cstr(o, "covers"));
+        if (key == 0 || covers == 0) { return 0 - 1; }
+        phoneme_builder_source(inv, key, covers);
+        i = i + 1;
+    }
     return 0;
 }
 
@@ -414,6 +454,7 @@ fn _json_inventory(v) {
         i = i + 1;
     }
     if (tones != 0) { phoneme_builder_tones(inv, tones); }
+    if (_json_inventory_sources(inv, bayan_json_v_obj_get_by_cstr(v, "sources")) != 0) { return 0; }
     return phoneme_builder_build(inv);
 }
 
@@ -1700,4 +1741,62 @@ fn _json_registry_info(v) {
 #must_use
 fn registry_info_from_json(text) {
     return _json_registry_info(_json_parse(text));
+}
+
+# --- Source (2.6.0) ---------------------------------------------------------
+#
+# A bibliography entry (src/sources.cyr), a record varna gained after v1.x:
+#   {"key":"leezee2003","authors":"Lee, Wai-Sum; Zee, Eric","year":2003,
+#    "title":"Standard Chinese (Beijing)","venue":"...","pages":"109-112",
+#    "doi":"10.1017/...","url":null}
+# year, pages, doi and url are Options (null for none: year 0 is an undated work);
+# the rest are required.
+
+# Append source `s`. Returns 0, or -1 (nothing written) for a null source.
+fn source_to_json(s, sb) {
+    if (s == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"key\":");
+    str_builder_add_json_cstr(sb, source_key(s));
+    str_builder_add_cstr(sb, ",\"authors\":");
+    str_builder_add_json_cstr(sb, source_authors(s));
+    str_builder_add_cstr(sb, ",\"year\":");
+    if (source_year(s) == 0) {
+        str_builder_add_cstr(sb, "null");
+    } else {
+        str_builder_add_int(sb, source_year(s));
+    }
+    str_builder_add_cstr(sb, ",\"title\":");
+    str_builder_add_json_cstr(sb, source_title(s));
+    str_builder_add_cstr(sb, ",\"venue\":");
+    str_builder_add_json_cstr(sb, source_venue(s));
+    str_builder_add_cstr(sb, ",\"pages\":");
+    _json_opt_cstr_write(sb, source_pages(s));
+    str_builder_add_cstr(sb, ",\"doi\":");
+    _json_opt_cstr_write(sb, source_doi(s));
+    str_builder_add_cstr(sb, ",\"url\":");
+    _json_opt_cstr_write(sb, source_url(s));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_source(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var key = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "key"));
+    var authors = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "authors"));
+    var year = _json_opt_uint(bayan_json_v_obj_get_by_cstr(v, "year"), 9999);
+    if (year == 0 - 1) { year = 0; }
+    var title = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "title"));
+    var venue = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "venue"));
+    if (key == 0 || authors == 0 || year < 0 || title == 0 || venue == 0) { return 0; }
+    var pages = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "pages"));
+    var doi = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "doi"));
+    var url = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "url"));
+    if (pages < 0 || doi < 0 || url < 0) { return 0; }
+    return _source_new(key, authors, year, title, venue, pages, doi, url);
+}
+
+# A source from NUL-terminated JSON text, or 0.
+#must_use
+fn source_from_json(text) {
+    return _json_source(_json_parse(text));
 }

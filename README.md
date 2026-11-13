@@ -21,6 +21,7 @@ Used by [shabda](https://github.com/MacCracken/shabda) (G2P conversion),
 | `features` | 25 SPE/Hayes distinctive features, derived from the articulatory description rather than tabulated |
 | `tone` | Structured tone parsed from Chao tone-letter notation — contour, register, pitch levels, creak and checked |
 | `inventories` | The per-language inventory data the `phoneme` API is built over |
+| `sources` | The bibliography: each inventory's values linked to the works they come from |
 | `allophone` | Context-conditioned realisation rules |
 | `syllable` | Phonotactic profiles and syllable-template validation |
 | `script` | Writing system metadata: alphabet, syllabary, logographic, abjad, abugida. Unicode ranges, directionality |

@@ -68,7 +68,9 @@ fn dialect_removes(v, ipa) {
 }
 
 # Apply this variety's overlay to a parent inventory, producing a new inventory
-# (parent phonemes minus removed, plus added as Mid/Central vowels).
+# (parent phonemes minus removed, plus added as Mid/Central vowels). The result
+# carries no source links (2.6.0): the parent's sources describe the parent, not
+# the overlay.
 fn dialect_apply(v, parent) {
     var inv = phoneme_builder_with_capacity(load64(v), load64(v + 8), 48);
     store64(inv + 24, phoneme_stress(parent));

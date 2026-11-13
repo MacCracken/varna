@@ -70,6 +70,31 @@ identifier: `registry_info_glottocode(registry_info("lo"))` is `"laoo1244"`, and
 
 ---
 
+## Provenance
+
+An inventory names the works its values are taken from, each with what it covers. The
+works themselves are in one bibliography, keyed:
+
+```cyrius
+var links = inventory_sources(phoneme_thai());
+# [0] key "tingsabadh1993", covers "consonants, vowels and diphthongs"
+# [1] key "teeranon2007",   covers "tones"
+var w = source_by_key(source_link_key(vec_get(links, 0)));
+# source_authors(w) -> "Tingsabadh, M. R. Kalaya; Abramson, Arthur S."
+# source_year(w)    -> 1993
+# source_venue(w)   -> "Journal of the International Phonetic Association 23(1)"
+# source_doi(w)     -> "10.1017/s0025100300004746"
+
+# Most inventories cite nothing yet, and say so.
+assert(inventory_is_sourced(phoneme_finnish()) == 0);
+```
+
+A link goes to a work the values are taken from; works that only agree, or that could
+not be read, stay in the inventory's comment. `source_all_keys()` lists the
+bibliography. Every entry has a DOI or the URL its record was read from.
+
+---
+
 ## Builder Pattern
 
 Construct a custom inventory with the inventory builder:

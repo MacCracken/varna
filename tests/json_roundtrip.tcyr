@@ -17,6 +17,7 @@
 # input.
 
 include "src/util.cyr"
+include "src/sources.cyr"
 include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
@@ -72,6 +73,16 @@ fn _inv_eq(a, b) {
     var i = 0;
     while (i < n) {
         if (_ph_eq(vec_get(pa, i), vec_get(pb, i)) != 1) { return 0; }
+        i = i + 1;
+    }
+    # 2.6.0: the source links.
+    var la = inventory_sources(a);
+    var lb = inventory_sources(b);
+    if (vec_len(la) != vec_len(lb)) { return 0; }
+    i = 0;
+    while (i < vec_len(la)) {
+        if (streq(source_link_key(vec_get(la, i)), source_link_key(vec_get(lb, i))) != 1) { return 0; }
+        if (streq(source_link_covers(vec_get(la, i)), source_link_covers(vec_get(lb, i))) != 1) { return 0; }
         i = i + 1;
     }
     return 1;
@@ -341,6 +352,66 @@ fn test_malformed_inventory() {
     assert_eq(phoneme_inventory_from_json("{\"language_code\":\"xx\",\"language_name\":\"T\",\"phonemes\":[],\"tones\":\"˥\",\"stress\":\"Free\"}"), 0, "tones not an array");  #skip-lint
     assert_eq(phoneme_inventory_from_json("{\"language_code\":\"xx\",\"language_name\":\"T\",\"phonemes\":[],\"tones\":[5],\"stress\":\"Free\"}"), 0, "tone not a string");  #skip-lint
     assert_eq(phoneme_inventory_from_json("{\"language_name\":\"T\",\"phonemes\":[],\"stress\":\"Free\"}"), 0, "missing language_code");  #skip-lint
+    # 2.6.0 "sources": optional, but strict when present.
+    var g = "{\"language_code\":\"xx\",\"language_name\":\"T\",\"phonemes\":[],\"tones\":null,\"stress\":\"Free\",\"sources\":[{\"key\":\"k\",\"covers\":\"c\"}]}";  #skip-lint
+    var gi = phoneme_inventory_from_json(g);
+    assert(gi != 0, "an inventory with sources decodes");
+    if (gi != 0) { assert(streq(source_link_covers(vec_get(inventory_sources(gi), 0)), "c"), "with its link"); }
+    var nul = phoneme_inventory_from_json(_with(g, "[{\"key\":\"k\",\"covers\":\"c\"}]", "null"));
+    assert(nul != 0, "sources: null is none");
+    if (nul != 0) { assert_eq(inventory_is_sourced(nul), 0, "and cites nothing"); }
+    var d = vec_new();
+    vec_push(d, _with(g, "[{\"key\":\"k\",\"covers\":\"c\"}]", "{}"));
+    vec_push(d, _with(g, "{\"key\":\"k\",\"covers\":\"c\"}", "\"k\""));
+    vec_push(d, _with(g, "\"key\":\"k\",", ""));
+    vec_push(d, _with(g, ",\"covers\":\"c\"", ""));
+    vec_push(d, _with(g, "\"covers\":\"c\"", "\"covers\":7"));
+    _refuses_all(&phoneme_inventory_from_json, d, "every malformed sources field is refused");
+    return 0;
+}
+
+fn test_serde_sources() {
+    # Every bibliography entry round-trips, and so does every sourced inventory.
+    var keys = source_all_keys();
+    var i = 0;
+    while (i < vec_len(keys)) {
+        var s = source_by_key(vec_get(keys, i));
+        var back = source_from_json(_text_of(&source_to_json, s));
+        var same = 0;
+        if (back != 0) {
+            same = streq(source_key(back), source_key(s)) & streq(source_authors(back), source_authors(s));
+            same = same & streq(source_title(back), source_title(s)) & streq(source_venue(back), source_venue(s));
+            if (source_year(back) != source_year(s)) { same = 0; }
+            if ((source_doi(back) == 0) != (source_doi(s) == 0)) { same = 0; }
+            if ((source_url(back) == 0) != (source_url(s) == 0)) { same = 0; }
+            if ((source_pages(back) == 0) != (source_pages(s) == 0)) { same = 0; }
+        }
+        assert_eq(same, 1, vec_get(keys, i));
+        i = i + 1;
+    }
+    var lz = _text_of(&source_to_json, source_by_key("leezee2003"));
+    assert(streq(lz, "{\"key\":\"leezee2003\",\"authors\":\"Lee, Wai-Sum; Zee, Eric\",\"year\":2003,\"title\":\"Standard Chinese (Beijing)\",\"venue\":\"Journal of the International Phonetic Association 33(1)\",\"pages\":\"109-112\",\"doi\":\"10.1017/s0025100303001208\",\"url\":null}"), "the record's shape");  #skip-lint
+    var th = _text_of(&phoneme_inventory_to_json, phoneme_thai());
+    assert(_contains(th, ",\"stress\":\"Tonal\",\"sources\":[{\"key\":\"tingsabadh1993\",\"covers\":"), "Thai writes its sources last");  #skip-lint
+    assert_eq(_contains(_text_of(&phoneme_inventory_to_json, phoneme_finnish()), "sources"), 0, "Finnish writes none");
+    assert(_inv_eq(phoneme_thai(), phoneme_inventory_from_json(th)), "a sourced inventory round-trips");
+    # Malformed records.
+    var d = vec_new();
+    vec_push(d, _with(lz, "\"key\":\"leezee2003\",", ""));
+    vec_push(d, _with(lz, "\"year\":2003", "\"year\":\"2003\""));
+    vec_push(d, _with(lz, "\"year\":2003", "\"year\":-1"));
+    vec_push(d, _with(lz, "\"pages\":\"109-112\"", "\"pages\":7"));
+    vec_push(d, _with(lz, "\"url\":null", "\"url\":[]"));
+    vec_push(d, _with(lz, ",\"venue\":\"Journal of the International Phonetic Association 33(1)\"", ""));
+    vec_push(d, "[]");
+    _refuses_all(&source_from_json, d, "every malformed source is refused");
+    assert_eq(source_from_json(0), 0, "null text");
+    assert(source_from_json(_with(lz, ",\"url\":null", "")) != 0, "an absent Option is none");
+    var nd = _text_of(&source_to_json, source_by_key("edmondson_nd"));
+    assert(_contains(nd, ",\"year\":null,"), "an undated work writes year null");
+    var ndb = source_from_json(nd);
+    assert(ndb != 0, "and reads back");
+    if (ndb != 0) { assert_eq(source_year(ndb), 0, "as undated"); }
     return 0;
 }
 
@@ -2225,6 +2296,7 @@ fn main() {
     test_serde_lex_entry();
     test_serde_lexicon();
     test_malformed_lexicon();
+    test_serde_sources();
     test_serde_cognate();
     test_malformed_cognate();
     test_serde_language_variety();

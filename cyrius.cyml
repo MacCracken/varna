@@ -23,6 +23,7 @@ output = "build/varna"
 modules = [
     "src/error.cyr",
     "src/util.cyr",
+    "src/sources.cyr",
     "src/tone.cyr",
     "src/phoneme.cyr",
     "src/features.cyr",
@@ -48,6 +49,7 @@ modules = [
 modules = [
     "src/error.cyr",
     "src/util.cyr",
+    "src/sources.cyr",
     "src/tone.cyr",
     "src/phoneme.cyr",
     "src/features.cyr",
@@ -80,6 +82,7 @@ modules = [
 modules = [
     "src/error.cyr",
     "src/util.cyr",
+    "src/sources.cyr",
     "src/tone.cyr",
     "src/phoneme.cyr",
     "src/features.cyr",

@@ -1,0 +1,130 @@
+# src/sources.cyr — the bibliography: the works varna's data is taken from (2.6.0).
+#
+# Provenance was named only in comments until 2.6.0. This module holds each cited work
+# once, under a key, and a dataset links to keys with what each work covers: an
+# inventory's links are inventory_sources (src/phoneme.cyr). Phonotactics, allophones,
+# transliteration and numerals link here next (see the roadmap).
+#
+# What gets a link: a work the values are taken from. A work that only agrees with
+# them, one that was checked and set aside, and one that could not be read are
+# named in the dataset's comment, not linked.
+#
+# Every field is as the work's publisher, journal or repository prints it, read from
+# that page: Crossref's publisher-deposited record for a work with a DOI, and the
+# page in `url` for one without. Authors are "Family, Given" and separated by "; ".
+# A work that prints no date is undated, year 0, rather than dated from another
+# work's citation of it.
+#
+# Source (64B): [0]=key [8]=authors [16]=year [24]=title [32]=venue
+#               [40]=pages (cstr|0) [48]=doi (cstr|0) [56]=url (cstr|0)
+
+fn _source_new(key, authors, year, title, venue, pages, doi, url) {
+    var s = alloc(64);
+    store64(s, key);
+    store64(s + 8, authors);
+    store64(s + 16, year);
+    store64(s + 24, title);
+    store64(s + 32, venue);
+    store64(s + 40, pages);
+    store64(s + 48, doi);
+    store64(s + 56, url);
+    return s;
+}
+
+fn source_key(s) { return load64(s); }
+fn source_authors(s) { return load64(s + 8); }
+# Year, or 0 for a work that prints no date (cited "n.d."; its key ends "_nd").
+fn source_year(s) { return load64(s + 16); }
+fn source_title(s) { return load64(s + 24); }
+fn source_venue(s) { return load64(s + 32); }
+# Page range, or 0 for a whole book or database.
+fn source_pages(s) { return load64(s + 40); }
+# DOI, or 0 when the work has none.
+fn source_doi(s) { return load64(s + 48); }
+# The page the record was read from, or 0 when the DOI resolves to it.
+fn source_url(s) { return load64(s + 56); }
+
+var _c_bibliography = 0;
+
+# Every work, in key order — vec of Source.
+fn _bibliography() {
+    if (_c_bibliography != 0) { return _c_bibliography; }
+    var b = vec_new();
+    vec_push(b, _source_new("archangeli1989", "Archangeli, Diana; Pulleyblank, Douglas", 1989, "Yoruba Vowel Harmony",
+        "Linguistic Inquiry 20(2)", "173-217", 0, "http://www.jstor.org/stable/4178624"));
+    vec_push(b, _source_new("edmondson_nd", "Edmondson, Jerold A.; Esling, John H.; Harris, Jimmy G.", 0,
+        "Supraglottal cavity shape, linguistic register, and other phonetic features of Somali",
+        "Manuscript, University of Texas at Arlington and University of Victoria", 0, 0,
+        "https://web.archive.org/web/20041221093128id_/http://ling.uta.edu:80/~jerry/somali.pdf"));
+    vec_push(b, _source_new("enfield2007", "Enfield, N.J.", 2007, "A Grammar of Lao", "Mouton de Gruyter", 0,
+        "10.1515/9783110207538", 0));
+    vec_push(b, _source_new("gabbard2010", "Gabbard, Kevin M.", 2010,
+        "A Phonological Analysis of Somali and the Guttural Consonants", "BA honors thesis, The Ohio State University",
+        0, 0, "http://hdl.handle.net/1811/46639"));
+    vec_push(b, _source_new("kimper2019", "Kimper, Wendell; Bennett, Wm. G.; Green, Christopher R.; Yu, Kristine", 2019,
+        "Acoustic correlates of harmony classes in Somali",
+        "In Emily Clem, Peter Jenks & Hannah Sande (eds.), Theory and description in African Linguistics: Selected papers from the 47th Annual Conference on African Linguistics. Berlin: Language Science Press",  #skip-lint
+        "199-212", "10.5281/zenodo.3367140", 0));
+    vec_push(b, _source_new("kirby2011", "Kirby, James P.", 2011, "Vietnamese (Hanoi Vietnamese)",
+        "Journal of the International Phonetic Association 41(3)", "381-392", "10.1017/s0025100311000181", 0));
+    vec_push(b, _source_new("leezee2003", "Lee, Wai-Sum; Zee, Eric", 2003, "Standard Chinese (Beijing)",
+        "Journal of the International Phonetic Association 33(1)", "109-112", "10.1017/s0025100303001208", 0));
+    vec_push(b, _source_new("martinezceldran2003",
+        "Martínez-Celdrán, Eugenio; Fernández-Planas, Ana Ma.; Carrera-Sabaté, Josefina", 2003, "Castilian Spanish",
+        "Journal of the International Phonetic Association 33(2)", "255-259", "10.1017/s0025100303001373", 0));
+    vec_push(b, _source_new("okada1991", "Okada, Hideo", 1991, "Japanese",
+        "Journal of the International Phonetic Association 21(2)", "94-96", "10.1017/s002510030000445x", 0));
+    vec_push(b, _source_new("phoible2019", "Moran, Steven; McCloy, Daniel (eds.)", 2019, "PHOIBLE 2.0",
+        "Jena: Max Planck Institute for the Science of Human History", 0, "10.5281/zenodo.2593234",
+        "https://phoible.org"));
+    vec_push(b, _source_new("sy2006", "Sy, Mariame I.", 2006, "Vowel harmony in Wolof loanwords",
+        "Studies in African Linguistics 35, Supplement 11", "203-220", "10.32473/sal.v35i0.107326", 0));
+    vec_push(b, _source_new("teeranon2007", "Teeranon, Phanintra", 2007,
+        "The change of Standard Thai high tone: an acoustic study and a perceptual experiment",
+        "SKASE Journal of Theoretical Linguistics 4(3)", "1-17", 0, "http://www.skase.sk/Volumes/JTL10/pdf_doc/1.pdf"));
+    vec_push(b, _source_new("thelwall1990", "Thelwall, Robin; Sa'adeddin, M. Akram", 1990, "Arabic",
+        "Journal of the International Phonetic Association 20(2)", "37-39", "10.1017/s0025100300004266", 0));
+    vec_push(b, _source_new("tingsabadh1993", "Tingsabadh, M. R. Kalaya; Abramson, Arthur S.", 1993, "Thai",
+        "Journal of the International Phonetic Association 23(1)", "24-28", "10.1017/s0025100300004746", 0));
+    vec_push(b, _source_new("unseth2009", "Unseth, Carla", 2009, "Vowel Harmony in Wolof",
+        "Occasional Papers in Applied Linguistics 7, Graduate Institute of Applied Linguistics", "1-8", 0,
+        "https://www.diu.edu/documents/OPAL/No-7-Unseth-Wolof-Vowel-Harmony.pdf"));
+    vec_push(b, _source_new("watkins2001", "Watkins, Justin W.", 2001, "Burmese",
+        "Journal of the International Phonetic Association 31(2)", "291-295", "10.1017/s0025100301002122", 0));
+    vec_push(b, _source_new("yanagimura2011", "Yanagimura, Yu", 2011, "Contextual Tonal Variations in Vientiane Lao",
+        "Journal of Mekong Societies 7(1)", "1-16", 0,
+        "https://so03.tci-thaijo.org/index.php/mekongjournal/article/view/6739"));
+    vec_push(b, _source_new("yanushevskaya2015", "Yanushevskaya, Irena; Bunčić, Daniel", 2015, "Russian",
+        "Journal of the International Phonetic Association 45(2)", "221-228", "10.1017/s0025100314000395", 0));
+    _c_bibliography = b;
+    return _c_bibliography;
+}
+
+# The work under `key`, or 0 when the bibliography has none.
+#must_use
+fn source_by_key(key) {
+    if (key == 0) { return 0; }
+    var b = _bibliography();
+    var i = 0;
+    while (i < vec_len(b)) {
+        var s = vec_get(b, i);
+        if (streq(load64(s), key) == 1) { return s; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+var _c_source_all_keys = 0;
+# Every bibliography key, in key order — vec of cstrings.
+fn source_all_keys() {
+    if (_c_source_all_keys != 0) { return _c_source_all_keys; }
+    var c = vec_new();
+    var b = _bibliography();
+    var i = 0;
+    while (i < vec_len(b)) {
+        vec_push(c, load64(vec_get(b, i)));
+        i = i + 1;
+    }
+    _c_source_all_keys = c;
+    return _c_source_all_keys;
+}

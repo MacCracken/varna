@@ -99,6 +99,8 @@ fn phoneme_yoruba() {
     if (_c_phoneme_yoruba != 0) { return _c_phoneme_yoruba; }
 
     var b = phoneme_builder_with_capacity("yo", "Yoruba", 28);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "archangeli1989", "the seven oral vowels, their ATR values, and the three nasal vowels");
     phoneme_builder_stress(b, StressPattern.Tonal);
     var t = vec_new();
     vec_push(t, "˥");
@@ -264,10 +266,14 @@ fn phoneme_thai() {
     if (_c_phoneme_thai != 0) { return _c_phoneme_thai; }
 
     var b = phoneme_builder_with_capacity("th", "Thai", 42);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "tingsabadh1993", "consonants, vowels and diphthongs");
+    phoneme_builder_source(b, "teeranon2007", "tones");
     phoneme_builder_stress(b, StressPattern.Tonal);
     # Five tones in the canonical order สามัญ / เอก / โท / ตรี / จัตวา, from one
     # source that prints numbers for all five: Teeranon (2007), "The change of Standard
-    # Thai high tone", SKASE Journal of Theoretical Linguistics 4(3), p. 1: "mid tone
+    # Thai high tone: an acoustic study and a perceptual experiment", SKASE Journal of
+    # Theoretical Linguistics 4(3), p. 1: "mid tone
     # [33], low tone [21], falling tone [43], high tone [44 or 45] and rising tone
     # [323]". She gives them "based on" Abramson's acoustic work (1962, 1975, 1978),
     # so these are her five-level conversion of his F0 data. The high tone is 45, the
@@ -358,6 +364,8 @@ fn phoneme_vietnamese() {
     if (_c_phoneme_vietnamese != 0) { return _c_phoneme_vietnamese; }
 
     var b = phoneme_builder_with_capacity("vi", "Vietnamese", 33);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "kirby2011", "tones");
     phoneme_builder_stress(b, StressPattern.Tonal);
     # Six tones in the order ngang / huyền / sắc / hỏi / ngã / nặng, Hanoi Vietnamese,
     # all from one source: Kirby (2011), "Vietnamese (Hanoi Vietnamese)", JIPA 41(3),
@@ -660,6 +668,8 @@ fn phoneme_classical_arabic() {
     if (_c_phoneme_classical_arabic != 0) { return _c_phoneme_classical_arabic; }
 
     var b = phoneme_builder_with_capacity("ar", "Arabic", 35);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "thelwall1990", "the pharyngealized lateral lˤ");
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
@@ -827,6 +837,8 @@ fn phoneme_mandarin() {
     if (_c_phoneme_mandarin != 0) { return _c_phoneme_mandarin; }
 
     var b = phoneme_builder_with_capacity("zh", "Mandarin Chinese", 46);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "leezee2003", "consonants and vowels");
     phoneme_builder_stress(b, StressPattern.Tonal);
     var t = vec_new();
     vec_push(t, "˥˥");
@@ -992,6 +1004,8 @@ fn phoneme_japanese() {
     if (_c_phoneme_japanese != 0) { return _c_phoneme_japanese; }
 
     var b = phoneme_builder_with_capacity("ja", "Japanese", 21);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "okada1991", "consonants and vowels");
     phoneme_builder_stress(b, StressPattern.PitchAccent);
     # Tokyo Japanese after Okada (1991), "Japanese", JIPA 21(2), the IPA Illustration:
     # 16 consonants p b t d tˢ ɖ k ɡ m n ɴ s z h j w and the vowels i e a o u (p. 94).
@@ -1042,6 +1056,8 @@ fn phoneme_spanish() {
     if (_c_phoneme_spanish != 0) { return _c_phoneme_spanish; }
 
     var b = phoneme_builder_with_capacity("es", "Spanish", 26);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "martinezceldran2003", "consonants and vowels");
     phoneme_builder_stress(b, StressPattern.Free);
     # Castilian Spanish after Martínez-Celdrán, Fernández-Planas & Carrera-Sabaté (2003),
     # "Castilian Spanish", JIPA 33(2), the IPA Illustration: 19 consonants p b t d k ɡ
@@ -1213,6 +1229,10 @@ fn phoneme_russian() {
     if (_c_phoneme_russian != 0) { return _c_phoneme_russian; }
 
     var b = phoneme_builder_with_capacity("ru", "Russian", 38);
+    # Source (2.6.0): checked at 2.6.0 against Yanushevskaya & Bunčić (2015), "Russian",
+    # JIPA 45(2), the IPA Illustration, whose consonants and six vowels it matches. Nothing
+    # was changed.
+    phoneme_builder_source(b, "yanushevskaya2015", "consonants and vowels, checked against it at 2.6.0 and unchanged");
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives (plain / palatalized pairs)
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
@@ -2200,6 +2220,8 @@ fn phoneme_burmese() {
     if (_c_phoneme_burmese != 0) { return _c_phoneme_burmese; }
 
     var b = phoneme_builder_with_capacity("my", "Burmese", 37);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "watkins2001", "tones");
     phoneme_builder_stress(b, StressPattern.Tonal);
     # Four tones in the order high / creaky / low / checked, all four from ONE
     # description: Watkins (2001), "Burmese", JIPA 31(2), p. 293, the IPA Illustration
@@ -2359,10 +2381,16 @@ fn phoneme_somali() {
     if (_c_phoneme_somali != 0) { return _c_phoneme_somali; }
 
     var b = phoneme_builder_with_capacity("so", "Somali", 32);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "edmondson_nd", "dental t d, voiceless q, the affricate, and the vowel heights");
+    phoneme_builder_source(b, "gabbard2010", "dental t d, voiceless q, and no /ɣ/");
+    phoneme_builder_source(b, "phoible2019", "dental t d, the affricate, /x/, and no /ɣ/ (inventories 127 and 552)");
+    phoneme_builder_source(b, "kimper2019", "five vowel qualities, each short and long");
     phoneme_builder_stress(b, StressPattern.Tonal);
     # Standard (Northern) Somali. Reviewed at 2.5.3 against PHOIBLE's two Somali
     # inventories (127, SPA, from Armstrong and Andrzejewski; 552, UPSID), Gabbard
-    # (2010) and Edmondson, Esling & Harris (2004).
+    # (2010) and Edmondson, Esling & Harris (n.d.), an unpublished manuscript that prints
+    # no date (cited elsewhere as 2004; corrected at 2.6.0, see src/sources.cyr).
     var t = vec_new();
     vec_push(t, "˥");
     vec_push(t, "˩");
@@ -2603,6 +2631,9 @@ fn phoneme_wolof() {
     if (_c_phoneme_wolof != 0) { return _c_phoneme_wolof; }
 
     var b = phoneme_builder_with_capacity("wo", "Wolof", 39);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "unseth2009", "vowel qualities, length and ATR values");
+    phoneme_builder_source(b, "sy2006", "vowel ATR values");
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
@@ -2641,8 +2672,8 @@ fn phoneme_wolof() {
     # Vowels — 8 short, 7 long. Unseth (2009), "Vowel Harmony in Wolof", Occasional
     # Papers in Applied Linguistics No. 7, Table 1 (p. 1) and Table 2 (p. 2), whose
     # data is "based upon" Ka's Wolof Phonology and Morphology (1993; the corpus said
-    # 1994). Sy (2006), Studies in African Linguistics 35(2), ex. (1), p. 204, has the
-    # same vowels and values.
+    # 1994). Sy (2006), Studies in African Linguistics 35, Supplement 11 (not 35(2), as
+    # this comment said until 2.6.0), ex. (1), p. 204, has the same vowels and values.
     #
     # Corrected at 2.5.3. The comment said "the same assignment appears in Torrence
     # (2013) and PHOIBLE". Torrence could not be checked. PHOIBLE marks no ATR value on
@@ -2708,6 +2739,9 @@ fn phoneme_lao() {
     # (Enfield; Morev et al. 1979 and the EA database, both via PHOIBLE) has nine
     # vowel qualities.
     var b = phoneme_builder_with_capacity("lo", "Lao", 41);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "enfield2007", "consonants, vowels, diphthongs, and the number and order of the tones");
+    phoneme_builder_source(b, "yanagimura2011", "tone values");
     phoneme_builder_stress(b, StressPattern.Tonal);
     # FIVE tones, in Enfield's order 1-5 with his example words (pp. 35-36): mid level
     # khaa1 'galangal', high rising khaa2 'to be stuck', low rising khaa3 'leg', high

@@ -15,6 +15,7 @@ include "lib/syscalls.cyr"
 
 include "src/error.cyr"
 include "src/util.cyr"
+include "src/sources.cyr"
 include "src/tone.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
@@ -36,6 +37,7 @@ var _b_en = 0;
 var _b_deva = 0;
 var _b_iast = 0;
 var _b_beta = 0;
+var _b_source_json = 0;
 var _b_ru = 0;
 var _b_ar = 0;
 var _b_zy = 0;
@@ -111,6 +113,13 @@ fn b_json_phonotactics_write() {
     return 0;
 }
 fn b_json_phonotactics_read() { phonotactics_from_json(_b_phono_json); return 0; }
+fn b_source_by_key() { source_by_key("yanushevskaya2015"); return 0; }
+fn b_json_source_write() {
+    var sb = str_builder_new();
+    source_to_json(source_by_key("leezee2003"), sb);
+    return 0;
+}
+fn b_json_source_read() { source_from_json(_b_source_json); return 0; }
 fn b_json_script_write() {
     var sb = str_builder_new();
     script_to_json(_b_deva, sb);
@@ -187,6 +196,9 @@ fn main() {
     var psb = str_builder_new();
     phonotactics_to_json(_b_phono, psb);
     _b_phono_json = str_cstr(str_builder_build(psb));
+    var srcsb = str_builder_new();
+    source_to_json(source_by_key("leezee2003"), srcsb);
+    _b_source_json = str_cstr(str_builder_build(srcsb));
     _b_grek_num = numerals_greek_isopsephy();
     var ssb = str_builder_new();
     script_to_json(_b_deva, ssb);
@@ -247,6 +259,9 @@ fn main() {
     _bench(benches, "json_inventory_read_en", &b_json_inventory_read, 1000);
     _bench(benches, "json_phonotactics_write_en", &b_json_phonotactics_write, 5000);
     _bench(benches, "json_phonotactics_read_en", &b_json_phonotactics_read, 2000);
+    _bench(benches, "source_by_key_lookup", &b_source_by_key, 1000000);
+    _bench(benches, "json_source_write", &b_json_source_write, 10000);
+    _bench(benches, "json_source_read", &b_json_source_read, 5000);
     _bench(benches, "json_script_write_deva", &b_json_script_write, 10000);
     _bench(benches, "json_script_read_deva", &b_json_script_read, 5000);
     _bench(benches, "json_numerals_write_greek", &b_json_numerals_write, 2000);

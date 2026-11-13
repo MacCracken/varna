@@ -72,6 +72,139 @@ fn _utf8_step(s, p, n) {
     return len;
 }
 
+# --- sources.cyr ---
+
+# src/sources.cyr — the bibliography: the works varna's data is taken from (2.6.0).
+#
+# Provenance was named only in comments until 2.6.0. This module holds each cited work
+# once, under a key, and a dataset links to keys with what each work covers: an
+# inventory's links are inventory_sources (src/phoneme.cyr). Phonotactics, allophones,
+# transliteration and numerals link here next (see the roadmap).
+#
+# What gets a link: a work the values are taken from. A work that only agrees with
+# them, one that was checked and set aside, and one that could not be read are
+# named in the dataset's comment, not linked.
+#
+# Every field is as the work's publisher, journal or repository prints it, read from
+# that page: Crossref's publisher-deposited record for a work with a DOI, and the
+# page in `url` for one without. Authors are "Family, Given" and separated by "; ".
+# A work that prints no date is undated, year 0, rather than dated from another
+# work's citation of it.
+#
+# Source (64B): [0]=key [8]=authors [16]=year [24]=title [32]=venue
+#               [40]=pages (cstr|0) [48]=doi (cstr|0) [56]=url (cstr|0)
+
+fn _source_new(key, authors, year, title, venue, pages, doi, url) {
+    var s = alloc(64);
+    store64(s, key);
+    store64(s + 8, authors);
+    store64(s + 16, year);
+    store64(s + 24, title);
+    store64(s + 32, venue);
+    store64(s + 40, pages);
+    store64(s + 48, doi);
+    store64(s + 56, url);
+    return s;
+}
+
+fn source_key(s) { return load64(s); }
+fn source_authors(s) { return load64(s + 8); }
+# Year, or 0 for a work that prints no date (cited "n.d."; its key ends "_nd").
+fn source_year(s) { return load64(s + 16); }
+fn source_title(s) { return load64(s + 24); }
+fn source_venue(s) { return load64(s + 32); }
+# Page range, or 0 for a whole book or database.
+fn source_pages(s) { return load64(s + 40); }
+# DOI, or 0 when the work has none.
+fn source_doi(s) { return load64(s + 48); }
+# The page the record was read from, or 0 when the DOI resolves to it.
+fn source_url(s) { return load64(s + 56); }
+
+var _c_bibliography = 0;
+
+# Every work, in key order — vec of Source.
+fn _bibliography() {
+    if (_c_bibliography != 0) { return _c_bibliography; }
+    var b = vec_new();
+    vec_push(b, _source_new("archangeli1989", "Archangeli, Diana; Pulleyblank, Douglas", 1989, "Yoruba Vowel Harmony",
+        "Linguistic Inquiry 20(2)", "173-217", 0, "http://www.jstor.org/stable/4178624"));
+    vec_push(b, _source_new("edmondson_nd", "Edmondson, Jerold A.; Esling, John H.; Harris, Jimmy G.", 0,
+        "Supraglottal cavity shape, linguistic register, and other phonetic features of Somali",
+        "Manuscript, University of Texas at Arlington and University of Victoria", 0, 0,
+        "https://web.archive.org/web/20041221093128id_/http://ling.uta.edu:80/~jerry/somali.pdf"));
+    vec_push(b, _source_new("enfield2007", "Enfield, N.J.", 2007, "A Grammar of Lao", "Mouton de Gruyter", 0,
+        "10.1515/9783110207538", 0));
+    vec_push(b, _source_new("gabbard2010", "Gabbard, Kevin M.", 2010,
+        "A Phonological Analysis of Somali and the Guttural Consonants", "BA honors thesis, The Ohio State University",
+        0, 0, "http://hdl.handle.net/1811/46639"));
+    vec_push(b, _source_new("kimper2019", "Kimper, Wendell; Bennett, Wm. G.; Green, Christopher R.; Yu, Kristine", 2019,
+        "Acoustic correlates of harmony classes in Somali",
+        "In Emily Clem, Peter Jenks & Hannah Sande (eds.), Theory and description in African Linguistics: Selected papers from the 47th Annual Conference on African Linguistics. Berlin: Language Science Press",  #skip-lint
+        "199-212", "10.5281/zenodo.3367140", 0));
+    vec_push(b, _source_new("kirby2011", "Kirby, James P.", 2011, "Vietnamese (Hanoi Vietnamese)",
+        "Journal of the International Phonetic Association 41(3)", "381-392", "10.1017/s0025100311000181", 0));
+    vec_push(b, _source_new("leezee2003", "Lee, Wai-Sum; Zee, Eric", 2003, "Standard Chinese (Beijing)",
+        "Journal of the International Phonetic Association 33(1)", "109-112", "10.1017/s0025100303001208", 0));
+    vec_push(b, _source_new("martinezceldran2003",
+        "Martínez-Celdrán, Eugenio; Fernández-Planas, Ana Ma.; Carrera-Sabaté, Josefina", 2003, "Castilian Spanish",
+        "Journal of the International Phonetic Association 33(2)", "255-259", "10.1017/s0025100303001373", 0));
+    vec_push(b, _source_new("okada1991", "Okada, Hideo", 1991, "Japanese",
+        "Journal of the International Phonetic Association 21(2)", "94-96", "10.1017/s002510030000445x", 0));
+    vec_push(b, _source_new("phoible2019", "Moran, Steven; McCloy, Daniel (eds.)", 2019, "PHOIBLE 2.0",
+        "Jena: Max Planck Institute for the Science of Human History", 0, "10.5281/zenodo.2593234",
+        "https://phoible.org"));
+    vec_push(b, _source_new("sy2006", "Sy, Mariame I.", 2006, "Vowel harmony in Wolof loanwords",
+        "Studies in African Linguistics 35, Supplement 11", "203-220", "10.32473/sal.v35i0.107326", 0));
+    vec_push(b, _source_new("teeranon2007", "Teeranon, Phanintra", 2007,
+        "The change of Standard Thai high tone: an acoustic study and a perceptual experiment",
+        "SKASE Journal of Theoretical Linguistics 4(3)", "1-17", 0, "http://www.skase.sk/Volumes/JTL10/pdf_doc/1.pdf"));
+    vec_push(b, _source_new("thelwall1990", "Thelwall, Robin; Sa'adeddin, M. Akram", 1990, "Arabic",
+        "Journal of the International Phonetic Association 20(2)", "37-39", "10.1017/s0025100300004266", 0));
+    vec_push(b, _source_new("tingsabadh1993", "Tingsabadh, M. R. Kalaya; Abramson, Arthur S.", 1993, "Thai",
+        "Journal of the International Phonetic Association 23(1)", "24-28", "10.1017/s0025100300004746", 0));
+    vec_push(b, _source_new("unseth2009", "Unseth, Carla", 2009, "Vowel Harmony in Wolof",
+        "Occasional Papers in Applied Linguistics 7, Graduate Institute of Applied Linguistics", "1-8", 0,
+        "https://www.diu.edu/documents/OPAL/No-7-Unseth-Wolof-Vowel-Harmony.pdf"));
+    vec_push(b, _source_new("watkins2001", "Watkins, Justin W.", 2001, "Burmese",
+        "Journal of the International Phonetic Association 31(2)", "291-295", "10.1017/s0025100301002122", 0));
+    vec_push(b, _source_new("yanagimura2011", "Yanagimura, Yu", 2011, "Contextual Tonal Variations in Vientiane Lao",
+        "Journal of Mekong Societies 7(1)", "1-16", 0,
+        "https://so03.tci-thaijo.org/index.php/mekongjournal/article/view/6739"));
+    vec_push(b, _source_new("yanushevskaya2015", "Yanushevskaya, Irena; Bunčić, Daniel", 2015, "Russian",
+        "Journal of the International Phonetic Association 45(2)", "221-228", "10.1017/s0025100314000395", 0));
+    _c_bibliography = b;
+    return _c_bibliography;
+}
+
+# The work under `key`, or 0 when the bibliography has none.
+#must_use
+fn source_by_key(key) {
+    if (key == 0) { return 0; }
+    var b = _bibliography();
+    var i = 0;
+    while (i < vec_len(b)) {
+        var s = vec_get(b, i);
+        if (streq(load64(s), key) == 1) { return s; }
+        i = i + 1;
+    }
+    return 0;
+}
+
+var _c_source_all_keys = 0;
+# Every bibliography key, in key order — vec of cstrings.
+fn source_all_keys() {
+    if (_c_source_all_keys != 0) { return _c_source_all_keys; }
+    var c = vec_new();
+    var b = _bibliography();
+    var i = 0;
+    while (i < vec_len(b)) {
+        vec_push(c, load64(vec_get(b, i)));
+        i = i + 1;
+    }
+    _c_source_all_keys = c;
+    return _c_source_all_keys;
+}
+
 # --- tone.cyr ---
 
 # src/tone.cyr — structured tone, parsed from Chao tone-letter notation.
@@ -490,7 +623,8 @@ fn phoneme_is_breathy(p) {
 }
 
 # --- Inventory builder ---------------------------------------------
-# The builder and the inventory share one 40-byte layout; build() is identity.
+# The builder and the inventory share one 48-byte layout; build() is identity.
+# [0]=code [8]=name [16]=phonemes [24]=stress [32]=tones [40]=source links (2.6.0)
 
 # `cap` is accepted for source compatibility with the v1.x Rust builder and is
 # currently ignored: lib/vec.cyr exposes no capacity-taking constructor, so the
@@ -498,12 +632,13 @@ fn phoneme_is_breathy(p) {
 # rather than dropped because the bundle is a published consumer API; it becomes
 # load-bearing the moment the stdlib grows `vec_new_with_capacity`.
 fn phoneme_builder_with_capacity(code, name, cap) {
-    var inv = alloc(40);
+    var inv = alloc(48);
     store64(inv, code);
     store64(inv + 8, name);
     store64(inv + 16, vec_new());
     store64(inv + 24, StressPattern.Free);
     store64(inv + 32, 0);
+    store64(inv + 40, vec_new());
     return inv;
 }
 
@@ -570,6 +705,39 @@ fn phoneme_builder_phoneme(inv, p) {
 
 fn phoneme_builder_build(inv) { return inv; }
 
+# --- Source links (2.6.0) --------------------------------------------
+# Provenance: the works an inventory's values are taken from, each with what it
+# covers ("consonants and vowels", "tones"). A link names a bibliography key
+# (src/sources.cyr resolves it); this file needs nothing from there. An inventory
+# with no links cites nothing, and says so: inventory_is_sourced is 0.
+#
+# SourceLink (16B): [0]=key (cstr) [8]=covers (cstr)
+fn _source_link_new(key, covers) {
+    var l = alloc(16);
+    store64(l, key);
+    store64(l + 8, covers);
+    return l;
+}
+
+fn source_link_key(l) { return load64(l); }
+fn source_link_covers(l) { return load64(l + 8); }
+
+# Record that `key`'s work is the source of `covers` in this inventory.
+fn phoneme_builder_source(inv, key, covers) {
+    vec_push(load64(inv + 40), _source_link_new(key, covers));
+    return inv;
+}
+
+# The inventory's source links, in the order added — vec of SourceLink, empty when
+# the inventory cites nothing.
+fn inventory_sources(inv) { return load64(inv + 40); }
+
+# 1 when the inventory cites at least one source, else 0.
+fn inventory_is_sourced(inv) {
+    if (vec_len(load64(inv + 40)) > 0) { return 1; }
+    return 0;
+}
+
 # Independent copy of `inv`, safe to mutate through the `phoneme_builder_*`
 # functions without touching the original.
 #
@@ -579,7 +747,7 @@ fn phoneme_builder_build(inv) { return inv; }
 # are shared, because nothing in the API mutates a Phoneme in place — only the
 # inventory's own vec, stress and tone slots, all of which are fresh here.
 fn phoneme_clone(inv) {
-    var out = alloc(40);
+    var out = alloc(48);
     store64(out, load64(inv));
     store64(out + 8, load64(inv + 8));
     var dst = vec_new();
@@ -593,6 +761,14 @@ fn phoneme_clone(inv) {
     store64(out + 16, dst);
     store64(out + 24, load64(inv + 24));
     store64(out + 32, load64(inv + 32));
+    var links = vec_new();
+    var sl = load64(inv + 40);
+    var k = 0;
+    while (k < vec_len(sl)) {
+        vec_push(links, vec_get(sl, k));
+        k = k + 1;
+    }
+    store64(out + 40, links);
     return out;
 }
 
@@ -1335,6 +1511,8 @@ fn phoneme_yoruba() {
     if (_c_phoneme_yoruba != 0) { return _c_phoneme_yoruba; }
 
     var b = phoneme_builder_with_capacity("yo", "Yoruba", 28);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "archangeli1989", "the seven oral vowels, their ATR values, and the three nasal vowels");
     phoneme_builder_stress(b, StressPattern.Tonal);
     var t = vec_new();
     vec_push(t, "˥");
@@ -1500,10 +1678,14 @@ fn phoneme_thai() {
     if (_c_phoneme_thai != 0) { return _c_phoneme_thai; }
 
     var b = phoneme_builder_with_capacity("th", "Thai", 42);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "tingsabadh1993", "consonants, vowels and diphthongs");
+    phoneme_builder_source(b, "teeranon2007", "tones");
     phoneme_builder_stress(b, StressPattern.Tonal);
     # Five tones in the canonical order สามัญ / เอก / โท / ตรี / จัตวา, from one
     # source that prints numbers for all five: Teeranon (2007), "The change of Standard
-    # Thai high tone", SKASE Journal of Theoretical Linguistics 4(3), p. 1: "mid tone
+    # Thai high tone: an acoustic study and a perceptual experiment", SKASE Journal of
+    # Theoretical Linguistics 4(3), p. 1: "mid tone
     # [33], low tone [21], falling tone [43], high tone [44 or 45] and rising tone
     # [323]". She gives them "based on" Abramson's acoustic work (1962, 1975, 1978),
     # so these are her five-level conversion of his F0 data. The high tone is 45, the
@@ -1594,6 +1776,8 @@ fn phoneme_vietnamese() {
     if (_c_phoneme_vietnamese != 0) { return _c_phoneme_vietnamese; }
 
     var b = phoneme_builder_with_capacity("vi", "Vietnamese", 33);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "kirby2011", "tones");
     phoneme_builder_stress(b, StressPattern.Tonal);
     # Six tones in the order ngang / huyền / sắc / hỏi / ngã / nặng, Hanoi Vietnamese,
     # all from one source: Kirby (2011), "Vietnamese (Hanoi Vietnamese)", JIPA 41(3),
@@ -1896,6 +2080,8 @@ fn phoneme_classical_arabic() {
     if (_c_phoneme_classical_arabic != 0) { return _c_phoneme_classical_arabic; }
 
     var b = phoneme_builder_with_capacity("ar", "Arabic", 35);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "thelwall1990", "the pharyngealized lateral lˤ");
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives
     phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
@@ -2063,6 +2249,8 @@ fn phoneme_mandarin() {
     if (_c_phoneme_mandarin != 0) { return _c_phoneme_mandarin; }
 
     var b = phoneme_builder_with_capacity("zh", "Mandarin Chinese", 46);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "leezee2003", "consonants and vowels");
     phoneme_builder_stress(b, StressPattern.Tonal);
     var t = vec_new();
     vec_push(t, "˥˥");
@@ -2228,6 +2416,8 @@ fn phoneme_japanese() {
     if (_c_phoneme_japanese != 0) { return _c_phoneme_japanese; }
 
     var b = phoneme_builder_with_capacity("ja", "Japanese", 21);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "okada1991", "consonants and vowels");
     phoneme_builder_stress(b, StressPattern.PitchAccent);
     # Tokyo Japanese after Okada (1991), "Japanese", JIPA 21(2), the IPA Illustration:
     # 16 consonants p b t d tˢ ɖ k ɡ m n ɴ s z h j w and the vowels i e a o u (p. 94).
@@ -2278,6 +2468,8 @@ fn phoneme_spanish() {
     if (_c_phoneme_spanish != 0) { return _c_phoneme_spanish; }
 
     var b = phoneme_builder_with_capacity("es", "Spanish", 26);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "martinezceldran2003", "consonants and vowels");
     phoneme_builder_stress(b, StressPattern.Free);
     # Castilian Spanish after Martínez-Celdrán, Fernández-Planas & Carrera-Sabaté (2003),
     # "Castilian Spanish", JIPA 33(2), the IPA Illustration: 19 consonants p b t d k ɡ
@@ -2449,6 +2641,10 @@ fn phoneme_russian() {
     if (_c_phoneme_russian != 0) { return _c_phoneme_russian; }
 
     var b = phoneme_builder_with_capacity("ru", "Russian", 38);
+    # Source (2.6.0): checked at 2.6.0 against Yanushevskaya & Bunčić (2015), "Russian",
+    # JIPA 45(2), the IPA Illustration, whose consonants and six vowels it matches. Nothing
+    # was changed.
+    phoneme_builder_source(b, "yanushevskaya2015", "consonants and vowels, checked against it at 2.6.0 and unchanged");
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives (plain / palatalized pairs)
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
@@ -3436,6 +3632,8 @@ fn phoneme_burmese() {
     if (_c_phoneme_burmese != 0) { return _c_phoneme_burmese; }
 
     var b = phoneme_builder_with_capacity("my", "Burmese", 37);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "watkins2001", "tones");
     phoneme_builder_stress(b, StressPattern.Tonal);
     # Four tones in the order high / creaky / low / checked, all four from ONE
     # description: Watkins (2001), "Burmese", JIPA 31(2), p. 293, the IPA Illustration
@@ -3595,10 +3793,16 @@ fn phoneme_somali() {
     if (_c_phoneme_somali != 0) { return _c_phoneme_somali; }
 
     var b = phoneme_builder_with_capacity("so", "Somali", 32);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "edmondson_nd", "dental t d, voiceless q, the affricate, and the vowel heights");
+    phoneme_builder_source(b, "gabbard2010", "dental t d, voiceless q, and no /ɣ/");
+    phoneme_builder_source(b, "phoible2019", "dental t d, the affricate, /x/, and no /ɣ/ (inventories 127 and 552)");
+    phoneme_builder_source(b, "kimper2019", "five vowel qualities, each short and long");
     phoneme_builder_stress(b, StressPattern.Tonal);
     # Standard (Northern) Somali. Reviewed at 2.5.3 against PHOIBLE's two Somali
     # inventories (127, SPA, from Armstrong and Andrzejewski; 552, UPSID), Gabbard
-    # (2010) and Edmondson, Esling & Harris (2004).
+    # (2010) and Edmondson, Esling & Harris (n.d.), an unpublished manuscript that prints
+    # no date (cited elsewhere as 2004; corrected at 2.6.0, see src/sources.cyr).
     var t = vec_new();
     vec_push(t, "˥");
     vec_push(t, "˩");
@@ -3839,6 +4043,9 @@ fn phoneme_wolof() {
     if (_c_phoneme_wolof != 0) { return _c_phoneme_wolof; }
 
     var b = phoneme_builder_with_capacity("wo", "Wolof", 39);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "unseth2009", "vowel qualities, length and ATR values");
+    phoneme_builder_source(b, "sy2006", "vowel ATR values");
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
@@ -3877,8 +4084,8 @@ fn phoneme_wolof() {
     # Vowels — 8 short, 7 long. Unseth (2009), "Vowel Harmony in Wolof", Occasional
     # Papers in Applied Linguistics No. 7, Table 1 (p. 1) and Table 2 (p. 2), whose
     # data is "based upon" Ka's Wolof Phonology and Morphology (1993; the corpus said
-    # 1994). Sy (2006), Studies in African Linguistics 35(2), ex. (1), p. 204, has the
-    # same vowels and values.
+    # 1994). Sy (2006), Studies in African Linguistics 35, Supplement 11 (not 35(2), as
+    # this comment said until 2.6.0), ex. (1), p. 204, has the same vowels and values.
     #
     # Corrected at 2.5.3. The comment said "the same assignment appears in Torrence
     # (2013) and PHOIBLE". Torrence could not be checked. PHOIBLE marks no ATR value on
@@ -3944,6 +4151,9 @@ fn phoneme_lao() {
     # (Enfield; Morev et al. 1979 and the EA database, both via PHOIBLE) has nine
     # vowel qualities.
     var b = phoneme_builder_with_capacity("lo", "Lao", 41);
+    # Sources (2.6.0); the comments below say what each one supports.
+    phoneme_builder_source(b, "enfield2007", "consonants, vowels, diphthongs, and the number and order of the tones");
+    phoneme_builder_source(b, "yanagimura2011", "tone values");
     phoneme_builder_stress(b, StressPattern.Tonal);
     # FIVE tones, in Enfield's order 1-5 with his example words (pp. 35-36): mid level
     # khaa1 'galangal', high rising khaa2 'to be stuck', low rising khaa3 'leg', high
@@ -6416,7 +6626,9 @@ fn dialect_removes(v, ipa) {
 }
 
 # Apply this variety's overlay to a parent inventory, producing a new inventory
-# (parent phonemes minus removed, plus added as Mid/Central vowels).
+# (parent phonemes minus removed, plus added as Mid/Central vowels). The result
+# carries no source links (2.6.0): the parent's sources describe the parent, not
+# the overlay.
 fn dialect_apply(v, parent) {
     var inv = phoneme_builder_with_capacity(load64(v), load64(v + 8), 48);
     store64(inv + 24, phoneme_stress(parent));
@@ -12618,7 +12830,47 @@ fn phoneme_inventory_to_json(inv, sb) {
     }
     str_builder_add_cstr(sb, ",\"stress\":");
     StressPattern_to_json(phoneme_stress(inv), sb);
+    # 2.6.0: provenance, only for an inventory that cites a source, so every other
+    # inventory writes exactly v1.x's shape.
+    var links = inventory_sources(inv);
+    var nl = vec_len(links);
+    if (nl > 0) {
+        str_builder_add_cstr(sb, ",\"sources\":[");
+        var k = 0;
+        while (k < nl) {
+            var l = vec_get(links, k);
+            if (k > 0) { str_builder_putc(sb, ','); }
+            str_builder_add_cstr(sb, "{\"key\":");
+            str_builder_add_json_cstr(sb, source_link_key(l));
+            str_builder_add_cstr(sb, ",\"covers\":");
+            str_builder_add_json_cstr(sb, source_link_covers(l));
+            str_builder_putc(sb, '}');
+            k = k + 1;
+        }
+        str_builder_putc(sb, ']');
+    }
     str_builder_putc(sb, '}');
+    return 0;
+}
+
+# The optional "sources" member (2.6.0) onto `inv`: 0, or -1 when it is present and
+# malformed. Absent or null is no links; otherwise an array of {"key","covers"}
+# objects, both strings. A key is not checked against the bibliography here, as a
+# caller's own inventory may cite its own works.
+fn _json_inventory_sources(inv, sv) {
+    if (sv == 0 || bayan_json_v_is_null(sv)) { return 0; }
+    if (!bayan_json_v_is_arr(sv)) { return 0 - 1; }
+    var n = bayan_json_v_arr_len(sv);
+    var i = 0;
+    while (i < n) {
+        var o = bayan_json_v_arr_get(sv, i);
+        if (!bayan_json_v_is_obj(o)) { return 0 - 1; }
+        var key = _json_cstr(bayan_json_v_obj_get_by_cstr(o, "key"));
+        var covers = _json_cstr(bayan_json_v_obj_get_by_cstr(o, "covers"));
+        if (key == 0 || covers == 0) { return 0 - 1; }
+        phoneme_builder_source(inv, key, covers);
+        i = i + 1;
+    }
     return 0;
 }
 
@@ -12660,6 +12912,7 @@ fn _json_inventory(v) {
         i = i + 1;
     }
     if (tones != 0) { phoneme_builder_tones(inv, tones); }
+    if (_json_inventory_sources(inv, bayan_json_v_obj_get_by_cstr(v, "sources")) != 0) { return 0; }
     return phoneme_builder_build(inv);
 }
 
@@ -13946,4 +14199,62 @@ fn _json_registry_info(v) {
 #must_use
 fn registry_info_from_json(text) {
     return _json_registry_info(_json_parse(text));
+}
+
+# --- Source (2.6.0) ---------------------------------------------------------
+#
+# A bibliography entry (src/sources.cyr), a record varna gained after v1.x:
+#   {"key":"leezee2003","authors":"Lee, Wai-Sum; Zee, Eric","year":2003,
+#    "title":"Standard Chinese (Beijing)","venue":"...","pages":"109-112",
+#    "doi":"10.1017/...","url":null}
+# year, pages, doi and url are Options (null for none: year 0 is an undated work);
+# the rest are required.
+
+# Append source `s`. Returns 0, or -1 (nothing written) for a null source.
+fn source_to_json(s, sb) {
+    if (s == 0) { return 0 - 1; }
+    str_builder_add_cstr(sb, "{\"key\":");
+    str_builder_add_json_cstr(sb, source_key(s));
+    str_builder_add_cstr(sb, ",\"authors\":");
+    str_builder_add_json_cstr(sb, source_authors(s));
+    str_builder_add_cstr(sb, ",\"year\":");
+    if (source_year(s) == 0) {
+        str_builder_add_cstr(sb, "null");
+    } else {
+        str_builder_add_int(sb, source_year(s));
+    }
+    str_builder_add_cstr(sb, ",\"title\":");
+    str_builder_add_json_cstr(sb, source_title(s));
+    str_builder_add_cstr(sb, ",\"venue\":");
+    str_builder_add_json_cstr(sb, source_venue(s));
+    str_builder_add_cstr(sb, ",\"pages\":");
+    _json_opt_cstr_write(sb, source_pages(s));
+    str_builder_add_cstr(sb, ",\"doi\":");
+    _json_opt_cstr_write(sb, source_doi(s));
+    str_builder_add_cstr(sb, ",\"url\":");
+    _json_opt_cstr_write(sb, source_url(s));
+    str_builder_putc(sb, '}');
+    return 0;
+}
+
+fn _json_source(v) {
+    if (!bayan_json_v_is_obj(v)) { return 0; }
+    var key = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "key"));
+    var authors = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "authors"));
+    var year = _json_opt_uint(bayan_json_v_obj_get_by_cstr(v, "year"), 9999);
+    if (year == 0 - 1) { year = 0; }
+    var title = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "title"));
+    var venue = _json_cstr(bayan_json_v_obj_get_by_cstr(v, "venue"));
+    if (key == 0 || authors == 0 || year < 0 || title == 0 || venue == 0) { return 0; }
+    var pages = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "pages"));
+    var doi = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "doi"));
+    var url = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "url"));
+    if (pages < 0 || doi < 0 || url < 0) { return 0; }
+    return _source_new(key, authors, year, title, venue, pages, doi, url);
+}
+
+# A source from NUL-terminated JSON text, or 0.
+#must_use
+fn source_from_json(text) {
+    return _json_source(_json_parse(text));
 }

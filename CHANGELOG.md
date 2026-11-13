@@ -9,12 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Toward 2.6.0, coverage scale: allophone rules for five more languages, phonotactic
 profiles for all eleven core languages, four new transliteration tables and a fix to
-the two old ones, the numeral follow-ons, and the citation re-check carried over from
-2.5.4. The decisions in it were the project owner's: re-sourcing both tone rows,
-automatic variant aliases, Glagolitic's core values only, exact-environment rules plus
-inventory fixes, re-sourcing all twelve phonotactic profiles, and, for
-transliteration, ALA-LC for the alphabets, Zhuyin as Pinyin's source, an inherent-vowel
-rule, and each "X or Y" choice listed below.
+the two old ones, source provenance for the inventories, the numeral follow-ons, and
+the citation re-check carried over from 2.5.4. The decisions in it were the project
+owner's: re-sourcing both tone rows, automatic variant aliases, Glagolitic's core values
+only, exact-environment rules plus inventory fixes, re-sourcing all twelve phonotactic
+profiles; for transliteration, ALA-LC for the alphabets, Zhuyin as Pinyin's source, an
+inherent-vowel rule, and each "X or Y" choice listed below; and for provenance, a keyed
+bibliography with links, inventories first, and no source recorded where none is cited.
 
 ### Breaking
 
@@ -37,6 +38,8 @@ rule, and each "X or Y" choice listed below.
   field; every other table's JSON is unchanged.
 - **transliteration: accented Greek is transliterated.** `λόγος` gives `"lo/gos"`,
   where `ό` passed through untouched (`"lόgos"`).
+- **The JSON of the 12 sourced inventories gains a `"sources"` field**, after
+  `"stress"` (see *Added*). The other 39 inventories' JSON is unchanged.
 - **21 scripts, not 20** (Bopomofo, `Bopo`).
 - **MCP `varna_translate_ipa`**: its description and `scheme` parameter text list the
   six schemes, so `tools/list` output changed. v1.x's "↔" is now "→": the tool only
@@ -117,6 +120,28 @@ rule, and each "X or Y" choice listed below.
     Schäfer's duplex core. His permitted codas are prose rules, so they are not listed.
   - **Korean's onset is 1**, after Lee (1993): glides are part of the diphthong, and the
     inventory has none to spell Sohn's (C)(G)V(C).
+- **sources: provenance for the inventories**, in a new module, `src/sources.cyr`.
+  A bibliography holds each cited work once, under a key: `source_by_key(key)`,
+  `source_all_keys()`, and the accessors `source_authors`, `source_year`,
+  `source_title`, `source_venue`, `source_pages`, `source_doi` and `source_url`. An
+  inventory links to the works its values are taken from, each with what it covers:
+  `inventory_sources(inv)` (a vec of links: `source_link_key`, `source_link_covers`),
+  `inventory_is_sourced(inv)`, and `phoneme_builder_source(b, key, covers)`.
+  - 12 of the 51 inventories cite a source, 18 works between them: zh ja es ru (their
+    JIPA Illustrations), ar (one phoneme, lˤ), vi and my (tones), th (segments and
+    tones), yo (vowels), so, wo (vowels) and lo. The other 39 cite nothing, and
+    `inventory_is_sourced` says so; re-sourcing them is on the roadmap.
+  - A link goes to a work the values are taken from. A work that only agrees, one
+    checked and set aside, and one that could not be read stay in the comment.
+  - Every field is as the publisher, journal or repository prints it: Crossref's
+    publisher-deposited record for a work with a DOI, otherwise the page in
+    `source_url`, which every such entry has. A work that prints no date is undated,
+    `source_year` 0 and JSON `null`, not dated from someone else's citation of it. Russian's link records the 2.6.0 check
+    against Yanushevskaya & Bunčić (2015), which its inventory now states too.
+  - JSON: `source_to_json` / `source_from_json`, and the inventory gains an optional
+    `"sources"` field, written only for a sourced inventory, so the other 39 write
+    exactly v1.x's shape and a v1.x document still decodes. A dialect overlay carries
+    no links: its parent's sources describe the parent.
 - **transliteration: four tables**, and `translit_by_scheme(name)` /
   `translit_all_schemes()`, keyed by the names the MCP tool takes. Each table cites
   its primary source in a comment, and where the source gives two readings or none,
@@ -212,6 +237,16 @@ rule, and each "X or Y" choice listed below.
 - **Arabic inventory**: the marginal pharyngealized /lˤ/ is added (Thelwall &
   Sa'adeddin 1990, p. 37).
 - **Russian inventory** matches Yanushevskaya & Bunčić (2015) and is unchanged.
+- **Four inventory citations corrected from their primary pages** while entering
+  them in the bibliography:
+  - Wolof: Sy (2006) is in *Studies in African Linguistics* 35, **Supplement 11**
+    (pp. 203–220), not 35(2), a different issue.
+  - Somali: Edmondson, Esling & Harris is an **unpublished, undated** manuscript. The
+    corpus dated it 2004, after another work's citation of it; it is now n.d.
+  - Somali: Kimper et al. (2019) is a chapter in an edited volume (Language Science
+    Press, pp. 199–212), not a journal article.
+  - Thai: Teeranon's (2007) title has a subtitle, "an acoustic study and a perceptual
+    experiment".
 - **Devanagari → IAST wrote an "a" after every consonant**, so a vowel sign or virama
   could not remove it: नमस्ते gave "namasatae", कि "kai", संस्कृतम् "saṃsakaṛtama".
   v1.x tested single letters only. With the inherent-vowel rule the 33 consonants
@@ -255,6 +290,18 @@ Measured interleaved against a build of 2.5.4, min of 3, timer floor 1.21–1.24
   cost one more string compare on every call. It now stops at the match.
 - `grammar_by_code_lookup` and `lexicon_find_word` read −8% with their code unchanged.
   That is the per-run CPU effect 2.5.4 measured, not a result.
+
+Provenance, measured interleaved against the committed transliteration work (556428b),
+min of 3:
+
+- New rows: `source_by_key_lookup` 1,018 ns (a scan of the 18 works),
+  `json_source_write` 4,141 ns and `json_source_read` 7,240 ns.
+- The JSON rows and the inventory paths stayed within ±3.2%. Some rows moved further
+  on their own, `registry_phonemes_lookup` +18% and `transliterate_zhuyin_phrase`
+  +38% among them, with their code unchanged. A control build, the last commit plus
+  an unused `include "src/sources.cyr"` and nothing else, moved the same rows by about
+  as much (+20% and +26%), so the movement comes with the bigger binary, not with
+  this work's code.
 
 The transliteration rows, measured interleaved against the committed phonotactics work
 (7de9ec4), min of 3 runs; every row with unchanged code and data stayed within ±3.7%,

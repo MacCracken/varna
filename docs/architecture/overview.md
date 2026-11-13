@@ -10,6 +10,7 @@ varna/
 │   ├── main.cyr           — demo entry + include aggregator (alloc_init, dispatch)
 │   ├── error.cyr          — VarnaError enum (tagged variants)
 │   ├── util.cyr           — shared UTF-8 codepoint helpers
+│   ├── sources.cyr        — the bibliography; inventories link to it (provenance)
 │   ├── phoneme.cyr        — IPA inventories, articulatory features, airstream,
 │   │                        the feature mask, the builder, english/sanskrit/greek
 │   ├── features.cyr       — 25 derived SPE/Hayes distinctive features (tri-state)

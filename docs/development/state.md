@@ -40,10 +40,10 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | Scripts | 21 (Glagolitic and Bopomofo added in the unreleased 2.6.0 work) |
 | Numeral systems | 10 — six of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek, Glagolitic) |
 | Grammar profiles | 11 |
-| Source modules | 22 — 18 core, 4 behind `-D` defines |
-| Tests | 40 files, **3,881 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
-| Benchmarks | 45, covering every domain and every module's JSON |
-| Reference coverage | 442/449 functions (98%) — a floor, not a correctness proof |
+| Source modules | 23 — 19 core, 4 behind `-D` defines |
+| Tests | 41 files, **3,959 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
+| Benchmarks | 48, covering every domain and every module's JSON |
+| Reference coverage | 459/466 functions (98%) — a floor, not a correctness proof |
 
 ## Toolchain
 
@@ -75,13 +75,14 @@ the port and has since been extended past it.
 |---|---|
 | `error` | `VarnaError` codes |
 | `util` | shared UTF-8 codepoint helpers |
+| `sources` | the bibliography (18 works, each checkable by DOI or URL) and `source_by_key`; inventories link to it through `inventory_sources` (2.6.0) |
 | `phoneme` | phoneme record + builder, `Airstream`, a 16-bit feature mask (tongue root from 2.5.3), `phoneme_is_breathy` |
 | `features` | 25 derived SPE/Hayes distinctive features, tri-state (+/−/unspecified) |
 | `tone` | Chao tone-letter parsing → contour, register, endpoint levels, creak/checked |
 | `inventories` | the 48 extended inventories behind the 51-language corpus |
 | `allophone` | rule sets for English, Spanish, Japanese, Russian, Mandarin and Arabic, each from one JIPA Illustration; `allophone_by_code` |
 | `syllable` | syllable templates + phonotactics: 12 sourced profiles (the 11 core languages and Sanskrit), `phonotactics_by_code` |
-| `script` | 19 writing systems — type, direction, status, Unicode ranges |
+| `script` | 21 writing systems — type, direction, status, Unicode ranges |
 | `numerals` | 10 numeral systems + the gematria layer (standard / ordinal / reduced / mispar gadol), and a variant-glyph alias layer for Church Slavonic |
 | `transliteration` | 6 tables: Devanagari→IAST, Greek→Beta Code, ALA-LC Russian, Arabic and Hebrew, Zhuyin→Pinyin; indexed greedy longest-match, inherent vowel, `translit_by_scheme` |
 | `grammar` | 11 typological profiles, eight WALS-style dimensions each |
