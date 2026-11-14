@@ -67,9 +67,8 @@ custom fonts, so render the page and look rather than trusting extracted text.
 - [ ] **German permitted codas.** Schäfer (2018, §5.2) states them as prose rules, so
       only his exclusions are encoded and every other coda reads unspecified. A source
       that enumerates them (Wiese 1996, which could not be read) would allow a list.
-- [ ] **Portuguese inventory: one variety.** It mixes Brazilian /t͡ʃ d͡ʒ/ into an
-      otherwise European set; the phonotactic profile is European (Mateus & d'Andrade
-      1998). Decide the variety, or split it under *Multiple inventories per language*.
+- [x] **Portuguese inventory: one variety.** Split: European (Cruz-Ferreira 1995) is
+      the default, Brazilian (Barbosa & Albano 2004) the alternative `pt-BR`.
 - [ ] **Korean inventory: /ʌ/ is missing.** Lee (1993, JIPA, p. 29) lists it; the
       inventory has i e ɛ a o u ɯ. Re-check the whole inventory against that
       Illustration and its erratum (JIPA 23(2), p. 104: no [f] in the chart, [ɟ] for
@@ -108,9 +107,14 @@ custom fonts, so render the page and look rather than trusting extracted text.
       first entries.
 - [ ] **Re-source the 39 unsourced inventories**, JIPA Illustrations first, correcting
       each to its source as 2.6.0 did for ja es zh. Each may change data.
-- [ ] **Multiple inventories per language**: competing analyses, as PHOIBLE keeps them.
-      `dialect` overlays (British English RP) are the nearest thing today.
-- [ ] **Data-driven inventories**: load PHOIBLE for 2000+ languages, feature-gated.
+- [x] **Multiple inventories per language**: `registry_inventories` /
+      `registry_inventory`, each inventory with an id and a variety; Portuguese split
+      into European (default) and Brazilian (`pt-BR`).
+- [ ] **A full RP inventory.** The British English overlay adds ɒ and drops the t-flap,
+      but Roach (2004) has long vowels, ɜː and the centring diphthongs ɪə eə ʊə too.
+      An RP alternative of English, as Portuguese has, would carry them.
+- [ ] **Data-driven inventories**: load PHOIBLE for 2000+ languages, feature-gated,
+      as alternatives through `registry_inventories` (one per PHOIBLE InventoryID).
       It needs 2.5.2's JSON for the JSON form, and a CSV load would take bayan's
       `bayan-csv` profile beside `bayan-json`.
 

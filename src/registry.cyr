@@ -626,3 +626,42 @@ fn registry_phonemes(code) {
     if (streq(code, "mn") == 1) { return phoneme_mongolian(); }
     return 0;
 }
+
+# --- Alternative inventories (2.6.0) ------------------------------------
+# A language can have more than one inventory, as PHOIBLE keeps several per
+# language: its default (registry_phonemes, unchanged) and alternatives from other
+# analyses or varieties. Each has an id unique within the language (inventory_id):
+# the language code for the default, a tag such as "pt-BR" for an alternative.
+
+var _c_registry_inventories = 0;
+
+# Every inventory of `code`, the default first — vec of inventories, or 0 for a code
+# the corpus does not have. Cached per language.
+#must_use
+fn registry_inventories(code) {
+    if (code == 0) { return 0; }
+    var d = registry_phonemes(code);
+    if (d == 0) { return 0; }
+    if (_c_registry_inventories == 0) { _c_registry_inventories = map_new(); }
+    var cached = map_get(_c_registry_inventories, phoneme_language_code(d));
+    if (cached != 0) { return cached; }
+    var v = vec_new();
+    vec_push(v, d);
+    if (streq(code, "pt") == 1) { vec_push(v, phoneme_portuguese_brazilian()); }
+    map_set(_c_registry_inventories, phoneme_language_code(d), v);
+    return v;
+}
+
+# The inventory of `code` whose id is `id`, or 0.
+#must_use
+fn registry_inventory(code, id) {
+    if (id == 0) { return 0; }
+    var v = registry_inventories(code);
+    if (v == 0) { return 0; }
+    var i = 0;
+    while (i < vec_len(v)) {
+        if (streq(inventory_id(vec_get(v, i)), id) == 1) { return vec_get(v, i); }
+        i = i + 1;
+    }
+    return 0;
+}

@@ -41,9 +41,9 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | Numeral systems | 10 — six of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek, Glagolitic) |
 | Grammar profiles | 11 |
 | Source modules | 23 — 19 core, 4 behind `-D` defines |
-| Tests | 41 files, **4,012 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
-| Benchmarks | 48, covering every domain and every module's JSON |
-| Reference coverage | 464/470 functions (98%) — a floor, not a correctness proof |
+| Tests | 42 files, **4,072 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
+| Benchmarks | 49, covering every domain and every module's JSON |
+| Reference coverage | 471/477 functions (98%) — a floor, not a correctness proof |
 
 ## Toolchain
 
@@ -79,7 +79,7 @@ the port and has since been extended past it.
 | `phoneme` | phoneme record + builder, `Airstream`, a 16-bit feature mask (tongue root from 2.5.3), `phoneme_is_breathy` |
 | `features` | 25 derived SPE/Hayes distinctive features, tri-state (+/−/unspecified) |
 | `tone` | Chao tone-letter parsing → contour, register, endpoint levels, creak/checked |
-| `inventories` | the 48 extended inventories behind the 51-language corpus |
+| `inventories` | the 48 extended inventories behind the 51-language corpus, plus Brazilian Portuguese as an alternative |
 | `allophone` | rule sets for English, Spanish, Japanese, Russian, Mandarin and Arabic, each from one JIPA Illustration; `allophone_by_code` |
 | `syllable` | syllable templates + phonotactics: 12 sourced profiles (the 11 core languages and Sanskrit), `phonotactics_by_code` |
 | `script` | 21 writing systems — type, direction, status, Unicode ranges |
@@ -89,8 +89,8 @@ the port and has since been extended past it.
 | `lexicon` | `LexEntry`/`Lexicon`, `PartOfSpeech`, frequency ranking |
 | `swadesh` | Swadesh-25 for 10 languages (250 entries) |
 | `cognate` | cognate sets, etymology, borrowing type |
-| `dialect` | variety overlays (British English RP) |
-| `registry` | ISO 639 lookup across every module, plus family, endangerment, geography |
+| `dialect` | variety overlays (British English RP, checked against Roach 2004) |
+| `registry` | ISO 639 lookup across every module, plus family, endangerment, geography; `registry_inventories` for a language's alternatives |
 | `json` | JSON in the v1.x serde format (2.5.2, ADR 0003) for every type v1.x serialized, plus `registry_info`; in `dist/varna-json.cyr` only |
 
 **`-D`-gated surfaces.** Each test `#define`s its own macro, so `cyrius test tests` exercises

@@ -79,7 +79,7 @@ fn main() {
     alloc_init();
     test_group("bibliography");
     var keys = source_all_keys();
-    assert_eq(vec_len(keys), 50, "50 works");
+    assert_eq(vec_len(keys), 53, "53 works");
     var bad = 0;
     var i = 0;
     while (i < vec_len(keys)) {
@@ -149,7 +149,7 @@ fn main() {
     }
     assert_eq(unresolved, 0, "every link names a work in the bibliography");
     assert_eq(empty_covers, 0, "every link says what it covers");
-    assert_eq(sourced, 12, "12 of 51 inventories cite a source");
+    assert_eq(sourced, 13, "13 of 51 default inventories cite a source");
 
     test_group("which_inventories");
     var with = vec_new();
@@ -224,6 +224,19 @@ fn main() {
         lbad = lbad + _bad_links(numerals_sources(vec_get(ns, i)));
         i = i + 1;
     }
+    # Every inventory, alternatives included, and the RP overlay.
+    i = 0;
+    while (i < vec_len(codes)) {
+        var all = registry_inventories(vec_get(codes, i));
+        var j = 0;
+        while (j < vec_len(all)) {
+            lbad = lbad + _bad_links(inventory_sources(vec_get(all, j)));
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+    lbad = lbad + _bad_links(dialect_sources(dialect_british_english()));
+    assert(streq(source_link_key(vec_get(dialect_sources(dialect_british_english()), 0)), "roach2004"), "RP");
     assert_eq(lbad, 0, "every link in every dataset names a work in the bibliography");
     assert(streq(source_link_key(vec_get(phonotactics_sources(phonotactics_japanese()), 0)), "kubozono2015"), "ja");
     assert(streq(source_link_key(vec_get(allophone_sources(allophone_spanish()), 0)), "martinezceldran2003"), "es");

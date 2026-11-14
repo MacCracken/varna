@@ -83,6 +83,8 @@ fn _bibliography() {
         "https://www.unicode.org/notes/tn41/"));
     vec_push(b, _source_new("archangeli1989", "Archangeli, Diana; Pulleyblank, Douglas", 1989, "Yoruba Vowel Harmony",
         "Linguistic Inquiry 20(2)", "173-217", 0, "http://www.jstor.org/stable/4178624"));
+    vec_push(b, _source_new("barbosa2004", "Barbosa, Plínio A.; Albano, Eleonora C.", 2004, "Brazilian Portuguese",
+        "Journal of the International Phonetic Association 34(2)", "227-232", "10.1017/s0025100304001756", 0));
     vec_push(b, _source_new("chew2003", "Chew, Peter A.", 2003, "A Computational Phonology of Russian",
         "Dissertation.com. D.Phil. thesis, University of Oxford, 1999. ISBN 1-58112-178-4", 0, 0,
         "http://web.archive.org/web/20030527195044/http://www.dissertation.com:80/library/1121784a.htm"));
@@ -94,6 +96,8 @@ fn _bibliography() {
         "PhD dissertation, Massachusetts Institute of Technology", 0, 0, "http://hdl.handle.net/1721.1/8845"));
     vec_push(b, _source_new("cruttenden1994", "Cruttenden, Alan (rev.)", 1994, "Gimson's Pronunciation of English",
         "5th edition, revised by Alan Cruttenden. London: E. Arnold", 0, 0, "https://lccn.loc.gov/94010860"));
+    vec_push(b, _source_new("cruzferreira1995", "Cruz-Ferreira, Madalena", 1995, "European Portuguese",
+        "Journal of the International Phonetic Association 25(2)", "90-94", "10.1017/s0025100300005223", 0));
     vec_push(b, _source_new("cubberley1996", "Cubberley, Paul", 1996, "The Slavic Alphabets",
         "In Peter T. Daniels & William Bright (eds.), The World's Writing Systems. New York, Oxford: Oxford University Press",  #skip-lint
         "346-355", 0, "https://lccn.loc.gov/95002247"));
@@ -166,6 +170,8 @@ fn _bibliography() {
         "La transcripción fonética automática del Diccionario Electrónico de Formas Simples Flexivas del Español: estudio fonológico en el léxico",  #skip-lint
         "Estudios de Lingüística del Español 4. Thesis, Universitat Autònoma de Barcelona", 0, 0,
         "https://ddd.uab.cat/pub/elies/elies_a1999v4/index.htm"));
+    vec_push(b, _source_new("roach2004", "Roach, Peter", 2004, "British English: Received Pronunciation",
+        "Journal of the International Phonetic Association 34(2)", "239-245", "10.1017/s0025100304001768", 0));
     vec_push(b, _source_new("russkajagrammatika1980", "Shvedova, N. Yu. (general editor)", 1980,
         "Русская грамматика, т. 1",
         "Moscow: Nauka (Akademiia nauk SSSR, Institut russkogo iazyka). «Фонетика» by S. N. Dmitrenko", 0, 0,

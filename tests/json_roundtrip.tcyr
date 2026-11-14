@@ -87,6 +87,12 @@ fn _inv_eq(a, b) {
         if (_ph_eq(vec_get(pa, i), vec_get(pb, i)) != 1) { return 0; }
         i = i + 1;
     }
+    # 2.6.0: the inventory's id and variety.
+    if (streq(inventory_id(a), inventory_id(b)) != 1) { return 0; }
+    var va = inventory_variety(a);
+    var vb = inventory_variety(b);
+    if ((va == 0) != (vb == 0)) { return 0; }
+    if (va != 0 && streq(va, vb) != 1) { return 0; }
     return _links_eq(inventory_sources(a), inventory_sources(b));
 }
 
@@ -369,6 +375,27 @@ fn test_malformed_inventory() {
     vec_push(d, _with(g, ",\"covers\":\"c\"", ""));
     vec_push(d, _with(g, "\"covers\":\"c\"", "\"covers\":7"));
     _refuses_all(&phoneme_inventory_from_json, d, "every malformed sources field is refused");
+    return 0;
+}
+
+fn test_serde_alternatives() {
+    # 2.6.0: an alternative writes its id and variety; a default only its variety, when
+    # it has one; a v1.x document reads as a default with no variety.
+    var bp = _text_of(&phoneme_inventory_to_json, phoneme_portuguese_brazilian());
+    assert(_contains(bp, ",\"inventory_id\":\"pt-BR\",\"variety\":\"Brazilian (São Paulo)\",\"sources\":"), "pt-BR writes its id and variety");  #skip-lint
+    assert(_inv_eq(phoneme_portuguese_brazilian(), phoneme_inventory_from_json(bp)), "and round-trips");
+    var ep = _text_of(&phoneme_inventory_to_json, phoneme_portuguese());
+    assert_eq(_contains(ep, "inventory_id"), 0, "the default writes no id");
+    assert(_contains(ep, ",\"variety\":\"European (Lisbon)\""), "but its variety");
+    assert(_inv_eq(phoneme_portuguese(), phoneme_inventory_from_json(ep)), "and round-trips");
+    assert_eq(_contains(_text_of(&phoneme_inventory_to_json, phoneme_finnish()), "variety"), 0, "Finnish names none");
+    var v1 = phoneme_inventory_from_json("{\"language_code\":\"xx\",\"language_name\":\"T\",\"phonemes\":[],\"tones\":null,\"stress\":\"Free\"}");  #skip-lint
+    assert(v1 != 0, "a v1.x inventory decodes");
+    if (v1 != 0) {
+        assert(streq(inventory_id(v1), "xx"), "its id is its code");
+        assert_eq(inventory_variety(v1), 0, "and it names no variety");
+    }
+    assert_eq(phoneme_inventory_from_json(_with(bp, "\"inventory_id\":\"pt-BR\"", "\"inventory_id\":7")), 0, "a numeric id is refused");  #skip-lint
     return 0;
 }
 
@@ -1802,8 +1829,14 @@ fn test_serde_language_variety() {
     # By hand from v1.x's british_english().
     var v1x = "{\"code\":\"en-GB\",\"name\":\"British English (RP)\",\"parent\":\"en\",\"kind\":\"NationalStandard\",\"added_phonemes\":[\"ɒ\"],\"removed_phonemes\":[\"ɹ\"],\"allophone_overrides\":[{\"phoneme\":\"t\",\"allophone\":\"t\",\"environment\":\"Intervocalic\",\"obligatory\":true}]}";  #skip-lint
     var rp = dialect_british_english();
-    assert(streq(_text_of(&language_variety_to_json, rp), v1x), "serde_language_variety: byte for byte what v1.x wrote");
-    assert(_variety_eq(rp, language_variety_from_json(v1x)), "serde_language_variety: round trip");
+    # v1.x's document still decodes; 2.6.0's RP no longer writes it (ɹ is kept, and the
+    # overlay cites Roach 2004).
+    var old = language_variety_from_json(v1x);
+    assert(old != 0, "serde_language_variety: a v1.x document decodes");
+    if (old != 0) { assert_eq(dialect_removes(old, "ɹ"), 1, "as v1.x wrote it"); }
+    var now = "{\"code\":\"en-GB\",\"name\":\"British English (RP)\",\"parent\":\"en\",\"kind\":\"NationalStandard\",\"added_phonemes\":[\"ɒ\"],\"removed_phonemes\":[],\"allophone_overrides\":[{\"phoneme\":\"t\",\"allophone\":\"t\",\"environment\":\"Intervocalic\",\"obligatory\":true}],\"sources\":[{\"key\":\"roach2004\",\"covers\":\"ɒ, the kept ɹ, and no t-flap (pp. 240-242)\"}]}";  #skip-lint
+    assert(streq(_text_of(&language_variety_to_json, rp), now), "serde_language_variety: 2.6.0's text");
+    assert(_variety_eq(rp, language_variety_from_json(now)), "serde_language_variety: round trip");
 
     # A class environment inside a variety's overrides.
     var v = _variety_new("xx", "X", "en", VarietyKind.Creole);
@@ -2318,6 +2351,7 @@ fn main() {
     test_serde_lexicon();
     test_malformed_lexicon();
     test_serde_sources();
+    test_serde_alternatives();
     test_serde_cognate();
     test_malformed_cognate();
     test_serde_language_variety();

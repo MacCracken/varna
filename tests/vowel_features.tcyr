@@ -178,7 +178,8 @@ fn main() {
     # 5 until 2.5.4. Yoruba gained ĩ ũ ɔ̃, and Portuguese's five and Guarani's five
     # precomposed nasal vowels, which carried no Nasalized bit and so were never
     # counted, now carry it.
-    assert_eq(nas, 18, "18 nasal vowels in the corpus");
+    # 22 since 2.6.0: European Portuguese's four nasal diphthongs (Cruz-Ferreira 1995).
+    assert_eq(nas, 22, "22 nasal vowels in the corpus");
     # 4 until 2.6.0 added Mandarin's apical [ɹ̩] (Lee & Zee 2003).
     assert_eq(syl, 5, "5 syllabic vowels");
     assert_eq(xs, 1, "1 extra-short vowel");
@@ -193,7 +194,7 @@ fn main() {
     # Guarani used the precomposed ã ẽ ĩ õ ũ with no bit, so features.cyr read ten
     # nasal vowels as [−nasal] and the diacritic check below could not see them.
     var pt = phoneme_portuguese();
-    _vfeats(pt, "ã", PhonemeFeature.Nasalized, "Portuguese /ã/ is nasal");
+    _vfeats(pt, "ɐ̃", PhonemeFeature.Nasalized, "Portuguese /ɐ̃/ is nasal (ã until 2.6.0)");
     _vfeats(pt, "ẽ", PhonemeFeature.Nasalized, "Portuguese /ẽ/ is nasal");
     _vfeats(pt, "ĩ", PhonemeFeature.Nasalized, "Portuguese /ĩ/ is nasal");
     _vfeats(pt, "õ", PhonemeFeature.Nasalized, "Portuguese /õ/ is nasal");

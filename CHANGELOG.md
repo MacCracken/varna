@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Toward 2.6.0, coverage scale: allophone rules for five more languages, phonotactic
 profiles for all eleven core languages, four new transliteration tables and a fix to
-the two old ones, source provenance for the inventories, the numeral follow-ons, and
+the two old ones, source provenance, more than one inventory per language, the
+numeral follow-ons, and
 the citation re-check carried over from 2.5.4. The decisions in it were the project
 owner's: re-sourcing both tone rows, automatic variant aliases, Glagolitic's core values
 only, exact-environment rules plus inventory fixes, re-sourcing all twelve phonotactic
@@ -43,6 +44,15 @@ bibliography with links, inventories first, and no source recorded where none is
   sets, 5 transliteration tables and 3 numeral systems. A record that cites nothing
   writes the same JSON as before.
 - **21 scripts, not 20** (Bopomofo, `Bopo`).
+- **The Portuguese inventory is now European Portuguese only** (Cruz-Ferreira 1995;
+  see *Fixed*), and Brazilian is a separate inventory. `phoneme_find` returns 0 for
+  `t͡ʃ d͡ʒ j w r ɨ ã`. The tap is `ɾ` (it was `r`), the reduced vowel `ɯ` (was `ɨ`)
+  and the nasal low vowel `ɐ̃` (was `ã`); it has 14 diphthongs as vowel units. The
+  European phonotactic profile spells the tap `ɾ` to match (`pɾ`, `bɾ`, coda `ɾ`).
+- **The British English (RP) overlay keeps ɹ** (see *Fixed*): `dialect_removes(rp,
+  "ɹ")` is 0, and its JSON writes `"removed_phonemes":[]` and gains `"sources"`.
+- **Inventory JSON** gains `"inventory_id"` (an alternative's only) and `"variety"`
+  (when named), before `"sources"`; Portuguese now writes a variety.
 - **MCP `varna_translate_ipa`**: its description and `scheme` parameter text list the
   six schemes, so `tools/list` output changed. v1.x's "↔" is now "→": the tool only
   transliterates forward.
@@ -160,6 +170,22 @@ bibliography with links, inventories first, and no source recorded where none is
   - The link record (`source_link_key`, `source_link_covers`) moved from
     `src/phoneme.cyr` to `src/sources.cyr`, which every data module now includes
     first. The names are unchanged.
+- **registry: more than one inventory per language**, as PHOIBLE keeps several:
+  `registry_inventories(code)` lists a language's inventories, its default first,
+  and `registry_inventory(code, id)` finds one. Each inventory has an id unique
+  within its language, `inventory_id` (the language code for the default, a tag such
+  as `"pt-BR"` for an alternative), and may name its variety, `inventory_variety`.
+  `registry_phonemes(code)` still returns the default, unchanged. The project owner
+  chose full inventories over overlays, so an alternative can change any phoneme,
+  not only add or drop one.
+  - **Portuguese** is the first: European (Lisbon, Cruz-Ferreira 1995) is the default,
+    as the phonotactic profile is European, and **Brazilian** (São Paulo, Barbosa &
+    Albano 2004) is `"pt-BR"`: 19 consonants (the strong r is ɣ, as their table prints
+    its realisation there) and the 7 oral vowels /i e ɛ a ɔ o u/. Their tables put
+    allophones in parentheses, so the affricates (t͡ʃ d͡ʒ), the nasalised vowels and
+    [ɪ ɐ ʊ] are not phonemes here.
+  - `phoneme_builder_variety(b, id, variety)` names a caller's own inventory; a
+    dialect variety now has `dialect_sources` too.
 - **transliteration: four tables**, and `translit_by_scheme(name)` /
   `translit_all_schemes()`, keyed by the names the MCP tool takes. Each table cites
   its primary source in a comment, and where the source gives two readings or none,
@@ -270,6 +296,15 @@ bibliography with links, inventories first, and no source recorded where none is
   - Not wrong in the code, but checked: Leskien 1922 is the 6th edition of the
     *Handbuch der altbulgarischen Sprache*; the ALA-LC Hebrew table is dated only on
     the LoC index (2011); Chew (2003) is a 1999 Oxford D.Phil. thesis.
+- **Portuguese mixed two varieties**: Brazilian /t͡ʃ d͡ʒ/ in a European set, which even
+  the Brazilian source treats as allophones of /t d/ before [i]. Corrected to
+  Cruz-Ferreira's (1995) European inventory: /t͡ʃ d͡ʒ/ and /j w/ removed (she writes
+  the glides only in diphthongs), n and l dental, the tap ɾ (r is a trill), her ɯ for
+  ɨ, ɐ at mid central from her chart, ɐ̃ for ã, and her 14 diphthongs added.
+- **The RP overlay removed /ɹ/**, though RP's /r/ is a phoneme ("red"; "usually
+  realized as a post-alveolar approximant [ɹ]", Roach 2004, pp. 240-241).
+  Non-rhoticity is where /r/ occurs, which an inventory cannot say. Its other two
+  changes hold against Roach: ɒ is in his vowel chart, and his /t/ is never a tap.
 - **Devanagari → IAST wrote an "a" after every consonant**, so a vowel sign or virama
   could not remove it: नमस्ते gave "namasatae", कि "kai", संस्कृतम् "saṃsakaṛtama".
   v1.x tested single letters only. With the inherent-vowel rule the 33 consonants
@@ -313,6 +348,19 @@ Measured interleaved against a build of 2.5.4, min of 3, timer floor 1.21–1.24
   cost one more string compare on every call. It now stops at the match.
 - `grammar_by_code_lookup` and `lexicon_find_word` read −8% with their code unchanged.
   That is the per-run CPU effect 2.5.4 measured, not a result.
+
+More than one inventory per language, measured interleaved against the committed
+bibliography work (3b27d40), min of 3. Every row with unchanged code read +2.9% to
++5.6% in this run, a drift common to all of them:
+
+- **`dialect_apply_overlay` 2,830 → 2,103 ns (−26%).** The RP overlay no longer
+  removes ɹ, so applying it checks each phoneme against an empty removal list.
+- **`json_variety_write_rp` 2,099 → 3,669 ns (+75%) and `_read_rp` 8,489 → 11,237 ns
+  (+32%).** The document gained its source and grew from 239 to 323 bytes (+35%),
+  past the string builder's 256-byte step, so the write also grows the builder once
+  more.
+- New: `registry_inventory_lookup` 836 ns (`registry_inventory("pt", "pt-BR")`, which
+  first runs `registry_phonemes`'s chain of code comparisons).
 
 Provenance for the other datasets, measured interleaved against the committed
 inventory provenance (6645153), min of 3:

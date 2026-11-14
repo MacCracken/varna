@@ -784,30 +784,30 @@ var _c_phonotactics_portuguese = 0;
 # Principle (p. 28); "Both elements of these diphthongs - either oral or nasal - belong
 # to the syllable nucleus" (p. 19); one coda consonant, "/R/, /L/ and /S/ are usually
 # considered the only ones that can occur in Portuguese syllable coda" (p. 21),
-# realized r l ʃ ʒ in EP (its tap ɾ is the inventory's r). Not tautosyllabic: the
-# word-internal sequences of its example (1), e.g. pn gn ps (p. 15).
-# VARIETY: the corpus inventory mixes in Brazilian features (/t͡ʃ d͡ʒ/), while this
-# profile is EP. See the roadmap. In Brazilian Portuguese the codas are /R S N L/
-# (Barbosa & Albano 2004, JIPA, p. 228).
+# realized ɾ l ʃ ʒ in EP. Not tautosyllabic: the word-internal sequences of its
+# example (1), e.g. pn gn ps (p. 15).
+# VARIETY: European, as the default Portuguese inventory is since 2.6.0 (Cruz-Ferreira
+# 1995), whose tap ɾ these sequences spell. The Brazilian inventory ("pt-BR") has no
+# profile; there the codas are /R S N L/ (Barbosa & Albano 2004, JIPA, p. 228).
 fn phonotactics_portuguese() {
     if (_c_phonotactics_portuguese != 0) { return _c_phonotactics_portuguese; }
     var p = _phonotactics_new("pt", _syllable_new(2, 1, 1, "(C)(C)V(C)"));
     _phonotactics_source(p, "mateus1998", "European Portuguese onsets, nucleus and codas");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "European Portuguese onset clusters (Mateus & d'Andrade 1998, ex. 2)");
-    _constraint_add_seq(c0, "pr");
-    _constraint_add_seq(c0, "br");
-    _constraint_add_seq(c0, "tr");
-    _constraint_add_seq(c0, "dr");
-    _constraint_add_seq(c0, "kr");
-    _constraint_add_seq(c0, "ɡr");
+    _constraint_add_seq(c0, "pɾ");
+    _constraint_add_seq(c0, "bɾ");
+    _constraint_add_seq(c0, "tɾ");
+    _constraint_add_seq(c0, "dɾ");
+    _constraint_add_seq(c0, "kɾ");
+    _constraint_add_seq(c0, "ɡɾ");
     _constraint_add_seq(c0, "pl");
     _constraint_add_seq(c0, "bl");
     _constraint_add_seq(c0, "tl");
     _constraint_add_seq(c0, "kl");
     _constraint_add_seq(c0, "ɡl");
-    _constraint_add_seq(c0, "fr");
-    _constraint_add_seq(c0, "vr");
+    _constraint_add_seq(c0, "fɾ");
+    _constraint_add_seq(c0, "vɾ");
     _constraint_add_seq(c0, "fl");
     _phonotactics_add(p, c0);
     var c1 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
@@ -818,7 +818,7 @@ fn phonotactics_portuguese() {
     _phonotactics_add(p, c1);
     var c2 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
       "EP coda consonants (Mateus & d'Andrade 1998, p. 21)");
-    _constraint_add_seq(c2, "r");
+    _constraint_add_seq(c2, "ɾ");
     _constraint_add_seq(c2, "l");
     _constraint_add_seq(c2, "ʃ");
     _constraint_add_seq(c2, "ʒ");

@@ -120,8 +120,9 @@ fn main() {
     var rp = dialect_british_english();
     var rp_inv = dialect_apply(rp, en);
     assert(rp_inv != en, "overlay result is a distinct object");
-    assert_eq(phoneme_has(en, "ɹ"), 1, "parent keeps /ɹ/ after the overlay removes it");
-    assert_eq(phoneme_has(rp_inv, "ɹ"), 0, "overlay dropped /ɹ/");
+    # Since 2.6.0 the overlay keeps /ɹ/ (Roach 2004); /ɒ/ is what it adds.
+    assert_eq(phoneme_has(en, "ɹ"), 1, "parent keeps /ɹ/");
+    assert_eq(phoneme_has(rp_inv, "ɒ"), 1, "overlay added /ɒ/");
     assert_eq(phoneme_has(en, "ɒ"), 0, "parent did not gain the overlay's /ɒ/");
     # Applying twice must still be stable now that the parent is shared.
     var second = dialect_apply(rp, rp_inv);

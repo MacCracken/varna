@@ -114,6 +114,7 @@ fn b_json_phonotactics_write() {
 }
 fn b_json_phonotactics_read() { phonotactics_from_json(_b_phono_json); return 0; }
 fn b_source_by_key() { source_by_key("yanushevskaya2015"); return 0; }
+fn b_registry_inventory() { registry_inventory("pt", "pt-BR"); return 0; }
 fn b_json_source_write() {
     var sb = str_builder_new();
     source_to_json(source_by_key("leezee2003"), sb);
@@ -260,6 +261,7 @@ fn main() {
     _bench(benches, "json_phonotactics_write_en", &b_json_phonotactics_write, 5000);
     _bench(benches, "json_phonotactics_read_en", &b_json_phonotactics_read, 2000);
     _bench(benches, "source_by_key_lookup", &b_source_by_key, 1000000);
+    _bench(benches, "registry_inventory_lookup", &b_registry_inventory, 1000000);
     _bench(benches, "json_source_write", &b_json_source_write, 10000);
     _bench(benches, "json_source_read", &b_json_source_read, 5000);
     _bench(benches, "json_script_write_deva", &b_json_script_write, 10000);

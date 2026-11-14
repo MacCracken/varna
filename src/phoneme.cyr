@@ -246,8 +246,9 @@ fn phoneme_is_breathy(p) {
 }
 
 # --- Inventory builder ---------------------------------------------
-# The builder and the inventory share one 48-byte layout; build() is identity.
+# The builder and the inventory share one 64-byte layout; build() is identity.
 # [0]=code [8]=name [16]=phonemes [24]=stress [32]=tones [40]=source links (2.6.0)
+# [48]=inventory id [56]=variety (cstr|0) (2.6.0)
 
 # `cap` is accepted for source compatibility with the v1.x Rust builder and is
 # currently ignored: lib/vec.cyr exposes no capacity-taking constructor, so the
@@ -255,13 +256,15 @@ fn phoneme_is_breathy(p) {
 # rather than dropped because the bundle is a published consumer API; it becomes
 # load-bearing the moment the stdlib grows `vec_new_with_capacity`.
 fn phoneme_builder_with_capacity(code, name, cap) {
-    var inv = alloc(48);
+    var inv = alloc(64);
     store64(inv, code);
     store64(inv + 8, name);
     store64(inv + 16, vec_new());
     store64(inv + 24, StressPattern.Free);
     store64(inv + 32, 0);
     store64(inv + 40, vec_new());
+    store64(inv + 48, code);
+    store64(inv + 56, 0);
     return inv;
 }
 
@@ -344,6 +347,24 @@ fn phoneme_builder_source(inv, key, covers) {
 # the inventory cites nothing.
 fn inventory_sources(inv) { return load64(inv + 40); }
 
+# --- Inventory identity (2.6.0) --------------------------------------------
+# A language can have more than one inventory: its default, and alternatives from
+# other analyses or varieties (src/registry.cyr: registry_inventories), as PHOIBLE
+# keeps several per language. Each has an id, unique within its language: the
+# language code for the default, a tag such as "pt-BR" for an alternative. Its
+# variety names the speech described ("Brazilian (São Paulo)"), or is 0.
+
+# Give an inventory its id and variety (either may be 0 to keep the default id, or
+# to leave the variety unnamed).
+fn phoneme_builder_variety(inv, id, variety) {
+    if (id != 0) { store64(inv + 48, id); }
+    store64(inv + 56, variety);
+    return inv;
+}
+
+fn inventory_id(inv) { return load64(inv + 48); }
+fn inventory_variety(inv) { return load64(inv + 56); }
+
 # 1 when the inventory cites at least one source, else 0.
 fn inventory_is_sourced(inv) {
     if (vec_len(load64(inv + 40)) > 0) { return 1; }
@@ -359,7 +380,7 @@ fn inventory_is_sourced(inv) {
 # are shared, because nothing in the API mutates a Phoneme in place — only the
 # inventory's own vec, stress and tone slots, all of which are fresh here.
 fn phoneme_clone(inv) {
-    var out = alloc(48);
+    var out = alloc(64);
     store64(out, load64(inv));
     store64(out + 8, load64(inv + 8));
     var dst = vec_new();
@@ -381,6 +402,8 @@ fn phoneme_clone(inv) {
         k = k + 1;
     }
     store64(out + 40, links);
+    store64(out + 48, load64(inv + 48));
+    store64(out + 56, load64(inv + 56));
     return out;
 }
 

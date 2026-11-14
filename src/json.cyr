@@ -421,6 +421,16 @@ fn phoneme_inventory_to_json(inv, sb) {
     }
     str_builder_add_cstr(sb, ",\"stress\":");
     StressPattern_to_json(phoneme_stress(inv), sb);
+    # 2.6.0: an alternative inventory's id and variety, each only when it carries one,
+    # so a default inventory writes v1.x's shape.
+    if (streq(inventory_id(inv), phoneme_language_code(inv)) == 0) {
+        str_builder_add_cstr(sb, ",\"inventory_id\":");
+        str_builder_add_json_cstr(sb, inventory_id(inv));
+    }
+    if (inventory_variety(inv) != 0) {
+        str_builder_add_cstr(sb, ",\"variety\":");
+        str_builder_add_json_cstr(sb, inventory_variety(inv));
+    }
     _json_sources_write(sb, inventory_sources(inv));
     str_builder_putc(sb, '}');
     return 0;
@@ -464,6 +474,11 @@ fn _json_inventory(v) {
         i = i + 1;
     }
     if (tones != 0) { phoneme_builder_tones(inv, tones); }
+    # 2.6.0, both optional: absent or null keeps the default (the code; no variety).
+    var iid = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "inventory_id"));
+    var ivar = _json_opt_cstr(bayan_json_v_obj_get_by_cstr(v, "variety"));
+    if (iid < 0 || ivar < 0) { return 0; }
+    phoneme_builder_variety(inv, iid, ivar);
     if (_json_sources_read(inventory_sources(inv), bayan_json_v_obj_get_by_cstr(v, "sources")) != 0) { return 0; }
     return phoneme_builder_build(inv);
 }
@@ -1621,7 +1636,9 @@ fn language_variety_to_json(lv, sb) {
         allophone_rule_to_json(vec_get(rules, i), sb);
         i = i + 1;
     }
-    str_builder_add_cstr(sb, "]}");
+    str_builder_putc(sb, ']');
+    _json_sources_write(sb, dialect_sources(lv));
+    str_builder_putc(sb, '}');
     return 0;
 }
 
@@ -1659,6 +1676,7 @@ fn _json_language_variety(v) {
         _variety_add_override(lv, r);
         i = i + 1;
     }
+    if (_json_sources_read(dialect_sources(lv), bayan_json_v_obj_get_by_cstr(v, "sources")) != 0) { return 0; }
     return lv;
 }
 

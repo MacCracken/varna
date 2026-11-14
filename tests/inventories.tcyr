@@ -131,8 +131,10 @@ fn main() {
     assert_eq(phoneme_vowel_count(iv), 7, "ko vowels");
     iv = phoneme_portuguese();
     assert(streq(phoneme_language_code(iv), "pt"), "pt code");
-    assert_eq(phoneme_consonant_count(iv), 23, "pt consonants");
-    assert_eq(phoneme_vowel_count(iv), 14, "pt vowels");
+    # European, after Cruz-Ferreira (1995) since 2.6.0: 19 consonants; 9 oral and 5
+    # nasal vowels and 14 diphthongs. 23 / 14 mixed in Brazilian /t͡ʃ d͡ʒ/ and /j w/.
+    assert_eq(phoneme_consonant_count(iv), 19, "pt consonants");
+    assert_eq(phoneme_vowel_count(iv), 28, "pt vowels");
     iv = phoneme_italian();
     assert(streq(phoneme_language_code(iv), "it"), "it code");
     assert_eq(phoneme_consonant_count(iv), 23, "it consonants");

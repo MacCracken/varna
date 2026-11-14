@@ -1,0 +1,96 @@
+# tests/alternatives.tcyr — more than one inventory per language (2.6.0).
+#
+# A language keeps its default (registry_phonemes) and may have alternatives, as
+# PHOIBLE keeps several per language. Portuguese is the first: European (Lisbon,
+# Cruz-Ferreira 1995) is the default, Brazilian (São Paulo, Barbosa & Albano 2004)
+# the alternative "pt-BR". They were one inventory that mixed the two until 2.6.0.
+
+include "src/error.cyr"
+include "src/util.cyr"
+include "src/sources.cyr"
+include "src/tone.cyr"
+include "src/phoneme.cyr"
+include "src/inventories.cyr"
+include "src/script.cyr"
+include "src/registry.cyr"
+
+fn _link0(inv) { return source_link_key(vec_get(inventory_sources(inv), 0)); }
+
+fn main() {
+    alloc_init();
+    test_group("lookup");
+    var pts = registry_inventories("pt");
+    assert_eq(vec_len(pts), 2, "Portuguese has two inventories");
+    assert_eq(vec_get(pts, 0), registry_phonemes("pt"), "the default comes first");
+    assert_eq(vec_get(pts, 1), phoneme_portuguese_brazilian(), "then pt-BR");
+    assert_eq(registry_inventories("pt"), pts, "the list is cached");
+    assert_eq(registry_inventory("pt", "pt-BR"), phoneme_portuguese_brazilian(), "by id");
+    assert_eq(registry_inventory("pt", "pt"), phoneme_portuguese(), "the default's id is its code");
+    assert_eq(registry_inventory("pt", "pt-PT"), 0, "an unknown id has none");
+    assert_eq(registry_inventory("pt", 0), 0, "nor does a null id");
+    assert_eq(registry_inventories("xx"), 0, "an unknown language has no list");
+    assert_eq(registry_inventories(0), 0, "nor does null");
+    var fi = registry_inventories("fi");
+    assert_eq(vec_len(fi), 1, "a language without alternatives has its default only");
+
+    test_group("every_default_is_its_own_id");
+    var codes = registry_all_codes();
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var inv = registry_phonemes(vec_get(codes, i));
+        if (streq(inventory_id(inv), vec_get(codes, i)) == 0) { bad = bad + 1; }
+        if (registry_inventory(vec_get(codes, i), vec_get(codes, i)) != inv) { bad = bad + 1; }
+        i = i + 1;
+    }
+    assert_eq(bad, 0, "every default inventory's id is its language code");
+
+    test_group("european_portuguese");
+    var ep = phoneme_portuguese();
+    assert(streq(inventory_variety(ep), "European (Lisbon)"), "variety");
+    assert(streq(_link0(ep), "cruzferreira1995"), "source");
+    assert_eq(phoneme_consonant_count(ep), 19, "19 consonants (p. 91)");
+    assert_eq(phoneme_has(ep, "ɾ"), 1, "the tap is ɾ");
+    assert_eq(phoneme_has(ep, "r"), 0, "not r, a trill");
+    assert_eq(phoneme_has(ep, "ʁ"), 1, "the other r is uvular");
+    assert_eq(phoneme_has(ep, "t͡ʃ"), 0, "no Brazilian affricate");
+    assert_eq(phoneme_has(ep, "j"), 0, "glides only inside diphthongs");
+    assert_eq(phoneme_place(phoneme_find(ep, "l")), Place.Dental, "l is dental");
+    assert_eq(phoneme_has(ep, "ɯ"), 1, "her ɯ (the corpus had ɨ)");
+    assert_eq(phoneme_has(ep, "ɐ̃"), 1, "nasal ɐ̃ (was ã)");
+    assert_eq(phoneme_height(phoneme_find(ep, "ɐ")), Height.Mid, "ɐ at mid central, from her chart");
+    assert_eq(phoneme_has(ep, "ɐ̃u"), 1, "a nasal diphthong (mão)");
+    assert_eq(phoneme_has(ep, "ɛu"), 1, "an oral diphthong (véu)");
+    assert_eq(phoneme_vowel_count(ep), 28, "9 oral, 5 nasal, 14 diphthongs");
+
+    test_group("brazilian_portuguese");
+    var bp = phoneme_portuguese_brazilian();
+    assert(streq(phoneme_language_code(bp), "pt"), "the same language");
+    assert(streq(inventory_id(bp), "pt-BR"), "its own id");
+    assert(streq(inventory_variety(bp), "Brazilian (São Paulo)"), "variety");
+    assert(streq(_link0(bp), "barbosa2004"), "source");
+    assert_eq(phoneme_consonant_count(bp), 19, "19 consonants (p. 228)");
+    assert_eq(phoneme_has(bp, "ɣ"), 1, "the strong r, a velar fricative here");
+    assert_eq(phoneme_has(bp, "ʁ"), 0, "not EP's uvular");
+    assert_eq(phoneme_has(bp, "t͡ʃ"), 0, "(t͡ʃ) is an allophone of /t/ before [i]");
+    assert_eq(phoneme_place(phoneme_find(bp, "l")), Place.Alveolar, "l is alveolar");
+    assert_eq(phoneme_vowel_count(bp), 7, "/i e ɛ a ɔ o u/ (p. 229)");
+    assert_eq(phoneme_has(bp, "ĩ"), 0, "nasalised vowels are allophones before /N/");
+    assert_eq(registry_phonemes("pt"), ep, "registry_phonemes is still the default");
+
+    test_group("builder");
+    var mine = phoneme_builder_new("xx", "X");
+    assert(streq(inventory_id(mine), "xx"), "a new inventory's id is its code");
+    assert_eq(inventory_variety(mine), 0, "and it names no variety");
+    phoneme_builder_variety(mine, 0, "Highland");
+    assert(streq(inventory_id(mine), "xx"), "a null id keeps the code");
+    phoneme_builder_variety(mine, "xx-hl", "Highland");
+    assert(streq(inventory_id(mine), "xx-hl"), "an id given is kept");
+    var copy = phoneme_clone(mine);
+    assert(streq(inventory_id(copy), "xx-hl") && streq(inventory_variety(copy), "Highland"), "a clone keeps both");
+
+    return assert_summary();
+}
+
+var exit_code = main();
+syscall(60, exit_code);

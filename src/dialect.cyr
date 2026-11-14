@@ -3,8 +3,9 @@
 # Ported from v1.x Rust src/dialect.rs. Requires phoneme.cyr (apply) and
 # allophone.cyr (AllophoneRule overrides).
 #
-# LanguageVariety (56B): [0]=code [8]=name [16]=parent [24]=kind
+# LanguageVariety (64B): [0]=code [8]=name [16]=parent [24]=kind
 #   [32]=added_phonemes(vec) [40]=removed_phonemes(vec) [48]=allophone_overrides(vec)
+#   [56]=source links (2.6.0)
 
 # HistoricalVariety is v1.x's VarietyKind::Historical, a stage like Middle English.
 # `Historical` is taken by ScriptStatus.Historical, since enum constants are global
@@ -20,7 +21,7 @@ enum VarietyKind {
 }
 
 fn _variety_new(code, name, parent, kind) {
-    var v = alloc(56);
+    var v = alloc(64);
     store64(v, code);
     store64(v + 8, name);
     store64(v + 16, parent);
@@ -28,6 +29,13 @@ fn _variety_new(code, name, parent, kind) {
     store64(v + 32, vec_new());
     store64(v + 40, vec_new());
     store64(v + 48, vec_new());
+    store64(v + 56, vec_new());
+    return v;
+}
+
+# Record that `key`'s work is the source of `covers` in this variety (2.6.0).
+fn _variety_source(v, key, covers) {
+    _source_links_add(load64(v + 56), key, covers);
     return v;
 }
 
@@ -42,6 +50,8 @@ fn dialect_kind(v) { return load64(v + 24); }
 fn dialect_added(v) { return load64(v + 32); }
 fn dialect_removed(v) { return load64(v + 40); }
 fn dialect_overrides(v) { return load64(v + 48); }
+# The works the overlay is taken from (2.6.0) — vec of source links (src/sources.cyr).
+fn dialect_sources(v) { return load64(v + 56); }
 
 # Does this variety add a phoneme not in the parent?
 fn dialect_adds(v, ipa) {
@@ -101,11 +111,22 @@ fn dialect_apply(v, parent) {
 
 var _c_dialect_british_english = 0;
 # British English (Received Pronunciation).
+# British English (RP), an overlay on the General American inventory, checked at 2.6.0
+# against Roach (2004), "British English: Received Pronunciation", JIPA 34(2), the IPA
+# Illustration:
+#   - adds ɒ, the vowel of LOT, in his chart of pure vowels (Figure 1, p. 242);
+#   - keeps ɹ. v1.x removed it, but RP's /r/ is a phoneme ("red", p. 240), "usually
+#     realized as a post-alveolar approximant [ɹ]" (p. 241). Non-rhoticity is where
+#     /r/ occurs (only before a vowel), which an inventory cannot say;
+#   - overrides GA's intervocalic flap with plain t: his /t/ is aspirated, glottally
+#     reinforced, or replaced by a glottal stop (pp. 240-241), never a tap.
+# It is not a full RP: Roach's long vowels, ɜː and centring diphthongs are not added
+# (see the roadmap).
 fn dialect_british_english() {
     if (_c_dialect_british_english != 0) { return _c_dialect_british_english; }
     var v = _variety_new("en-GB", "British English (RP)", "en", VarietyKind.NationalStandard);
+    _variety_source(v, "roach2004", "ɒ, the kept ɹ, and no t-flap (pp. 240-242)");
     _variety_add_added(v, "ɒ");
-    _variety_add_removed(v, "ɹ");
     _variety_add_override(v, _arule_new("t", "t", Environment.Intervocalic, 1));
     _c_dialect_british_english = v;
     return _c_dialect_british_english;

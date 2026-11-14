@@ -70,6 +70,26 @@ identifier: `registry_info_glottocode(registry_info("lo"))` is `"laoo1244"`, and
 
 ---
 
+## More Than One Inventory
+
+A language has a default inventory (`registry_phonemes`) and may have alternatives,
+other analyses or varieties, as PHOIBLE keeps several per language:
+
+```cyrius
+var all = registry_inventories("pt");        # the default first
+# [0] European (Lisbon), id "pt"      after Cruz-Ferreira 1995
+# [1] Brazilian (São Paulo), id "pt-BR" after Barbosa & Albano 2004
+var bp = registry_inventory("pt", "pt-BR");
+assert(streq(inventory_variety(bp), "Brazilian (São Paulo)"));
+assert(phoneme_has(bp, "ɣ"));                # its strong r
+assert(registry_phonemes("pt") == vec_get(all, 0));
+```
+
+`inventory_id` is the language code for a default inventory. Every other language
+has its default only, for now.
+
+---
+
 ## Provenance
 
 An inventory names the works its values are taken from, each with what it covers. The

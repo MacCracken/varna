@@ -140,7 +140,7 @@ fn main() {
     var rp = dialect_british_english();
     var rp_inv = dialect_apply(rp, en);
     assert_eq(phoneme_has(rp_inv, "ɒ"), 1, "RP adds /ɒ/");
-    assert_eq(phoneme_has(rp_inv, "ɹ"), 0, "RP removes /ɹ/");
+    assert_eq(phoneme_has(rp_inv, "ɹ"), 1, "RP keeps /ɹ/ (Roach 2004; v1.x removed it)");
     assert_eq(phoneme_has(rp_inv, "p"), 1, "RP keeps /p/");
     assert_eq(phoneme_has(rp_inv, "θ"), 1, "RP keeps /θ/");
     assert(streq(phoneme_language_code(rp_inv), "en-GB"), "overlay carries the variety code");

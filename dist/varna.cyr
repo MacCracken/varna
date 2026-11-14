@@ -157,6 +157,8 @@ fn _bibliography() {
         "https://www.unicode.org/notes/tn41/"));
     vec_push(b, _source_new("archangeli1989", "Archangeli, Diana; Pulleyblank, Douglas", 1989, "Yoruba Vowel Harmony",
         "Linguistic Inquiry 20(2)", "173-217", 0, "http://www.jstor.org/stable/4178624"));
+    vec_push(b, _source_new("barbosa2004", "Barbosa, Plínio A.; Albano, Eleonora C.", 2004, "Brazilian Portuguese",
+        "Journal of the International Phonetic Association 34(2)", "227-232", "10.1017/s0025100304001756", 0));
     vec_push(b, _source_new("chew2003", "Chew, Peter A.", 2003, "A Computational Phonology of Russian",
         "Dissertation.com. D.Phil. thesis, University of Oxford, 1999. ISBN 1-58112-178-4", 0, 0,
         "http://web.archive.org/web/20030527195044/http://www.dissertation.com:80/library/1121784a.htm"));
@@ -168,6 +170,8 @@ fn _bibliography() {
         "PhD dissertation, Massachusetts Institute of Technology", 0, 0, "http://hdl.handle.net/1721.1/8845"));
     vec_push(b, _source_new("cruttenden1994", "Cruttenden, Alan (rev.)", 1994, "Gimson's Pronunciation of English",
         "5th edition, revised by Alan Cruttenden. London: E. Arnold", 0, 0, "https://lccn.loc.gov/94010860"));
+    vec_push(b, _source_new("cruzferreira1995", "Cruz-Ferreira, Madalena", 1995, "European Portuguese",
+        "Journal of the International Phonetic Association 25(2)", "90-94", "10.1017/s0025100300005223", 0));
     vec_push(b, _source_new("cubberley1996", "Cubberley, Paul", 1996, "The Slavic Alphabets",
         "In Peter T. Daniels & William Bright (eds.), The World's Writing Systems. New York, Oxford: Oxford University Press",  #skip-lint
         "346-355", 0, "https://lccn.loc.gov/95002247"));
@@ -240,6 +244,8 @@ fn _bibliography() {
         "La transcripción fonética automática del Diccionario Electrónico de Formas Simples Flexivas del Español: estudio fonológico en el léxico",  #skip-lint
         "Estudios de Lingüística del Español 4. Thesis, Universitat Autònoma de Barcelona", 0, 0,
         "https://ddd.uab.cat/pub/elies/elies_a1999v4/index.htm"));
+    vec_push(b, _source_new("roach2004", "Roach, Peter", 2004, "British English: Received Pronunciation",
+        "Journal of the International Phonetic Association 34(2)", "239-245", "10.1017/s0025100304001768", 0));
     vec_push(b, _source_new("russkajagrammatika1980", "Shvedova, N. Yu. (general editor)", 1980,
         "Русская грамматика, т. 1",
         "Moscow: Nauka (Akademiia nauk SSSR, Institut russkogo iazyka). «Фонетика» by S. N. Dmitrenko", 0, 0,
@@ -750,8 +756,9 @@ fn phoneme_is_breathy(p) {
 }
 
 # --- Inventory builder ---------------------------------------------
-# The builder and the inventory share one 48-byte layout; build() is identity.
+# The builder and the inventory share one 64-byte layout; build() is identity.
 # [0]=code [8]=name [16]=phonemes [24]=stress [32]=tones [40]=source links (2.6.0)
+# [48]=inventory id [56]=variety (cstr|0) (2.6.0)
 
 # `cap` is accepted for source compatibility with the v1.x Rust builder and is
 # currently ignored: lib/vec.cyr exposes no capacity-taking constructor, so the
@@ -759,13 +766,15 @@ fn phoneme_is_breathy(p) {
 # rather than dropped because the bundle is a published consumer API; it becomes
 # load-bearing the moment the stdlib grows `vec_new_with_capacity`.
 fn phoneme_builder_with_capacity(code, name, cap) {
-    var inv = alloc(48);
+    var inv = alloc(64);
     store64(inv, code);
     store64(inv + 8, name);
     store64(inv + 16, vec_new());
     store64(inv + 24, StressPattern.Free);
     store64(inv + 32, 0);
     store64(inv + 40, vec_new());
+    store64(inv + 48, code);
+    store64(inv + 56, 0);
     return inv;
 }
 
@@ -848,6 +857,24 @@ fn phoneme_builder_source(inv, key, covers) {
 # the inventory cites nothing.
 fn inventory_sources(inv) { return load64(inv + 40); }
 
+# --- Inventory identity (2.6.0) --------------------------------------------
+# A language can have more than one inventory: its default, and alternatives from
+# other analyses or varieties (src/registry.cyr: registry_inventories), as PHOIBLE
+# keeps several per language. Each has an id, unique within its language: the
+# language code for the default, a tag such as "pt-BR" for an alternative. Its
+# variety names the speech described ("Brazilian (São Paulo)"), or is 0.
+
+# Give an inventory its id and variety (either may be 0 to keep the default id, or
+# to leave the variety unnamed).
+fn phoneme_builder_variety(inv, id, variety) {
+    if (id != 0) { store64(inv + 48, id); }
+    store64(inv + 56, variety);
+    return inv;
+}
+
+fn inventory_id(inv) { return load64(inv + 48); }
+fn inventory_variety(inv) { return load64(inv + 56); }
+
 # 1 when the inventory cites at least one source, else 0.
 fn inventory_is_sourced(inv) {
     if (vec_len(load64(inv + 40)) > 0) { return 1; }
@@ -863,7 +890,7 @@ fn inventory_is_sourced(inv) {
 # are shared, because nothing in the API mutates a Phoneme in place — only the
 # inventory's own vec, stress and tone slots, all of which are fresh here.
 fn phoneme_clone(inv) {
-    var out = alloc(48);
+    var out = alloc(64);
     store64(out, load64(inv));
     store64(out + 8, load64(inv + 8));
     var dst = vec_new();
@@ -885,6 +912,8 @@ fn phoneme_clone(inv) {
         k = k + 1;
     }
     store64(out + 40, links);
+    store64(out + 48, load64(inv + 48));
+    store64(out + 56, load64(inv + 56));
     return out;
 }
 
@@ -2881,11 +2910,30 @@ fn phoneme_korean() {
     return _c_phoneme_korean;
 }
 
+# Portuguese. The default inventory is European Portuguese, as the phonotactic profile
+# is (Mateus & d'Andrade 1998); Brazilian Portuguese is the alternative "pt-BR" below
+# (registry_inventories). Both were split at 2.6.0 from one inventory that mixed them:
+# it had Brazilian /t͡ʃ d͡ʒ/, which even the Brazilian source treats as allophones of
+# /t d/ before [i], in a European set.
+#
+# European Portuguese (Lisbon), after Cruz-Ferreira (1995), "European Portuguese",
+# JIPA 25(2), the IPA Illustration, pp. 91-92. 19 consonants (p. 91): t d n l are
+# dental, s z alveolar, the tap is ɾ and the other r the uvular fricative ʁ. 14
+# monophthongs, "9 oral and 5 nasalized" (p. 91), placed from her chart; her ɯ is
+# "a fronted and lowered high back unrounded vowel", "often represented as /ə/" (the
+# corpus had ɨ). 14 diphthongs, "10 oral and 4 nasalized" (p. 92), as vowel units
+# filed under their nucleus, as the Mandarin and Thai rows do.
+# Corrected at 2.6.0: /t͡ʃ d͡ʒ/ removed (Brazilian, and allophones there too); /j w/
+# removed (she writes the glides only inside diphthongs); n and l dental; the tap
+# written ɾ, not r (a trill); ɨ → ɯ; ɐ at mid central, not near-open; and the nasal
+# low vowel is ɐ̃, not ã. The diphthongs were missing.
 var _c_phoneme_portuguese = 0;
 fn phoneme_portuguese() {
     if (_c_phoneme_portuguese != 0) { return _c_phoneme_portuguese; }
 
-    var b = phoneme_builder_with_capacity("pt", "Portuguese", 33);
+    var b = phoneme_builder_with_capacity("pt", "Portuguese", 47);
+    phoneme_builder_variety(b, 0, "European (Lisbon)");
+    phoneme_builder_source(b, "cruzferreira1995", "consonants, vowels and diphthongs");
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
@@ -2894,9 +2942,10 @@ fn phoneme_portuguese() {
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Dental, 1);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
-    # Affricates
-    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
-    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Dental, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Fricatives
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
@@ -2904,42 +2953,97 @@ fn phoneme_portuguese() {
     phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
-    # Nasals
-    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
-    # Liquids & approximants
-    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+    phoneme_builder_consonant(b, "ʁ", Manner.Fricative, Place.Uvular, 1);
+    # Tap and laterals
+    phoneme_builder_consonant(b, "ɾ", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Dental, 1,
       Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant_full(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1,
       Airstream.Pulmonic, PhonemeFeature.Lateral);
-    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ʁ", Manner.Fricative, Place.Uvular, 1);
-    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
-    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
-    # Oral vowels
+    # Oral vowels (9)
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "ɐ", Height.NearOpen, Backness.Central, 0);
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
-    # Nasal vowels. Corrected at 2.5.4: they were written with the precomposed letters
-    # (U+00E3 ã and kin) and carried no Nasalized bit, so features.cyr read all five as
-    # [−nasal]. The vowel test could not see it, because it checks the combining tilde.
-    # They now carry the bit and are spelled with the combining tilde (U+0303), the
-    # one spelling the corpus uses. A caller passing NFC text, which composes ã to
-    # U+00E3, must decompose it (NFD) before phoneme_find.
-    phoneme_builder_vowel_full(b, "ẽ", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Nasalized);
-    phoneme_builder_vowel_full(b, "ã", Height.Open, Backness.Central, 0, PhonemeFeature.Nasalized);
-    phoneme_builder_vowel_full(b, "õ", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel(b, "ɐ", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɯ", Height.NearClose, Backness.Back, 0);
+    # Nasalized vowels (5), spelled with the combining tilde (U+0303), the corpus's one
+    # spelling; a caller with NFC text must decompose it (NFD) before phoneme_find.
     phoneme_builder_vowel_full(b, "ĩ", Height.Close, Backness.Front, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ẽ", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ɐ̃", Height.Mid, Backness.Central, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "õ", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Nasalized);
     phoneme_builder_vowel_full(b, "ũ", Height.Close, Backness.Back, 1, PhonemeFeature.Nasalized);
+    # Diphthongs: 10 oral and 4 nasalized (p. 92), under their nucleus
+    phoneme_builder_vowel(b, "ɛi", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ai", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɐi", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔi", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "oi", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ui", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "iu", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eu", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛu", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "au", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "ɐ̃i", Height.Mid, Backness.Central, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "õi", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ũi", Height.Close, Backness.Back, 1, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ɐ̃u", Height.Mid, Backness.Central, 0, PhonemeFeature.Nasalized);
     _c_phoneme_portuguese = phoneme_builder_build(b);
     return _c_phoneme_portuguese;
+}
+
+# Brazilian Portuguese (São Paulo), the alternative "pt-BR", after Barbosa & Albano
+# (2004), "Brazilian Portuguese", JIPA 34(2), the IPA Illustration, pp. 228-229. Their
+# tables put allophones in parentheses, and only what is outside them is listed here:
+#   - 19 consonants (p. 228). The affricates (t͡ʃ) (d͡ʒ) are allophones of /t d/
+#     "before [i] and [ɪ]". The strong r is ɣ, the symbol their table prints for its
+#     realisation in this variety, "a velar fricative"; the weak r is the tap ɾ.
+#   - 7 oral vowels, "/i e ɛ a ɔ o u/" (p. 229), placed from their chart. The five
+#     nasalised vowels are allophones before the archiphoneme /N/, and [ɪ ɐ ʊ] are
+#     unstressed allophones, so neither is listed. Diphthongs are formed freely from a
+#     vowel and an offglide (p. 230), so none is a unit here.
+var _c_phoneme_portuguese_brazilian = 0;
+fn phoneme_portuguese_brazilian() {
+    if (_c_phoneme_portuguese_brazilian != 0) { return _c_phoneme_portuguese_brazilian; }
+
+    var b = phoneme_builder_with_capacity("pt", "Portuguese", 26);
+    phoneme_builder_variety(b, "pt-BR", "Brazilian (São Paulo)");
+    phoneme_builder_source(b, "barbosa2004", "consonants and vowels");
+    phoneme_builder_stress(b, StressPattern.Free);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Dental, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ɾ", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+      Airstream.Pulmonic, PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1,
+      Airstream.Pulmonic, PhonemeFeature.Lateral);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    _c_phoneme_portuguese_brazilian = phoneme_builder_build(b);
+    return _c_phoneme_portuguese_brazilian;
 }
 
 var _c_phoneme_italian = 0;
@@ -5656,30 +5760,30 @@ var _c_phonotactics_portuguese = 0;
 # Principle (p. 28); "Both elements of these diphthongs - either oral or nasal - belong
 # to the syllable nucleus" (p. 19); one coda consonant, "/R/, /L/ and /S/ are usually
 # considered the only ones that can occur in Portuguese syllable coda" (p. 21),
-# realized r l ʃ ʒ in EP (its tap ɾ is the inventory's r). Not tautosyllabic: the
-# word-internal sequences of its example (1), e.g. pn gn ps (p. 15).
-# VARIETY: the corpus inventory mixes in Brazilian features (/t͡ʃ d͡ʒ/), while this
-# profile is EP. See the roadmap. In Brazilian Portuguese the codas are /R S N L/
-# (Barbosa & Albano 2004, JIPA, p. 228).
+# realized ɾ l ʃ ʒ in EP. Not tautosyllabic: the word-internal sequences of its
+# example (1), e.g. pn gn ps (p. 15).
+# VARIETY: European, as the default Portuguese inventory is since 2.6.0 (Cruz-Ferreira
+# 1995), whose tap ɾ these sequences spell. The Brazilian inventory ("pt-BR") has no
+# profile; there the codas are /R S N L/ (Barbosa & Albano 2004, JIPA, p. 228).
 fn phonotactics_portuguese() {
     if (_c_phonotactics_portuguese != 0) { return _c_phonotactics_portuguese; }
     var p = _phonotactics_new("pt", _syllable_new(2, 1, 1, "(C)(C)V(C)"));
     _phonotactics_source(p, "mateus1998", "European Portuguese onsets, nucleus and codas");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "European Portuguese onset clusters (Mateus & d'Andrade 1998, ex. 2)");
-    _constraint_add_seq(c0, "pr");
-    _constraint_add_seq(c0, "br");
-    _constraint_add_seq(c0, "tr");
-    _constraint_add_seq(c0, "dr");
-    _constraint_add_seq(c0, "kr");
-    _constraint_add_seq(c0, "ɡr");
+    _constraint_add_seq(c0, "pɾ");
+    _constraint_add_seq(c0, "bɾ");
+    _constraint_add_seq(c0, "tɾ");
+    _constraint_add_seq(c0, "dɾ");
+    _constraint_add_seq(c0, "kɾ");
+    _constraint_add_seq(c0, "ɡɾ");
     _constraint_add_seq(c0, "pl");
     _constraint_add_seq(c0, "bl");
     _constraint_add_seq(c0, "tl");
     _constraint_add_seq(c0, "kl");
     _constraint_add_seq(c0, "ɡl");
-    _constraint_add_seq(c0, "fr");
-    _constraint_add_seq(c0, "vr");
+    _constraint_add_seq(c0, "fɾ");
+    _constraint_add_seq(c0, "vɾ");
     _constraint_add_seq(c0, "fl");
     _phonotactics_add(p, c0);
     var c1 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
@@ -5690,7 +5794,7 @@ fn phonotactics_portuguese() {
     _phonotactics_add(p, c1);
     var c2 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
       "EP coda consonants (Mateus & d'Andrade 1998, p. 21)");
-    _constraint_add_seq(c2, "r");
+    _constraint_add_seq(c2, "ɾ");
     _constraint_add_seq(c2, "l");
     _constraint_add_seq(c2, "ʃ");
     _constraint_add_seq(c2, "ʒ");
@@ -6716,8 +6820,9 @@ fn cognate_water() {
 # Ported from v1.x Rust src/dialect.rs. Requires phoneme.cyr (apply) and
 # allophone.cyr (AllophoneRule overrides).
 #
-# LanguageVariety (56B): [0]=code [8]=name [16]=parent [24]=kind
+# LanguageVariety (64B): [0]=code [8]=name [16]=parent [24]=kind
 #   [32]=added_phonemes(vec) [40]=removed_phonemes(vec) [48]=allophone_overrides(vec)
+#   [56]=source links (2.6.0)
 
 # HistoricalVariety is v1.x's VarietyKind::Historical, a stage like Middle English.
 # `Historical` is taken by ScriptStatus.Historical, since enum constants are global
@@ -6733,7 +6838,7 @@ enum VarietyKind {
 }
 
 fn _variety_new(code, name, parent, kind) {
-    var v = alloc(56);
+    var v = alloc(64);
     store64(v, code);
     store64(v + 8, name);
     store64(v + 16, parent);
@@ -6741,6 +6846,13 @@ fn _variety_new(code, name, parent, kind) {
     store64(v + 32, vec_new());
     store64(v + 40, vec_new());
     store64(v + 48, vec_new());
+    store64(v + 56, vec_new());
+    return v;
+}
+
+# Record that `key`'s work is the source of `covers` in this variety (2.6.0).
+fn _variety_source(v, key, covers) {
+    _source_links_add(load64(v + 56), key, covers);
     return v;
 }
 
@@ -6755,6 +6867,8 @@ fn dialect_kind(v) { return load64(v + 24); }
 fn dialect_added(v) { return load64(v + 32); }
 fn dialect_removed(v) { return load64(v + 40); }
 fn dialect_overrides(v) { return load64(v + 48); }
+# The works the overlay is taken from (2.6.0) — vec of source links (src/sources.cyr).
+fn dialect_sources(v) { return load64(v + 56); }
 
 # Does this variety add a phoneme not in the parent?
 fn dialect_adds(v, ipa) {
@@ -6814,11 +6928,22 @@ fn dialect_apply(v, parent) {
 
 var _c_dialect_british_english = 0;
 # British English (Received Pronunciation).
+# British English (RP), an overlay on the General American inventory, checked at 2.6.0
+# against Roach (2004), "British English: Received Pronunciation", JIPA 34(2), the IPA
+# Illustration:
+#   - adds ɒ, the vowel of LOT, in his chart of pure vowels (Figure 1, p. 242);
+#   - keeps ɹ. v1.x removed it, but RP's /r/ is a phoneme ("red", p. 240), "usually
+#     realized as a post-alveolar approximant [ɹ]" (p. 241). Non-rhoticity is where
+#     /r/ occurs (only before a vowel), which an inventory cannot say;
+#   - overrides GA's intervocalic flap with plain t: his /t/ is aspirated, glottally
+#     reinforced, or replaced by a glottal stop (pp. 240-241), never a tap.
+# It is not a full RP: Roach's long vowels, ɜː and centring diphthongs are not added
+# (see the roadmap).
 fn dialect_british_english() {
     if (_c_dialect_british_english != 0) { return _c_dialect_british_english; }
     var v = _variety_new("en-GB", "British English (RP)", "en", VarietyKind.NationalStandard);
+    _variety_source(v, "roach2004", "ɒ, the kept ɹ, and no t-flap (pp. 240-242)");
     _variety_add_added(v, "ɒ");
-    _variety_add_removed(v, "ɹ");
     _variety_add_override(v, _arule_new("t", "t", Environment.Intervocalic, 1));
     _c_dialect_british_english = v;
     return _c_dialect_british_english;
@@ -7879,6 +8004,45 @@ fn registry_phonemes(code) {
     if (streq(code, "wo") == 1) { return phoneme_wolof(); }
     if (streq(code, "lo") == 1) { return phoneme_lao(); }
     if (streq(code, "mn") == 1) { return phoneme_mongolian(); }
+    return 0;
+}
+
+# --- Alternative inventories (2.6.0) ------------------------------------
+# A language can have more than one inventory, as PHOIBLE keeps several per
+# language: its default (registry_phonemes, unchanged) and alternatives from other
+# analyses or varieties. Each has an id unique within the language (inventory_id):
+# the language code for the default, a tag such as "pt-BR" for an alternative.
+
+var _c_registry_inventories = 0;
+
+# Every inventory of `code`, the default first — vec of inventories, or 0 for a code
+# the corpus does not have. Cached per language.
+#must_use
+fn registry_inventories(code) {
+    if (code == 0) { return 0; }
+    var d = registry_phonemes(code);
+    if (d == 0) { return 0; }
+    if (_c_registry_inventories == 0) { _c_registry_inventories = map_new(); }
+    var cached = map_get(_c_registry_inventories, phoneme_language_code(d));
+    if (cached != 0) { return cached; }
+    var v = vec_new();
+    vec_push(v, d);
+    if (streq(code, "pt") == 1) { vec_push(v, phoneme_portuguese_brazilian()); }
+    map_set(_c_registry_inventories, phoneme_language_code(d), v);
+    return v;
+}
+
+# The inventory of `code` whose id is `id`, or 0.
+#must_use
+fn registry_inventory(code, id) {
+    if (id == 0) { return 0; }
+    var v = registry_inventories(code);
+    if (v == 0) { return 0; }
+    var i = 0;
+    while (i < vec_len(v)) {
+        if (streq(inventory_id(vec_get(v, i)), id) == 1) { return vec_get(v, i); }
+        i = i + 1;
+    }
     return 0;
 }
 

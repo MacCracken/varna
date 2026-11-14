@@ -13,7 +13,8 @@ fn main() {
     assert(streq(dialect_parent(rp), "en"), "parent en");
     assert_eq(dialect_kind(rp), VarietyKind.NationalStandard, "national standard");
     assert(dialect_adds(rp, "ɒ"), "adds ɒ");
-    assert(dialect_removes(rp, "ɹ"), "removes ɹ");
+    # v1.x removed ɹ; RP's /r/ is a phoneme (Roach 2004, p. 240), so 2.6.0 keeps it.
+    assert_eq(dialect_removes(rp, "ɹ"), 0, "keeps ɹ");
     assert_eq(dialect_adds(rp, "xyz"), 0, "no add xyz");
     assert_eq(vec_len(dialect_overrides(rp)), 1, "1 allophone override");
 
@@ -22,7 +23,7 @@ fn main() {
     var rp_inv = dialect_apply(rp, ga);
     assert(streq(phoneme_language_code(rp_inv), "en-GB"), "applied code en-GB");
     assert(phoneme_has(rp_inv, "ɒ"), "applied has ɒ (added)");
-    assert_eq(phoneme_has(rp_inv, "ɹ"), 0, "applied removed ɹ");
+    assert_eq(phoneme_has(rp_inv, "ɹ"), 1, "applied keeps ɹ");
     # parent inventory must be left unmodified
     assert(phoneme_has(ga, "ɹ"), "parent still has ɹ");
     assert_eq(phoneme_has(ga, "ɒ"), 0, "parent still lacks ɒ");
@@ -34,8 +35,7 @@ fn main() {
     # are what dialect_apply walks, so their contents are pinned too.
     assert_eq(vec_len(dialect_added(rp)), 1, "1 added phoneme");
     assert(streq(vec_get(dialect_added(rp), 0), "ɒ"), "added[0] ɒ");
-    assert_eq(vec_len(dialect_removed(rp)), 1, "1 removed phoneme");
-    assert(streq(vec_get(dialect_removed(rp), 0), "ɹ"), "removed[0] ɹ");
+    assert_eq(vec_len(dialect_removed(rp)), 0, "no removed phoneme");
     assert_eq(dialect_removes(rp, "ɒ"), 0, "added phoneme is not removed");
 
     test_group("allophone_overrides");

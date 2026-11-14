@@ -1353,11 +1353,30 @@ fn phoneme_korean() {
     return _c_phoneme_korean;
 }
 
+# Portuguese. The default inventory is European Portuguese, as the phonotactic profile
+# is (Mateus & d'Andrade 1998); Brazilian Portuguese is the alternative "pt-BR" below
+# (registry_inventories). Both were split at 2.6.0 from one inventory that mixed them:
+# it had Brazilian /t͡ʃ d͡ʒ/, which even the Brazilian source treats as allophones of
+# /t d/ before [i], in a European set.
+#
+# European Portuguese (Lisbon), after Cruz-Ferreira (1995), "European Portuguese",
+# JIPA 25(2), the IPA Illustration, pp. 91-92. 19 consonants (p. 91): t d n l are
+# dental, s z alveolar, the tap is ɾ and the other r the uvular fricative ʁ. 14
+# monophthongs, "9 oral and 5 nasalized" (p. 91), placed from her chart; her ɯ is
+# "a fronted and lowered high back unrounded vowel", "often represented as /ə/" (the
+# corpus had ɨ). 14 diphthongs, "10 oral and 4 nasalized" (p. 92), as vowel units
+# filed under their nucleus, as the Mandarin and Thai rows do.
+# Corrected at 2.6.0: /t͡ʃ d͡ʒ/ removed (Brazilian, and allophones there too); /j w/
+# removed (she writes the glides only inside diphthongs); n and l dental; the tap
+# written ɾ, not r (a trill); ɨ → ɯ; ɐ at mid central, not near-open; and the nasal
+# low vowel is ɐ̃, not ã. The diphthongs were missing.
 var _c_phoneme_portuguese = 0;
 fn phoneme_portuguese() {
     if (_c_phoneme_portuguese != 0) { return _c_phoneme_portuguese; }
 
-    var b = phoneme_builder_with_capacity("pt", "Portuguese", 33);
+    var b = phoneme_builder_with_capacity("pt", "Portuguese", 47);
+    phoneme_builder_variety(b, 0, "European (Lisbon)");
+    phoneme_builder_source(b, "cruzferreira1995", "consonants, vowels and diphthongs");
     phoneme_builder_stress(b, StressPattern.Free);
     # Plosives
     phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
@@ -1366,9 +1385,10 @@ fn phoneme_portuguese() {
     phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Dental, 1);
     phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
     phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
-    # Affricates
-    phoneme_builder_consonant(b, "t͡ʃ", Manner.Affricate, Place.Postalveolar, 0);
-    phoneme_builder_consonant(b, "d͡ʒ", Manner.Affricate, Place.Postalveolar, 1);
+    # Nasals
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Dental, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
     # Fricatives
     phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
     phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
@@ -1376,42 +1396,97 @@ fn phoneme_portuguese() {
     phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
     phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
     phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
-    # Nasals
-    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
-    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
-    # Liquids & approximants
-    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+    phoneme_builder_consonant(b, "ʁ", Manner.Fricative, Place.Uvular, 1);
+    # Tap and laterals
+    phoneme_builder_consonant(b, "ɾ", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Dental, 1,
       Airstream.Pulmonic, PhonemeFeature.Lateral);
     phoneme_builder_consonant_full(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1,
       Airstream.Pulmonic, PhonemeFeature.Lateral);
-    phoneme_builder_consonant(b, "r", Manner.TapFlap, Place.Alveolar, 1);
-    phoneme_builder_consonant(b, "ʁ", Manner.Fricative, Place.Uvular, 1);
-    phoneme_builder_consonant(b, "j", Manner.Approximant, Place.Palatal, 1);
-    phoneme_builder_consonant(b, "w", Manner.Approximant, Place.LabialVelar, 1);
-    # Oral vowels
+    # Oral vowels (9)
     phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
     phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
     phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
-    phoneme_builder_vowel(b, "ɐ", Height.NearOpen, Backness.Central, 0);
     phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
     phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
-    phoneme_builder_vowel(b, "ɨ", Height.Close, Backness.Central, 0);
-    # Nasal vowels. Corrected at 2.5.4: they were written with the precomposed letters
-    # (U+00E3 ã and kin) and carried no Nasalized bit, so features.cyr read all five as
-    # [−nasal]. The vowel test could not see it, because it checks the combining tilde.
-    # They now carry the bit and are spelled with the combining tilde (U+0303), the
-    # one spelling the corpus uses. A caller passing NFC text, which composes ã to
-    # U+00E3, must decompose it (NFD) before phoneme_find.
-    phoneme_builder_vowel_full(b, "ẽ", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Nasalized);
-    phoneme_builder_vowel_full(b, "ã", Height.Open, Backness.Central, 0, PhonemeFeature.Nasalized);
-    phoneme_builder_vowel_full(b, "õ", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel(b, "ɐ", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɯ", Height.NearClose, Backness.Back, 0);
+    # Nasalized vowels (5), spelled with the combining tilde (U+0303), the corpus's one
+    # spelling; a caller with NFC text must decompose it (NFD) before phoneme_find.
     phoneme_builder_vowel_full(b, "ĩ", Height.Close, Backness.Front, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ẽ", Height.CloseMid, Backness.Front, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ɐ̃", Height.Mid, Backness.Central, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "õ", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Nasalized);
     phoneme_builder_vowel_full(b, "ũ", Height.Close, Backness.Back, 1, PhonemeFeature.Nasalized);
+    # Diphthongs: 10 oral and 4 nasalized (p. 92), under their nucleus
+    phoneme_builder_vowel(b, "ɛi", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ai", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɐi", Height.Mid, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔi", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "oi", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "ui", Height.Close, Backness.Back, 1);
+    phoneme_builder_vowel(b, "iu", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "eu", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛu", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "au", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel_full(b, "ɐ̃i", Height.Mid, Backness.Central, 0, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "õi", Height.CloseMid, Backness.Back, 1, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ũi", Height.Close, Backness.Back, 1, PhonemeFeature.Nasalized);
+    phoneme_builder_vowel_full(b, "ɐ̃u", Height.Mid, Backness.Central, 0, PhonemeFeature.Nasalized);
     _c_phoneme_portuguese = phoneme_builder_build(b);
     return _c_phoneme_portuguese;
+}
+
+# Brazilian Portuguese (São Paulo), the alternative "pt-BR", after Barbosa & Albano
+# (2004), "Brazilian Portuguese", JIPA 34(2), the IPA Illustration, pp. 228-229. Their
+# tables put allophones in parentheses, and only what is outside them is listed here:
+#   - 19 consonants (p. 228). The affricates (t͡ʃ) (d͡ʒ) are allophones of /t d/
+#     "before [i] and [ɪ]". The strong r is ɣ, the symbol their table prints for its
+#     realisation in this variety, "a velar fricative"; the weak r is the tap ɾ.
+#   - 7 oral vowels, "/i e ɛ a ɔ o u/" (p. 229), placed from their chart. The five
+#     nasalised vowels are allophones before the archiphoneme /N/, and [ɪ ɐ ʊ] are
+#     unstressed allophones, so neither is listed. Diphthongs are formed freely from a
+#     vowel and an offglide (p. 230), so none is a unit here.
+var _c_phoneme_portuguese_brazilian = 0;
+fn phoneme_portuguese_brazilian() {
+    if (_c_phoneme_portuguese_brazilian != 0) { return _c_phoneme_portuguese_brazilian; }
+
+    var b = phoneme_builder_with_capacity("pt", "Portuguese", 26);
+    phoneme_builder_variety(b, "pt-BR", "Brazilian (São Paulo)");
+    phoneme_builder_source(b, "barbosa2004", "consonants and vowels");
+    phoneme_builder_stress(b, StressPattern.Free);
+    phoneme_builder_consonant(b, "p", Manner.Plosive, Place.Bilabial, 0);
+    phoneme_builder_consonant(b, "b", Manner.Plosive, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "t", Manner.Plosive, Place.Dental, 0);
+    phoneme_builder_consonant(b, "d", Manner.Plosive, Place.Dental, 1);
+    phoneme_builder_consonant(b, "k", Manner.Plosive, Place.Velar, 0);
+    phoneme_builder_consonant(b, "ɡ", Manner.Plosive, Place.Velar, 1);
+    phoneme_builder_consonant(b, "m", Manner.Nasal, Place.Bilabial, 1);
+    phoneme_builder_consonant(b, "n", Manner.Nasal, Place.Dental, 1);
+    phoneme_builder_consonant(b, "ɲ", Manner.Nasal, Place.Palatal, 1);
+    phoneme_builder_consonant(b, "ɾ", Manner.TapFlap, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "f", Manner.Fricative, Place.Labiodental, 0);
+    phoneme_builder_consonant(b, "v", Manner.Fricative, Place.Labiodental, 1);
+    phoneme_builder_consonant(b, "s", Manner.Fricative, Place.Alveolar, 0);
+    phoneme_builder_consonant(b, "z", Manner.Fricative, Place.Alveolar, 1);
+    phoneme_builder_consonant(b, "ʃ", Manner.Fricative, Place.Postalveolar, 0);
+    phoneme_builder_consonant(b, "ʒ", Manner.Fricative, Place.Postalveolar, 1);
+    phoneme_builder_consonant(b, "ɣ", Manner.Fricative, Place.Velar, 1);
+    phoneme_builder_consonant_full(b, "l", Manner.LateralApproximant, Place.Alveolar, 1,
+      Airstream.Pulmonic, PhonemeFeature.Lateral);
+    phoneme_builder_consonant_full(b, "ʎ", Manner.LateralApproximant, Place.Palatal, 1,
+      Airstream.Pulmonic, PhonemeFeature.Lateral);
+    phoneme_builder_vowel(b, "i", Height.Close, Backness.Front, 0);
+    phoneme_builder_vowel(b, "e", Height.CloseMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "ɛ", Height.OpenMid, Backness.Front, 0);
+    phoneme_builder_vowel(b, "a", Height.Open, Backness.Central, 0);
+    phoneme_builder_vowel(b, "ɔ", Height.OpenMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "o", Height.CloseMid, Backness.Back, 1);
+    phoneme_builder_vowel(b, "u", Height.Close, Backness.Back, 1);
+    _c_phoneme_portuguese_brazilian = phoneme_builder_build(b);
+    return _c_phoneme_portuguese_brazilian;
 }
 
 var _c_phoneme_italian = 0;
