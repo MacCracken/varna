@@ -93,6 +93,11 @@ A link goes to a work the values are taken from; works that only agree, or that 
 not be read, stay in the inventory's comment. `source_all_keys()` lists the
 bibliography. Every entry has a DOI or the URL its record was read from.
 
+The other datasets link the same way: `phonotactics_sources(p)`,
+`allophone_sources(set)`, `translit_sources(table)` and `numerals_sources(sys)`.
+For example, `translit_sources(translit_zhuyin_pinyin())` names the 1958 Pinyin
+scheme, The Unicode Standard 18.0.0 and the Taiwan Ministry of Education's manual.
+
 ---
 
 ## Builder Pattern

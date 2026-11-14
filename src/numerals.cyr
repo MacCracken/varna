@@ -1,7 +1,7 @@
 # src/numerals.cyr — script-to-numeral value mappings.
 # Ported from v1.x Rust src/script/numerals.rs (data transpiled byte-exact).
 #
-# NumeralSystem (32B): [0]=script_code [8]=name [16]=kind [24]=mappings(vec)
+# NumeralSystem (40B): [0]=script_code [8]=name [16]=kind [24]=mappings(vec) [32]=source links (2.6.0)
 # NumeralMapping (40B): [0]=character(cstr) [8]=len [16]=value [24]=role [32]=base(cstr)
 #   `len` is the character's byte length, cached at construction. Every lookup is
 #   a linear scan comparing the probe against each entry, and recomputing
@@ -18,11 +18,18 @@ enum NumeralSystemKind {
 }
 
 fn _nsys_new(script_code, name, kind) {
-    var sys = alloc(32);
+    var sys = alloc(40);
     store64(sys, script_code);
     store64(sys + 8, name);
     store64(sys + 16, kind);
     store64(sys + 24, vec_new());
+    store64(sys + 32, vec_new());
+    return sys;
+}
+
+# Record that `key`'s work is the source of `covers` in this system (2.6.0).
+fn _nsys_source(sys, key, covers) {
+    _source_links_add(load64(sys + 32), key, covers);
     return sys;
 }
 
@@ -81,6 +88,8 @@ fn numerals_script_code(sys) { return load64(sys); }
 fn numerals_name(sys) { return load64(sys + 8); }
 fn numerals_kind(sys) { return load64(sys + 16); }
 fn numerals_mappings(sys) { return load64(sys + 24); }
+# The works the system is taken from (2.6.0) — vec of source links (src/sources.cyr).
+fn numerals_sources(sys) { return load64(sys + 32); }
 
 # Numeric value of a single-character string, or (0-1) if unmapped.
 fn numerals_value_of(sys, ch) {
@@ -586,6 +595,7 @@ var _c_gematria_hebrew = 0;
 fn gematria_hebrew() {
     if (_c_gematria_hebrew != 0) { return _c_gematria_hebrew; }
     var sys = _nsys_new("Hebr", "Hebrew Gematria", NumeralSystemKind.Alphabetic);
+    _nsys_source(sys, "schechter1903", "mispar gadol: the final letters count as hundreds (no. 11)");
     _nsys_add(sys, "א", 1);
     _nsys_add(sys, "ב", 2);
     _nsys_add(sys, "ג", 3);
@@ -752,6 +762,10 @@ var _c_gematria_cyrillic = 0;
 fn gematria_cyrillic() {
     if (_c_gematria_cyrillic != 0) { return _c_gematria_cyrillic; }
     var sys = _nsys_new("Cyrl", "Church Slavonic Numerals (standardised recension)", NumeralSystemKind.Alphabetic);
+    _nsys_source(sys, "leskien1922", "izhitsa ѵ read as 400 (p. 5)");
+    _nsys_source(sys, "schenker1995", "izhitsa ѵ read as 400 (p. 182)");
+    _nsys_source(sys, "andreev2015", "ot ѿ read as 800 and koppa ҁ as 90 (pp. 16, 64, 74)");
+    _nsys_source(sys, "cleminson2006", "monograph uk ꙋ not a numeral (p. 3)");
     _nsys_add(sys, "а", 1);
     _nsys_add(sys, "в", 2);
     _nsys_add(sys, "г", 3);
@@ -804,6 +818,11 @@ var _c_gematria_glagolitic = 0;
 fn gematria_glagolitic() {
     if (_c_gematria_glagolitic != 0) { return _c_gematria_glagolitic; }
     var sys = _nsys_new("Glag", "Glagolitic Numerals", NumeralSystemKind.Alphabetic);
+    _nsys_source(sys, "leskien1922", "every value (pp. 4-5)");
+    _nsys_source(sys, "vajs1932", "every value (p. 18)");
+    _nsys_source(sys, "schenker1995", "every value (p. 182)");
+    _nsys_source(sys, "cubberley1996", "every value (Table 27.1)");
+    _nsys_source(sys, "everson2003", "every value (p. 5)");
     _nsys_add(sys, "ⰰ", 1);   # U+2C30 azu
     _nsys_add(sys, "ⰱ", 2);   # U+2C31 buky
     _nsys_add(sys, "ⰲ", 3);   # U+2C32 vede

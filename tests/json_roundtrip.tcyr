@@ -60,6 +60,18 @@ fn _tones_eq(a, b) {
     return 1;
 }
 
+# 1 when two vecs of source links (2.6.0) hold the same keys and covers in order.
+fn _links_eq(la, lb) {
+    if (vec_len(la) != vec_len(lb)) { return 0; }
+    var i = 0;
+    while (i < vec_len(la)) {
+        if (streq(source_link_key(vec_get(la, i)), source_link_key(vec_get(lb, i))) != 1) { return 0; }
+        if (streq(source_link_covers(vec_get(la, i)), source_link_covers(vec_get(lb, i))) != 1) { return 0; }
+        i = i + 1;
+    }
+    return 1;
+}
+
 fn _inv_eq(a, b) {
     if (a == 0 || b == 0) { return 0; }
     if (streq(phoneme_language_code(a), phoneme_language_code(b)) != 1) { return 0; }
@@ -75,17 +87,7 @@ fn _inv_eq(a, b) {
         if (_ph_eq(vec_get(pa, i), vec_get(pb, i)) != 1) { return 0; }
         i = i + 1;
     }
-    # 2.6.0: the source links.
-    var la = inventory_sources(a);
-    var lb = inventory_sources(b);
-    if (vec_len(la) != vec_len(lb)) { return 0; }
-    i = 0;
-    while (i < vec_len(la)) {
-        if (streq(source_link_key(vec_get(la, i)), source_link_key(vec_get(lb, i))) != 1) { return 0; }
-        if (streq(source_link_covers(vec_get(la, i)), source_link_covers(vec_get(lb, i))) != 1) { return 0; }
-        i = i + 1;
-    }
-    return 1;
+    return _links_eq(inventory_sources(a), inventory_sources(b));
 }
 
 # --- helpers ---
@@ -371,6 +373,13 @@ fn test_malformed_inventory() {
 }
 
 fn test_serde_sources() {
+    # 2.6.0: the four other datasets write their links last, through the same reader.
+    assert(_contains(_phono_text(phonotactics_japanese()), "],\"sources\":[{\"key\":\"kubozono2015\""), "phonotactics");  #skip-lint
+    assert(_contains(_tt_text(translit_russian_alalc()), "]],\"sources\":[{\"key\":\"lcrussian2012\""), "transliteration");  #skip-lint
+    assert(_contains(_nsys_text(gematria_hebrew()), "}],\"sources\":[{\"key\":\"schechter1903\""), "numerals");  #skip-lint
+    assert_eq(_contains(_tt_text(translit_devanagari_iast()), "sources"), 0, "an unsourced table writes none");
+    var bad = phonotactics_from_json(_with(_phono_text(phonotactics_korean()), "\"key\":\"lee1993\"", "\"key\":7"));
+    assert_eq(bad, 0, "a malformed link refuses the profile");
     # Every bibliography entry round-trips, and so does every sourced inventory.
     var keys = source_all_keys();
     var i = 0;
@@ -453,7 +462,7 @@ fn _rset_eq(a, b) {
         if (_rule_eq(vec_get(ra, i), vec_get(rb, i)) != 1) { return 0; }
         i = i + 1;
     }
-    return 1;
+    return _links_eq(allophone_sources(a), allophone_sources(b));
 }
 
 fn _tmpl_eq(a, b) {
@@ -494,7 +503,7 @@ fn _phono_eq(a, b) {
         if (_cons_eq(vec_get(ca, i), vec_get(cb, i)) != 1) { return 0; }
         i = i + 1;
     }
-    return 1;
+    return _links_eq(phonotactics_sources(a), phonotactics_sources(b));
 }
 
 fn _rule_text(r) {
@@ -531,6 +540,16 @@ fn test_serde_allophone_rule_set() {
     var rs = allophone_english();
     assert(vec_len(allophone_rules(rs)) > 0, "English has rules");
     assert(_rset_eq(rs, allophone_rule_set_from_json(_rset_text(rs))), "serde_allophone_rule_set: round trip");
+    # 2.6.0: every set, its sources included.
+    var codes = allophone_all_codes();
+    var i = 0;
+    while (i < vec_len(codes)) {
+        var set = allophone_by_code(vec_get(codes, i));
+        assert(_rset_eq(set, allophone_rule_set_from_json(_rset_text(set))), vec_get(codes, i));
+        i = i + 1;
+    }
+    assert(_contains(_rset_text(allophone_spanish()), "}],\"sources\":[{\"key\":\"martinezceldran2003\""), "es writes its sources last");  #skip-lint
+    assert_eq(_contains(_rset_text(rs), "sources"), 0, "English writes none");
     return 0;
 }
 
@@ -908,7 +927,7 @@ fn _nsys_eq(a, b) {
         if (_map_eq(vec_get(ma, i), vec_get(mb, i)) != 1) { return 0; }
         i = i + 1;
     }
-    return 1;
+    return _links_eq(numerals_sources(a), numerals_sources(b));
 }
 
 fn _tt_eq(a, b) {
@@ -929,6 +948,7 @@ fn _tt_eq(a, b) {
         if (translit_pair_kind(pa) != translit_pair_kind(pb)) { return 0; }
         i = i + 1;
     }
+    if (_links_eq(translit_sources(a), translit_sources(b)) != 1) { return 0; }
     var va = translit_inherent_vowel(a);
     var vb = translit_inherent_vowel(b);
     if (va == 0 || vb == 0) { return va == vb; }
@@ -1072,6 +1092,7 @@ fn test_serde_numeral_system_all() {
     vec_push(systems, gematria_arabic_abjad());
     vec_push(systems, gematria_latin());
     vec_push(systems, gematria_cyrillic());
+    vec_push(systems, gematria_glagolitic());
     var bad = 0;
     var i = 0;
     while (i < vec_len(systems)) {

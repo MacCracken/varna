@@ -14,6 +14,9 @@ include "src/allophone.cyr"
 include "src/script.cyr"
 include "src/registry.cyr"
 include "src/dialect.cyr"
+include "src/syllable.cyr"
+include "src/transliteration.cyr"
+include "src/numerals.cyr"
 
 fn _links(inv) { return vec_len(inventory_sources(inv)); }
 
@@ -34,11 +37,49 @@ fn _link_key(inv, i) { return source_link_key(vec_get(inventory_sources(inv), i)
 
 fn _link_covers(inv, i) { return source_link_covers(vec_get(inventory_sources(inv), i)); }
 
+# Links in `links` whose key the bibliography lacks or whose covers is empty; prints them.
+fn _bad_links(links) {
+    var bad = 0;
+    var i = 0;
+    while (i < vec_len(links)) {
+        var l = vec_get(links, i);
+        if (source_by_key(source_link_key(l)) == 0 || strlen(source_link_covers(l)) == 0) {
+            println(source_link_key(l));
+            bad = bad + 1;
+        }
+        i = i + 1;
+    }
+    return bad;
+}
+
+fn _sourced(links) {
+    if (vec_len(links) > 0) { return 1; }
+    return 0;
+}
+
+# Every numeral system: the five numeral notations and every letter-value script.
+fn _numeral_systems() {
+    var v = vec_new();
+    vec_push(v, numerals_devanagari_digits());
+    vec_push(v, numerals_greek_isopsephy());
+    vec_push(v, numerals_babylonian_sexagesimal());
+    vec_push(v, numerals_egyptian_hieroglyphic());
+    vec_push(v, numerals_chinese_rod_numerals());
+    var scripts = gematria_all_scripts();
+    var i = 0;
+    while (i < vec_len(scripts)) {
+        var g = gematria_by_script(vec_get(scripts, i));
+        if (g != numerals_greek_isopsephy()) { vec_push(v, g); }
+        i = i + 1;
+    }
+    return v;
+}
+
 fn main() {
     alloc_init();
     test_group("bibliography");
     var keys = source_all_keys();
-    assert_eq(vec_len(keys), 18, "18 works");
+    assert_eq(vec_len(keys), 50, "50 works");
     var bad = 0;
     var i = 0;
     while (i < vec_len(keys)) {
@@ -50,7 +91,7 @@ fn main() {
             if (strlen(source_authors(s)) == 0 || strlen(source_title(s)) == 0) { bad = bad + 1; }
             if (strlen(source_venue(s)) == 0) { bad = bad + 1; }
             # A year, or 0 for an undated work, whose key then ends "_nd".
-            if (source_year(s) != 0 && (source_year(s) < 1900 || source_year(s) > 2026)) { bad = bad + 1; }
+            if (source_year(s) != 0 && (source_year(s) < 1800 || source_year(s) > 2026)) { bad = bad + 1; }
             # Checkable: a DOI, or the page the record was read from.
             if (source_doi(s) == 0 && source_url(s) == 0) {
                 println(k);
@@ -141,6 +182,52 @@ fn main() {
     assert_eq(_links(phoneme_somali()), 4, "Somali: four works");
     assert(streq(_link_key(phoneme_lao(), 1), "yanagimura2011"), "Lao's tone values");
     assert(streq(_link_covers(phoneme_classical_arabic(), 0), "the pharyngealized lateral lˤ"), "Arabic: one phoneme");
+
+    test_group("other_datasets");
+    # 2.6.0: phonotactic profiles, allophone sets, transliteration tables and numeral
+    # systems link to the same bibliography.
+    var lbad = 0;
+    var n_sourced = 0;
+    var pc = phonotactics_all_codes();
+    i = 0;
+    while (i < vec_len(pc)) {
+        var pr = phonotactics_by_code(vec_get(pc, i));
+        lbad = lbad + _bad_links(phonotactics_sources(pr));
+        n_sourced = n_sourced + _sourced(phonotactics_sources(pr));
+        i = i + 1;
+    }
+    assert_eq(n_sourced, 12, "all 12 phonotactic profiles cite a source");
+    n_sourced = 0;
+    var ac = allophone_all_codes();
+    i = 0;
+    while (i < vec_len(ac)) {
+        var aset = allophone_by_code(vec_get(ac, i));
+        lbad = lbad + _bad_links(allophone_sources(aset));
+        n_sourced = n_sourced + _sourced(allophone_sources(aset));
+        i = i + 1;
+    }
+    assert_eq(n_sourced, 5, "5 of 6 allophone sets do (English cites nothing)");
+    assert_eq(_sourced(allophone_sources(allophone_english())), 0, "English");
+    n_sourced = 0;
+    var ts = translit_all_schemes();
+    i = 0;
+    while (i < vec_len(ts)) {
+        var tb = translit_by_scheme(vec_get(ts, i));
+        lbad = lbad + _bad_links(translit_sources(tb));
+        n_sourced = n_sourced + _sourced(translit_sources(tb));
+        i = i + 1;
+    }
+    assert_eq(n_sourced, 5, "5 of 6 tables do (Devanagari's v1.x table cites nothing)");
+    var ns = _numeral_systems();
+    i = 0;
+    while (i < vec_len(ns)) {
+        lbad = lbad + _bad_links(numerals_sources(vec_get(ns, i)));
+        i = i + 1;
+    }
+    assert_eq(lbad, 0, "every link in every dataset names a work in the bibliography");
+    assert(streq(source_link_key(vec_get(phonotactics_sources(phonotactics_japanese()), 0)), "kubozono2015"), "ja");
+    assert(streq(source_link_key(vec_get(allophone_sources(allophone_spanish()), 0)), "martinezceldran2003"), "es");
+    assert_eq(vec_len(translit_sources(translit_zhuyin_pinyin())), 3, "Zhuyin: three sources");
 
     test_group("derived_inventories");
     var copy = phoneme_clone(th);

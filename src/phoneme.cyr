@@ -330,24 +330,13 @@ fn phoneme_builder_build(inv) { return inv; }
 
 # --- Source links (2.6.0) --------------------------------------------
 # Provenance: the works an inventory's values are taken from, each with what it
-# covers ("consonants and vowels", "tones"). A link names a bibliography key
-# (src/sources.cyr resolves it); this file needs nothing from there. An inventory
-# with no links cites nothing, and says so: inventory_is_sourced is 0.
-#
-# SourceLink (16B): [0]=key (cstr) [8]=covers (cstr)
-fn _source_link_new(key, covers) {
-    var l = alloc(16);
-    store64(l, key);
-    store64(l + 8, covers);
-    return l;
-}
-
-fn source_link_key(l) { return load64(l); }
-fn source_link_covers(l) { return load64(l + 8); }
+# covers ("consonants and vowels", "tones"). The link record and the bibliography
+# its keys name are in src/sources.cyr. An inventory with no links cites nothing,
+# and says so: inventory_is_sourced is 0.
 
 # Record that `key`'s work is the source of `covers` in this inventory.
 fn phoneme_builder_source(inv, key, covers) {
-    vec_push(load64(inv + 40), _source_link_new(key, covers));
+    _source_links_add(load64(inv + 40), key, covers);
     return inv;
 }
 

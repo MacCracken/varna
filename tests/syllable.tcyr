@@ -5,6 +5,7 @@
 # pin the sourced values: English (Gimson), Japanese (Kubozono 2015) and Sanskrit
 # (Allen 1953). tests/syllable_profiles.tcyr covers all twelve profiles.
 
+include "src/sources.cyr"
 include "src/syllable.cyr"
 
 fn main() {

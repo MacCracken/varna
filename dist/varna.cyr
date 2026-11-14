@@ -75,9 +75,9 @@ fn _utf8_step(s, p, n) {
 # src/sources.cyr — the bibliography: the works varna's data is taken from (2.6.0).
 #
 # Provenance was named only in comments until 2.6.0. This module holds each cited work
-# once, under a key, and a dataset links to keys with what each work covers: an
-# inventory's links are inventory_sources (src/phoneme.cyr). Phonotactics, allophones,
-# transliteration and numerals link here next (see the roadmap).
+# once, under a key, and a dataset links to keys with what each work covers:
+# inventory_sources, phonotactics_sources, allophone_sources, translit_sources and
+# numerals_sources. Grammar, scripts and lexicons are not linked yet (see the roadmap).
 #
 # What gets a link: a work the values are taken from. A work that only agrees with
 # them, one that was checked and set aside, and one that could not be read are
@@ -91,6 +91,31 @@ fn _utf8_step(s, p, n) {
 #
 # Source (64B): [0]=key [8]=authors [16]=year [24]=title [32]=venue
 #               [40]=pages (cstr|0) [48]=doi (cstr|0) [56]=url (cstr|0)
+#
+# Every data module includes this file first: it holds the link record the
+# inventories, phonotactic profiles, allophone sets, transliteration tables and
+# numeral systems use.
+
+# --- Links ---------------------------------------------------------------
+# A link: a bibliography key and what that work covers in the record holding it.
+# SourceLink (16B): [0]=key (cstr) [8]=covers (cstr)
+fn _source_link_new(key, covers) {
+    var l = alloc(16);
+    store64(l, key);
+    store64(l + 8, covers);
+    return l;
+}
+
+fn source_link_key(l) { return load64(l); }
+fn source_link_covers(l) { return load64(l + 8); }
+
+# Append a link to a record's vec of links.
+fn _source_links_add(links, key, covers) {
+    vec_push(links, _source_link_new(key, covers));
+    return links;
+}
+
+# --- The bibliography ----------------------------------------------------
 
 fn _source_new(key, authors, year, title, venue, pages, doi, url) {
     var s = alloc(64);
@@ -124,14 +149,39 @@ var _c_bibliography = 0;
 fn _bibliography() {
     if (_c_bibliography != 0) { return _c_bibliography; }
     var b = vec_new();
+    vec_push(b, _source_new("allen1953", "Allen, W. S.", 1953, "Phonetics in Ancient India",
+        "London: Oxford University Press (London Oriental Series 1)", 0, 0,
+        "https://archive.org/details/in.gov.ignca.7855"));
+    vec_push(b, _source_new("andreev2015", "Andreev, Aleksandr; Shardt, Yuri; Simmons, Nikita", 2015,
+        "Church Slavonic Typography in Unicode", "Unicode Technical Note #41, version 1, 2015-11-04", 0, 0,
+        "https://www.unicode.org/notes/tn41/"));
     vec_push(b, _source_new("archangeli1989", "Archangeli, Diana; Pulleyblank, Douglas", 1989, "Yoruba Vowel Harmony",
         "Linguistic Inquiry 20(2)", "173-217", 0, "http://www.jstor.org/stable/4178624"));
+    vec_push(b, _source_new("chew2003", "Chew, Peter A.", 2003, "A Computational Phonology of Russian",
+        "Dissertation.com. D.Phil. thesis, University of Oxford, 1999. ISBN 1-58112-178-4", 0, 0,
+        "http://web.archive.org/web/20030527195044/http://www.dissertation.com:80/library/1121784a.htm"));
+    vec_push(b, _source_new("cleminson2006", "Cleminson, Ralph", 2006, "Proposal for additional Cyrillic characters",
+        "Unicode document L2/06-359, 2006-10-31", 0, 0,
+        "https://www.unicode.org/L2/L2006/06359-cleminson-cyrillic.pdf"));
+    vec_push(b, _source_new("cote2000", "Côté, Marie-Hélène", 2000,
+        "Consonant Cluster Phonotactics: A Perceptual Approach",
+        "PhD dissertation, Massachusetts Institute of Technology", 0, 0, "http://hdl.handle.net/1721.1/8845"));
+    vec_push(b, _source_new("cruttenden1994", "Cruttenden, Alan (rev.)", 1994, "Gimson's Pronunciation of English",
+        "5th edition, revised by Alan Cruttenden. London: E. Arnold", 0, 0, "https://lccn.loc.gov/94010860"));
+    vec_push(b, _source_new("cubberley1996", "Cubberley, Paul", 1996, "The Slavic Alphabets",
+        "In Peter T. Daniels & William Bright (eds.), The World's Writing Systems. New York, Oxford: Oxford University Press",  #skip-lint
+        "346-355", 0, "https://lccn.loc.gov/95002247"));
     vec_push(b, _source_new("edmondson_nd", "Edmondson, Jerold A.; Esling, John H.; Harris, Jimmy G.", 0,
         "Supraglottal cavity shape, linguistic register, and other phonetic features of Somali",
         "Manuscript, University of Texas at Arlington and University of Victoria", 0, 0,
         "https://web.archive.org/web/20041221093128id_/http://ling.uta.edu:80/~jerry/somali.pdf"));
     vec_push(b, _source_new("enfield2007", "Enfield, N.J.", 2007, "A Grammar of Lao", "Mouton de Gruyter", 0,
         "10.1515/9783110207538", 0));
+    vec_push(b, _source_new("everson2003", "Everson, Michael; Cleminson, Ralph", 2003,
+        "Final proposal for encoding the Glagolitic script in the UCS", "ISO/IEC JTC1/SC2/WG2 N2610R, 2003-09-04", 0, 0,
+        "https://www.unicode.org/wg2/docs/n2610r.pdf"));
+    vec_push(b, _source_new("fougeron1993", "Fougeron, Cécile; Smith, Caroline L.", 1993, "French",
+        "Journal of the International Phonetic Association 23(2)", "73-76", "10.1017/s0025100300004874", 0));
     vec_push(b, _source_new("gabbard2010", "Gabbard, Kevin M.", 2010,
         "A Phonological Analysis of Somali and the Guttural Consonants", "BA honors thesis, The Ohio State University",
         0, 0, "http://hdl.handle.net/1811/46639"));
@@ -141,16 +191,70 @@ fn _bibliography() {
         "199-212", "10.5281/zenodo.3367140", 0));
     vec_push(b, _source_new("kirby2011", "Kirby, James P.", 2011, "Vietnamese (Hanoi Vietnamese)",
         "Journal of the International Phonetic Association 41(3)", "381-392", "10.1017/s0025100311000181", 0));
+    vec_push(b, _source_new("kubozono2015", "Kubozono, Haruo", 2015, "Introduction to Japanese phonetics and phonology",
+        "In Haruo Kubozono (ed.), Handbook of Japanese Phonetics and Phonology. Berlin, Boston: De Gruyter Mouton (Handbooks of Japanese Language and Linguistics 2)",  #skip-lint
+        "1-40", "10.1515/9781614511984.1", 0));
+    vec_push(b, _source_new("lcarabic2012", "Library of Congress", 2012, "Arabic Romanization Table",
+        "ALA-LC Romanization Tables, approved by the Library of Congress and the American Library Association. 2012 version",  #skip-lint
+        0, 0, "https://www.loc.gov/catdir/cpso/romanization/arabic.pdf"));
+    vec_push(b, _source_new("lchebrew2011", "Library of Congress", 2011, "Hebrew and Yiddish",
+        "ALA-LC Romanization Tables, approved by the Library of Congress and the American Library Association. Dated 2011 on the tables index",  #skip-lint
+        0, 0, "https://www.loc.gov/catdir/cpso/romanization/hebrew.pdf"));
+    vec_push(b, _source_new("lcrussian2012", "Library of Congress", 2012, "Russian Romanization Table",
+        "ALA-LC Romanization Tables, approved by the Library of Congress and the American Library Association. 2012 version",  #skip-lint
+        0, 0, "https://www.loc.gov/catdir/cpso/romanization/russian.pdf"));
+    vec_push(b, _source_new("lee1993", "Lee, Hyun Bok", 1993, "Korean",
+        "Journal of the International Phonetic Association 23(1)", "28-31", "10.1017/s0025100300004758", 0));
     vec_push(b, _source_new("leezee2003", "Lee, Wai-Sum; Zee, Eric", 2003, "Standard Chinese (Beijing)",
         "Journal of the International Phonetic Association 33(1)", "109-112", "10.1017/s0025100303001208", 0));
+    vec_push(b, _source_new("leskien1922", "Leskien, A.", 1922,
+        "Handbuch der altbulgarischen (altkirchenslavischen) Sprache: Grammatik - Texte - Glossar",
+        "6th edition. Heidelberg: Carl Winters Universitätsbuchhandlung", 0, 0,
+        "https://archive.org/details/handbuchderaltb00leskuoft"));
+    vec_push(b, _source_new("macdonell1927", "Macdonell, Arthur A.", 1927, "A Sanskrit Grammar for Students",
+        "3rd edition. Oxford University Press", 0, 0, "https://lccn.loc.gov/56014731"));
+    vec_push(b, _source_new("marc21extlatin2007", "Library of Congress", 2007, "Code Table Extended Latin (ANSEL)",
+        "MARC 21 Specifications for Record Structure, Character Sets, and Exchange Media. December 2007", 0, 0,
+        "https://www.loc.gov/marc/specifications/codetables/ExtendedLatin.html"));
     vec_push(b, _source_new("martinezceldran2003",
         "Martínez-Celdrán, Eugenio; Fernández-Planas, Ana Ma.; Carrera-Sabaté, Josefina", 2003, "Castilian Spanish",
         "Journal of the International Phonetic Association 33(2)", "255-259", "10.1017/s0025100303001373", 0));
+    vec_push(b, _source_new("mateus1998", "Mateus, Maria Helena; D'Andrade, Ernesto", 1998,
+        "The syllable structure in European Portuguese",
+        "DELTA: Documentação de Estudos em Lingüística Teórica e Aplicada 14(1)", "13-32",
+        "10.1590/s0102-44501998000100002", 0));
+    vec_push(b, _source_new("moe2017", "教育部終身教育司", 2017, "國語注音符號手冊（數位版）",
+        "Taipei: Ministry of Education (教育部). Digital edition of the 2000 first edition, compiled by 教育部國語推行委員會", 0, 0,
+        "https://language.moe.gov.tw/001/Upload/files/site_content/M0001/juyin/html_ch/index.html"));
+    vec_push(b, _source_new("ohala1983", "Ohala, Manjari", 1983, "Aspects of Hindi Phonology",
+        "Delhi: Motilal Banarsidass (MLBD Series in Linguistics 2)", 0, 0, "https://lccn.loc.gov/83902484"));
     vec_push(b, _source_new("okada1991", "Okada, Hideo", 1991, "Japanese",
         "Journal of the International Phonetic Association 21(2)", "94-96", "10.1017/s002510030000445x", 0));
     vec_push(b, _source_new("phoible2019", "Moran, Steven; McCloy, Daniel (eds.)", 2019, "PHOIBLE 2.0",
         "Jena: Max Planck Institute for the Science of Human History", 0, "10.5281/zenodo.2593234",
         "https://phoible.org"));
+    vec_push(b, _source_new("pinyin1958", "第一届全国人民代表大会第五次会议", 1958, "汉语拼音方案",
+        "Approved by resolution of the 5th session of the 1st National People's Congress, 1958-02-11. Copy published by the Ministry of Education of the PRC",  #skip-lint
+        0, 0, "http://www.moe.gov.cn/jyb_xwfb/moe_2082/siju/yywzxxgls/ztzl_yywzgfbz/195802/t19580201_186000.html"));
+    vec_push(b, _source_new("riosmestre1999", "Ríos Mestre, Antonio", 1999,
+        "La transcripción fonética automática del Diccionario Electrónico de Formas Simples Flexivas del Español: estudio fonológico en el léxico",  #skip-lint
+        "Estudios de Lingüística del Español 4. Thesis, Universitat Autònoma de Barcelona", 0, 0,
+        "https://ddd.uab.cat/pub/elies/elies_a1999v4/index.htm"));
+    vec_push(b, _source_new("russkajagrammatika1980", "Shvedova, N. Yu. (general editor)", 1980,
+        "Русская грамматика, т. 1",
+        "Moscow: Nauka (Akademiia nauk SSSR, Institut russkogo iazyka). «Фонетика» by S. N. Dmitrenko", 0, 0,
+        "https://lccn.loc.gov/81458585"));
+    vec_push(b, _source_new("ryding2005", "Ryding, Karin C.", 2005, "A Reference Grammar of Modern Standard Arabic",
+        "Cambridge University Press", 0, "10.1017/cbo9780511486975", 0));
+    vec_push(b, _source_new("schafer2018", "Schäfer, Roland", 2018,
+        "Einführung in die grammatische Beschreibung des Deutschen: Dritte, überarbeitete und erweiterte Auflage",
+        "Berlin: Language Science Press (Textbooks in Language Sciences 2)", 0, "10.5281/zenodo.1421660", 0));
+    vec_push(b, _source_new("schechter1903", "Schechter, Solomon; Levias, Caspar", 1903, "Gematria",
+        "The Jewish Encyclopedia, vol. V. New York and London: Funk and Wagnalls", "589-592", 0,
+        "https://archive.org/details/jewishencyclopedia05sing"));
+    vec_push(b, _source_new("schenker1995", "Schenker, Alexander M.", 1995,
+        "The Dawn of Slavic: An Introduction to Slavic Philology",
+        "New Haven: Yale University Press (Yale Language Series)", 0, 0, "https://lccn.loc.gov/95017853"));
     vec_push(b, _source_new("sy2006", "Sy, Mariame I.", 2006, "Vowel harmony in Wolof loanwords",
         "Studies in African Linguistics 35, Supplement 11", "203-220", "10.32473/sal.v35i0.107326", 0));
     vec_push(b, _source_new("teeranon2007", "Teeranon, Phanintra", 2007,
@@ -160,11 +264,28 @@ fn _bibliography() {
         "Journal of the International Phonetic Association 20(2)", "37-39", "10.1017/s0025100300004266", 0));
     vec_push(b, _source_new("tingsabadh1993", "Tingsabadh, M. R. Kalaya; Abramson, Arthur S.", 1993, "Thai",
         "Journal of the International Phonetic Association 23(1)", "24-28", "10.1017/s0025100300004746", 0));
+    vec_push(b, _source_new("tlgbcm2023", "Thesaurus Linguae Graecae", 2023, "The TLG Beta Code Manual",
+        "Thesaurus Linguae Graecae, University of California, Irvine. Edition updated December 23, 2023", 0, 0,
+        "https://stephanus.tlg.uci.edu/encoding/BCM.pdf"));
+    vec_push(b, _source_new("tlgencoding_nd", "Thesaurus Linguae Graecae", 0,
+        "The Beta Code Manual (encoding web page)", "Thesaurus Linguae Graecae, University of California, Irvine", 0, 0,
+        "https://stephanus.tlg.uci.edu/encoding.php"));
+    vec_push(b, _source_new("unicode2026", "The Unicode Consortium", 2026, "The Unicode Standard, Version 18.0.0",
+        "South San Francisco: The Unicode Consortium. ISBN 978-1-936213-36-8", 0, 0,
+        "https://www.unicode.org/versions/Unicode18.0.0/"));
     vec_push(b, _source_new("unseth2009", "Unseth, Carla", 2009, "Vowel Harmony in Wolof",
         "Occasional Papers in Applied Linguistics 7, Graduate Institute of Applied Linguistics", "1-8", 0,
         "https://www.diu.edu/documents/OPAL/No-7-Unseth-Wolof-Vowel-Harmony.pdf"));
+    vec_push(b, _source_new("vajs1932", "Vajs, Josef", 1932,
+        "Rukověť hlaholské paleografie: uvedení do knižního písma hlaholského",
+        "Praha: Slovanský ústav (Rukověti Slovanského ústavu v Praze 2)", 0, 0,
+        "https://archive.org/details/vajs-j.-rukovet-hlaholske-paleografie.-uvedeni-do-knizniho-pisma-hlaholskeho-v-praze-1932"));  #skip-lint
     vec_push(b, _source_new("watkins2001", "Watkins, Justin W.", 2001, "Burmese",
         "Journal of the International Phonetic Association 31(2)", "291-295", "10.1017/s0025100301002122", 0));
+    vec_push(b, _source_new("whitney1889", "Whitney, William Dwight", 1889,
+        "A Sanskrit Grammar, including both the classical language, and the older dialects, of Veda and Brahmana",
+        "2nd edition. Leipzig: Breitkopf & Härtel; Boston: Ginn & Company (Bibliothek indogermanischer Grammatiken 2)",
+        0, 0, "https://lccn.loc.gov/11023980"));
     vec_push(b, _source_new("yanagimura2011", "Yanagimura, Yu", 2011, "Contextual Tonal Variations in Vientiane Lao",
         "Journal of Mekong Societies 7(1)", "1-16", 0,
         "https://so03.tci-thaijo.org/index.php/mekongjournal/article/view/6739"));
@@ -174,18 +295,26 @@ fn _bibliography() {
     return _c_bibliography;
 }
 
+var _c_bibliography_index = 0;
+
 # The work under `key`, or 0 when the bibliography has none.
+#
+# Through an index built on first use: a scan of the 50 works cost 2.8 µs for the
+# last key, and resolving every link in the corpus calls this once per link.
 #must_use
 fn source_by_key(key) {
     if (key == 0) { return 0; }
-    var b = _bibliography();
-    var i = 0;
-    while (i < vec_len(b)) {
-        var s = vec_get(b, i);
-        if (streq(load64(s), key) == 1) { return s; }
-        i = i + 1;
+    if (_c_bibliography_index == 0) {
+        var ix = map_new();
+        var b = _bibliography();
+        var i = 0;
+        while (i < vec_len(b)) {
+            map_set(ix, load64(vec_get(b, i)), vec_get(b, i));
+            i = i + 1;
+        }
+        _c_bibliography_index = ix;
     }
-    return 0;
+    return map_get(_c_bibliography_index, key);
 }
 
 var _c_source_all_keys = 0;
@@ -705,24 +834,13 @@ fn phoneme_builder_build(inv) { return inv; }
 
 # --- Source links (2.6.0) --------------------------------------------
 # Provenance: the works an inventory's values are taken from, each with what it
-# covers ("consonants and vowels", "tones"). A link names a bibliography key
-# (src/sources.cyr resolves it); this file needs nothing from there. An inventory
-# with no links cites nothing, and says so: inventory_is_sourced is 0.
-#
-# SourceLink (16B): [0]=key (cstr) [8]=covers (cstr)
-fn _source_link_new(key, covers) {
-    var l = alloc(16);
-    store64(l, key);
-    store64(l + 8, covers);
-    return l;
-}
-
-fn source_link_key(l) { return load64(l); }
-fn source_link_covers(l) { return load64(l + 8); }
+# covers ("consonants and vowels", "tones"). The link record and the bibliography
+# its keys name are in src/sources.cyr. An inventory with no links cites nothing,
+# and says so: inventory_is_sourced is 0.
 
 # Record that `key`'s work is the source of `covers` in this inventory.
 fn phoneme_builder_source(inv, key, covers) {
-    vec_push(load64(inv + 40), _source_link_new(key, covers));
+    _source_links_add(load64(inv + 40), key, covers);
     return inv;
 }
 
@@ -4316,7 +4434,7 @@ fn phoneme_mongolian() {
 # Ported from v1.x Rust src/phoneme/allophone.rs.
 #
 # AllophoneRule (32B):    [0]=phoneme [8]=allophone [16]=environment [24]=obligatory(0/1)
-# AllophoneRuleSet (16B): [0]=language_code [8]=rules(vec)
+# AllophoneRuleSet (24B): [0]=language_code [8]=rules(vec) [16]=source links (2.6.0)
 #
 # v1.x's one `Environment` enum is two declarations here, for one reason each.
 # `#derive(Serialize)` refuses an enum with a payload variant, and it is what gives the
@@ -4447,7 +4565,8 @@ fn allophone_rule_environment(r) { return load64(r + 16); }
 fn allophone_rule_obligatory(r) { return load64(r + 24); }
 
 fn _aset_new(code) {
-    var s = alloc(16);
+    var s = alloc(24);
+    store64(s + 16, vec_new());
     store64(s, code);
     store64(s + 8, vec_new());
     return s;
@@ -4460,6 +4579,14 @@ fn _aset_add(s, phoneme, allophone, env, obligatory) {
 
 fn allophone_language_code(s) { return load64(s); }
 fn allophone_rules(s) { return load64(s + 8); }
+# The works the rules are taken from (2.6.0) — vec of source links (src/sources.cyr).
+fn allophone_sources(s) { return load64(s + 16); }
+
+# Record that `key`'s work is the source of `covers` in this rule set (2.6.0).
+fn _aset_source(s, key, covers) {
+    _source_links_add(load64(s + 16), key, covers);
+    return s;
+}
 
 # All allophone rules for a phoneme — vec of rule ptrs (possibly empty).
 fn allophone_rules_for(s, phoneme) {
@@ -4580,6 +4707,7 @@ var _c_allophone_spanish = 0;
 fn allophone_spanish() {
     if (_c_allophone_spanish != 0) { return _c_allophone_spanish; }
     var s = _aset_new("es");
+    _aset_source(s, "martinezceldran2003", "the rules (pp. 257-258)");
     _aset_add(s, "n", "m", _env_before("p"), 1);
     _aset_add(s, "n", "m", _env_before("b"), 1);
     _aset_add(s, "n", "ɱ", _env_before("f"), 1);
@@ -4631,6 +4759,7 @@ var _c_allophone_japanese = 0;
 fn allophone_japanese() {
     if (_c_allophone_japanese != 0) { return _c_allophone_japanese; }
     var s = _aset_new("ja");
+    _aset_source(s, "okada1991", "the rules (p. 95)");
     _aset_add(s, "t͡s", "t͡ɕ", _env_before("i"), 1);
     _aset_add(s, "s", "ɕ", _env_before("i"), 1);
     _aset_add(s, "z", "ʑ", _env_before("i"), 1);
@@ -4663,6 +4792,7 @@ var _c_allophone_russian = 0;
 fn allophone_russian() {
     if (_c_allophone_russian != 0) { return _c_allophone_russian; }
     var s = _aset_new("ru");
+    _aset_source(s, "yanushevskaya2015", "the rules (pp. 223-225)");
     var wf = Environment.WordFinal;
     _aset_add(s, "b", "p", wf, 1);
     _aset_add(s, "bʲ", "pʲ", wf, 1);
@@ -4698,6 +4828,7 @@ var _c_allophone_mandarin = 0;
 fn allophone_mandarin() {
     if (_c_allophone_mandarin != 0) { return _c_allophone_mandarin; }
     var s = _aset_new("zh");
+    _aset_source(s, "leezee2003", "the rules (p. 111)");
     _aset_add(s, "a", "a̠", Environment.SyllableFinal, 1);
     _aset_add(s, "ə", "ɚ", Environment.SyllableFinal, 1);
     _c_allophone_mandarin = s;
@@ -4721,6 +4852,7 @@ var _c_allophone_arabic = 0;
 fn allophone_arabic() {
     if (_c_allophone_arabic != 0) { return _c_allophone_arabic; }
     var s = _aset_new("ar");
+    _aset_source(s, "thelwall1990", "the rules (pp. 38-39)");
     var rtr = vec_new();
     vec_push(rtr, "tˤ");
     vec_push(rtr, "dˤ");
@@ -4817,10 +4949,17 @@ fn constraint_description(c) { return load64(c + 24); }
 # --- Phonotactics --------------------------------------------------
 
 fn _phonotactics_new(code, syllable) {
-    var p = alloc(24);
+    var p = alloc(32);
     store64(p, code);
     store64(p + 8, syllable);
     store64(p + 16, vec_new());
+    store64(p + 24, vec_new());
+    return p;
+}
+
+# Record that `key`'s work is the source of `covers` in this profile (2.6.0).
+fn _phonotactics_source(p, key, covers) {
+    _source_links_add(load64(p + 24), key, covers);
     return p;
 }
 
@@ -4832,6 +4971,8 @@ fn _phonotactics_add(p, constraint) {
 fn phonotactics_language_code(p) { return load64(p); }
 fn phonotactics_syllable(p) { return load64(p + 8); }
 fn phonotactics_constraints(p) { return load64(p + 16); }
+# The works the profile is taken from (2.6.0) — vec of source links (src/sources.cyr).
+fn phonotactics_sources(p) { return load64(p + 24); }
 
 # Convenience accessors delegating to the syllable template.
 fn phonotactics_max_onset(p) { return syllable_max_onset(load64(p + 8)); }
@@ -4905,6 +5046,7 @@ var _c_phonotactics_english = 0;
 fn phonotactics_english() {
     if (_c_phonotactics_english != 0) { return _c_phonotactics_english; }
     var p = _phonotactics_new("en", _syllable_new(3, 4, 1, "(C)(C)(C)V(C)(C)(C)(C)"));
+    _phonotactics_source(p, "cruttenden1994", "the template and the onsets (§10.9.1), adjusted to General American");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "English CCC onsets: /s/ + voiceless stop + /l ɹ j w/ (Gimson)");
     _constraint_add_seq(c0, "spl");
@@ -4950,6 +5092,9 @@ var _c_phonotactics_sanskrit = 0;
 fn phonotactics_sanskrit() {
     if (_c_phonotactics_sanskrit != 0) { return _c_phonotactics_sanskrit; }
     var p = _phonotactics_new("sa", _syllable_new(3, 1, 1, "(C)(C)(C)V(C)"));
+    _phonotactics_source(p, "allen1953", "one final consonant and the final stops (pp. 70, 82)");
+    _phonotactics_source(p, "whitney1889", "no palatal final (§142)");
+    _phonotactics_source(p, "macdonell1927", "an onset of three (strī, §100a)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
       "Sanskrit non-nasal stops allowed word-finally in pausa (Allen p. 70)");
     _constraint_add_seq(c0, "k");
@@ -4975,6 +5120,7 @@ var _c_phonotactics_japanese = 0;
 fn phonotactics_japanese() {
     if (_c_phonotactics_japanese != 0) { return _c_phonotactics_japanese; }
     var p = _phonotactics_new("ja", _syllable_new(2, 1, 1, "(C)(C)V(C)"));
+    _phonotactics_source(p, "kubozono2015", "the template and the codas (pp. 9, 16)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
       "Japanese codas: the moraic nasal and the moraic obstruent (Kubozono)");
     _constraint_add_seq(c0, "ɴ");
@@ -4997,6 +5143,7 @@ var _c_phonotactics_arabic = 0;
 fn phonotactics_arabic() {
     if (_c_phonotactics_arabic != 0) { return _c_phonotactics_arabic; }
     var p = _phonotactics_new("ar", _syllable_new(1, 2, 1, "CV(C)(C)"));
+    _phonotactics_source(p, "ryding2005", "the template and no onset cluster (§6, pp. 35-36)");
     var c0 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
       "No onset cluster in MSA; Ryding's examples (p. 36)");
     _constraint_add_seq(c0, "sk");
@@ -5017,6 +5164,7 @@ var _c_phonotactics_mandarin = 0;
 fn phonotactics_mandarin() {
     if (_c_phonotactics_mandarin != 0) { return _c_phonotactics_mandarin; }
     var p = _phonotactics_new("zh", _syllable_new(1, 1, 1, "(C)V(C)"));
+    _phonotactics_source(p, "leezee2003", "the nasal codas and onsets (p. 111)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda, "Mandarin codas (Lee & Zee p. 111)");
     _constraint_add_seq(c0, "n");
     _constraint_add_seq(c0, "ŋ");
@@ -5048,6 +5196,7 @@ var _c_phonotactics_hindi = 0;
 fn phonotactics_hindi() {
     if (_c_phonotactics_hindi != 0) { return _c_phonotactics_hindi; }
     var p = _phonotactics_new("hi", _syllable_new(3, 3, 1, "(C)(C)(C)V(C)(C)(C)"));
+    _phonotactics_source(p, "ohala1983", "the clusters at word edges (ch. 4, pp. 38-45)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "Hindi word-initial clusters (Ohala p. 39)");
     _constraint_add_seq(c0, "kr");
@@ -5197,6 +5346,7 @@ var _c_phonotactics_spanish = 0;
 fn phonotactics_spanish() {
     if (_c_phonotactics_spanish != 0) { return _c_phonotactics_spanish; }
     var p = _phonotactics_new("es", _syllable_new(2, 2, 1, "(C)(C)V(C)(C)"));
+    _phonotactics_source(p, "riosmestre1999", "the onset and coda clusters (§6.2)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "Spanish onset clusters: obstruent + liquid (Ríos Mestre §6.2.2.2)");
     _constraint_add_seq(c0, "pɾ");
@@ -5252,6 +5402,8 @@ var _c_phonotactics_french = 0;
 fn phonotactics_french() {
     if (_c_phonotactics_french != 0) { return _c_phonotactics_french; }
     var p = _phonotactics_new("fr", _syllable_new(2, 1, 0, "(C)(C)V(C)"));
+    _phonotactics_source(p, "cote2000", "max_coda 1, a view it reports, and the minimum onsets (p. 91)");
+    _phonotactics_source(p, "fougeron1993", "no initial ŋ (p. 75)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "French stop/f + liquid onsets, Côté's minimum (p. 91)");
     _constraint_add_seq(c0, "pʁ");
@@ -5296,6 +5448,7 @@ var _c_phonotactics_german = 0;
 fn phonotactics_german() {
     if (_c_phonotactics_german != 0) { return _c_phonotactics_german; }
     var p = _phonotactics_new("de", _syllable_new(3, 5, 1, "(C)(C)(C)V(C)(C)(C)(C)(C)"));
+    _phonotactics_source(p, "schafer2018", "the template, the onsets and the excluded codas (§5.2)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "German onset clusters (Schäfer pp. 129-130)");
     _constraint_add_seq(c0, "ʃp");
@@ -5390,6 +5543,8 @@ var _c_phonotactics_russian = 0;
 fn phonotactics_russian() {
     if (_c_phonotactics_russian != 0) { return _c_phonotactics_russian; }
     var p = _phonotactics_new("ru", _syllable_new(4, 4, 0, "(C)(C)(C)(C)V(C)(C)(C)(C)"));
+    _phonotactics_source(p, "russkajagrammatika1980", "the onset and coda maxima and the j constraints (§22)");
+    _phonotactics_source(p, "chew2003", "four-consonant onsets (p. 86)");
     var c0 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
       "No Russian syllable begins with /j/ + consonant (Русская грамматика §22)");
     _constraint_add_seq(c0, "jp");
@@ -5480,6 +5635,7 @@ var _c_phonotactics_korean = 0;
 fn phonotactics_korean() {
     if (_c_phonotactics_korean != 0) { return _c_phonotactics_korean; }
     var p = _phonotactics_new("ko", _syllable_new(1, 1, 1, "(C)V(C)"));
+    _phonotactics_source(p, "lee1993", "the template and the seven finals (pp. 30-31)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
       "The seven Korean syllable finals (Lee 1993 p. 31)");
     _constraint_add_seq(c0, "p");
@@ -5508,6 +5664,7 @@ var _c_phonotactics_portuguese = 0;
 fn phonotactics_portuguese() {
     if (_c_phonotactics_portuguese != 0) { return _c_phonotactics_portuguese; }
     var p = _phonotactics_new("pt", _syllable_new(2, 1, 1, "(C)(C)V(C)"));
+    _phonotactics_source(p, "mateus1998", "European Portuguese onsets, nucleus and codas");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "European Portuguese onset clusters (Mateus & d'Andrade 1998, ex. 2)");
     _constraint_add_seq(c0, "pr");
@@ -7730,7 +7887,7 @@ fn registry_phonemes(code) {
 # src/numerals.cyr — script-to-numeral value mappings.
 # Ported from v1.x Rust src/script/numerals.rs (data transpiled byte-exact).
 #
-# NumeralSystem (32B): [0]=script_code [8]=name [16]=kind [24]=mappings(vec)
+# NumeralSystem (40B): [0]=script_code [8]=name [16]=kind [24]=mappings(vec) [32]=source links (2.6.0)
 # NumeralMapping (40B): [0]=character(cstr) [8]=len [16]=value [24]=role [32]=base(cstr)
 #   `len` is the character's byte length, cached at construction. Every lookup is
 #   a linear scan comparing the probe against each entry, and recomputing
@@ -7747,11 +7904,18 @@ enum NumeralSystemKind {
 }
 
 fn _nsys_new(script_code, name, kind) {
-    var sys = alloc(32);
+    var sys = alloc(40);
     store64(sys, script_code);
     store64(sys + 8, name);
     store64(sys + 16, kind);
     store64(sys + 24, vec_new());
+    store64(sys + 32, vec_new());
+    return sys;
+}
+
+# Record that `key`'s work is the source of `covers` in this system (2.6.0).
+fn _nsys_source(sys, key, covers) {
+    _source_links_add(load64(sys + 32), key, covers);
     return sys;
 }
 
@@ -7810,6 +7974,8 @@ fn numerals_script_code(sys) { return load64(sys); }
 fn numerals_name(sys) { return load64(sys + 8); }
 fn numerals_kind(sys) { return load64(sys + 16); }
 fn numerals_mappings(sys) { return load64(sys + 24); }
+# The works the system is taken from (2.6.0) — vec of source links (src/sources.cyr).
+fn numerals_sources(sys) { return load64(sys + 32); }
 
 # Numeric value of a single-character string, or (0-1) if unmapped.
 fn numerals_value_of(sys, ch) {
@@ -8315,6 +8481,7 @@ var _c_gematria_hebrew = 0;
 fn gematria_hebrew() {
     if (_c_gematria_hebrew != 0) { return _c_gematria_hebrew; }
     var sys = _nsys_new("Hebr", "Hebrew Gematria", NumeralSystemKind.Alphabetic);
+    _nsys_source(sys, "schechter1903", "mispar gadol: the final letters count as hundreds (no. 11)");
     _nsys_add(sys, "א", 1);
     _nsys_add(sys, "ב", 2);
     _nsys_add(sys, "ג", 3);
@@ -8481,6 +8648,10 @@ var _c_gematria_cyrillic = 0;
 fn gematria_cyrillic() {
     if (_c_gematria_cyrillic != 0) { return _c_gematria_cyrillic; }
     var sys = _nsys_new("Cyrl", "Church Slavonic Numerals (standardised recension)", NumeralSystemKind.Alphabetic);
+    _nsys_source(sys, "leskien1922", "izhitsa ѵ read as 400 (p. 5)");
+    _nsys_source(sys, "schenker1995", "izhitsa ѵ read as 400 (p. 182)");
+    _nsys_source(sys, "andreev2015", "ot ѿ read as 800 and koppa ҁ as 90 (pp. 16, 64, 74)");
+    _nsys_source(sys, "cleminson2006", "monograph uk ꙋ not a numeral (p. 3)");
     _nsys_add(sys, "а", 1);
     _nsys_add(sys, "в", 2);
     _nsys_add(sys, "г", 3);
@@ -8533,6 +8704,11 @@ var _c_gematria_glagolitic = 0;
 fn gematria_glagolitic() {
     if (_c_gematria_glagolitic != 0) { return _c_gematria_glagolitic; }
     var sys = _nsys_new("Glag", "Glagolitic Numerals", NumeralSystemKind.Alphabetic);
+    _nsys_source(sys, "leskien1922", "every value (pp. 4-5)");
+    _nsys_source(sys, "vajs1932", "every value (p. 18)");
+    _nsys_source(sys, "schenker1995", "every value (p. 182)");
+    _nsys_source(sys, "cubberley1996", "every value (Table 27.1)");
+    _nsys_source(sys, "everson2003", "every value (p. 5)");
     _nsys_add(sys, "ⰰ", 1);   # U+2C30 azu
     _nsys_add(sys, "ⰱ", 2);   # U+2C31 buky
     _nsys_add(sys, "ⰲ", 3);   # U+2C32 vede
@@ -8575,6 +8751,7 @@ fn gematria_glagolitic() {
 #                             [24]=forward(vec of pairs) [32]=max_target(cache|0)
 #                             [40]=inherent vowel (cstr|0, 2.6.0)
 #                             [48]=source index (map|0) [56]=pairs it covers (2.6.0)
+#                             [64]=source links: the works it is taken from (2.6.0)
 # pair (24B): [0]=src(cstr) [8]=tgt(cstr) [16]=kind (TranslitKind, 2.6.0)
 # Requires src/util.cyr (_utf8_step). transliterate_char/reverse-lookup return 0
 # when unmapped; transliterate() returns a fresh cstring.
@@ -8596,7 +8773,7 @@ enum TranslitKind {
 }
 
 fn _tt_new(scheme, src_script, tgt_script) {
-    var tt = alloc(64);
+    var tt = alloc(72);
     store64(tt, scheme);
     store64(tt + 8, src_script);
     store64(tt + 16, tgt_script);
@@ -8605,6 +8782,13 @@ fn _tt_new(scheme, src_script, tgt_script) {
     store64(tt + 40, 0);
     store64(tt + 48, 0);
     store64(tt + 56, 0);
+    store64(tt + 64, vec_new());
+    return tt;
+}
+
+# Record that `key`'s work is the source of `covers` in this table (2.6.0).
+fn _tt_source(tt, key, covers) {
+    _source_links_add(load64(tt + 64), key, covers);
     return tt;
 }
 
@@ -8630,6 +8814,8 @@ fn _tt_set_inherent(tt, vowel) {
 }
 
 fn translit_scheme(tt) { return load64(tt); }
+# The works the table is taken from (2.6.0) — vec of source links (src/sources.cyr).
+fn translit_sources(tt) { return load64(tt + 64); }
 fn translit_source_script(tt) { return load64(tt + 8); }
 fn translit_target_script(tt) { return load64(tt + 16); }
 fn translit_forward(tt) { return load64(tt + 24); }
@@ -8930,6 +9116,9 @@ var _c_translit_greek_beta_code = 0;
 fn translit_greek_beta_code() {
     if (_c_translit_greek_beta_code != 0) { return _c_translit_greek_beta_code; }
     var tt = _tt_new("Beta Code", "Grek", "Latn");
+    _tt_source(tt, "tlgbcm2023", "the codes for the letters and marks (pp. 5-6, 27-28)");
+    _tt_source(tt, "tlgencoding_nd", "the order of the marks");
+    _tt_source(tt, "unicode2026", "each precomposed letter's marks (UnicodeData.txt)");
     _tt_add(tt, "α", "a");
     _tt_add(tt, "β", "b");
     _tt_add(tt, "γ", "g");
@@ -9346,6 +9535,8 @@ var _c_translit_russian_alalc = 0;
 fn translit_russian_alalc() {
     if (_c_translit_russian_alalc != 0) { return _c_translit_russian_alalc; }
     var tt = _tt_new("ALA-LC Russian", "Cyrl", "Latn");
+    _tt_source(tt, "lcrussian2012", "the table");
+    _tt_source(tt, "marc21extlatin2007", "the codepoints of the tie, ʹ and ʺ");
     _tt_add(tt, "А", "A");
     _tt_add(tt, "Б", "B");
     _tt_add(tt, "В", "V");
@@ -9446,6 +9637,8 @@ var _c_translit_arabic_alalc = 0;
 fn translit_arabic_alalc() {
     if (_c_translit_arabic_alalc != 0) { return _c_translit_arabic_alalc; }
     var tt = _tt_new("ALA-LC Arabic", "Arab", "Latn");
+    _tt_source(tt, "lcarabic2012", "the letters, vowels, and the rules followed letter by letter");
+    _tt_source(tt, "marc21extlatin2007", "the codepoints of ʻ and ʼ");
     # The letters (table, p. 1). ة before ه, so the reverse map gives ه for h.
     _tt_add(tt, "ب", "b");
     _tt_add(tt, "ت", "t");
@@ -9803,6 +9996,7 @@ var _c_translit_hebrew_alalc = 0;
 fn translit_hebrew_alalc() {
     if (_c_translit_hebrew_alalc != 0) { return _c_translit_hebrew_alalc; }
     var tt = _tt_new("ALA-LC Hebrew", "Hebr", "Latn");
+    _tt_source(tt, "lchebrew2011", "the Hebrew column");
     # The letters (table, p. 1). א is ʼ everywhere and a bare ש is sh (owner's decisions).
     _tt_add(tt, "א", "ʼ");
     _tt_add(tt, "ב", "v");
@@ -10292,8 +10486,9 @@ fn translit_hebrew_alalc() {
 #   - the syllables and their tone-marked spellings: every kMandarin reading in
 #     Unihan (UCD 18.0.0), so a row exists only for a syllable and tone some
 #     character has, and the tone mark sits where Unicode's data puts it;
-#   - the Zhuyin tone marks: 國語注音符號手冊 (Taiwan Ministry of Education, 2000),
-#     調號說明表: tones 1-4 after the syllable's last symbol, tone 1 "may be omitted",
+#   - the Zhuyin tone marks: 國語注音符號手冊 (Taiwan Ministry of Education; read in its
+#     2017 digital edition of the 2000 manual), 調號說明表: tones 1-4 after the
+#     syllable's last symbol, tone 1 "may be omitted",
 #     the neutral dot before the first symbol in horizontal writing; codepoints from
 #     The Unicode Standard, Table 18-9 (ˉ U+02C9, ˊ U+02CA, ˇ U+02C7, ˋ U+02CB, ˙ U+02D9).
 # A syllable with no mark is tone 1, so it reads as tone 1 where one exists. Every
@@ -10306,6 +10501,9 @@ var _c_translit_zhuyin_pinyin = 0;
 fn translit_zhuyin_pinyin() {
     if (_c_translit_zhuyin_pinyin != 0) { return _c_translit_zhuyin_pinyin; }
     var tt = _tt_new("Hanyu Pinyin", "Bopo", "Latn");
+    _tt_source(tt, "pinyin1958", "the initials, finals and spelling rules 1-5");
+    _tt_source(tt, "unicode2026", "the syllables and spellings (Unihan kMandarin), tone-mark codepoints (Table 18-9)");
+    _tt_source(tt, "moe2017", "the tone marks' positions (調號說明表)");
     _tt_add(tt, "ㄚˉ", "ā");
     _tt_add(tt, "ㄚ", "ā");
     _tt_add(tt, "˙ㄚ", "a");

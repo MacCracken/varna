@@ -5,6 +5,7 @@
 # "namasatae" passed. Whole words are pinned here.
 
 include "src/util.cyr"
+include "src/sources.cyr"
 include "src/transliteration.cyr"
 
 fn main() {

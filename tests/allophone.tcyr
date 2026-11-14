@@ -1,5 +1,6 @@
 # tests/allophone.tcyr — allophone parity (v1.x Rust src/phoneme/allophone.rs).
 
+include "src/sources.cyr"
 include "src/allophone.cyr"
 
 # v1.x's Environment::Before(PhonemeClass) / ::After, which the port deferred to 2.5.2.

@@ -3,7 +3,7 @@
 # Ported from v1.x Rust src/phoneme/allophone.rs.
 #
 # AllophoneRule (32B):    [0]=phoneme [8]=allophone [16]=environment [24]=obligatory(0/1)
-# AllophoneRuleSet (16B): [0]=language_code [8]=rules(vec)
+# AllophoneRuleSet (24B): [0]=language_code [8]=rules(vec) [16]=source links (2.6.0)
 #
 # v1.x's one `Environment` enum is two declarations here, for one reason each.
 # `#derive(Serialize)` refuses an enum with a payload variant, and it is what gives the
@@ -134,7 +134,8 @@ fn allophone_rule_environment(r) { return load64(r + 16); }
 fn allophone_rule_obligatory(r) { return load64(r + 24); }
 
 fn _aset_new(code) {
-    var s = alloc(16);
+    var s = alloc(24);
+    store64(s + 16, vec_new());
     store64(s, code);
     store64(s + 8, vec_new());
     return s;
@@ -147,6 +148,14 @@ fn _aset_add(s, phoneme, allophone, env, obligatory) {
 
 fn allophone_language_code(s) { return load64(s); }
 fn allophone_rules(s) { return load64(s + 8); }
+# The works the rules are taken from (2.6.0) — vec of source links (src/sources.cyr).
+fn allophone_sources(s) { return load64(s + 16); }
+
+# Record that `key`'s work is the source of `covers` in this rule set (2.6.0).
+fn _aset_source(s, key, covers) {
+    _source_links_add(load64(s + 16), key, covers);
+    return s;
+}
 
 # All allophone rules for a phoneme — vec of rule ptrs (possibly empty).
 fn allophone_rules_for(s, phoneme) {
@@ -267,6 +276,7 @@ var _c_allophone_spanish = 0;
 fn allophone_spanish() {
     if (_c_allophone_spanish != 0) { return _c_allophone_spanish; }
     var s = _aset_new("es");
+    _aset_source(s, "martinezceldran2003", "the rules (pp. 257-258)");
     _aset_add(s, "n", "m", _env_before("p"), 1);
     _aset_add(s, "n", "m", _env_before("b"), 1);
     _aset_add(s, "n", "ɱ", _env_before("f"), 1);
@@ -318,6 +328,7 @@ var _c_allophone_japanese = 0;
 fn allophone_japanese() {
     if (_c_allophone_japanese != 0) { return _c_allophone_japanese; }
     var s = _aset_new("ja");
+    _aset_source(s, "okada1991", "the rules (p. 95)");
     _aset_add(s, "t͡s", "t͡ɕ", _env_before("i"), 1);
     _aset_add(s, "s", "ɕ", _env_before("i"), 1);
     _aset_add(s, "z", "ʑ", _env_before("i"), 1);
@@ -350,6 +361,7 @@ var _c_allophone_russian = 0;
 fn allophone_russian() {
     if (_c_allophone_russian != 0) { return _c_allophone_russian; }
     var s = _aset_new("ru");
+    _aset_source(s, "yanushevskaya2015", "the rules (pp. 223-225)");
     var wf = Environment.WordFinal;
     _aset_add(s, "b", "p", wf, 1);
     _aset_add(s, "bʲ", "pʲ", wf, 1);
@@ -385,6 +397,7 @@ var _c_allophone_mandarin = 0;
 fn allophone_mandarin() {
     if (_c_allophone_mandarin != 0) { return _c_allophone_mandarin; }
     var s = _aset_new("zh");
+    _aset_source(s, "leezee2003", "the rules (p. 111)");
     _aset_add(s, "a", "a̠", Environment.SyllableFinal, 1);
     _aset_add(s, "ə", "ɚ", Environment.SyllableFinal, 1);
     _c_allophone_mandarin = s;
@@ -408,6 +421,7 @@ var _c_allophone_arabic = 0;
 fn allophone_arabic() {
     if (_c_allophone_arabic != 0) { return _c_allophone_arabic; }
     var s = _aset_new("ar");
+    _aset_source(s, "thelwall1990", "the rules (pp. 38-39)");
     var rtr = vec_new();
     vec_push(rtr, "tˤ");
     vec_push(rtr, "dˤ");

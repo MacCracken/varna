@@ -41,9 +41,9 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | Numeral systems | 10 — six of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek, Glagolitic) |
 | Grammar profiles | 11 |
 | Source modules | 23 — 19 core, 4 behind `-D` defines |
-| Tests | 41 files, **3,959 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
+| Tests | 41 files, **4,012 assertions**, 0 failing, plus a fuzz harness (2.5.4 shipped 38 / 3,373) |
 | Benchmarks | 48, covering every domain and every module's JSON |
-| Reference coverage | 459/466 functions (98%) — a floor, not a correctness proof |
+| Reference coverage | 464/470 functions (98%) — a floor, not a correctness proof |
 
 ## Toolchain
 
@@ -75,7 +75,7 @@ the port and has since been extended past it.
 |---|---|
 | `error` | `VarnaError` codes |
 | `util` | shared UTF-8 codepoint helpers |
-| `sources` | the bibliography (18 works, each checkable by DOI or URL) and `source_by_key`; inventories link to it through `inventory_sources` (2.6.0) |
+| `sources` | the bibliography (50 works, each checkable by DOI or URL), `source_by_key`, and the link record; inventories, phonotactic profiles, allophone sets, transliteration tables and numeral systems link to it (2.6.0) |
 | `phoneme` | phoneme record + builder, `Airstream`, a 16-bit feature mask (tongue root from 2.5.3), `phoneme_is_breathy` |
 | `features` | 25 derived SPE/Hayes distinctive features, tri-state (+/−/unspecified) |
 | `tone` | Chao tone-letter parsing → contour, register, endpoint levels, creak/checked |

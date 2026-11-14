@@ -2,6 +2,7 @@
 
 include "src/error.cyr"
 include "src/tone.cyr"
+include "src/sources.cyr"
 include "src/phoneme.cyr"
 include "src/inventories.cyr"
 include "src/script.cyr"

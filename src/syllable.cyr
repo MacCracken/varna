@@ -77,10 +77,17 @@ fn constraint_description(c) { return load64(c + 24); }
 # --- Phonotactics --------------------------------------------------
 
 fn _phonotactics_new(code, syllable) {
-    var p = alloc(24);
+    var p = alloc(32);
     store64(p, code);
     store64(p + 8, syllable);
     store64(p + 16, vec_new());
+    store64(p + 24, vec_new());
+    return p;
+}
+
+# Record that `key`'s work is the source of `covers` in this profile (2.6.0).
+fn _phonotactics_source(p, key, covers) {
+    _source_links_add(load64(p + 24), key, covers);
     return p;
 }
 
@@ -92,6 +99,8 @@ fn _phonotactics_add(p, constraint) {
 fn phonotactics_language_code(p) { return load64(p); }
 fn phonotactics_syllable(p) { return load64(p + 8); }
 fn phonotactics_constraints(p) { return load64(p + 16); }
+# The works the profile is taken from (2.6.0) — vec of source links (src/sources.cyr).
+fn phonotactics_sources(p) { return load64(p + 24); }
 
 # Convenience accessors delegating to the syllable template.
 fn phonotactics_max_onset(p) { return syllable_max_onset(load64(p + 8)); }
@@ -165,6 +174,7 @@ var _c_phonotactics_english = 0;
 fn phonotactics_english() {
     if (_c_phonotactics_english != 0) { return _c_phonotactics_english; }
     var p = _phonotactics_new("en", _syllable_new(3, 4, 1, "(C)(C)(C)V(C)(C)(C)(C)"));
+    _phonotactics_source(p, "cruttenden1994", "the template and the onsets (§10.9.1), adjusted to General American");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "English CCC onsets: /s/ + voiceless stop + /l ɹ j w/ (Gimson)");
     _constraint_add_seq(c0, "spl");
@@ -210,6 +220,9 @@ var _c_phonotactics_sanskrit = 0;
 fn phonotactics_sanskrit() {
     if (_c_phonotactics_sanskrit != 0) { return _c_phonotactics_sanskrit; }
     var p = _phonotactics_new("sa", _syllable_new(3, 1, 1, "(C)(C)(C)V(C)"));
+    _phonotactics_source(p, "allen1953", "one final consonant and the final stops (pp. 70, 82)");
+    _phonotactics_source(p, "whitney1889", "no palatal final (§142)");
+    _phonotactics_source(p, "macdonell1927", "an onset of three (strī, §100a)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
       "Sanskrit non-nasal stops allowed word-finally in pausa (Allen p. 70)");
     _constraint_add_seq(c0, "k");
@@ -235,6 +248,7 @@ var _c_phonotactics_japanese = 0;
 fn phonotactics_japanese() {
     if (_c_phonotactics_japanese != 0) { return _c_phonotactics_japanese; }
     var p = _phonotactics_new("ja", _syllable_new(2, 1, 1, "(C)(C)V(C)"));
+    _phonotactics_source(p, "kubozono2015", "the template and the codas (pp. 9, 16)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
       "Japanese codas: the moraic nasal and the moraic obstruent (Kubozono)");
     _constraint_add_seq(c0, "ɴ");
@@ -257,6 +271,7 @@ var _c_phonotactics_arabic = 0;
 fn phonotactics_arabic() {
     if (_c_phonotactics_arabic != 0) { return _c_phonotactics_arabic; }
     var p = _phonotactics_new("ar", _syllable_new(1, 2, 1, "CV(C)(C)"));
+    _phonotactics_source(p, "ryding2005", "the template and no onset cluster (§6, pp. 35-36)");
     var c0 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
       "No onset cluster in MSA; Ryding's examples (p. 36)");
     _constraint_add_seq(c0, "sk");
@@ -277,6 +292,7 @@ var _c_phonotactics_mandarin = 0;
 fn phonotactics_mandarin() {
     if (_c_phonotactics_mandarin != 0) { return _c_phonotactics_mandarin; }
     var p = _phonotactics_new("zh", _syllable_new(1, 1, 1, "(C)V(C)"));
+    _phonotactics_source(p, "leezee2003", "the nasal codas and onsets (p. 111)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda, "Mandarin codas (Lee & Zee p. 111)");
     _constraint_add_seq(c0, "n");
     _constraint_add_seq(c0, "ŋ");
@@ -308,6 +324,7 @@ var _c_phonotactics_hindi = 0;
 fn phonotactics_hindi() {
     if (_c_phonotactics_hindi != 0) { return _c_phonotactics_hindi; }
     var p = _phonotactics_new("hi", _syllable_new(3, 3, 1, "(C)(C)(C)V(C)(C)(C)"));
+    _phonotactics_source(p, "ohala1983", "the clusters at word edges (ch. 4, pp. 38-45)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "Hindi word-initial clusters (Ohala p. 39)");
     _constraint_add_seq(c0, "kr");
@@ -457,6 +474,7 @@ var _c_phonotactics_spanish = 0;
 fn phonotactics_spanish() {
     if (_c_phonotactics_spanish != 0) { return _c_phonotactics_spanish; }
     var p = _phonotactics_new("es", _syllable_new(2, 2, 1, "(C)(C)V(C)(C)"));
+    _phonotactics_source(p, "riosmestre1999", "the onset and coda clusters (§6.2)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "Spanish onset clusters: obstruent + liquid (Ríos Mestre §6.2.2.2)");
     _constraint_add_seq(c0, "pɾ");
@@ -512,6 +530,8 @@ var _c_phonotactics_french = 0;
 fn phonotactics_french() {
     if (_c_phonotactics_french != 0) { return _c_phonotactics_french; }
     var p = _phonotactics_new("fr", _syllable_new(2, 1, 0, "(C)(C)V(C)"));
+    _phonotactics_source(p, "cote2000", "max_coda 1, a view it reports, and the minimum onsets (p. 91)");
+    _phonotactics_source(p, "fougeron1993", "no initial ŋ (p. 75)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "French stop/f + liquid onsets, Côté's minimum (p. 91)");
     _constraint_add_seq(c0, "pʁ");
@@ -556,6 +576,7 @@ var _c_phonotactics_german = 0;
 fn phonotactics_german() {
     if (_c_phonotactics_german != 0) { return _c_phonotactics_german; }
     var p = _phonotactics_new("de", _syllable_new(3, 5, 1, "(C)(C)(C)V(C)(C)(C)(C)(C)"));
+    _phonotactics_source(p, "schafer2018", "the template, the onsets and the excluded codas (§5.2)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "German onset clusters (Schäfer pp. 129-130)");
     _constraint_add_seq(c0, "ʃp");
@@ -650,6 +671,8 @@ var _c_phonotactics_russian = 0;
 fn phonotactics_russian() {
     if (_c_phonotactics_russian != 0) { return _c_phonotactics_russian; }
     var p = _phonotactics_new("ru", _syllable_new(4, 4, 0, "(C)(C)(C)(C)V(C)(C)(C)(C)"));
+    _phonotactics_source(p, "russkajagrammatika1980", "the onset and coda maxima and the j constraints (§22)");
+    _phonotactics_source(p, "chew2003", "four-consonant onsets (p. 86)");
     var c0 = _constraint_new(ConstraintKind.Forbidden, SyllablePosition.Onset,
       "No Russian syllable begins with /j/ + consonant (Русская грамматика §22)");
     _constraint_add_seq(c0, "jp");
@@ -740,6 +763,7 @@ var _c_phonotactics_korean = 0;
 fn phonotactics_korean() {
     if (_c_phonotactics_korean != 0) { return _c_phonotactics_korean; }
     var p = _phonotactics_new("ko", _syllable_new(1, 1, 1, "(C)V(C)"));
+    _phonotactics_source(p, "lee1993", "the template and the seven finals (pp. 30-31)");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Coda,
       "The seven Korean syllable finals (Lee 1993 p. 31)");
     _constraint_add_seq(c0, "p");
@@ -768,6 +792,7 @@ var _c_phonotactics_portuguese = 0;
 fn phonotactics_portuguese() {
     if (_c_phonotactics_portuguese != 0) { return _c_phonotactics_portuguese; }
     var p = _phonotactics_new("pt", _syllable_new(2, 1, 1, "(C)(C)V(C)"));
+    _phonotactics_source(p, "mateus1998", "European Portuguese onsets, nucleus and codas");
     var c0 = _constraint_new(ConstraintKind.Permitted, SyllablePosition.Onset,
       "European Portuguese onset clusters (Mateus & d'Andrade 1998, ex. 2)");
     _constraint_add_seq(c0, "pr");

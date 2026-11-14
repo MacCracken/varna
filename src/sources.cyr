@@ -1,9 +1,9 @@
 # src/sources.cyr — the bibliography: the works varna's data is taken from (2.6.0).
 #
 # Provenance was named only in comments until 2.6.0. This module holds each cited work
-# once, under a key, and a dataset links to keys with what each work covers: an
-# inventory's links are inventory_sources (src/phoneme.cyr). Phonotactics, allophones,
-# transliteration and numerals link here next (see the roadmap).
+# once, under a key, and a dataset links to keys with what each work covers:
+# inventory_sources, phonotactics_sources, allophone_sources, translit_sources and
+# numerals_sources. Grammar, scripts and lexicons are not linked yet (see the roadmap).
 #
 # What gets a link: a work the values are taken from. A work that only agrees with
 # them, one that was checked and set aside, and one that could not be read are
@@ -17,6 +17,31 @@
 #
 # Source (64B): [0]=key [8]=authors [16]=year [24]=title [32]=venue
 #               [40]=pages (cstr|0) [48]=doi (cstr|0) [56]=url (cstr|0)
+#
+# Every data module includes this file first: it holds the link record the
+# inventories, phonotactic profiles, allophone sets, transliteration tables and
+# numeral systems use.
+
+# --- Links ---------------------------------------------------------------
+# A link: a bibliography key and what that work covers in the record holding it.
+# SourceLink (16B): [0]=key (cstr) [8]=covers (cstr)
+fn _source_link_new(key, covers) {
+    var l = alloc(16);
+    store64(l, key);
+    store64(l + 8, covers);
+    return l;
+}
+
+fn source_link_key(l) { return load64(l); }
+fn source_link_covers(l) { return load64(l + 8); }
+
+# Append a link to a record's vec of links.
+fn _source_links_add(links, key, covers) {
+    vec_push(links, _source_link_new(key, covers));
+    return links;
+}
+
+# --- The bibliography ----------------------------------------------------
 
 fn _source_new(key, authors, year, title, venue, pages, doi, url) {
     var s = alloc(64);
@@ -50,14 +75,39 @@ var _c_bibliography = 0;
 fn _bibliography() {
     if (_c_bibliography != 0) { return _c_bibliography; }
     var b = vec_new();
+    vec_push(b, _source_new("allen1953", "Allen, W. S.", 1953, "Phonetics in Ancient India",
+        "London: Oxford University Press (London Oriental Series 1)", 0, 0,
+        "https://archive.org/details/in.gov.ignca.7855"));
+    vec_push(b, _source_new("andreev2015", "Andreev, Aleksandr; Shardt, Yuri; Simmons, Nikita", 2015,
+        "Church Slavonic Typography in Unicode", "Unicode Technical Note #41, version 1, 2015-11-04", 0, 0,
+        "https://www.unicode.org/notes/tn41/"));
     vec_push(b, _source_new("archangeli1989", "Archangeli, Diana; Pulleyblank, Douglas", 1989, "Yoruba Vowel Harmony",
         "Linguistic Inquiry 20(2)", "173-217", 0, "http://www.jstor.org/stable/4178624"));
+    vec_push(b, _source_new("chew2003", "Chew, Peter A.", 2003, "A Computational Phonology of Russian",
+        "Dissertation.com. D.Phil. thesis, University of Oxford, 1999. ISBN 1-58112-178-4", 0, 0,
+        "http://web.archive.org/web/20030527195044/http://www.dissertation.com:80/library/1121784a.htm"));
+    vec_push(b, _source_new("cleminson2006", "Cleminson, Ralph", 2006, "Proposal for additional Cyrillic characters",
+        "Unicode document L2/06-359, 2006-10-31", 0, 0,
+        "https://www.unicode.org/L2/L2006/06359-cleminson-cyrillic.pdf"));
+    vec_push(b, _source_new("cote2000", "Côté, Marie-Hélène", 2000,
+        "Consonant Cluster Phonotactics: A Perceptual Approach",
+        "PhD dissertation, Massachusetts Institute of Technology", 0, 0, "http://hdl.handle.net/1721.1/8845"));
+    vec_push(b, _source_new("cruttenden1994", "Cruttenden, Alan (rev.)", 1994, "Gimson's Pronunciation of English",
+        "5th edition, revised by Alan Cruttenden. London: E. Arnold", 0, 0, "https://lccn.loc.gov/94010860"));
+    vec_push(b, _source_new("cubberley1996", "Cubberley, Paul", 1996, "The Slavic Alphabets",
+        "In Peter T. Daniels & William Bright (eds.), The World's Writing Systems. New York, Oxford: Oxford University Press",  #skip-lint
+        "346-355", 0, "https://lccn.loc.gov/95002247"));
     vec_push(b, _source_new("edmondson_nd", "Edmondson, Jerold A.; Esling, John H.; Harris, Jimmy G.", 0,
         "Supraglottal cavity shape, linguistic register, and other phonetic features of Somali",
         "Manuscript, University of Texas at Arlington and University of Victoria", 0, 0,
         "https://web.archive.org/web/20041221093128id_/http://ling.uta.edu:80/~jerry/somali.pdf"));
     vec_push(b, _source_new("enfield2007", "Enfield, N.J.", 2007, "A Grammar of Lao", "Mouton de Gruyter", 0,
         "10.1515/9783110207538", 0));
+    vec_push(b, _source_new("everson2003", "Everson, Michael; Cleminson, Ralph", 2003,
+        "Final proposal for encoding the Glagolitic script in the UCS", "ISO/IEC JTC1/SC2/WG2 N2610R, 2003-09-04", 0, 0,
+        "https://www.unicode.org/wg2/docs/n2610r.pdf"));
+    vec_push(b, _source_new("fougeron1993", "Fougeron, Cécile; Smith, Caroline L.", 1993, "French",
+        "Journal of the International Phonetic Association 23(2)", "73-76", "10.1017/s0025100300004874", 0));
     vec_push(b, _source_new("gabbard2010", "Gabbard, Kevin M.", 2010,
         "A Phonological Analysis of Somali and the Guttural Consonants", "BA honors thesis, The Ohio State University",
         0, 0, "http://hdl.handle.net/1811/46639"));
@@ -67,16 +117,70 @@ fn _bibliography() {
         "199-212", "10.5281/zenodo.3367140", 0));
     vec_push(b, _source_new("kirby2011", "Kirby, James P.", 2011, "Vietnamese (Hanoi Vietnamese)",
         "Journal of the International Phonetic Association 41(3)", "381-392", "10.1017/s0025100311000181", 0));
+    vec_push(b, _source_new("kubozono2015", "Kubozono, Haruo", 2015, "Introduction to Japanese phonetics and phonology",
+        "In Haruo Kubozono (ed.), Handbook of Japanese Phonetics and Phonology. Berlin, Boston: De Gruyter Mouton (Handbooks of Japanese Language and Linguistics 2)",  #skip-lint
+        "1-40", "10.1515/9781614511984.1", 0));
+    vec_push(b, _source_new("lcarabic2012", "Library of Congress", 2012, "Arabic Romanization Table",
+        "ALA-LC Romanization Tables, approved by the Library of Congress and the American Library Association. 2012 version",  #skip-lint
+        0, 0, "https://www.loc.gov/catdir/cpso/romanization/arabic.pdf"));
+    vec_push(b, _source_new("lchebrew2011", "Library of Congress", 2011, "Hebrew and Yiddish",
+        "ALA-LC Romanization Tables, approved by the Library of Congress and the American Library Association. Dated 2011 on the tables index",  #skip-lint
+        0, 0, "https://www.loc.gov/catdir/cpso/romanization/hebrew.pdf"));
+    vec_push(b, _source_new("lcrussian2012", "Library of Congress", 2012, "Russian Romanization Table",
+        "ALA-LC Romanization Tables, approved by the Library of Congress and the American Library Association. 2012 version",  #skip-lint
+        0, 0, "https://www.loc.gov/catdir/cpso/romanization/russian.pdf"));
+    vec_push(b, _source_new("lee1993", "Lee, Hyun Bok", 1993, "Korean",
+        "Journal of the International Phonetic Association 23(1)", "28-31", "10.1017/s0025100300004758", 0));
     vec_push(b, _source_new("leezee2003", "Lee, Wai-Sum; Zee, Eric", 2003, "Standard Chinese (Beijing)",
         "Journal of the International Phonetic Association 33(1)", "109-112", "10.1017/s0025100303001208", 0));
+    vec_push(b, _source_new("leskien1922", "Leskien, A.", 1922,
+        "Handbuch der altbulgarischen (altkirchenslavischen) Sprache: Grammatik - Texte - Glossar",
+        "6th edition. Heidelberg: Carl Winters Universitätsbuchhandlung", 0, 0,
+        "https://archive.org/details/handbuchderaltb00leskuoft"));
+    vec_push(b, _source_new("macdonell1927", "Macdonell, Arthur A.", 1927, "A Sanskrit Grammar for Students",
+        "3rd edition. Oxford University Press", 0, 0, "https://lccn.loc.gov/56014731"));
+    vec_push(b, _source_new("marc21extlatin2007", "Library of Congress", 2007, "Code Table Extended Latin (ANSEL)",
+        "MARC 21 Specifications for Record Structure, Character Sets, and Exchange Media. December 2007", 0, 0,
+        "https://www.loc.gov/marc/specifications/codetables/ExtendedLatin.html"));
     vec_push(b, _source_new("martinezceldran2003",
         "Martínez-Celdrán, Eugenio; Fernández-Planas, Ana Ma.; Carrera-Sabaté, Josefina", 2003, "Castilian Spanish",
         "Journal of the International Phonetic Association 33(2)", "255-259", "10.1017/s0025100303001373", 0));
+    vec_push(b, _source_new("mateus1998", "Mateus, Maria Helena; D'Andrade, Ernesto", 1998,
+        "The syllable structure in European Portuguese",
+        "DELTA: Documentação de Estudos em Lingüística Teórica e Aplicada 14(1)", "13-32",
+        "10.1590/s0102-44501998000100002", 0));
+    vec_push(b, _source_new("moe2017", "教育部終身教育司", 2017, "國語注音符號手冊（數位版）",
+        "Taipei: Ministry of Education (教育部). Digital edition of the 2000 first edition, compiled by 教育部國語推行委員會", 0, 0,
+        "https://language.moe.gov.tw/001/Upload/files/site_content/M0001/juyin/html_ch/index.html"));
+    vec_push(b, _source_new("ohala1983", "Ohala, Manjari", 1983, "Aspects of Hindi Phonology",
+        "Delhi: Motilal Banarsidass (MLBD Series in Linguistics 2)", 0, 0, "https://lccn.loc.gov/83902484"));
     vec_push(b, _source_new("okada1991", "Okada, Hideo", 1991, "Japanese",
         "Journal of the International Phonetic Association 21(2)", "94-96", "10.1017/s002510030000445x", 0));
     vec_push(b, _source_new("phoible2019", "Moran, Steven; McCloy, Daniel (eds.)", 2019, "PHOIBLE 2.0",
         "Jena: Max Planck Institute for the Science of Human History", 0, "10.5281/zenodo.2593234",
         "https://phoible.org"));
+    vec_push(b, _source_new("pinyin1958", "第一届全国人民代表大会第五次会议", 1958, "汉语拼音方案",
+        "Approved by resolution of the 5th session of the 1st National People's Congress, 1958-02-11. Copy published by the Ministry of Education of the PRC",  #skip-lint
+        0, 0, "http://www.moe.gov.cn/jyb_xwfb/moe_2082/siju/yywzxxgls/ztzl_yywzgfbz/195802/t19580201_186000.html"));
+    vec_push(b, _source_new("riosmestre1999", "Ríos Mestre, Antonio", 1999,
+        "La transcripción fonética automática del Diccionario Electrónico de Formas Simples Flexivas del Español: estudio fonológico en el léxico",  #skip-lint
+        "Estudios de Lingüística del Español 4. Thesis, Universitat Autònoma de Barcelona", 0, 0,
+        "https://ddd.uab.cat/pub/elies/elies_a1999v4/index.htm"));
+    vec_push(b, _source_new("russkajagrammatika1980", "Shvedova, N. Yu. (general editor)", 1980,
+        "Русская грамматика, т. 1",
+        "Moscow: Nauka (Akademiia nauk SSSR, Institut russkogo iazyka). «Фонетика» by S. N. Dmitrenko", 0, 0,
+        "https://lccn.loc.gov/81458585"));
+    vec_push(b, _source_new("ryding2005", "Ryding, Karin C.", 2005, "A Reference Grammar of Modern Standard Arabic",
+        "Cambridge University Press", 0, "10.1017/cbo9780511486975", 0));
+    vec_push(b, _source_new("schafer2018", "Schäfer, Roland", 2018,
+        "Einführung in die grammatische Beschreibung des Deutschen: Dritte, überarbeitete und erweiterte Auflage",
+        "Berlin: Language Science Press (Textbooks in Language Sciences 2)", 0, "10.5281/zenodo.1421660", 0));
+    vec_push(b, _source_new("schechter1903", "Schechter, Solomon; Levias, Caspar", 1903, "Gematria",
+        "The Jewish Encyclopedia, vol. V. New York and London: Funk and Wagnalls", "589-592", 0,
+        "https://archive.org/details/jewishencyclopedia05sing"));
+    vec_push(b, _source_new("schenker1995", "Schenker, Alexander M.", 1995,
+        "The Dawn of Slavic: An Introduction to Slavic Philology",
+        "New Haven: Yale University Press (Yale Language Series)", 0, 0, "https://lccn.loc.gov/95017853"));
     vec_push(b, _source_new("sy2006", "Sy, Mariame I.", 2006, "Vowel harmony in Wolof loanwords",
         "Studies in African Linguistics 35, Supplement 11", "203-220", "10.32473/sal.v35i0.107326", 0));
     vec_push(b, _source_new("teeranon2007", "Teeranon, Phanintra", 2007,
@@ -86,11 +190,28 @@ fn _bibliography() {
         "Journal of the International Phonetic Association 20(2)", "37-39", "10.1017/s0025100300004266", 0));
     vec_push(b, _source_new("tingsabadh1993", "Tingsabadh, M. R. Kalaya; Abramson, Arthur S.", 1993, "Thai",
         "Journal of the International Phonetic Association 23(1)", "24-28", "10.1017/s0025100300004746", 0));
+    vec_push(b, _source_new("tlgbcm2023", "Thesaurus Linguae Graecae", 2023, "The TLG Beta Code Manual",
+        "Thesaurus Linguae Graecae, University of California, Irvine. Edition updated December 23, 2023", 0, 0,
+        "https://stephanus.tlg.uci.edu/encoding/BCM.pdf"));
+    vec_push(b, _source_new("tlgencoding_nd", "Thesaurus Linguae Graecae", 0,
+        "The Beta Code Manual (encoding web page)", "Thesaurus Linguae Graecae, University of California, Irvine", 0, 0,
+        "https://stephanus.tlg.uci.edu/encoding.php"));
+    vec_push(b, _source_new("unicode2026", "The Unicode Consortium", 2026, "The Unicode Standard, Version 18.0.0",
+        "South San Francisco: The Unicode Consortium. ISBN 978-1-936213-36-8", 0, 0,
+        "https://www.unicode.org/versions/Unicode18.0.0/"));
     vec_push(b, _source_new("unseth2009", "Unseth, Carla", 2009, "Vowel Harmony in Wolof",
         "Occasional Papers in Applied Linguistics 7, Graduate Institute of Applied Linguistics", "1-8", 0,
         "https://www.diu.edu/documents/OPAL/No-7-Unseth-Wolof-Vowel-Harmony.pdf"));
+    vec_push(b, _source_new("vajs1932", "Vajs, Josef", 1932,
+        "Rukověť hlaholské paleografie: uvedení do knižního písma hlaholského",
+        "Praha: Slovanský ústav (Rukověti Slovanského ústavu v Praze 2)", 0, 0,
+        "https://archive.org/details/vajs-j.-rukovet-hlaholske-paleografie.-uvedeni-do-knizniho-pisma-hlaholskeho-v-praze-1932"));  #skip-lint
     vec_push(b, _source_new("watkins2001", "Watkins, Justin W.", 2001, "Burmese",
         "Journal of the International Phonetic Association 31(2)", "291-295", "10.1017/s0025100301002122", 0));
+    vec_push(b, _source_new("whitney1889", "Whitney, William Dwight", 1889,
+        "A Sanskrit Grammar, including both the classical language, and the older dialects, of Veda and Brahmana",
+        "2nd edition. Leipzig: Breitkopf & Härtel; Boston: Ginn & Company (Bibliothek indogermanischer Grammatiken 2)",
+        0, 0, "https://lccn.loc.gov/11023980"));
     vec_push(b, _source_new("yanagimura2011", "Yanagimura, Yu", 2011, "Contextual Tonal Variations in Vientiane Lao",
         "Journal of Mekong Societies 7(1)", "1-16", 0,
         "https://so03.tci-thaijo.org/index.php/mekongjournal/article/view/6739"));
@@ -100,18 +221,26 @@ fn _bibliography() {
     return _c_bibliography;
 }
 
+var _c_bibliography_index = 0;
+
 # The work under `key`, or 0 when the bibliography has none.
+#
+# Through an index built on first use: a scan of the 50 works cost 2.8 µs for the
+# last key, and resolving every link in the corpus calls this once per link.
 #must_use
 fn source_by_key(key) {
     if (key == 0) { return 0; }
-    var b = _bibliography();
-    var i = 0;
-    while (i < vec_len(b)) {
-        var s = vec_get(b, i);
-        if (streq(load64(s), key) == 1) { return s; }
-        i = i + 1;
+    if (_c_bibliography_index == 0) {
+        var ix = map_new();
+        var b = _bibliography();
+        var i = 0;
+        while (i < vec_len(b)) {
+            map_set(ix, load64(vec_get(b, i)), vec_get(b, i));
+            i = i + 1;
+        }
+        _c_bibliography_index = ix;
     }
-    return 0;
+    return map_get(_c_bibliography_index, key);
 }
 
 var _c_source_all_keys = 0;

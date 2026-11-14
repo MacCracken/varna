@@ -38,8 +38,10 @@ bibliography with links, inventories first, and no source recorded where none is
   field; every other table's JSON is unchanged.
 - **transliteration: accented Greek is transliterated.** `λόγος` gives `"lo/gos"`,
   where `ό` passed through untouched (`"lόgos"`).
-- **The JSON of the 12 sourced inventories gains a `"sources"` field**, after
-  `"stress"` (see *Added*). The other 39 inventories' JSON is unchanged.
+- **The JSON of every sourced record gains a `"sources"` field**, as its last member
+  (see *Added*): the 12 sourced inventories, all 12 phonotactic profiles, 5 allophone
+  sets, 5 transliteration tables and 3 numeral systems. A record that cites nothing
+  writes the same JSON as before.
 - **21 scripts, not 20** (Bopomofo, `Bopo`).
 - **MCP `varna_translate_ipa`**: its description and `scheme` parameter text list the
   six schemes, so `tools/list` output changed. v1.x's "↔" is now "→": the tool only
@@ -120,7 +122,8 @@ bibliography with links, inventories first, and no source recorded where none is
     Schäfer's duplex core. His permitted codas are prose rules, so they are not listed.
   - **Korean's onset is 1**, after Lee (1993): glides are part of the diphthong, and the
     inventory has none to spell Sohn's (C)(G)V(C).
-- **sources: provenance for the inventories**, in a new module, `src/sources.cyr`.
+- **sources: provenance for the inventories, phonotactic profiles, allophone sets,
+  transliteration tables and numeral systems**, in a new module, `src/sources.cyr`.
   A bibliography holds each cited work once, under a key: `source_by_key(key)`,
   `source_all_keys()`, and the accessors `source_authors`, `source_year`,
   `source_title`, `source_venue`, `source_pages`, `source_doi` and `source_url`. An
@@ -142,6 +145,21 @@ bibliography with links, inventories first, and no source recorded where none is
     `"sources"` field, written only for a sourced inventory, so the other 39 write
     exactly v1.x's shape and a v1.x document still decodes. A dialect overlay carries
     no links: its parent's sources describe the parent.
+  - The other datasets link the same way: `phonotactics_sources(p)`,
+    `allophone_sources(set)`, `translit_sources(table)` and `numerals_sources(sys)`,
+    each with the same optional `"sources"` JSON field. The bibliography grows to
+    **50 works**:
+
+    | Dataset | Sourced | Works it adds |
+    |---|---|---|
+    | phonotactics | all 12 profiles | 15: Gimson (Cruttenden 1994), Allen 1953, Whitney 1889, Macdonell 1927, Kubozono 2015, Ryding 2005, Ohala 1983, Ríos Mestre 1999, Côté 2000, Fougeron & Smith 1993, Schäfer 2018, Русская грамматика 1980, Chew 2003, Lee 1993, Mateus & D'Andrade 1998 |
+    | allophones | 5 of 6 (not English) | none: their five JIPA Illustrations were already in it |
+    | transliteration | 5 of 6 (not Devanagari) | 9: the three LoC ALA-LC tables, the MARC 21 Extended Latin code table, the TLG manual and encoding page, The Unicode Standard 18.0.0, 汉语拼音方案 (1958), and the MOE 國語注音符號手冊 |
+    | numerals | Glagolitic, Cyrillic, Hebrew | 8: Leskien 1922, Vajs 1932, Schenker 1995, Cubberley 1996, Everson & Cleminson 2003, UTN #41 (Andreev et al. 2015), Cleminson 2006, and the Jewish Encyclopedia's "Gematria" (Schechter & Levias 1903) |
+
+  - The link record (`source_link_key`, `source_link_covers`) moved from
+    `src/phoneme.cyr` to `src/sources.cyr`, which every data module now includes
+    first. The names are unchanged.
 - **transliteration: four tables**, and `translit_by_scheme(name)` /
   `translit_all_schemes()`, keyed by the names the MCP tool takes. Each table cites
   its primary source in a comment, and where the source gives two readings or none,
@@ -237,8 +255,8 @@ bibliography with links, inventories first, and no source recorded where none is
 - **Arabic inventory**: the marginal pharyngealized /lˤ/ is added (Thelwall &
   Sa'adeddin 1990, p. 37).
 - **Russian inventory** matches Yanushevskaya & Bunčić (2015) and is unchanged.
-- **Four inventory citations corrected from their primary pages** while entering
-  them in the bibliography:
+- **Citations corrected from their primary pages** while entering them in the
+  bibliography:
   - Wolof: Sy (2006) is in *Studies in African Linguistics* 35, **Supplement 11**
     (pp. 203–220), not 35(2), a different issue.
   - Somali: Edmondson, Esling & Harris is an **unpublished, undated** manuscript. The
@@ -247,6 +265,11 @@ bibliography with links, inventories first, and no source recorded where none is
     Press, pp. 199–212), not a journal article.
   - Thai: Teeranon's (2007) title has a subtitle, "an acoustic study and a perceptual
     experiment".
+  - Zhuyin: the 國語注音符號手冊 read is the Ministry's 2017 digital edition of the 2000
+    manual, not the 2000 print.
+  - Not wrong in the code, but checked: Leskien 1922 is the 6th edition of the
+    *Handbuch der altbulgarischen Sprache*; the ALA-LC Hebrew table is dated only on
+    the LoC index (2011); Chew (2003) is a 1999 Oxford D.Phil. thesis.
 - **Devanagari → IAST wrote an "a" after every consonant**, so a vowel sign or virama
   could not remove it: नमस्ते gave "namasatae", कि "kai", संस्कृतम् "saṃsakaṛtama".
   v1.x tested single letters only. With the inherent-vowel rule the 33 consonants
@@ -290,6 +313,19 @@ Measured interleaved against a build of 2.5.4, min of 3, timer floor 1.21–1.24
   cost one more string compare on every call. It now stops at the match.
 - `grammar_by_code_lookup` and `lexicon_find_word` read −8% with their code unchanged.
   That is the per-run CPU effect 2.5.4 measured, not a result.
+
+Provenance for the other datasets, measured interleaved against the committed
+inventory provenance (6645153), min of 3:
+
+- **`source_by_key_lookup` 970 → 152 ns (−84%)**, with the bibliography at 50 works
+  instead of 18. A linear scan of the 50 cost 2,788 ns for the last key, so the
+  lookup now goes through an index built on first use.
+- **`json_phonotactics_write_en` 7,961 → 9,702 ns (+22%) and `_read_en` 20,590 →
+  24,628 ns (+20%).** English's profile now carries its source, and its document
+  grew from 592 to 709 bytes (+20%).
+- Every other JSON row, with unchanged code, read +3.4% to +5.6% in this run (and
+  within ±1.6% in the run before), and the transliteration rows swung ±18% in both
+  directions between the two runs: the noise and layout effects measured above.
 
 Provenance, measured interleaved against the committed transliteration work (556428b),
 min of 3:

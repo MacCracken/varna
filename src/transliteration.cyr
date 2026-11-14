@@ -5,6 +5,7 @@
 #                             [24]=forward(vec of pairs) [32]=max_target(cache|0)
 #                             [40]=inherent vowel (cstr|0, 2.6.0)
 #                             [48]=source index (map|0) [56]=pairs it covers (2.6.0)
+#                             [64]=source links: the works it is taken from (2.6.0)
 # pair (24B): [0]=src(cstr) [8]=tgt(cstr) [16]=kind (TranslitKind, 2.6.0)
 # Requires src/util.cyr (_utf8_step). transliterate_char/reverse-lookup return 0
 # when unmapped; transliterate() returns a fresh cstring.
@@ -26,7 +27,7 @@ enum TranslitKind {
 }
 
 fn _tt_new(scheme, src_script, tgt_script) {
-    var tt = alloc(64);
+    var tt = alloc(72);
     store64(tt, scheme);
     store64(tt + 8, src_script);
     store64(tt + 16, tgt_script);
@@ -35,6 +36,13 @@ fn _tt_new(scheme, src_script, tgt_script) {
     store64(tt + 40, 0);
     store64(tt + 48, 0);
     store64(tt + 56, 0);
+    store64(tt + 64, vec_new());
+    return tt;
+}
+
+# Record that `key`'s work is the source of `covers` in this table (2.6.0).
+fn _tt_source(tt, key, covers) {
+    _source_links_add(load64(tt + 64), key, covers);
     return tt;
 }
 
@@ -60,6 +68,8 @@ fn _tt_set_inherent(tt, vowel) {
 }
 
 fn translit_scheme(tt) { return load64(tt); }
+# The works the table is taken from (2.6.0) — vec of source links (src/sources.cyr).
+fn translit_sources(tt) { return load64(tt + 64); }
 fn translit_source_script(tt) { return load64(tt + 8); }
 fn translit_target_script(tt) { return load64(tt + 16); }
 fn translit_forward(tt) { return load64(tt + 24); }
@@ -360,6 +370,9 @@ var _c_translit_greek_beta_code = 0;
 fn translit_greek_beta_code() {
     if (_c_translit_greek_beta_code != 0) { return _c_translit_greek_beta_code; }
     var tt = _tt_new("Beta Code", "Grek", "Latn");
+    _tt_source(tt, "tlgbcm2023", "the codes for the letters and marks (pp. 5-6, 27-28)");
+    _tt_source(tt, "tlgencoding_nd", "the order of the marks");
+    _tt_source(tt, "unicode2026", "each precomposed letter's marks (UnicodeData.txt)");
     _tt_add(tt, "α", "a");
     _tt_add(tt, "β", "b");
     _tt_add(tt, "γ", "g");
@@ -776,6 +789,8 @@ var _c_translit_russian_alalc = 0;
 fn translit_russian_alalc() {
     if (_c_translit_russian_alalc != 0) { return _c_translit_russian_alalc; }
     var tt = _tt_new("ALA-LC Russian", "Cyrl", "Latn");
+    _tt_source(tt, "lcrussian2012", "the table");
+    _tt_source(tt, "marc21extlatin2007", "the codepoints of the tie, ʹ and ʺ");
     _tt_add(tt, "А", "A");
     _tt_add(tt, "Б", "B");
     _tt_add(tt, "В", "V");
@@ -876,6 +891,8 @@ var _c_translit_arabic_alalc = 0;
 fn translit_arabic_alalc() {
     if (_c_translit_arabic_alalc != 0) { return _c_translit_arabic_alalc; }
     var tt = _tt_new("ALA-LC Arabic", "Arab", "Latn");
+    _tt_source(tt, "lcarabic2012", "the letters, vowels, and the rules followed letter by letter");
+    _tt_source(tt, "marc21extlatin2007", "the codepoints of ʻ and ʼ");
     # The letters (table, p. 1). ة before ه, so the reverse map gives ه for h.
     _tt_add(tt, "ب", "b");
     _tt_add(tt, "ت", "t");
@@ -1233,6 +1250,7 @@ var _c_translit_hebrew_alalc = 0;
 fn translit_hebrew_alalc() {
     if (_c_translit_hebrew_alalc != 0) { return _c_translit_hebrew_alalc; }
     var tt = _tt_new("ALA-LC Hebrew", "Hebr", "Latn");
+    _tt_source(tt, "lchebrew2011", "the Hebrew column");
     # The letters (table, p. 1). א is ʼ everywhere and a bare ש is sh (owner's decisions).
     _tt_add(tt, "א", "ʼ");
     _tt_add(tt, "ב", "v");
@@ -1722,8 +1740,9 @@ fn translit_hebrew_alalc() {
 #   - the syllables and their tone-marked spellings: every kMandarin reading in
 #     Unihan (UCD 18.0.0), so a row exists only for a syllable and tone some
 #     character has, and the tone mark sits where Unicode's data puts it;
-#   - the Zhuyin tone marks: 國語注音符號手冊 (Taiwan Ministry of Education, 2000),
-#     調號說明表: tones 1-4 after the syllable's last symbol, tone 1 "may be omitted",
+#   - the Zhuyin tone marks: 國語注音符號手冊 (Taiwan Ministry of Education; read in its
+#     2017 digital edition of the 2000 manual), 調號說明表: tones 1-4 after the
+#     syllable's last symbol, tone 1 "may be omitted",
 #     the neutral dot before the first symbol in horizontal writing; codepoints from
 #     The Unicode Standard, Table 18-9 (ˉ U+02C9, ˊ U+02CA, ˇ U+02C7, ˋ U+02CB, ˙ U+02D9).
 # A syllable with no mark is tone 1, so it reads as tone 1 where one exists. Every
@@ -1736,6 +1755,9 @@ var _c_translit_zhuyin_pinyin = 0;
 fn translit_zhuyin_pinyin() {
     if (_c_translit_zhuyin_pinyin != 0) { return _c_translit_zhuyin_pinyin; }
     var tt = _tt_new("Hanyu Pinyin", "Bopo", "Latn");
+    _tt_source(tt, "pinyin1958", "the initials, finals and spelling rules 1-5");
+    _tt_source(tt, "unicode2026", "the syllables and spellings (Unihan kMandarin), tone-mark codepoints (Table 18-9)");
+    _tt_source(tt, "moe2017", "the tone marks' positions (調號說明表)");
     _tt_add(tt, "ㄚˉ", "ā");
     _tt_add(tt, "ㄚ", "ā");
     _tt_add(tt, "˙ㄚ", "a");

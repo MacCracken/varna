@@ -71,7 +71,9 @@ custom fonts, so render the page and look rather than trusting extracted text.
       otherwise European set; the phonotactic profile is European (Mateus & d'Andrade
       1998). Decide the variety, or split it under *Multiple inventories per language*.
 - [ ] **Korean inventory: /ʌ/ is missing.** Lee (1993, JIPA, p. 29) lists it; the
-      inventory has i e ɛ a o u ɯ.
+      inventory has i e ɛ a o u ɯ. Re-check the whole inventory against that
+      Illustration and its erratum (JIPA 23(2), p. 104: no [f] in the chart, [ɟ] for
+      [ʝ]).
 - [x] **Transliteration tables**: ALA-LC Russian, Arabic and Hebrew, and Zhuyin →
       Pinyin, with `translit_by_scheme`; Devanagari's inherent vowel and Greek's
       accented letters fixed; a source index for lookup; Bopomofo registered.
@@ -97,10 +99,13 @@ custom fonts, so render the page and look rather than trusting extracted text.
 - [x] **Source provenance**: a keyed bibliography (`src/sources.cyr`) and each
       inventory's links to the works its values come from (`inventory_sources`);
       12 inventories cite 18 works, every entry checkable by DOI or URL.
-- [ ] **Provenance for the other datasets**: link the phonotactic profiles, allophone
-      sets, transliteration tables, tone rows and numeral systems to the bibliography,
-      as the inventories are. Their comments cite about 50 more works, each to be
-      entered from its primary record.
+- [x] **Provenance for the other datasets**: phonotactic profiles, allophone sets,
+      transliteration tables and numeral systems link to the bibliography (50 works);
+      tone rows already did, through their inventories ("tones").
+- [ ] **Provenance for grammar, scripts and lexicons.** The grammar profiles' WALS
+      claims, the scripts' Unicode ranges and dates, and the Swadesh and lexicon
+      data are not linked yet. Most cite nothing; WALS and Unicode would be the
+      first entries.
 - [ ] **Re-source the 39 unsourced inventories**, JIPA Illustrations first, correcting
       each to its source as 2.6.0 did for ja es zh. Each may change data.
 - [ ] **Multiple inventories per language**: competing analyses, as PHOIBLE keeps them.

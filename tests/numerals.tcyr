@@ -1,6 +1,7 @@
 # tests/numerals.tcyr — numeral parity tests (v1.x Rust src/script/numerals.rs).
 
 include "src/util.cyr"
+include "src/sources.cyr"
 include "src/numerals.cyr"
 
 fn main() {
