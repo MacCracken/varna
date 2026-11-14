@@ -5,9 +5,9 @@ History in `bench-history.csv`. `min` is the most representative
 per-op figure (the bump allocator never frees, so `avg` carries
 accumulating alloc overhead).
 
-Latest: **2026-11-14T00:47:19Z** commit `3b27d40` on cyrius `6.7.18`
+Latest: **2026-11-14T00:53:23Z** commit `e699844` on cyrius `6.7.18`
 
-Timer floor: **1.209us** per clock read (measured on this host,
+Timer floor: **1.217us** per clock read (measured on this host,
 subtracted from every sample). Cyrius >=6.5.19 calibrates this at
 runtime; the value is a property of the host clocksource and
 moves between reboots, so rows recorded under different floors are
@@ -23,52 +23,52 @@ not directly comparable.
 
 | Benchmark | min | avg |
 |-----------|-----|-----|
-| `english_phoneme_inventory` | 8ns | 8ns |
-| `sanskrit_phoneme_inventory` | 8ns | 8ns |
+| `english_phoneme_inventory` | 9ns | 9ns |
+| `sanskrit_phoneme_inventory` | 5ns | 5ns |
 | `greek_phoneme_inventory` | 5ns | 5ns |
-| `phoneme_lookup_ipa` | 324ns | 335ns |
-| `registry_phonemes_lookup` | 52ns | 53ns |
-| `registry_all_codes_iter` | 4.371us | 4.522us |
-| `script_by_code_lookup` | 101ns | 105ns |
-| `script_contains_codepoint` | 13ns | 13ns |
-| `transliterate_devanagari_char` | 140ns | 140ns |
-| `transliterate_greek_word` | 3.062us | 3.062us |
-| `transliterate_russian_word` | 5.745us | 5.969us |
-| `transliterate_arabic_word` | 4.063us | 4.218us |
-| `transliterate_zhuyin_phrase` | 1.164us | 1.164us |
-| `numeral_value_of_char` | 178ns | 183ns |
-| `numeral_string_value_word` | 588ns | 617ns |
-| `gematria_char_value` | 290ns | 301ns |
-| `gematria_char_value_ordinal` | 487ns | 505ns |
-| `gematria_string_value_in` | 835ns | 875ns |
-| `gematria_alphabet_table` | 205ns | 211ns |
-| `grammar_by_code_lookup` | 202ns | 208ns |
-| `swadesh_by_code_lookup` | 96ns | 97ns |
-| `lexicon_find_word` | 753ns | 777ns |
-| `allophone_realize` | 34ns | 35ns |
-| `phonotactics_is_permitted` | 162ns | 168ns |
-| `dialect_apply_overlay` | 2.003us | 2.089us |
-| `json_inventory_write_en` | 45.627us | 47.331us |
-| `json_inventory_read_en` | 173.258us | 179.674us |
-| `json_phonotactics_write_en` | 9.368us | 9.652us |
-| `json_phonotactics_read_en` | 23.229us | 26.251us |
-| `source_by_key_lookup` | 142ns | 147ns |
-| `registry_inventory_lookup` | 796ns | 826ns |
-| `json_source_write` | 3.518us | 3.626us |
-| `json_source_read` | 6.559us | 6.817us |
-| `json_script_write_deva` | 2.006us | 2.073us |
-| `json_script_read_deva` | 7.841us | 8.305us |
-| `json_numerals_write_greek` | 16.618us | 17.106us |
-| `json_numerals_read_greek` | 69.678us | 72.243us |
-| `json_translit_write_iast` | 23.664us | 24.439us |
-| `json_translit_read_iast` | 71.715us | 75.070us |
-| `json_grammar_write_en` | 2.835us | 2.948us |
-| `json_grammar_read_en` | 14.425us | 15.351us |
-| `json_lexicon_write_ar` | 28.585us | 30.816us |
-| `json_lexicon_read_ar` | 94.123us | 97.619us |
-| `json_cognate_write_water` | 4.638us | 4.884us |
-| `json_cognate_read_water` | 12.524us | 13.163us |
-| `json_variety_write_rp` | 3.478us | 3.614us |
-| `json_variety_read_rp` | 10.696us | 11.175us |
-| `json_registry_write_en` | 2.551us | 2.736us |
-| `json_registry_read_en` | 8.731us | 8.994us |
+| `phoneme_lookup_ipa` | 344ns | 351ns |
+| `registry_phonemes_lookup` | 55ns | 56ns |
+| `registry_all_codes_iter` | 4.193us | 4.269us |
+| `script_by_code_lookup` | 107ns | 109ns |
+| `script_contains_codepoint` | 14ns | 14ns |
+| `transliterate_devanagari_char` | 108ns | 108ns |
+| `transliterate_greek_word` | 3.396us | 3.396us |
+| `transliterate_russian_word` | 11.180us | 11.526us |
+| `transliterate_arabic_word` | 2.212us | 2.212us |
+| `transliterate_zhuyin_phrase` | 1.558us | 1.558us |
+| `numeral_value_of_char` | 190ns | 193ns |
+| `numeral_string_value_word` | 626ns | 641ns |
+| `gematria_char_value` | 307ns | 316ns |
+| `gematria_char_value_ordinal` | 516ns | 530ns |
+| `gematria_string_value_in` | 888ns | 917ns |
+| `gematria_alphabet_table` | 219ns | 222ns |
+| `grammar_by_code_lookup` | 214ns | 218ns |
+| `swadesh_by_code_lookup` | 101ns | 102ns |
+| `lexicon_find_word` | 799ns | 818ns |
+| `allophone_realize` | 36ns | 37ns |
+| `phonotactics_is_permitted` | 172ns | 176ns |
+| `dialect_apply_overlay` | 2.138us | 2.202us |
+| `json_inventory_write_en` | 48.573us | 49.907us |
+| `json_inventory_read_en` | 183.104us | 189.186us |
+| `json_phonotactics_write_en` | 9.927us | 10.154us |
+| `json_phonotactics_read_en` | 24.506us | 25.165us |
+| `source_by_key_lookup` | 249ns | 254ns |
+| `registry_inventory_lookup` | 842ns | 859ns |
+| `json_source_write` | 3.715us | 3.787us |
+| `json_source_read` | 6.961us | 7.089us |
+| `json_script_write_deva` | 2.105us | 2.156us |
+| `json_script_read_deva` | 8.300us | 8.485us |
+| `json_numerals_write_greek` | 17.461us | 17.859us |
+| `json_numerals_read_greek` | 73.639us | 75.793us |
+| `json_translit_write_iast` | 25.048us | 25.636us |
+| `json_translit_read_iast` | 75.892us | 77.762us |
+| `json_grammar_write_en` | 2.937us | 3.005us |
+| `json_grammar_read_en` | 15.241us | 15.620us |
+| `json_lexicon_write_ar` | 30.199us | 30.923us |
+| `json_lexicon_read_ar` | 100.141us | 102.227us |
+| `json_cognate_write_water` | 4.902us | 5.025us |
+| `json_cognate_read_water` | 13.238us | 13.564us |
+| `json_variety_write_rp` | 3.709us | 3.827us |
+| `json_variety_read_rp` | 11.326us | 11.641us |
+| `json_registry_write_en` | 2.590us | 2.646us |
+| `json_registry_read_en` | 8.870us | 9.066us |

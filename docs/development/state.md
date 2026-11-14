@@ -7,14 +7,22 @@
 
 ## Version
 
-**2.5.4** (2026-11-13) — **hygiene and follow-ons.** `-D LOGGING` goes through sakshi,
-with v1.x's `VARNA_LOG` override. `assert` and `bench` are test-only, and
-`script_alphabet_values` is cached. Thai gains vowel length and diphthongs, and Yoruba
-three nasal vowels. Portuguese's and Guarani's nasal vowels, which read as [−nasal],
-are corrected and respelled with the combining tilde. Benchmark rows that move with no
-code change were traced to per-run CPU state, not code layout.
+**2.6.0** (2026-11-13) — **coverage scale.** Allophone rules for Spanish, Japanese,
+Russian, Mandarin and Arabic, and phonotactic profiles for all eleven core languages
+and Sanskrit, each from a cited primary source. Four new transliteration tables
+(ALA-LC Russian, Arabic and Hebrew; Zhuyin → Pinyin) behind an indexed lookup, with
+Devanagari's inherent vowel and Greek's accents fixed. A bibliography of 53 works,
+each checkable by DOI or URL, that the inventories, profiles, allophone sets, tables
+and numeral systems link to. More than one inventory per language, with Portuguese
+split into European (default) and Brazilian. Glagolitic and Bopomofo are registered
+scripts, and the numerals gain Glagolitic, mispar gadol and variant-glyph aliases.
+Thai's and Vietnamese's tone rows, which were Wikipedia's uncited columns credited to
+primary sources, are re-sourced to Teeranon (2007) and Kirby (2011).
 
-Previous: **2.5.3** data accuracy: Glottocodes, Burmese and Lao re-sourced, Somali
+Previous: **2.5.4** hygiene and follow-ons: logging through sakshi, test-only `assert`
+and `bench`, Thai vowel length, Yoruba nasal vowels, and Portuguese's and Guarani's
+nasal vowels corrected.
+**2.5.3** data accuracy: Glottocodes, Burmese and Lao re-sourced, Somali
 corrected, and a tongue-root ([ATR]) value for Yoruba and Wolof.
 **2.5.2** varna serializes again: every type v1.x serialized has JSON in v1.x's
 format ([ADR 0003](../adr/0003-json-wire-format-matches-v1x-serde.md)), and
@@ -37,7 +45,7 @@ Rust → Cyrius port ([ADR 0001](../adr/0001-port-from-rust-to-cyrius.md)).
 | | |
 |---|---|
 | Languages | 51, each with a phoneme inventory, a resolving primary script and a Glottocode (2.5.3, from Glottolog) |
-| Scripts | 21 (Glagolitic and Bopomofo added in the unreleased 2.6.0 work) |
+| Scripts | 21 (Glagolitic and Bopomofo added at 2.6.0) |
 | Numeral systems | 10 — six of them letter-value (Hebrew, Arabic, Latin, Cyrillic, Greek, Glagolitic) |
 | Grammar profiles | 11 |
 | Source modules | 23 — 19 core, 4 behind `-D` defines |

@@ -1,6 +1,6 @@
 # Development Roadmap
 
-> **Current**: 2.5.4 · **Open work only.** Shipped releases are in
+> **Current**: 2.6.0 · **Open work only.** Shipped releases are in
 > [CHANGELOG.md](../../CHANGELOG.md) and the git tags.
 >
 > Releases are listed in their intended order, which is not a commitment to ship
@@ -11,7 +11,7 @@
 
 | Release | Theme | Priority |
 |---|---|---|
-| 2.6.0 | Coverage scale: allophony, phonotactics, transliteration, numerals, provenance, PHOIBLE | P3 |
+| 2.6.1 | Coverage scale, continued: PHOIBLE loading, an allophone environment model, word-level romanization, re-sourcing | P3 |
 | 2.7.0 | Typology and interchange: PHOIBLE export, WALS codes, cross-cutting queries, ISO 639 | P4 |
 | 2.8.0+ | Linguistic depth: prosody, morphology, historical phonology, sign language, Hangul | P4 |
 
@@ -29,7 +29,7 @@ citations turned out to be Wikipedia's text credited to the primary source (Burm
 that checked only whether the claim was plausible. JIPA Illustrations set IPA in
 custom fonts, so render the page and look rather than trusting extracted text.
 
-## Carried over from 2.5.4 (not yet assigned to a release)
+## Carried over (not yet assigned to a release)
 
 - [ ] **Drop `_json_text_ok` once bayan refuses raw control bytes and invalid UTF-8.**
       RFC 8259 requires both; bayan's parser accepts both, so `_json_parse` scans for
@@ -40,26 +40,17 @@ custom fonts, so render the page and look rather than trusting extracted text.
       Enfield's prose than Yanagimura's isolation values. That figure is known only
       from Wikipedia. The dissertation (UMI 9801455) is image-only and was not
       reachable at 2.5.3 or 2.5.4. Read it before preferring it.
-- [x] **Re-check the source comments that predate 2.5.3.** Only 7 of the 48 inventories
-      cite a dated source; the two not already re-checked, Thai and Vietnamese, were
-      Wikipedia's tone columns too, and are re-sourced (Teeranon 2007; Kirby 2011). The
-      four explicit WALS claims hold against WALS's CLDF data. The other 41 inventories
-      cite nothing, which is the provenance item below.
 
-## 2.6.0 — Coverage scale (P3)
+## 2.6.1 — Coverage scale, continued (P3)
 
-- [x] **Expanded allophone rules**: Spanish, Japanese, Russian, Mandarin and Arabic,
-      each from its JIPA Illustration, with only the rules whose environment the model
-      states exactly. The inventories were corrected to the same sources.
+Left open when 2.6.0 shipped (see its CHANGELOG entry for what did).
+
 - [ ] **An allophone environment model that can state the rules left out.** Each new
       set's comment lists rules that are real but not encoded, because the model has
       no "elsewhere" (Spanish spirantization, /ɟ͡ʝ/), no "same syllable" (Mandarin
       [a̟ ʊ] before a nasal coda), no two conditions at once (Japanese devoicing, [ᵈʑ]
       word-initially before /i/), and classes that are labels nothing evaluates
       (Russian voicing assimilation needs "voiced obstruent other than /v vʲ/").
-- [x] **Expanded phonotactic profiles**: the 11 core languages plus Sanskrit, each
-      re-sourced to one cited work, spelled in its inventory's symbols, and checked
-      against that inventory by a test. `phonotactics_by_code` / `phonotactics_all_codes`.
 - [ ] **French phonotactics: re-check against Walker (2001) or Tranel (1987).** The
       profile is partial: no reachable source states a template, so `max_coda 1` is a
       view Côté (2000) reports and argues against, and the onset list is his minimum
@@ -67,15 +58,10 @@ custom fonts, so render the page and look rather than trusting extracted text.
 - [ ] **German permitted codas.** Schäfer (2018, §5.2) states them as prose rules, so
       only his exclusions are encoded and every other coda reads unspecified. A source
       that enumerates them (Wiese 1996, which could not be read) would allow a list.
-- [x] **Portuguese inventory: one variety.** Split: European (Cruz-Ferreira 1995) is
-      the default, Brazilian (Barbosa & Albano 2004) the alternative `pt-BR`.
 - [ ] **Korean inventory: /ʌ/ is missing.** Lee (1993, JIPA, p. 29) lists it; the
       inventory has i e ɛ a o u ɯ. Re-check the whole inventory against that
       Illustration and its erratum (JIPA 23(2), p. 104: no [f] in the chart, [ɟ] for
       [ʝ]).
-- [x] **Transliteration tables**: ALA-LC Russian, Arabic and Hebrew, and Zhuyin →
-      Pinyin, with `translit_by_scheme`; Devanagari's inherent vowel and Greek's
-      accented letters fixed; a source index for lookup; Bopomofo registered.
 - [ ] **Word-level romanization rules.** Arabic's initial hamzah, construct-state tāʼ
       marbūṭah, the article al- and final -iyy; Hebrew's word-initial alef and vocal
       shva; ALA-LC capitalization; Pinyin's apostrophe and word division. Each needs
@@ -92,24 +78,12 @@ custom fonts, so render the page and look rather than trusting extracted text.
       TLG lists, are not in the table.
 - [ ] **More ALA-LC tables**: the other Cyrillic languages (ALA-LC has one per
       language) and the Yiddish column of the Hebrew table.
-- [x] **Numeral follow-ons**: the variant-glyph alias layer (ѵ ѿ ҁ; not ꙋ, which has
-      no numeric use), Glagolitic numerals (`Glag`, the 29 values every source agrees
-      on), and mispar gadol (`NUM_GADOL`, Hebrew only).
-- [x] **Source provenance**: a keyed bibliography (`src/sources.cyr`) and each
-      inventory's links to the works its values come from (`inventory_sources`);
-      12 inventories cite 18 works, every entry checkable by DOI or URL.
-- [x] **Provenance for the other datasets**: phonotactic profiles, allophone sets,
-      transliteration tables and numeral systems link to the bibliography (50 works);
-      tone rows already did, through their inventories ("tones").
 - [ ] **Provenance for grammar, scripts and lexicons.** The grammar profiles' WALS
       claims, the scripts' Unicode ranges and dates, and the Swadesh and lexicon
       data are not linked yet. Most cite nothing; WALS and Unicode would be the
       first entries.
-- [ ] **Re-source the 39 unsourced inventories**, JIPA Illustrations first, correcting
+- [ ] **Re-source the 38 unsourced inventories**, JIPA Illustrations first, correcting
       each to its source as 2.6.0 did for ja es zh. Each may change data.
-- [x] **Multiple inventories per language**: `registry_inventories` /
-      `registry_inventory`, each inventory with an id and a variety; Portuguese split
-      into European (default) and Brazilian (`pt-BR`).
 - [ ] **A full RP inventory.** The British English overlay adds ɒ and drops the t-flap,
       but Roach (2004) has long vowels, ɜː and the centring diphthongs ɪə eə ʊə too.
       An RP alternative of English, as Portuguese has, would carry them.

@@ -7,16 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Toward 2.6.0, coverage scale: allophone rules for five more languages, phonotactic
+## [2.6.0] - 2026-11-13
+
+Roadmap 2.6.0, coverage scale: allophone rules for five more languages, phonotactic
 profiles for all eleven core languages, four new transliteration tables and a fix to
-the two old ones, source provenance, more than one inventory per language, the
-numeral follow-ons, and
-the citation re-check carried over from 2.5.4. The decisions in it were the project
-owner's: re-sourcing both tone rows, automatic variant aliases, Glagolitic's core values
-only, exact-environment rules plus inventory fixes, re-sourcing all twelve phonotactic
-profiles; for transliteration, ALA-LC for the alphabets, Zhuyin as Pinyin's source, an
-inherent-vowel rule, and each "X or Y" choice listed below; and for provenance, a keyed
-bibliography with links, inventories first, and no source recorded where none is cited.
+the two old ones, a bibliography that the inventories, profiles, allophone sets,
+tables and numeral systems cite, more than one inventory per language (Portuguese
+split into European and Brazilian), the numeral follow-ons, and the citation re-check
+carried over from 2.5.4. Its open items move to 2.6.1, among them PHOIBLE loading, an
+allophone environment model, and word-level romanization rules.
+
+The decisions in it were the project owner's: re-sourcing both tone rows, automatic
+variant aliases, Glagolitic's core values only, exact-environment rules plus inventory
+fixes, re-sourcing all twelve phonotactic profiles; for transliteration, ALA-LC for
+the alphabets, Zhuyin as Pinyin's source, an inherent-vowel rule, and each "X or Y"
+choice listed below; for provenance, a keyed bibliography with links, inventories
+first, and no source recorded where none is cited; and full alternative inventories,
+with European Portuguese the default.
 
 ### Breaking
 
@@ -30,8 +37,9 @@ bibliography with links, inventories first, and no source recorded where none is
   Vietnamese cell (below).
 - **`char_value("Cyrl", …)` reads ѵ, ѿ and ҁ** (400, 800, 90) where it returned the
   unmapped sentinel.
-- **20 scripts, not 19**, and 6 letter-value scripts, not 5 (Glagolitic). Anything that
-  counts `script_all_codes` or `gematria_all_scripts` sees one more.
+- **21 scripts, not 19** (Glagolitic and Bopomofo), and 6 letter-value scripts, not 5
+  (Glagolitic). Anything that counts `script_all_codes` or `gematria_all_scripts`
+  sees more.
 - **transliteration: a Devanagari consonant's own target is bare.**
   `translit_char(translit_devanagari_iast(), "क")` is `"k"`, not `"ka"`, and the
   reverse map gives क for `"k"`. `translit_apply` still writes a lone क as `"ka"`: it
@@ -40,10 +48,10 @@ bibliography with links, inventories first, and no source recorded where none is
 - **transliteration: accented Greek is transliterated.** `λόγος` gives `"lo/gos"`,
   where `ό` passed through untouched (`"lόgos"`).
 - **The JSON of every sourced record gains a `"sources"` field**, as its last member
-  (see *Added*): the 12 sourced inventories, all 12 phonotactic profiles, 5 allophone
+  (see *Added*): the 13 sourced inventories (and Brazilian Portuguese), all 12
+  phonotactic profiles, 5 allophone
   sets, 5 transliteration tables and 3 numeral systems. A record that cites nothing
   writes the same JSON as before.
-- **21 scripts, not 20** (Bopomofo, `Bopo`).
 - **The Portuguese inventory is now European Portuguese only** (Cruz-Ferreira 1995;
   see *Fixed*), and Brazilian is a separate inventory. `phoneme_find` returns 0 for
   `t͡ʃ d͡ʒ j w r ɨ ã`. The tap is `ɾ` (it was `r`), the reduced vowel `ɯ` (was `ɨ`)
@@ -140,19 +148,21 @@ bibliography with links, inventories first, and no source recorded where none is
   inventory links to the works its values are taken from, each with what it covers:
   `inventory_sources(inv)` (a vec of links: `source_link_key`, `source_link_covers`),
   `inventory_is_sourced(inv)`, and `phoneme_builder_source(b, key, covers)`.
-  - 12 of the 51 inventories cite a source, 18 works between them: zh ja es ru (their
-    JIPA Illustrations), ar (one phoneme, lˤ), vi and my (tones), th (segments and
-    tones), yo (vowels), so, wo (vowels) and lo. The other 39 cite nothing, and
-    `inventory_is_sourced` says so; re-sourcing them is on the roadmap.
+  - 13 of the 51 default inventories cite a source: zh ja es ru pt (their JIPA
+    Illustrations; Portuguese since its split, below), ar (one phoneme, lˤ), vi and
+    my (tones), th (segments and tones), yo (vowels), so, wo (vowels) and lo. The other
+    38 cite nothing, and `inventory_is_sourced` says so; re-sourcing them is on the
+    roadmap.
   - A link goes to a work the values are taken from. A work that only agrees, one
     checked and set aside, and one that could not be read stay in the comment.
   - Every field is as the publisher, journal or repository prints it: Crossref's
     publisher-deposited record for a work with a DOI, otherwise the page in
     `source_url`, which every such entry has. A work that prints no date is undated,
-    `source_year` 0 and JSON `null`, not dated from someone else's citation of it. Russian's link records the 2.6.0 check
-    against Yanushevskaya & Bunčić (2015), which its inventory now states too.
+    `source_year` 0 and JSON `null`, not dated from someone else's citation of it.
+    Russian's link records the 2.6.0 check against Yanushevskaya & Bunčić (2015),
+    which its inventory now states too.
   - JSON: `source_to_json` / `source_from_json`, and the inventory gains an optional
-    `"sources"` field, written only for a sourced inventory, so the other 39 write
+    `"sources"` field, written only for a sourced inventory, so the other 38 write
     exactly v1.x's shape and a v1.x document still decodes. A dialect overlay carries
     no links: its parent's sources describe the parent.
   - The other datasets link the same way: `phonotactics_sources(p)`,
